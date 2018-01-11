@@ -3395,7 +3395,8 @@ if (!Array.prototype.indexOf) {
 
             return _keys(obj, myLevel, 0, curParent, options.concat,
                          allKeys, leafKeys, levelKeys, separator,
-                         options.array || [], keys, options.skip, options.cb);
+                         options.array || [], keys, options.skip || {},
+                         options.cb);
         }
 
         function _keys(obj, level, curLevel, curParent,
@@ -3412,28 +3413,26 @@ if (!Array.prototype.indexOf) {
                         (leafKeys && (isLevel || !isObj)) ||
                         (levelKeys && isLevel)) {
 
-                        if (!skipKeys || !skipKeys[key]) {
-                            if (concatKeys) {
-                                tmp = curParent + key;
+                        if (concatKeys) {
+                            tmp = curParent + key;
+                            if (!skipKeys[tmp]) {
                                 if (cb) _doCb(tmp, res, cb);
                                 else res.push(tmp);
-
-                            }
-                            else {
-                                if (uniqueKeys){
-                                    if (!uniqueKeys[key]) {
-                                        if (cb) _doCb(key, res, cb);
-                                        else res.push(key);
-                                        uniqueKeys[key] = true;
-                                    }
-                                }
-                                else {
-                                    if (cb) _doCb(key, res, cb);
-                                    else res.push(key);
-                                }
                             }
                         }
-
+                        else if (!skipKeys[key]) {
+                            if (uniqueKeys){
+                                if (!uniqueKeys[key]) {
+                                    if (cb) _doCb(key, res, cb);
+                                    else res.push(key);
+                                    uniqueKeys[key] = true;
+                                }
+                            }
+                            else {
+                                if (cb) _doCb(key, res, cb);
+                                else res.push(key);
+                            }
+                        }
                     }
                     if (isObj && (curLevel < level)) {
                         _keys(obj[key], level, (curLevel+1),
@@ -22383,7 +22382,7 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # MatcherManager
- * Copyright(c) 2017 Stefano Balietti <ste@nodegame.org>
+ * Copyright(c) 2018 Stefano Balietti <ste@nodegame.org>
  * MIT Licensed
  *
  * Handles matching roles to players and players to players.
@@ -22790,6 +22789,7 @@ if (!Array.prototype.indexOf) {
         var roundMatches, nMatchesIdx, match, id1, id2, missId;
         var matches, matchesById, sayPartner, doRoles;
         var opts, roles, matchedRoles;
+        var validity;
 
         var game, n;
         var nRounds;
@@ -22818,6 +22818,10 @@ if (!Array.prototype.indexOf) {
             nRounds = game.plot.getRound(game.getNextStep(), 'total');
         }
         if (nRounds > n-1) nRounds = n-1;
+
+        if ('undefined' === typeof options.validity) {
+            // TODO: do something!
+        }
 
         // Algorithm: random.
         if (settings.match === 'random') {
@@ -23944,7 +23948,7 @@ if (!Array.prototype.indexOf) {
         else {
             if (!role) role = null;
             else if ('function' === typeof role) role = role.call(this);
-        
+
             if (role === null && this.getProperty('roles') !== null) {
                 throw new Error('Game.gotoStep: "role" is null, but "roles" ' +
                                 'are found in step ' + nextStep);
@@ -24918,7 +24922,6 @@ if (!Array.prototype.indexOf) {
                                 this.getCurrentGameStage());
             }
             roles = this.getProperty('roles');
-            // If FALSE, does not check the roles object, but let set the role.
             if (!roles) {
                 throw new Error('Game.setRole: trying to set role "' +
                                 role + '", but \'roles\' not found in ' +
@@ -24938,7 +24941,7 @@ if (!Array.prototype.indexOf) {
                     this.plot.tmpCache(prop, roleObj[prop]);
                 }
             }
-            
+
         }
         else if (role !== null) {
             throw new TypeError('Game.setRole: role must be string or null. ' +
@@ -29251,7 +29254,7 @@ if (!Array.prototype.indexOf) {
  *
  * Implementation of node.[say|set|get|done].
  *
- * Copyright(c) 2015 Stefano Balietti
+ * Copyright(c) 2018 Stefano Balietti
  * MIT Licensed
  */
 (function(exports, parent) {
@@ -29489,11 +29492,6 @@ if (!Array.prototype.indexOf) {
                 timer = this.timer.createTimer({
                     milliseconds: timeout,
                     timeup: function() {
-                        // 10.19.2016 Was:
-//                         // `ee.once` already removes it on execution.
-//                         if (!executeOnce) {
-//                             ee.remove('in.say.DATA', g);
-//                         }
                         ee.remove('in.say.DATA', g);
                         if ('undefined' !== typeof timer) {
                             that.timer.destroyTimer(timer);
@@ -29534,20 +29532,21 @@ if (!Array.prototype.indexOf) {
      *
      * All input parameters are passed along to `node.emit`.
      *
+     * @param {objet
+     *
      * @return {boolean} TRUE, if the method is authorized, FALSE otherwise
      *
      * @see NodeGameClient.emit
      * @emits DONE
      */
-    NGC.prototype.done = function() {
-        var that, game, doneCb, len, i;
-        var arg1, arg2, args, args2;
+    NGC.prototype.done = function(doneInfo) {
+        var that, game, doneCb, res;
         var stepTime, timeup;
         var autoSet;
-
+        
         // Get step execution time.
         stepTime = this.timer.getTimeSince('step');
-
+        
         game = this.game;
         if (game.willBeDone || game.getStageLevel() >= GETTING_DONE) {
             this.err('node.done: done already called in step: ' +
@@ -29555,65 +29554,26 @@ if (!Array.prototype.indexOf) {
             return false;
         }
 
-        len = arguments.length;
-
         // Evaluating `done` callback if any.
         doneCb = game.plot.getProperty(game.getCurrentGameStage(), 'done');
 
-        // A done callback can manipulate arguments, add new values to
+        // A done callback can manipulate doneInfo, add new values to
         // send to server, or even halt the procedure if returning false.
         if (doneCb) {
-            switch(len) {
-            case 0:
-                args = doneCb.call(game);
-                break;
-            case 1:
-                args = doneCb.call(game, arguments[0]);
-                break;
-            case 2:
-                args = doneCb.call(game, arguments[0], arguments[1]);
-                break;
-            default:
-                args = new Array(len);
-                for (i = -1 ; ++i < len ; ) {
-                    args[i] = arguments[i];
-                }
-                args = doneCb.apply(game, args);
-            };
-
+            res = doneCb.call(game, doneInfo);
+            
             // If a `done` callback returns false, exit.
-            if ('boolean' === typeof args) {
-                if (args === false) {
-                    this.silly('node.done: done callback returned false.');
-                    return false;
-                }
-                else {
-                    console.log('***');
-                    console.log('node.done: done callback returned true. ' +
-                                'For retro-compatibility the value is not ' +
-                                'processed and sent to server. If you wanted ' +
-                                'to return "true" return an array: [true]. ' +
-                                'In future releases any value ' +
-                                'different from false and undefined will be ' +
-                                'treated as a done argument and processed.');
-                    console.log('***');
-
-                    args = null;
-                }
+            if (res === false) {
+                this.silly('node.done: done callback returned false.');
+                return false;
             }
-            // If a value is provided make it an array, if not already one.
-            else if ('undefined' !== typeof args &&
-                Object.prototype.toString.call(args) !== '[object Array]') {
-
-                args = [args];
-            }
+            if ('undefined' !== typeof res) doneInfo = res;
         }
 
         // Build set object (will be sent to server).
+
         // Back-compatible checks.
-        if (game.timer && game.timer.isTimeup) {
-            timeup = game.timer.isTimeup();
-        }
+        if (game.timer && game.timer.isTimeup) timeup = game.timer.isTimeup();
 
         autoSet = game.plot.getProperty(game.getCurrentGameStage(), 'autoSet');
 
@@ -29621,57 +29581,14 @@ if (!Array.prototype.indexOf) {
         // to avoid calling `node.done` multiple times in the same stage.
         game.willBeDone = true;
 
-        // TODO: it is possible that DONE messages (in.set.DATA) are sent
-        // to server before PLAYING is set. Is this OK?
-
-        // Args can be the original arguments array, or
-        // the one returned by the done callback.
-        // TODO: check if it safe to copy arguments by reference.
-        if (!args) args = arguments;
-        else len = args.length;
         that = this;
-        // The arguments object must not be passed or leaked anywhere.
-        // Therefore, we recreate an args array here. We have a different
-        // timeout in a different branch for optimization.
-        switch(len) {
-
-        case 0:
-            if (autoSet) {
-                this.set(getSetObj(stepTime, timeup), 'SERVER', 'done');
-            }
-            setTimeout(function() { that.events.emit('DONE'); }, 0);
-            break;
-        case 1:
-            arg1 = args[0];
-            if (autoSet) {
-                this.set(getSetObj(stepTime, timeup, arg1), 'SERVER', 'done');
-            }
-            setTimeout(function() { that.events.emit('DONE', arg1); }, 0);
-            break;
-        case 2:
-            arg1 = args[0], arg2 = args[1];
-            // Send two setObjs.
-            if (autoSet) {
-                this.set(getSetObj(stepTime, timeup, arg1), 'SERVER', 'done');
-                this.set(getSetObj(stepTime, timeup, arg2), 'SERVER', 'done');
-            }
-            setTimeout(function() { that.events.emit('DONE', arg1, arg2); }, 0);
-            break;
-        default:
-            args2 = new Array(len+1);
-            args2[0] = 'DONE';
-            for (i = 0; i < len; i++) {
-                args2[i+1] = args[i];
-                if (autoSet) {
-                    this.set(getSetObj(stepTime, timeup, args2[i+1]),
-                             'SERVER', 'done');
-                }
-            }
-            setTimeout(function() {
-                that.events.emit.apply(that.events, args2);
-            }, 0);
+        if (autoSet) {
+            // TODO: it is possible that DONE messages (in.set.DATA) are sent
+            // to server before PLAYING is set. Is this OK?
+            this.set(getSetObj(stepTime, timeup, doneInfo), 'SERVER', 'done');
         }
-
+        setTimeout(function() { that.events.emit('DONE', doneInfo); }, 0);
+        
         return true;
     };
 
@@ -29680,7 +29597,9 @@ if (!Array.prototype.indexOf) {
     function getSetObj(time, timeup, arg) {
         var o;
         o = { time: time , timeup: timeup };
-        if ('object' === typeof arg) J.mixin(o, arg);
+        if ('object' === typeof arg) {
+            J.mixin(o, arg);
+        }
         else if ('string' === typeof arg || 'number' === typeof arg) {
             o[arg] = true;
         }
@@ -46376,7 +46295,7 @@ if (!Array.prototype.indexOf) {
 
     // ## Meta-data
 
-    Feedback.version = '1.0.0';
+    Feedback.version = '1.0.1';
     Feedback.description = 'Displays a configurable feedback form';
 
     Feedback.title = 'Feedback';
@@ -47801,7 +47720,7 @@ if (!Array.prototype.indexOf) {
     };
 
     MoodGauge.prototype.append = function() {
-        node.widgets.append(this.gauge, this.bodyDiv);
+        node.widgets.append(this.gauge, this.bodyDiv, { panel: false });
     };
 
     MoodGauge.prototype.listeners = function() {};
