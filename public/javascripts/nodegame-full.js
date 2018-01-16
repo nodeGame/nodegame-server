@@ -1864,7 +1864,7 @@ if (!Array.prototype.indexOf) {
      * @param {Node} parent The parent node
      * @param {array} order Optional. A pre-specified order. Defaults, random
      * @param {function} cb Optional. A callback to execute one each shuffled
-     *   element (after re-positioning). This is always the last parameter, 
+     *   element (after re-positioning). This is always the last parameter,
      *   so if order is omitted, it goes second. The callback takes as input:
      *     - the element
      *     - the new order
@@ -1903,7 +1903,7 @@ if (!Array.prototype.indexOf) {
             throw new TypeError('DOM.shuffleElements: order must be ' +
                                 'array. Found: ' + order);
         }
-        
+
         // DOM4 compliant browsers.
         children = parent.children;
 
@@ -2730,7 +2730,8 @@ if (!Array.prototype.indexOf) {
             }
             else if (!JSUS.isArray(titles)) {
                 throw new TypeError(where + 'titles must be string, ' +
-                                    'array of strings or undefined.');
+                                    'array of strings or undefined. Found: ' +
+                                    titles);
             }
             rotationId = 0;
             period = options.period || 1000;
@@ -22382,7 +22383,7 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # MatcherManager
- * Copyright(c) 2018 Stefano Balietti <ste@nodegame.org>
+ * Copyright(c) 2017 Stefano Balietti <ste@nodegame.org>
  * MIT Licensed
  *
  * Handles matching roles to players and players to players.
@@ -22789,7 +22790,6 @@ if (!Array.prototype.indexOf) {
         var roundMatches, nMatchesIdx, match, id1, id2, missId;
         var matches, matchesById, sayPartner, doRoles;
         var opts, roles, matchedRoles;
-        var validity;
 
         var game, n;
         var nRounds;
@@ -22818,10 +22818,6 @@ if (!Array.prototype.indexOf) {
             nRounds = game.plot.getRound(game.getNextStep(), 'total');
         }
         if (nRounds > n-1) nRounds = n-1;
-
-        if ('undefined' === typeof options.validity) {
-            // TODO: do something!
-        }
 
         // Algorithm: random.
         if (settings.match === 'random') {
@@ -25849,70 +25845,84 @@ if (!Array.prototype.indexOf) {
         /**
          * ### node
          *
-         * Internal reference to node.
+         * Internal reference to node
          */
         this.node = node;
 
         /**
          * ### name
          *
-         * Internal name of the timer.
+         * Internal name of the timer
          */
         this.name = options.name || 'timer_' + J.randomInt(0, 1000000);
 
         /**
          * ### GameTimer.status
          *
-         * Numerical index keeping the current the state of the GameTimer obj.
+         * Numerical index keeping the current the state of the GameTimer obj
          */
         this.status = GameTimer.UNINITIALIZED;
 
         /**
          * ### GameTimer.options
          *
-         * The current settings for the GameTimer.
+         * The current settings for the GameTimer
          */
         this.options = options;
 
         /**
          * ### GameTimer.timerId
          *
-         * The ID of the javascript interval.
+         * The ID of the javascript interval
          */
         this.timerId = null;
 
         /**
          * ### GameTimer.timeLeft
          *
-         * Total running time of timer.
+         * Total running time of timer
          */
         this.milliseconds = null;
 
         /**
          * ### GameTimer.timeLeft
          *
-         * Milliseconds left before time is up.
+         * Milliseconds left before time is up
          */
         this.timeLeft = null;
 
         /**
+         * ### GameTimer.timeLeft
+         *
+         * Milliseconds left when the last stop was called
+         */
+        this.timeLeftAtStop = null;
+
+        /**
          * ### GameTimer.timePassed
          *
-         * Milliseconds already passed from the start of the timer.
+         * Milliseconds already passed from the start of the timer
          */
         this.timePassed = 0;
 
         /**
+         * ### GameTimer.timePassed
+         *
+         * Milliseconds already passed when the last stop was called
+         */
+        this.timePassedAtStop = null;
+
+        /**
          * ### GameTimer.update
          *
-         * The frequency of update for the timer (in milliseconds).
+         * The frequency of update for the timer (in milliseconds)
          */
         this.update = undefined;
 
         /**
          * ### GameTimer.updateRemaining
          *
-         * Milliseconds remaining for current update.
+         * Milliseconds remaining for current update
          */
         this.updateRemaining = 0;
 
@@ -26382,7 +26392,9 @@ if (!Array.prototype.indexOf) {
         clearInterval(this.timerId);
         clearTimeout(this.timerId);
         this.timerId = null;
+        this.timePassedAtStop = this.timePassed;
         this.timePassed = 0;
+        this.timeLeftAtStop = this.timeLeft;
         this.timeLeft = null;
         this.startPaused = null;
         this.updateRemaining = 0;
@@ -29254,7 +29266,7 @@ if (!Array.prototype.indexOf) {
  *
  * Implementation of node.[say|set|get|done].
  *
- * Copyright(c) 2018 Stefano Balietti
+ * Copyright(c) 2015 Stefano Balietti
  * MIT Licensed
  */
 (function(exports, parent) {
@@ -29492,6 +29504,11 @@ if (!Array.prototype.indexOf) {
                 timer = this.timer.createTimer({
                     milliseconds: timeout,
                     timeup: function() {
+                        // 10.19.2016 Was:
+//                         // `ee.once` already removes it on execution.
+//                         if (!executeOnce) {
+//                             ee.remove('in.say.DATA', g);
+//                         }
                         ee.remove('in.say.DATA', g);
                         if ('undefined' !== typeof timer) {
                             that.timer.destroyTimer(timer);
@@ -29532,21 +29549,20 @@ if (!Array.prototype.indexOf) {
      *
      * All input parameters are passed along to `node.emit`.
      *
-     * @param {objet
-     *
      * @return {boolean} TRUE, if the method is authorized, FALSE otherwise
      *
      * @see NodeGameClient.emit
      * @emits DONE
      */
-    NGC.prototype.done = function(doneInfo) {
-        var that, game, doneCb, res;
+    NGC.prototype.done = function() {
+        var that, game, doneCb, len, i;
+        var arg1, arg2, args, args2;
         var stepTime, timeup;
         var autoSet;
-        
+
         // Get step execution time.
         stepTime = this.timer.getTimeSince('step');
-        
+
         game = this.game;
         if (game.willBeDone || game.getStageLevel() >= GETTING_DONE) {
             this.err('node.done: done already called in step: ' +
@@ -29554,26 +29570,65 @@ if (!Array.prototype.indexOf) {
             return false;
         }
 
+        len = arguments.length;
+
         // Evaluating `done` callback if any.
         doneCb = game.plot.getProperty(game.getCurrentGameStage(), 'done');
 
-        // A done callback can manipulate doneInfo, add new values to
+        // A done callback can manipulate arguments, add new values to
         // send to server, or even halt the procedure if returning false.
         if (doneCb) {
-            res = doneCb.call(game, doneInfo);
-            
+            switch(len) {
+            case 0:
+                args = doneCb.call(game);
+                break;
+            case 1:
+                args = doneCb.call(game, arguments[0]);
+                break;
+            case 2:
+                args = doneCb.call(game, arguments[0], arguments[1]);
+                break;
+            default:
+                args = new Array(len);
+                for (i = -1 ; ++i < len ; ) {
+                    args[i] = arguments[i];
+                }
+                args = doneCb.apply(game, args);
+            };
+
             // If a `done` callback returns false, exit.
-            if (res === false) {
-                this.silly('node.done: done callback returned false.');
-                return false;
+            if ('boolean' === typeof args) {
+                if (args === false) {
+                    this.silly('node.done: done callback returned false.');
+                    return false;
+                }
+                else {
+                    console.log('***');
+                    console.log('node.done: done callback returned true. ' +
+                                'For retro-compatibility the value is not ' +
+                                'processed and sent to server. If you wanted ' +
+                                'to return "true" return an array: [true]. ' +
+                                'In future releases any value ' +
+                                'different from false and undefined will be ' +
+                                'treated as a done argument and processed.');
+                    console.log('***');
+
+                    args = null;
+                }
             }
-            if ('undefined' !== typeof res) doneInfo = res;
+            // If a value is provided make it an array, if not already one.
+            else if ('undefined' !== typeof args &&
+                Object.prototype.toString.call(args) !== '[object Array]') {
+
+                args = [args];
+            }
         }
 
         // Build set object (will be sent to server).
-
         // Back-compatible checks.
-        if (game.timer && game.timer.isTimeup) timeup = game.timer.isTimeup();
+        if (game.timer && game.timer.isTimeup) {
+            timeup = game.timer.isTimeup();
+        }
 
         autoSet = game.plot.getProperty(game.getCurrentGameStage(), 'autoSet');
 
@@ -29581,14 +29636,57 @@ if (!Array.prototype.indexOf) {
         // to avoid calling `node.done` multiple times in the same stage.
         game.willBeDone = true;
 
+        // TODO: it is possible that DONE messages (in.set.DATA) are sent
+        // to server before PLAYING is set. Is this OK?
+
+        // Args can be the original arguments array, or
+        // the one returned by the done callback.
+        // TODO: check if it safe to copy arguments by reference.
+        if (!args) args = arguments;
+        else len = args.length;
         that = this;
-        if (autoSet) {
-            // TODO: it is possible that DONE messages (in.set.DATA) are sent
-            // to server before PLAYING is set. Is this OK?
-            this.set(getSetObj(stepTime, timeup, doneInfo), 'SERVER', 'done');
+        // The arguments object must not be passed or leaked anywhere.
+        // Therefore, we recreate an args array here. We have a different
+        // timeout in a different branch for optimization.
+        switch(len) {
+
+        case 0:
+            if (autoSet) {
+                this.set(getSetObj(stepTime, timeup), 'SERVER', 'done');
+            }
+            setTimeout(function() { that.events.emit('DONE'); }, 0);
+            break;
+        case 1:
+            arg1 = args[0];
+            if (autoSet) {
+                this.set(getSetObj(stepTime, timeup, arg1), 'SERVER', 'done');
+            }
+            setTimeout(function() { that.events.emit('DONE', arg1); }, 0);
+            break;
+        case 2:
+            arg1 = args[0], arg2 = args[1];
+            // Send two setObjs.
+            if (autoSet) {
+                this.set(getSetObj(stepTime, timeup, arg1), 'SERVER', 'done');
+                this.set(getSetObj(stepTime, timeup, arg2), 'SERVER', 'done');
+            }
+            setTimeout(function() { that.events.emit('DONE', arg1, arg2); }, 0);
+            break;
+        default:
+            args2 = new Array(len+1);
+            args2[0] = 'DONE';
+            for (i = 0; i < len; i++) {
+                args2[i+1] = args[i];
+                if (autoSet) {
+                    this.set(getSetObj(stepTime, timeup, args2[i+1]),
+                             'SERVER', 'done');
+                }
+            }
+            setTimeout(function() {
+                that.events.emit.apply(that.events, args2);
+            }, 0);
         }
-        setTimeout(function() { that.events.emit('DONE', doneInfo); }, 0);
-        
+
         return true;
     };
 
@@ -29597,9 +29695,7 @@ if (!Array.prototype.indexOf) {
     function getSetObj(time, timeup, arg) {
         var o;
         o = { time: time , timeup: timeup };
-        if ('object' === typeof arg) {
-            J.mixin(o, arg);
-        }
+        if ('object' === typeof arg) J.mixin(o, arg);
         else if ('string' === typeof arg || 'number' === typeof arg) {
             o[arg] = true;
         }
@@ -34409,30 +34505,28 @@ if (!Array.prototype.indexOf) {
      * Requires the waitScreen widget to be loaded.
      *
      * @param {string} text Optional. The text to be shown in the locked screen
+     * @param {number} countdown Optional. The expected max total time the 
+     *   the screen will stay locked (in ms). A countdown will be displayed
      *
+     * @see WaitScreen.lock
      * TODO: check if this can be called in any stage.
      */
-    GameWindow.prototype.lockScreen = function(text) {
-        var that;
-        that = this;
-
+    GameWindow.prototype.lockScreen = function(text, countdown) {
         if (!this.waitScreen) {
-            throw new Error('GameWindow.lockScreen: waitScreen not found.');
+            throw new Error('GameWindow.lockScreen: waitScreen not found');
         }
         if (text && 'string' !== typeof text) {
             throw new TypeError('GameWindow.lockScreen: text must be string ' +
-                                'or undefined');
+                                'or undefined. Found: ' + text);
         }
-        // Feb 16.02.2015
-        // Commented out the time-out part. It causes the browser to get stuck
-        // on a locked screen, because the method is invoked multiple times.
-        // If no further problem is found out, it can be eliminated.
-        // if (!this.isReady()) {
-        //   setTimeout(function() { that.lockScreen(text); }, 100);
-        // }
+        if (countdown && 'number' !== typeof countdown || countdown < 0) {
+            throw new TypeError('GameWindow.lockScreen: countdown must be ' +
+                                'a positive number or undefined. Found: ' +
+                                countdown);
+        }
         this.setScreenLevel('LOCKING');
         text = text || 'Screen locked. Please wait...';
-        this.waitScreen.lock(text);
+        this.waitScreen.lock(text, countdown);
         this.setScreenLevel('LOCKED');
     };
 
@@ -34602,10 +34696,10 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # WaitScreen
- * Copyright(c) 2017 Stefano Balietti
+ * Copyright(c) 2018 Stefano Balietti
  * MIT Licensed
  *
- * Covers the screen with a gray layer, disables inputs, and displays a message
+ * Overlays the screen, disables inputs, and displays a message/timer
  *
  * www.nodegame.org
  */
@@ -34618,13 +34712,13 @@ if (!Array.prototype.indexOf) {
 
     // ## Meta-data
 
-    WaitScreen.version = '0.8.1';
-    WaitScreen.description = 'Show a standard waiting screen';
+    WaitScreen.version = '0.9.0';
+    WaitScreen.description = 'Shows a standard waiting screen';
 
     // ## Helper functions
 
     var inputTags, len;
-    inputTags = ['button', 'select', 'textarea', 'input'];
+    inputTags = [ 'button', 'select', 'textarea', 'input' ];
     len = inputTags.length;
 
     /**
@@ -34668,13 +34762,20 @@ if (!Array.prototype.indexOf) {
     }
 
     function event_REALLY_DONE(text) {
+        var countdown;
         text = text || W.waitScreen.defaultTexts.waiting;
         if (!node.game.shouldStep()) {
             if (W.isScreenLocked()) {
                 W.waitScreen.updateText(text);
             }
             else {
-                W.lockScreen(text);
+                if (node.game.timer.milliseconds) {
+                    // 2000 to make sure it does reach 0 and stays there.
+                    countdown = node.game.timer.milliseconds -
+                        node.timer.getTimeSince('step', true) + 2000;
+                    if (countdown < 0) countdown = 0;
+                }
+                W.lockScreen(text, countdown);
             }
         }
     }
@@ -34694,7 +34795,7 @@ if (!Array.prototype.indexOf) {
         text = text || W.waitScreen.defaultTexts.paused;
         if (W.isScreenLocked()) {
             W.waitScreen.beforePauseInnerHTML =
-                W.waitScreen.waitingDiv.innerHTML;
+                W.waitScreen.contentDiv.innerHTML;
             W.waitScreen.updateText(text);
         }
         else {
@@ -34768,6 +34869,42 @@ if (!Array.prototype.indexOf) {
         this.enabled = false;
 
         /**
+         * ### WaitScreen.contentDiv
+         *
+         * Div containing the main content of the wait screen
+         */
+        this.contentDiv = null;
+
+        /**
+         * ### WaitScreen.countdownDiv
+         *
+         * Div containing the countdown span and other text
+         *
+         * @see WaitScreen.countdown
+         * @see WaitScreen.countdownSpan
+         */
+        this.countdownDiv = null;
+
+        /**
+         * ### WaitScreen.countdownSpan
+         *
+         * Span containing a countdown timer for the max waiting
+         *
+         * @see WaitScreen.countdown
+         * @see WaitScreen.countdownDiv
+         */
+        this.countdownSpan = null;
+
+        /**
+         * ### WaitScreen.countdown
+         *
+         * Countdown of max waiting time
+         *
+         * @see WaitScreen.countdown
+         */
+        this.countdown = null;
+
+        /**
          * ### WaitScreen.text
          *
          * Default texts for default events
@@ -34829,18 +34966,22 @@ if (!Array.prototype.indexOf) {
      *
      * Locks the screen
      *
-     * Overlays a gray div on top of the page and disables all inputs.
+     * Overlays a gray div on top of the page and disables all inputs
      *
      * If called on an already locked screen, the previous text is destroyed.
      * Use `WaitScreen.updateText` to modify an existing text.
      *
      * @param {string} text Optional. If set, displays the text on top of the
      *   gray string
+     * @param {number} countdown Optional. The expected max total time the
+     *   the screen will stay locked (in ms). A countdown will be displayed,
+     *   at the end of which a text replaces the countdown, but the screen
+     *   stays locked until the unlock command is received.
      *
      * @see WaitScreen.unlock
      * @see WaitScren.updateText
      */
-    WaitScreen.prototype.lock = function(text) {
+    WaitScreen.prototype.lock = function(text, countdown) {
         var frameDoc;
         if ('undefined' === typeof document.getElementsByTagName) {
             node.warn('WaitScreen.lock: cannot lock inputs.');
@@ -34849,11 +34990,6 @@ if (!Array.prototype.indexOf) {
         lockUnlockedInputs(document);
 
         frameDoc = W.getFrameDocument();
-
-        // TODO: cleanup refactor.
-        // Using this for IE8 compatibility.
-        // frameDoc = W.getIFrameDocument(W.getFrame());
-
         if (frameDoc) lockUnlockedInputs(frameDoc);
 
         if (!this.waitingDiv) {
@@ -34861,11 +34997,51 @@ if (!Array.prototype.indexOf) {
                 this.root = W.getFrameRoot() || document.body;
             }
             this.waitingDiv = W.add('div', this.root, this.id);
+
+            this.contentDiv = W.add('div', this.waitingDiv,
+                                    'ng_waitscreen-content-div');
         }
         if (this.waitingDiv.style.display === 'none') {
             this.waitingDiv.style.display = '';
         }
-        this.waitingDiv.innerHTML = text;
+        this.contentDiv.innerHTML = text;
+
+        if (countdown) {
+            if (!this.countdownDiv) {
+                this.countdownDiv = W.add('span', this.waitingDiv,
+                                          'ng_waitscreen-countdown-div');
+                this.countdownDiv.innerHTML = '<br>Do Not Refresh the Page!' +
+                    '<br>Maximum Waiting Time: ';
+
+                this.countdownSpan = W.add('span', this.countdownDiv,
+                                           'ng_waitscreen-countdown-span');
+            }
+
+            this.countdown = countdown;
+            this.countdownSpan.innerHTML = formatCountdown(countdown);
+            this.countdownDiv.style.display = '';
+
+            this.countdownInterval = setInterval(function() {
+                var w;
+                w = W.waitScreen;
+                if (!W.isScreenLocked()) {
+                    clearInterval(w.countdownInterval);
+                    return;
+                }
+
+                w.countdown -= 1000;
+                if (w.countdown < 0) {
+                    clearInterval(w.countdownInterval);
+                    w.countdownDiv.innerHTML = '<br>Resuming soon...';
+                }
+                else {
+                    w.countdownSpan.innerHTML = formatCountdown(w.countdown);
+                }
+            }, 1000);
+        }
+        else if (this.countdownDiv) {
+            this.countdownDiv.style.display = 'none';
+        }
     };
 
     /**
@@ -34883,6 +35059,8 @@ if (!Array.prototype.indexOf) {
                 this.waitingDiv.style.display = 'none';
             }
         }
+        if (this.countdownInterval) clearInterval(this.countdownInterval);
+
         // Re-enables all previously locked input forms in the page.
         try {
             len = this.lockedInputs.length;
@@ -34909,10 +35087,11 @@ if (!Array.prototype.indexOf) {
     WaitScreen.prototype.updateText = function(text, append) {
         append = append || false;
         if ('string' !== typeof text) {
-            throw new TypeError('WaitScreen.updateText: text must be string.');
+            throw new TypeError('WaitScreen.updateText: text must be ' +
+                                'string. Found: ' + text);
         }
-        if (append) this.waitingDiv.innerHTML += text;
-        else this.waitingDiv.innerHTML = text;
+        if (append) this.contentDiv.innerHTML += text;
+        else this.contentDiv.innerHTML = text;
     };
 
     /**
@@ -34937,6 +35116,19 @@ if (!Array.prototype.indexOf) {
         // Removes previously registered listeners.
         this.disable();
     };
+
+
+    // ## Helper functions.
+
+    function formatCountdown(time) {
+        var out;
+        out = '';
+        time = J.parseMilliseconds(time);
+        if (time[2]) out += time[2] + ' min ';
+        if (time[3]) out += time[3] + ' sec';
+        return out || '--';
+    }
+
 
 })(
     ('undefined' !== typeof node) ? node : module.parent.exports.node,
@@ -37646,7 +37838,7 @@ if (!Array.prototype.indexOf) {
      * @see Widgets.get
      * @see Widget.init
      */
-    function Widget() { }
+    function Widget() {}
 
     /**
      * ### Widget.init
@@ -37657,7 +37849,7 @@ if (!Array.prototype.indexOf) {
      *
      * @see Widgets.get
      */
-    Widget.prototype.init = function(options) { };
+    Widget.prototype.init = function(options) {};
 
     /**
      * ### Widget.listeners
@@ -37670,7 +37862,7 @@ if (!Array.prototype.indexOf) {
      * @see EventEmitter.setRecordChanges
      * @see Widgets.destroy
      */
-    Widget.prototype.listeners = function() { };
+    Widget.prototype.listeners = function() {};
 
     /**
      * ### Widget.append
@@ -37694,7 +37886,7 @@ if (!Array.prototype.indexOf) {
      * @see Widget.footerDiv
      * @see Widget.headingDiv
      */
-    Widget.prototype.append = function() { };
+    Widget.prototype.append = function() {};
 
     /**
      * ### Widget.getValues
@@ -37705,7 +37897,7 @@ if (!Array.prototype.indexOf) {
      *
      * @return {mixed} The values of the widget
      */
-    Widget.prototype.getValues = function(options) { };
+    Widget.prototype.getValues = function(options) {};
 
     /**
      * ### Widget.getValues
@@ -37716,7 +37908,7 @@ if (!Array.prototype.indexOf) {
      *
      * @param {mixed} values The values to store
      */
-    Widget.prototype.setValues = function(values) { };
+    Widget.prototype.setValues = function(values) {};
 
     /**
      * ### Widget.reset
@@ -37726,7 +37918,7 @@ if (!Array.prototype.indexOf) {
      * Deletes current selection, any highlighting, and other data
      * that the widget might have collected to far.
      */
-    Widget.prototype.reset = function(options) { };
+    Widget.prototype.reset = function(options) {};
 
     /**
      * ### Widget.highlight
@@ -37738,7 +37930,7 @@ if (!Array.prototype.indexOf) {
      *
      * @param {mixed} options Settings controlling the type of highlighting
      */
-    Widget.prototype.highlight = function(options) { };
+    Widget.prototype.highlight = function(options) {};
 
     /**
      * ### Widget.highlight
@@ -37754,7 +37946,7 @@ if (!Array.prototype.indexOf) {
      *
      * @see Widget.highlighted
      */
-    Widget.prototype.unhighlight = function() { };
+    Widget.prototype.unhighlight = function() {};
 
     /**
      * ### Widget.isHighlighted
@@ -37774,7 +37966,7 @@ if (!Array.prototype.indexOf) {
      *
      * An enabled widget allows the user to interact with it
      */
-    Widget.prototype.enable = function() { };
+    Widget.prototype.enable = function() {};
 
     /**
      * ### Widget.disable
@@ -37783,7 +37975,7 @@ if (!Array.prototype.indexOf) {
      *
      * A disabled widget is still visible, but user cannot interact with it
      */
-    Widget.prototype.disable = function() { };
+    Widget.prototype.disable = function() {};
 
     /**
      * ### Widget.isDisabled
@@ -37903,8 +38095,8 @@ if (!Array.prototype.indexOf) {
                 }
                 else if ('object' !== typeof options) {
                     throw new TypeError('Widget.setTitle: options must ' +
-                        'be object or undefined. Found: ' +
-                        options);
+                                        'be object or undefined. Found: ' +
+                                        options);
                 }
                 this.headingDiv = W.add('div', this.panelDiv, options);
                 // Move it to before the body (IE cannot have undefined).
@@ -37923,8 +38115,8 @@ if (!Array.prototype.indexOf) {
             }
             else {
                 throw new TypeError(J.funcName(this.constructor) +
-                    '.setTitle: title must be string, ' +
-                    'HTML element or falsy. Found: ' + title);
+                                    '.setTitle: title must be string, ' +
+                                    'HTML element or falsy. Found: ' + title);
             }
         }
     };
@@ -37964,8 +38156,8 @@ if (!Array.prototype.indexOf) {
                 }
                 else if ('object' !== typeof options) {
                     throw new TypeError('Widget.setFooter: options must ' +
-                        'be object or undefined. Found: ' +
-                        options);
+                                        'be object or undefined. Found: ' +
+                                        options);
                 }
                 this.footerDiv = W.add('div', this.panelDiv, options);
             }
@@ -37981,8 +38173,8 @@ if (!Array.prototype.indexOf) {
             }
             else {
                 throw new TypeError(J.funcName(this.constructor) +
-                    '.setFooter: footer must be string, ' +
-                    'HTML element or falsy. Found: ' + title);
+                                    '.setFooter: footer must be string, ' +
+                                    'HTML element or falsy. Found: ' + title);
             }
         }
     };
@@ -37999,7 +38191,7 @@ if (!Array.prototype.indexOf) {
     Widget.prototype.setContext = function(context) {
         if ('string' !== typeof context) {
             throw new TypeError(J.funcName(this.constructor) + '.setContext: ' +
-                'context must be string. Found: ' + context);
+                                'context must be string. Found: ' + context);
 
         }
         W.removeClass(this.panelDiv, 'panel-[a-z]*');
@@ -38023,8 +38215,8 @@ if (!Array.prototype.indexOf) {
         }
         else if ('string' !== typeof context || context.trim() === '') {
             throw new TypeError(J.funcName(this.constructor) +
-                '.addFrame: context must be a non-empty ' +
-                'string or undefined. Found: ' + context);
+                                '.addFrame: context must be a non-empty ' +
+                                'string or undefined. Found: ' + context);
         }
         if (this.panelDiv) {
             if (this.panelDiv.className.indexOf('panel-') === -1) {
@@ -38052,21 +38244,21 @@ if (!Array.prototype.indexOf) {
     };
 
     /**
-    * ### Widget.setSound
-    *
-    * Checks and assigns the value of a sound to play to user
-    *
-    * Throws an error if value is invalid
-    *
-    * @param {string} name The name of the sound to check
-    * @param {mixed} path Optional. The path to the audio file. If undefined
-    *    the default value from Widget.sounds is used
-    *
-    * @see Widget.sounds
-    * @see Widget.getSound
-    * @see Widget.setSounds
-    * @see Widget.getSounds
-    */
+     * ### Widget.setSound
+     *
+     * Checks and assigns the value of a sound to play to user
+     *
+     * Throws an error if value is invalid
+     *
+     * @param {string} name The name of the sound to check
+     * @param {mixed} path Optional. The path to the audio file. If undefined
+     *    the default value from Widget.sounds is used
+     *
+     * @see Widget.sounds
+     * @see Widget.getSound
+     * @see Widget.setSounds
+     * @see Widget.getSounds
+     */
     Widget.prototype.setSound = function(name, value) {
         strSetter(this, name, value, 'sounds', 'Widget.setSound');
     };
@@ -38085,7 +38277,7 @@ if (!Array.prototype.indexOf) {
      */
     Widget.prototype.setSounds = function(sounds) {
         strSetterMulti(this, sounds, 'sounds', 'setSound',
-            J.funcName(this.constructor) + '.setSounds');
+                       J.funcName(this.constructor) + '.setSounds');
     };
 
     /**
@@ -38106,7 +38298,7 @@ if (!Array.prototype.indexOf) {
      */
     Widget.prototype.getSound = function(name, param) {
         return strGetter(this, name, 'sounds',
-            J.funcName(this.constructor) + '.getSound', param);
+                         J.funcName(this.constructor) + '.getSound', param);
     };
 
     /**
@@ -38129,8 +38321,8 @@ if (!Array.prototype.indexOf) {
      */
     Widget.prototype.getSounds = function(keys, param) {
         return strGetterMulti(this, 'sounds', 'getSound',
-            J.funcName(this.constructor)
-            + '.getSounds', keys, param);
+                              J.funcName(this.constructor)
+                              + '.getSounds', keys, param);
     };
 
     /**
@@ -38147,8 +38339,8 @@ if (!Array.prototype.indexOf) {
      */
     Widget.prototype.getAllSounds = function(param) {
         return strGetterMulti(this, 'sounds', 'getSound',
-            J.funcName(this.constructor)
-            + '.getAllSounds', undefined, param);
+                              J.funcName(this.constructor) + '.getAllSounds',
+                              undefined, param);
     };
 
     /**
@@ -38168,8 +38360,8 @@ if (!Array.prototype.indexOf) {
      * @see Widget.getTexts
      */
     Widget.prototype.setText = function(name, value) {
-        strSetter(this, name, value, 'texts', J.funcName(this.constructor)
-            + '.setText');
+        strSetter(this, name, value, 'texts',
+                  J.funcName(this.constructor) + '.setText');
     };
 
     /**
@@ -38186,7 +38378,7 @@ if (!Array.prototype.indexOf) {
      */
     Widget.prototype.setTexts = function(texts) {
         strSetterMulti(this, texts, 'texts', 'setText',
-            J.funcName(this.constructor) + '.setTexts');
+                       J.funcName(this.constructor) + '.setTexts');
     };
 
     /**
@@ -38206,7 +38398,7 @@ if (!Array.prototype.indexOf) {
      */
     Widget.prototype.getText = function(name, param) {
         return strGetter(this, name, 'texts',
-            J.funcName(this.constructor) + '.getText', param);
+                         J.funcName(this.constructor) + '.getText', param);
     };
 
     /**
@@ -38230,8 +38422,8 @@ if (!Array.prototype.indexOf) {
      */
     Widget.prototype.getTexts = function(keys, param) {
         return strGetterMulti(this, 'texts', 'getText',
-            J.funcName(this.constructor)
-            + '.getTexts', keys, param);
+                              J.funcName(this.constructor)
+                              + '.getTexts', keys, param);
     };
 
     /**
@@ -38251,8 +38443,8 @@ if (!Array.prototype.indexOf) {
      */
     Widget.prototype.getAllTexts = function(param) {
         return strGetterMulti(this, 'texts', 'getText',
-            J.funcName(this.constructor)
-            + '.getAllTexts', undefined, param);
+                              J.funcName(this.constructor)
+                              + '.getAllTexts', undefined, param);
     };
 
     // ## Helper methods.
@@ -38283,12 +38475,13 @@ if (!Array.prototype.indexOf) {
         if (!that.constructor[collection].hasOwnProperty(name)) {
             throw new Error(method + ': name not found: ' + name);
         }
-        res = that[collection][name] || that.constructor[collection][name];
+        res = 'undefined' !== typeof that[collection][name] ?
+            that[collection][name] : that.constructor[collection][name];
         if ('function' === typeof res) {
             res = res(that, param);
             if ('string' !== typeof res) {
                 throw new TypeError(method + ': cb "' + name +
-                    'did not return a string. Found: ' + res);
+                                    'did not return a string. Found: ' + res);
             }
         }
         return res;
@@ -38354,7 +38547,7 @@ if (!Array.prototype.indexOf) {
         var i;
         if ('object' !== typeof obj && 'undefined' !== typeof obj) {
             throw new TypeError(method + ': ' + collection +
-                ' must be object or undefined. Found: ' + obj);
+                                ' must be object or undefined. Found: ' + obj);
         }
         for (i in obj) {
             if (obj.hasOwnProperty(i)) {
@@ -38388,8 +38581,8 @@ if (!Array.prototype.indexOf) {
         }
         else {
             throw new TypeError(method + ': value for item "' + name +
-                '" must be string, function or false. ' +
-                'Found: ' + value);
+                                '" must be string, function or false. ' +
+                                'Found: ' + value);
         }
     }
 
@@ -38398,7 +38591,7 @@ if (!Array.prototype.indexOf) {
 })(
     // Widgets works only in the browser environment.
     ('undefined' !== typeof node) ? node : module.parent.exports.node
-    );
+);
 
 /**
  * # Widgets
@@ -38648,9 +38841,12 @@ if (!Array.prototype.indexOf) {
             WidgetPrototype.sounds : options.sounds;
         widget.texts = 'undefined' === typeof options.texts ?
             WidgetPrototype.texts : options.texts;
-        widget.widgetName = widgetName;
+
+
         // Fixed properties.
 
+        // Widget Name.
+        widget.widgetName = widgetName;
         // Add random unique widget id.
         widget.wid = '' + J.randomInt(0,10000000000000000000);
         // Add enabled.
