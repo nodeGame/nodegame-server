@@ -11659,7 +11659,7 @@ if (!Array.prototype.indexOf) {
 /**
  * # GameStage
  *
- * Copyright(c) 2016 Stefano Balietti
+ * Copyright(c) 2018 Stefano Balietti
  * MIT Licensed
  *
  * Representation of the stage of a game:
@@ -11742,7 +11742,7 @@ if (!Array.prototype.indexOf) {
             }
             if (gameStage.charAt(0) === '.') {
                 throw new Error('GameStage constructor: gameStage name ' +
-                                'cannot start with a dot.');
+                                'cannot start with a dot. Name: ' + gameStage);
             }
 
             tokens = gameStage.split('.');
@@ -11785,7 +11785,8 @@ if (!Array.prototype.indexOf) {
         else if ('number' === typeof gameStage) {
             if (gameStage % 1 !== 0) {
                throw new TypeError('GameStage constructor: gameStage ' +
-                                   'cannot be a non-integer number.');
+                                   'cannot be a non-integer number. Found: ' +
+                                   gameStage);
             }
             this.stage = gameStage;
             if (this.stage === 0) {
@@ -11800,7 +11801,8 @@ if (!Array.prototype.indexOf) {
         // Defaults or error.
         else if (gameStage !== null && 'undefined' !== typeof gameStage) {
             throw new TypeError('GameStage constructor: gameStage must be ' +
-                                'string, object, number, undefined, or null.');
+                                'string, object, number, undefined, or null. ' +
+                                'Found: ' + gameStage);
         }
 
         // At this point we must have positive numbers, or strings for step
@@ -11826,7 +11828,7 @@ if (!Array.prototype.indexOf) {
         }
         else {
             throw new Error('GameStage constructor: gameStage.round must ' +
-                            'be number.');
+                            'be number. Found: ' + this.round);
         }
 
         if (err) {
@@ -11889,7 +11891,8 @@ if (!Array.prototype.indexOf) {
     GameStage.toHash = function(gs, str) {
         var hash, i, idx, properties, symbols;
         if (!gs || 'object' !== typeof gs) {
-            throw new TypeError('GameStage.toHash: gs must be object.');
+            throw new TypeError('GameStage.toHash: gs must be object. Found: ' +
+                                gs);
         }
         if (!str || !str.length) {
             return gs.stage + '.' + gs.step + '.' + gs.round;
@@ -14533,7 +14536,7 @@ if (!Array.prototype.indexOf) {
  *
  * Push players to advance to next step, otherwise disconnects them.
  *
- * Copyright(c) 2016 Stefano Balietti
+ * Copyright(c) 2018 Stefano Balietti
  * MIT Licensed
  */
 (function(exports, parent) {
@@ -14686,6 +14689,8 @@ if (!Array.prototype.indexOf) {
         };
 
         node.silly('push-manager: starting timer: ' + offset + ', ' + stage);
+        // console.log('push-manager: starting timer: ', offset, stage);
+
 
         that = this;
         pushCb = function() { that.pushGame.call(that, stage, conf); };
@@ -14712,6 +14717,7 @@ if (!Array.prototype.indexOf) {
     PushManager.prototype.clearTimer = function() {
         if (this.timer && !this.timer.isStopped()) {
             this.node.silly('push-manager: timer cleared.');
+            // console.log('push-manager: timer cleared.');
             this.timer.stop();
         }
     };
@@ -14744,7 +14750,7 @@ if (!Array.prototype.indexOf) {
         var m, node, replyWaitTime, checkPushWaitTime;
         node = this.node;
 
-        console.log('checking clients');
+        // console.log('push-manager: checking clients');
         node.silly('push-manager: checking clients.');
 
         if ('object' === typeof conf) {
@@ -14765,7 +14771,7 @@ if (!Array.prototype.indexOf) {
             if (p.stageLevel !== DONE &&
                 GameStage.compare(p.stage, stage) === 0) {
 
-                console.log('push needed');
+                // console.log('push needed: ', p.id);
                 node.warn('push needed: ' + p.id);
                 // Send push.
                 node.get(PUSH_STEP,
@@ -14840,7 +14846,7 @@ if (!Array.prototype.indexOf) {
         var msg;
         // No reply to GET, disconnect client.
         node.warn('push-manager: disconnecting: ' + p.id);
-
+        // console.log('push-manager: disconnecting: ' + p.id);
         msg = node.msg.create({
             target: 'SERVERCOMMAND',
             text: 'DISCONNECT',
@@ -24022,7 +24028,7 @@ if (!Array.prototype.indexOf) {
         var widget, widgetObj, widgetRoot;
         var widgetCb, widgetExit, widgetDone;
         var doneCb, origDoneCb, exitCb, origExitCb;
-        var w, frame, uri, frameOptions, frameAutoParse;
+        var w, frame, uri, frameOptions, frameAutoParse, reloadFrame;
 
         if ('object' !== typeof step) {
             throw new TypeError('Game.execStep: step must be object. Found: ' +
@@ -24163,10 +24169,6 @@ if (!Array.prototype.indexOf) {
             }
         }
 
-        // TODO: compare currently loaded frame, with
-        // requested frame. If it the same, and no forceReload flag is found
-        // it is not passed to W.loadFrame.
-
         // Handle frame loading natively, if required.
         if (frame) {
             w = this.node.window;
@@ -24202,21 +24204,43 @@ if (!Array.prototype.indexOf) {
             }
             else {
                 throw new TypeError('Game.execStep: frame must be string or ' +
-                                    'object: ' + frame + '. ' +
+                                    'object. Found: ' + frame + '. ' +
                                     'Step: ' + step);
 
             }
 
-            // In case we are not changing frame, we do not reload it,
-            // unless we are forced to.
-            if (uri === w.unprocessedUri && !frameOptions.forceReload) {
-                this.execCallback(cb);
+            // We reload the frame if (order matters):
+            // - regardless of uri, follows what frameOptions.reload says;
+            // - it is a different uri from previous step;
+            // - it is the same uri, but different stage or round.
+            if ('undefined' !== typeof frame.reload) {
+                reloadFrame = !!frame.reload;
             }
             else {
+                reloadFrame = uri !== w.unprocessedUri;
+                if (!reloadFrame) {
+                    // Get the previously played step
+                    // (-2, because current step is already inserted).
+                    reloadFrame =
+                        this._steppedSteps[this._steppedSteps.length-2];
+                    if (reloadFrame) {
+                        reloadFrame = (reloadFrame.round !== step.round ||
+                                       reloadFrame.stage !== step.stage);
+                    }
+                    else {
+                        reloadFrame = true;
+                    }
+                }
+            }
+
+            if (reloadFrame) {
                 // Auto load frame and wrap cb.
                 this.execCallback(function() {
                     this.node.window.loadFrame(uri, cb, frameOptions);
                 });
+            }
+            else {
+                this.execCallback(cb);
             }
         }
         else {
@@ -26083,7 +26107,7 @@ if (!Array.prototype.indexOf) {
                 }
             }
             else {
-                this.timeup = this.timeup || 'TIMEUP'
+                this.timeup = this.timeup || 'TIMEUP';
             }
 
             if (options.hooks) {
@@ -34505,7 +34529,7 @@ if (!Array.prototype.indexOf) {
      * Requires the waitScreen widget to be loaded.
      *
      * @param {string} text Optional. The text to be shown in the locked screen
-     * @param {number} countdown Optional. The expected max total time the 
+     * @param {number} countdown Optional. The expected max total time the
      *   the screen will stay locked (in ms). A countdown will be displayed
      *
      * @see WaitScreen.lock
@@ -34988,7 +35012,7 @@ if (!Array.prototype.indexOf) {
         }
         // Disables all input forms in the page.
         lockUnlockedInputs(document);
-
+        
         frameDoc = W.getFrameDocument();
         if (frameDoc) lockUnlockedInputs(frameDoc);
 
@@ -35008,9 +35032,10 @@ if (!Array.prototype.indexOf) {
 
         if (countdown) {
             if (!this.countdownDiv) {
-                this.countdownDiv = W.add('span', this.waitingDiv,
+                this.countdownDiv = W.add('div', this.waitingDiv,
                                           'ng_waitscreen-countdown-div');
-                this.countdownDiv.innerHTML = '<br>Do Not Refresh the Page!' +
+                
+                this.countdownDiv.innerHTML = '<br>Do not refresh the page!' +
                     '<br>Maximum Waiting Time: ';
 
                 this.countdownSpan = W.add('span', this.countdownDiv,
@@ -35032,7 +35057,8 @@ if (!Array.prototype.indexOf) {
                 w.countdown -= 1000;
                 if (w.countdown < 0) {
                     clearInterval(w.countdownInterval);
-                    w.countdownDiv.innerHTML = '<br>Resuming soon...';
+                    w.countdownDiv.style.display = 'none';
+                    w.contentDiv.innerHTML = 'Resuming soon...';
                 }
                 else {
                     w.countdownSpan.innerHTML = formatCountdown(w.countdown);
@@ -35126,7 +35152,7 @@ if (!Array.prototype.indexOf) {
         time = J.parseMilliseconds(time);
         if (time[2]) out += time[2] + ' min ';
         if (time[3]) out += time[3] + ' sec';
-        return out || '--';
+        return out || 0;
     }
 
 
@@ -51478,7 +51504,7 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # WaitingRoom
- * Copyright(c) 2017 Stefano Balietti <ste@nodegame.org>
+ * Copyright(c) 2018 Stefano Balietti <ste@nodegame.org>
  * MIT Licensed
  *
  * Displays the number of connected/required players to start a game
@@ -51825,15 +51851,20 @@ if (!Array.prototype.indexOf) {
             this.playWithBotOption = false;
         }
 
-        if (this.playWithBotOption) {
+        if (this.playWithBotOption && !document.getElementById('bot_btn')) {
             this.playBotBtn = document.createElement('input');
             this.playBotBtn.className = 'btn btn-secondary btn-lg';
             this.playBotBtn.value = this.getText('playBot');
+            this.playBotBtn.id = 'bot_btn';
             this.playBotBtn.type = 'button';
-            this.playBotBtn.onclick = function () {
+            this.playBotBtn.onclick = function() {
                 that.playBotBtn.value = that.getText('connectingBots');
-                that.playBotBtn.setAttribute('disabled', true);
+                that.playBotBtn.disabled = true;
                 node.say('PLAYWITHBOT');
+                setTimeout(function() {
+                    that.playBotBtn.value = that.getText('playBot');
+                    that.playBotBtn.disabled = false;
+                }, 5000);
             };
             this.bodyDiv.appendChild(document.createElement('br'));
             this.bodyDiv.appendChild(this.playBotBtn);
