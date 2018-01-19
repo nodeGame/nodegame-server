@@ -10,7 +10,9 @@ html
     block content
         h2= title
         each game in games
+            span(class='card waves-effect waves-light lighten-2' +game.color)
                 a(href='/'+game.name, class='btn-large waves-effect waves-light lighten-2 '+game.color)
                     #{game.name}
-                a Game description here.
-                br
+                div(class='card-action') Game description here.
+            br 
+            br
