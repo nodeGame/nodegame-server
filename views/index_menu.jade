@@ -1,0 +1,16 @@
+html
+  head
+    meta(name='description', content='')
+    meta(name='keywords', content='')
+    meta(name='viewport', content='width=device-width, initial-scale=1.0')
+    link(rel='stylesheet', href='//cdnjs.cloudflare.com/ajax/libs/materialize/0.100.2/css/materialize.min.css')
+    script(src='//ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js')
+    script(src='//cdnjs.cloudflare.com/ajax/libs/materialize/0.100.2/js/materialize.min.js')
+  body
+    block content
+        h2= title
+        each game in games
+                a(href='/'+game.name, class='btn-large waves-effect waves-light lighten-2 '+game.color)
+                    #{game.name}
+                a Game description here.
+                br

@@ -137,7 +137,8 @@ function configure(app, servernode) {
     });
 
     app.get(basepath + '/', function(req, res, next) {
-        var q;
+        var q, games = [];
+        var colors = ['light-blue', 'teal', 'green', 'amber', 'deep-orange'];
 
         if (servernode.defaultChannel) {
             next();
@@ -145,9 +146,27 @@ function configure(app, servernode) {
         }
 
         if (J.isEmpty(req.query)) {
-            res.render('index', {
-                title: 'Yay! Your nodeGame server is running.'
+            /*
+            res.render('index_simple', {
+                title: 'nodeGame server is running.'
             });
+            */
+            var i = 0;
+            for (var property in resourceManager.games) {
+                if (resourceManager.games.hasOwnProperty(property) &&
+                    property.length > 2 && property != 'experiment') {
+                    games.push({
+                        name: property,
+                        color: colors[i]
+                    });
+                    i++;
+                }
+            }
+            res.render('index_menu', {
+                title: 'Select a game: ',
+                games: games
+            });
+
             return
         }
 
