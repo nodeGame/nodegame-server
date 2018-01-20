@@ -138,7 +138,30 @@ function configure(app, servernode) {
 
     app.get(basepath + '/', function(req, res, next) {
         var q, games = [];
-        var colors = ['light-blue', 'teal', 'green', 'amber', 'deep-orange'];
+        var colors = ['light-blue', 'teal',
+                      'green', 'amber', 'deep-orange', 'red'];
+        var gamesInformation = {
+            'prisoner': {
+                url: 'https://github.com/ewenw/prisonersgame',
+                description:'Prisoners dilemma implementation.'
+            },
+            'car-sharing': {
+                url: 'https://github.com/nodeGame/car-sharing',
+                description:'Car sharing game.'
+            },
+            'dictator': {
+                url: 'https://github.com/nodeGame/dictator',
+                description:'Dictator game.'
+            },
+            'ultimatum': {
+                url: 'https://github.com/nodeGame/ultimatum-game',
+                description:'The ultimatum game.'
+            },
+            'stopgo': {
+                url: 'https://github.com/nodeGame/stopgo',
+                description:'The stopgo game.'
+            }
+        };
 
         if (servernode.defaultChannel) {
             next();
@@ -157,13 +180,15 @@ function configure(app, servernode) {
                     property.length > 2 && property != 'experiment') {
                     games.push({
                         name: property,
-                        color: colors[i]
+                        color: colors[i],
+                        url: gamesInformation[property].url,
+                        description: gamesInformation[property].description
                     });
                     i++;
                 }
             }
             res.render('index_menu', {
-                title: 'Select a game: ',
+                title: 'nodeGame Showcase',
                 games: games
             });
 

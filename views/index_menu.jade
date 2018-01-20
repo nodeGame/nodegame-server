@@ -8,11 +8,40 @@ html
     script(src='//cdnjs.cloudflare.com/ajax/libs/materialize/0.100.2/js/materialize.min.js')
   body
     block content
-        h2= title
-        each game in games
-            span(class='card waves-effect waves-light lighten-2' +game.color)
-                a(href='/'+game.name, class='btn-large waves-effect waves-light lighten-2 '+game.color)
-                    #{game.name}
-                div(class='card-action') Game description here.
-            br 
-            br
+        nav
+            .nav-wrapper.z-depth-4
+                .brand-logo.center #{title}
+        br
+        .container
+            .row
+                each game in games
+                    .container
+                        span(class='col s5 m6 center card lighten-3 small z-depth-2 ' +game.color)
+                            div(class='card-panel center waves-effect waves-light hoverable lighten-2 activator z-depth-4 '+game.color)
+                                span(class='card-title grey-text text-darken-4 activator')
+                                    p(class='flow-text activator')#{game.name}
+                            .card-reveal
+                                span(class='card-title right') x
+                                p(class='flow-text') #{game.description}
+                                .fixed-action-btn.horizontal
+                                    a(href='/'+game.name, class='btn btn-floating btn-large green pulse', target='_blank') Play
+                                    ul
+                                        li
+                                            a(href=game.url, class='btn-floating cyan', target='_blank') Code
+    
+        footer.page-footer
+            .container
+                .row
+                .col.l6.s12
+                    h5.white-text More about 
+                        a(href='https://github.com/nodeGame/nodeGame', target='_') nodeGame
+                    p.grey-text.text-lighten-4 
+                .col.l4.offset-l2.s12
+                    h6.white-text Web design by 
+                        a(href='https://github.com/ewenw/', target='_') Ewen
+            .footer-copyright
+                .container
+                | © 2018 Stefano Balietti, Ewen Wang
+
+
+            
