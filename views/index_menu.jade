@@ -4,44 +4,68 @@ html
     meta(name='keywords', content='')
     meta(name='viewport', content='width=device-width, initial-scale=1.0')
     link(rel='stylesheet', href='//cdnjs.cloudflare.com/ajax/libs/materialize/0.100.2/css/materialize.min.css')
+    link(rel='stylesheet', href='//fonts.googleapis.com/icon?family=Material+Icons')
     script(src='//ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js')
     script(src='//cdnjs.cloudflare.com/ajax/libs/materialize/0.100.2/js/materialize.min.js')
-  body
-    block content
-        nav
-            .nav-wrapper.z-depth-4
-                .brand-logo.center #{title}
-        br
+    style(type='text/css')
+            .col {
+                margin-right:80px;
+                margin-bottom:80px;
+            }
+            nav {
+                height:120px;
+            }
+            .brand-logo {
+                top:20px;
+                left:220px;
+            }
+            ul li {
+                display:inline;
+                margin-right:10px;
+            }
+body
+    nav
+        .nav-wrapper.z-depth-4
+            .brand-logo #{title}
+    br
+    br
+    br
+    .container
+        .row
+            each game in games
+                span(class='col m5 center card lighten-3 small z-depth-2 ' + game.color)            
+                    div(class='card-panel center waves-effect waves-light hoverable lighten-2 activator z-depth-2 '+ game.color)
+                        span(class='card-title grey-text text-darken-4 activator')
+                            p(class='flow-text activator') #{game.name}
+                    .card-reveal
+                        span(class='card-title right') x
+                        p(class='flow-text') #{game.description}
+                            ul
+                                if (game.url)
+                                    li
+                                        a(href=game.url, class='btn-floating cyan tooltipped z-depth-2', target='_blank', data-delay="0", data-tooltip='Github Project') 
+                                            i(class='material-icons') code
+                                if (game.abstract)
+                                    li
+                                        a(href=game.abstract, class='btn-floating pink tooltipped z-depth-2', target='_blank', data-delay="0", data-tooltip='Research Abstract')
+                                            i(class='material-icons') assessment
+                                li
+                                    a(href='/'+game.name, class='btn-floating btn-large green pulse tooltipped z-depth-2', target='_blank', data-delay="0", data-tooltip='Play Demo')
+                                        i(class='large material-icons') play_circle_filled
+
+    footer.page-footer
         .container
             .row
-                each game in games
-                    .container
-                        span(class='col s5 m6 center card lighten-3 small z-depth-2 ' +game.color)
-                            div(class='card-panel center waves-effect waves-light hoverable lighten-2 activator z-depth-4 '+game.color)
-                                span(class='card-title grey-text text-darken-4 activator')
-                                    p(class='flow-text activator') #{game.name}
-                            .card-reveal
-                                span(class='card-title right') x
-                                p(class='flow-text') #{game.description}
-                                .fixed-action-btn.horizontal
-                                    a(href='/'+game.name, class='btn btn-floating btn-large green pulse', target='_blank') Play
-                                    ul
-                                        li
-                                            a(href=game.url, class='btn-floating cyan', target='_blank') Code
-    
-        footer.page-footer
+            .col.l6.s12
+                h5.white-text More about 
+                    a(href='https://nodegame.org/', target='_', class='tooltipped', data-delay='0', data-tooltip='Fast, scalable JavaScript for large-scale, online, multiplayer, real-time games and experiments in the browser.') nodeGame
+                p.grey-text.text-lighten-4 
+            .col.l4.offset-l2.s12
+                h6.white-text Web design by 
+                    a(href='https://github.com/ewenw/', target='_') Ewen
+        .footer-copyright
             .container
-                .row
-                .col.l6.s12
-                    h5.white-text More about 
-                        a(href='https://github.com/nodeGame/nodeGame', target='_') nodeGame
-                    p.grey-text.text-lighten-4 
-                .col.l4.offset-l2.s12
-                    h6.white-text Web design by 
-                        a(href='https://github.com/ewenw/', target='_') Ewen
-            .footer-copyright
-                .container
-                | © 2018 Stefano Balietti, Ewen Wang
+            | © 2018 Stefano Balietti, Ewen Wang
 
 
-            
+        

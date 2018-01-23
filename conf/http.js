@@ -139,29 +139,7 @@ function configure(app, servernode) {
     app.get(basepath + '/', function(req, res, next) {
         var q, games = [];
         var colors = ['light-blue', 'teal',
-                      'green', 'amber', 'deep-orange', 'red'];
-        var gamesInformation = {
-            'prisoner': {
-                url: 'https://github.com/ewenw/prisonersgame',
-                description:'Prisoners dilemma implementation.'
-            },
-            'car-sharing': {
-                url: 'https://github.com/nodeGame/car-sharing',
-                description:'Car sharing game.'
-            },
-            'dictator': {
-                url: 'https://github.com/nodeGame/dictator',
-                description:'Dictator game.'
-            },
-            'ultimatum': {
-                url: 'https://github.com/nodeGame/ultimatum-game',
-                description:'The ultimatum game.'
-            },
-            'stopgo': {
-                url: 'https://github.com/nodeGame/stopgo',
-                description:'The stopgo game.'
-            }
-        };
+                      'green', 'amber', 'deep-orange', 'red', 'purple'];
 
         if (servernode.defaultChannel) {
             next();
@@ -174,15 +152,17 @@ function configure(app, servernode) {
                 title: 'nodeGame server is running.'
             });
             */
+            var gamesObj = servernode.info.games;
             var i = 0;
-            for (var property in resourceManager.games) {
-                if (resourceManager.games.hasOwnProperty(property) &&
-                    property.length > 2 && property != 'experiment') {
+            for (var name in servernode.info.games) {
+                if (servernode.info.games.hasOwnProperty(name) &&
+                    name.length > 2 && name != 'experiment') {
                     games.push({
-                        name: property,
+                        name: name,
                         color: colors[i],
-                        url: gamesInformation[property].url,
-                        description: gamesInformation[property].description
+                        url: gamesObj[name].info.url,
+                        description: gamesObj[name].info.description,
+                        abstract: gamesObj[name].info.abstract
                     });
                     i++;
                 }
