@@ -162,7 +162,8 @@ function configure(app, servernode) {
                         color: colors[i],
                         url: gamesObj[name].info.url,
                         description: gamesObj[name].info.description,
-                        abstract: gamesObj[name].info.abstract
+                        abstract: gamesObj[name].info.abstract,
+                        wiki: gamesObj[name].info.wiki
                     });
                     i++;
                 }

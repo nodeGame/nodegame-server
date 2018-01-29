@@ -34,6 +34,10 @@ html
                                         li
                                             a(href=game.abstract, class='btn-floating pink tooltipped z-depth-2', target='_blank', data-delay="0", data-tooltip='Research Abstract')
                                                 i(class='material-icons') assessment
+                                    if (game.wiki)
+                                        li
+                                            a(href=game.wiki, class='btn-floating blue tooltipped z-depth-2', target='_blank', data-delay="0", data-tooltip='Wikipedia')
+                                                i(class='material-icons') book
                                     li
                                         a(href='/'+game.name, class='btn-floating btn-large green pulse tooltipped z-depth-2', target='_blank', data-delay="0", data-tooltip='Play Demo')
                                             i(class='large material-icons') play_circle_filled
