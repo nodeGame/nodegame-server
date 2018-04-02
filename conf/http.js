@@ -138,8 +138,8 @@ function configure(app, servernode) {
 
     app.get(basepath + '/', function(req, res, next) {
         var q, games = [];
-        var colors = ['light-blue', 'teal',
-                      'green', 'amber', 'deep-orange', 'red', 'purple'];
+        var colors = ['teal', 'green',
+                      'light-green', 'lime'];
         var gamesObj = servernode.info.games;
         var i;
         var name;
@@ -150,7 +150,7 @@ function configure(app, servernode) {
         }
 
         if (J.isEmpty(req.query)) {
-            if (!servernode.showDemoPage) {
+            if (!servernode.demoPage.enabled) {
                 res.render('index_simple', {
                     title: 'Yay! nodeGame server is running.'
                 });
@@ -161,8 +161,8 @@ function configure(app, servernode) {
                     if (servernode.info.games.hasOwnProperty(name) &&
                         name.length > 2 && name != 'experiment') {
                         games.push({
-                            name: name,
-                            color: colors[i],
+                            name: name.charAt(0).toUpperCase() + name.slice(1),
+                            color: colors[i%colors.length],
                             url: gamesObj[name].info.url,
                             description: gamesObj[name].info.description,
                             abstract: gamesObj[name].info.abstract,
@@ -172,7 +172,7 @@ function configure(app, servernode) {
                     }
                 }
                 res.render('index_menu', {
-                    title: 'nodeGame Showcase',
+                    title: servernode.demoPage.title,
                     games: games
                 });
             }

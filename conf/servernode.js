@@ -31,7 +31,10 @@ function configure(servernode) {
     servernode.name = "nodeGame server";
 
     // Displays demo page with list of games.
-    servernode.showDemoPage = true;
+    servernode.demoPage = {
+        enabled: true,
+        title: "nodeGame v" + servernode.version + " Showcase"
+    };
 
     // Default games directory.
     servernode.defaultGamesDir = rootDir + '/games/';

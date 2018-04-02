@@ -5,9 +5,9 @@ html
         meta(name='viewport', content='width=device-width, initial-scale=1.0')
         link(rel='stylesheet', href='//cdnjs.cloudflare.com/ajax/libs/materialize/0.100.2/css/materialize.min.css')
         link(rel='stylesheet', href='//fonts.googleapis.com/icon?family=Material+Icons')
-        link(rel='stylesheet', href='/stylesheets/menu.css')
         script(src='//ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js')
         script(src='//cdnjs.cloudflare.com/ajax/libs/materialize/0.100.2/js/materialize.min.js')  
+        link(rel='stylesheet', href='/stylesheets/demopage.css')
     body
         nav
             .nav-wrapper.z-depth-4
@@ -18,10 +18,10 @@ html
         .container
             .row
                 each game in games
-                    span(class='col m5 center card lighten-3 small z-depth-2 ' + game.color)            
-                        div(class='card-panel center waves-effect waves-light hoverable lighten-2 activator z-depth-2 '+ game.color)
-                            span(class='card-title grey-text text-darken-4 activator')
-                                p(class='flow-text activator') #{game.name}
+                    span(class='col m5 center card lighten-5 small z-depth-3 ' + game.color)            
+                        div(style='top: 25%', class='card-panel center waves-effect waves-light hoverable lighten-3 activator z-depth-3 '+ game.color)
+                            span(class='card-title text-darken-1 activator')
+                                h4(class='activator') #{game.name}
                         .card-reveal
                             span(class='card-title right') x
                             p(class='flow-text') #{game.description}
