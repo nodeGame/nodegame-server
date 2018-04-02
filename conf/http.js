@@ -140,6 +140,9 @@ function configure(app, servernode) {
         var q, games = [];
         var colors = ['light-blue', 'teal',
                       'green', 'amber', 'deep-orange', 'red', 'purple'];
+        var gamesObj = servernode.info.games;
+        var i;
+        var name;
 
         if (servernode.defaultChannel) {
             next();
@@ -147,33 +150,34 @@ function configure(app, servernode) {
         }
 
         if (J.isEmpty(req.query)) {
-            /*
-            res.render('index_simple', {
-                title: 'nodeGame server is running.'
-            });
-            */
-            var gamesObj = servernode.info.games;
-            var i = 0;
-            for (var name in servernode.info.games) {
-                if (servernode.info.games.hasOwnProperty(name) &&
-                    name.length > 2 && name != 'experiment') {
-                    games.push({
-                        name: name,
-                        color: colors[i],
-                        url: gamesObj[name].info.url,
-                        description: gamesObj[name].info.description,
-                        abstract: gamesObj[name].info.abstract,
-                        wiki: gamesObj[name].info.wiki
-                    });
-                    i++;
-                }
+            if (!servernode.showDemoPage) {
+                res.render('index_simple', {
+                    title: 'Yay! nodeGame server is running.'
+                });
             }
-            res.render('index_menu', {
-                title: 'nodeGame Showcase',
-                games: games
-            });
+            else {
+                i = 0;
+                for (name in servernode.info.games) {
+                    if (servernode.info.games.hasOwnProperty(name) &&
+                        name.length > 2 && name != 'experiment') {
+                        games.push({
+                            name: name,
+                            color: colors[i],
+                            url: gamesObj[name].info.url,
+                            description: gamesObj[name].info.description,
+                            abstract: gamesObj[name].info.abstract,
+                            wiki: gamesObj[name].info.wiki
+                        });
+                        i++;
+                    }
+                }
+                res.render('index_menu', {
+                    title: 'nodeGame Showcase',
+                    games: games
+                });
+            }
 
-            return
+            return;
         }
 
         if (servernode.enableInfoQuery) {

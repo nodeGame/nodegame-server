@@ -30,6 +30,9 @@ function configure(servernode) {
     // The name of the server.
     servernode.name = "nodeGame server";
 
+    // Displays demo page with list of games.
+    servernode.showDemoPage = true;
+
     // Default games directory.
     servernode.defaultGamesDir = rootDir + '/games/';
 
