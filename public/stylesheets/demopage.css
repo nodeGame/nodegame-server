@@ -4,9 +4,21 @@
 nav {
     height: 55px;}
 .brand-logo {
-    font-size: 2.9em;
+    font-size: 2.2em;
     margin-left: 50px;
     margin-top: 0px;}
 ul, li {
     display: inline;
     margin-right: 10px;}
+.footer {
+    padding-top: 20px;
+    color: #fff;
+    background-color: #0d47a1;
+}
+.top {
+    color: #fff;
+    background-color: #0d47a1;
+    width: 100%;
+    height: 56px;
+    line-height: 56px;
+}
