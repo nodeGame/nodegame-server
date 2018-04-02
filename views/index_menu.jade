@@ -18,9 +18,11 @@ html
             .row
                 each game in games
                     span(style='border-radius: 15px', class='col m5 center card lighten-2 small z-depth-3 '+ game.color)           
-                        div(style='top: 10px; width:100%; height: 90%', class='card-panel center waves-effect waves-light hoverable lighten-3 activator z-depth-3 white')
+                        div(style='top: 25%; width:80%; height:40%', class='card-panel center waves-effect waves-light hoverable lighten-3 activator z-depth-3 white')
                             span(class='card-title text-darken-1 activator')
                                 h4(class='activator') #{game.name}
+                                if (game.icon)
+                                i(class='material-icons dp48') #{game.icon}
                         .card-reveal
                             span(class='card-title right') x
                             p(class='flow-text') #{game.description}
@@ -51,6 +53,3 @@ html
                 .col.l4.offset-l2.s12
                     h6.white-text Web design by 
                         a(href='https://github.com/ewenw/', target='_') Ewen
-
-
-            

@@ -1,24 +1,32 @@
 .col {
     margin-right: 80px;
-    margin-bottom: 80px;}
+    margin-bottom: 20px;}
 nav {
     height: 55px;}
 .brand-logo {
-    font-size: 2.2em;
+    font-size: 2em;
     margin-left: 50px;
     margin-top: 0px;}
 ul, li {
     display: inline;
     margin-right: 10px;}
 .footer {
-    padding-top: 20px;
+  margin-top: 70px;
+    padding-top: 50px;
     color: #fff;
-    background-color: #0d47a1;
+    /*background-color: #0d47a1;*/
+    background-color: #484c56;
+    min-height: 200px;
 }
 .top {
-    color: #fff;
-    background-color: #0d47a1;
-    width: 100%;
-    height: 56px;
-    line-height: 56px;
+  padding-top: 10px;
+  color: #484c56;
+  background-color: #fcfcff;
+  width: 100%;
+  height: 60px;
+}
+
+body {
+  background-image: url("../images/circles-dark.png");
+  background-repeat: repeat;
 }

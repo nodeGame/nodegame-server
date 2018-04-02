@@ -138,11 +138,13 @@ function configure(app, servernode) {
 
     app.get(basepath + '/', function(req, res, next) {
         var q, games = [];
-        var colors = ['teal', 'green',
-                      'light-green', 'lime'];
+        var colors = ['teal', 'green'];
+                     // ,'light-green', 'lime'];
+
         var gamesObj = servernode.info.games;
         var i;
         var name;
+        var color;
 
         if (servernode.defaultChannel) {
             next();
@@ -160,9 +162,16 @@ function configure(app, servernode) {
                 for (name in servernode.info.games) {
                     if (servernode.info.games.hasOwnProperty(name) &&
                         name.length > 2 && name != 'experiment') {
+
+                        if (i >= colors.length) {
+                            i = 0;
+                            colors.reverse();
+                        }
+                        color = colors[i];
+
                         games.push({
                             name: name.charAt(0).toUpperCase() + name.slice(1),
-                            color: colors[i%colors.length],
+                            color: color,
                             url: gamesObj[name].info.url,
                             description: gamesObj[name].info.description,
                             abstract: gamesObj[name].info.abstract,
