@@ -138,8 +138,7 @@ function configure(app, servernode) {
 
     app.get(basepath + '/', function(req, res, next) {
         var q, games = [];
-        var colors = ['teal', 'green'];
-                     // ,'light-green', 'lime'];
+        var colors = servernode.demoPage.colors;
 
         var gamesObj = servernode.info.games;
         var i;
@@ -165,7 +164,6 @@ function configure(app, servernode) {
 
                         if (i >= colors.length) {
                             i = 0;
-                            colors.reverse();
                         }
                         color = colors[i];
 
@@ -175,7 +173,8 @@ function configure(app, servernode) {
                             url: gamesObj[name].info.url,
                             description: gamesObj[name].info.description,
                             abstract: gamesObj[name].info.abstract,
-                            wiki: gamesObj[name].info.wiki
+                            wiki: gamesObj[name].info.wiki,
+                            icon: gamesObj[name].info.icon
                         });
                         i++;
                     }

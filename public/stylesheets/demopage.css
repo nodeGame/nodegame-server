@@ -2,7 +2,9 @@
     margin-right: 80px;
     margin-bottom: 20px;}
 nav {
-    height: 55px;}
+    height: 60px;
+    background-color: #0273a2;
+    }
 .brand-logo {
     font-size: 2em;
     margin-left: 50px;
@@ -11,12 +13,13 @@ ul, li {
     display: inline;
     margin-right: 10px;}
 .footer {
-  margin-top: 70px;
+  margin-top: 130px;
     padding-top: 50px;
     color: #fff;
     /*background-color: #0d47a1;*/
     background-color: #484c56;
     min-height: 200px;
+    height: 4em;
 }
 .top {
   padding-top: 10px;

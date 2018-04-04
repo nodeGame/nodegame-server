@@ -4,13 +4,14 @@ html
         meta(name='keywords', content='')
         meta(name='viewport', content='width=device-width, initial-scale=1.0')
         link(rel='stylesheet', href='//cdnjs.cloudflare.com/ajax/libs/materialize/0.100.2/css/materialize.min.css')
-        link(rel='stylesheet', href='//fonts.googleapis.com/icon?family=Material+Icons')
         script(src='//ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js')
         script(src='//cdnjs.cloudflare.com/ajax/libs/materialize/0.100.2/js/materialize.min.js')  
         link(rel='stylesheet', href='/stylesheets/demopage.css')
+        link(rel='stylesheet', href='https://fonts.googleapis.com/icon?family=Material+Icons')
     body
-        div.top.z-depth-4
-                .brand-logo #{title}
+        div.navbar-fixed
+                nav.z-depth-4
+                    div.nav-wrapper.brand-logo #{title}
         br
         br
         br
@@ -18,11 +19,11 @@ html
             .row
                 each game in games
                     span(style='border-radius: 15px', class='col m5 center card lighten-2 small z-depth-3 '+ game.color)           
-                        div(style='top: 25%; width:80%; height:40%', class='card-panel center waves-effect waves-light hoverable lighten-3 activator z-depth-3 white')
+                        div(style='border-radius: 15px; top: 15%; width:80%; height:60%', class='card-panel center waves-effect waves-light hoverable lighten-3 activator z-depth-3 white')
                             span(class='card-title text-darken-1 activator')
                                 h4(class='activator') #{game.name}
                                 if (game.icon)
-                                i(class='material-icons dp48') #{game.icon}
+                                    i(class='material-icons large') #{game.icon}
                         .card-reveal
                             span(class='card-title right') x
                             p(class='flow-text') #{game.description}
@@ -42,6 +43,15 @@ html
                                     li
                                         a(href='/'+game.name, class='btn-floating btn-large green pulse tooltipped z-depth-2', target='_blank', data-delay="0", data-tooltip='Play Demo')
                                             i(class='large material-icons') play_circle_filled
+                span(style='border-radius: 15px', class='col m5 center card lighten-2 small z-depth-3 white')           
+                        div(style='border-radius: 15px; top: 15%; width:80%; height:60%', class='card-panel center waves-effect waves-light hoverable lighten-3 activator z-depth-3 white')
+                            span(class='card-title text-darken-1 activator')
+                                h4(class='activator') About nodeGame
+                                i(class='material-icons medium') info
+                        .card-reveal
+                            span(class='card-title right') x
+                            p(class='flow-text') nodeGame is a framework for fast, scalable, multiplayer, real-time experiments in the browser.
+                                
 
         footer.footer
             .container
