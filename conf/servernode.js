@@ -34,7 +34,8 @@ function configure(servernode) {
     servernode.demoPage = {
         enabled: true,
         title: "nodeGame v" + servernode.version + " Showcase",
-        colors: ['teal', 'green', 'indigo', 'blue']
+        colors: ['teal', 'green', 'indigo', 'blue'],
+        order: "alphabetical"
     };
 
     // Default games directory.

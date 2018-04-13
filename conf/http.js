@@ -170,11 +170,11 @@ function configure(app, servernode) {
                         games.push({
                             name: name.charAt(0).toUpperCase() + name.slice(1),
                             color: color,
-                            url: gamesObj[name].info.url,
-                            description: gamesObj[name].info.description,
-                            abstract: gamesObj[name].info.abstract,
-                            wiki: gamesObj[name].info.wiki,
-                            icon: gamesObj[name].info.icon
+                            url: gamesObj[name].info.card.url,
+                            description: gamesObj[name].info.card.description,
+                            abstract: gamesObj[name].info.card.abstract,
+                            wiki: gamesObj[name].info.card.wiki,
+                            icon: gamesObj[name].info.card.icon
                         });
                         i++;
                     }

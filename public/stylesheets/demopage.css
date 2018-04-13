@@ -1,19 +1,22 @@
-.col {
-    margin-right: 80px;
-    margin-bottom: 20px;}
+col {
+    padding: 5em;
+}
 nav {
     height: 60px;
     background-color: #0273a2;
     }
+nav .brand-logo {
+    font-size: 3vw
+ }
 .brand-logo {
-    font-size: 2em;
-    margin-left: 50px;
-    margin-top: 0px;}
+    margin-right: 5em;
+    margin-top: 0px;
+    white-space: nowrap;}
 ul, li {
     display: inline;
     margin-right: 10px;}
 .footer {
-  margin-top: 130px;
+    margin-top: 130px;
     padding-top: 50px;
     color: #fff;
     /*background-color: #0d47a1;*/
@@ -22,14 +25,15 @@ ul, li {
     height: 4em;
 }
 .top {
-  padding-top: 10px;
-  color: #484c56;
-  background-color: #fcfcff;
-  width: 100%;
-  height: 60px;
+padding-top: 10px;
+color: #484c56;
+background-color: #fcfcff;
+width: 100%;
+height: 60px;
 }
 
 body {
-  background-image: url("../images/circles-dark.png");
-  background-repeat: repeat;
+background-image: url("../images/circles-dark.png");
+background-repeat: repeat;
 }
+
