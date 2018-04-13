@@ -35,7 +35,7 @@ function configure(servernode) {
         enabled: true,
         title: "nodeGame v" + servernode.version + " Showcase",
         colors: ['teal', 'green', 'indigo', 'blue'],
-        order: "alphabetical"
+        order: "alphabetical" // either alphabetical or an array of game names
     };
 
     // Default games directory.

@@ -144,6 +144,7 @@ function configure(app, servernode) {
         var i;
         var name;
         var color;
+        var filteredGames;
 
         if (servernode.defaultChannel) {
             next();
@@ -157,27 +158,40 @@ function configure(app, servernode) {
                 });
             }
             else {
+                listOfGames = J.keys(gamesObj);
+                filteredGames = listOfGames.filter(function(name) {
+                    return gamesObj.hasOwnProperty(name) &&
+                     name != 'experiment';
+                });
+                if (servernode.demoPage.order === 'alphabetical'){
+                    filteredGames.sort();
+                }
+                else if (servernode.demoPage.order.constructor === Array){
+                    var temp = servernode.demoPage.order;
+                    temp.filter(function(name) {
+                        return filteredGames.indexOf(name) !== 0;
+                    });
+                    filteredGames = temp;
+                }
                 i = 0;
-                for (name in servernode.info.games) {
-                    if (servernode.info.games.hasOwnProperty(name) &&
-                        name.length > 2 && name != 'experiment') {
-
-                        if (i >= colors.length) {
-                            i = 0;
-                        }
-                        color = colors[i];
-
-                        games.push({
-                            name: name.charAt(0).toUpperCase() + name.slice(1),
-                            color: color,
-                            url: gamesObj[name].info.card.url,
-                            description: gamesObj[name].info.card.description,
-                            abstract: gamesObj[name].info.card.abstract,
-                            wiki: gamesObj[name].info.card.wiki,
-                            icon: gamesObj[name].info.card.icon
-                        });
-                        i++;
+                for (var j=0; j<filteredGames.length; j++) {
+                    name = filteredGames[j];
+                    if (i >= colors.length) {
+                        i = 0;
                     }
+                    color = colors[i];
+
+                    games.push({
+                        name: name.charAt(0).toUpperCase() + name.slice(1),
+                        color: color,
+                        url: gamesObj[name].info.card.url,
+                        description: gamesObj[name].info.card.description,
+                        abstract: gamesObj[name].info.card.abstract,
+                        wiki: gamesObj[name].info.card.wiki,
+                        icon: gamesObj[name].info.card.icon
+                    });
+                    i++;
+
                 }
                 res.render('index_menu', {
                     title: servernode.demoPage.title,
