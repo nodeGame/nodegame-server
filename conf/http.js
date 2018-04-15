@@ -150,7 +150,7 @@ function configure(app, servernode) {
         }
 
         if (J.isEmpty(req.query)) {
-            if (!servernode.homePage.enabled) {
+            if (servernode.homePage.enabled === false) {
                 res.render('index_simple', {
                     title: 'Yay! nodeGame server is running.'
                 });
@@ -164,12 +164,12 @@ function configure(app, servernode) {
                     return (!gamesObj[name].alias ||
                             gamesObj[name].alias.indexOf(name) === -1);
                 });
-                if (J.isArray(servernode.homePage.order)) {
+                if (J.isArray(servernode.homePage.cardsOrder)) {
                     filteredGames =
-                        servernode.homePage.order.filter(function(name) {
+                        servernode.homePage.cardsOrder.filter(function(name) {
                             if (filteredGames.indexOf(name) !== -1) return true;
-                            servernode.logger.error('homePage.order game ' +
-                                                    'not found: ' + name);
+                            servernode.logger.error('homePage.cardsOrder ' +
+                                                    'game not found: ' + name);
                         });
                 }
                 else {
@@ -201,7 +201,8 @@ function configure(app, servernode) {
                 }
                 res.render('homepage', {
                     title: servernode.homePage.title,
-                    games: games
+                    games: games,
+                    nodeGameCard: servernode.homePage.nodeGameCard
                 });
             }
 

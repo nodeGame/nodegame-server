@@ -31,13 +31,27 @@ function configure(servernode) {
     servernode.name = "nodeGame server";
 
     // Displays home page with list of games.
+    // The whole home page displayed can be changed by modifying
+    // file: views/homepage.jade
     servernode.homePage = {
+
+        // If FALSE, a generic message is displayed instead. Default: TRUE.
         enabled: true,
+
+        // The title to be displayed in the top bar.
         title: "nodeGame v" + servernode.version + " Showcase",
+
+        // The background colors of the cards to access the games.
+        // Colors are repeated in the same order if there are more games
+        // than colors.
         colors: [ 'teal', 'green', 'indigo', 'blue' ],
+
         // Default alphabetical, or customize with an array of game names.
         // Games not listed here are excluded.
-        // order: [ 'game1', 'game2', 'game3' ]
+        // cardsOrder: [ 'game1', 'game2', 'game3' ],
+
+        // Displays a nodeGame card at last. Default: TRUE.
+        nodeGameCard: true
     };
 
     // Default games directory.
