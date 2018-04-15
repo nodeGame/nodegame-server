@@ -34,9 +34,10 @@ function configure(servernode) {
     servernode.homePage = {
         enabled: true,
         title: "nodeGame v" + servernode.version + " Showcase",
-        colors: ['teal', 'green', 'indigo', 'blue'],
+        colors: [ 'teal', 'green', 'indigo', 'blue' ],
         // Default alphabetical, or customize with an array of game names.
-        // order: [ 'game1', 'game2', 'game3', ... ]
+        // Games not listed here are excluded.
+        // order: [ 'game1', 'game2', 'game3' ]
     };
 
     // Default games directory.
@@ -47,7 +48,7 @@ function configure(servernode) {
     // file will be added as a new game.
     // Important: games found in folders down in lower positions of the
     // array can override games defined before.
-    servernode.gamesDirs = [servernode.defaultGamesDir];
+    servernode.gamesDirs = [ servernode.defaultGamesDir ];
 
     if (process && process.env.PORT) {
         // If app is running on a cloud service (e.g. Heroku)

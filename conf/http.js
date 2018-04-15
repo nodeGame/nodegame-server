@@ -166,14 +166,10 @@ function configure(app, servernode) {
                 });
                 if (J.isArray(servernode.homePage.order)) {
                     filteredGames =
-                        servernode.homePage.order.map(function(name) {
-                            if (filteredGames.indexOf(name) === -1) {
-                                servernode.logger.warn('homePage.order game ' +
-                                                       'not found: ' + name);
-                            }
-                            else {
-                                return name;
-                            }
+                        servernode.homePage.order.filter(function(name) {
+                            if (filteredGames.indexOf(name) !== -1) return true;
+                            servernode.logger.error('homePage.order game ' +
+                                                    'not found: ' + name);
                         });
                 }
                 else {
@@ -184,6 +180,8 @@ function configure(app, servernode) {
                     name = filteredGames[j];
                     if (i >= colors.length) i = 0;
                     color = colors[i];
+                    // Mixin name and description from package.json
+                    // if not in card, or if no card is defined.
                     card = J.mixin(gamesObj[name].info.card || {}, {
                         name: name.charAt(0).toUpperCase() + name.slice(1),
                         description: gamesObj[name].info.description
