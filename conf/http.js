@@ -138,13 +138,11 @@ function configure(app, servernode) {
 
     app.get(basepath + '/', function(req, res, next) {
         var q, games = [];
-        var colors = servernode.demoPage.colors;
 
-        var gamesObj = servernode.info.games;
-        var i;
-        var name;
-        var color;
-        var filteredGames;
+        var gamesObj;
+        var i, j;
+        var colors;
+        var name, card, color, filteredGames;
 
         if (servernode.defaultChannel) {
             next();
@@ -152,49 +150,59 @@ function configure(app, servernode) {
         }
 
         if (J.isEmpty(req.query)) {
-            if (!servernode.demoPage.enabled) {
+            if (!servernode.homePage.enabled) {
                 res.render('index_simple', {
                     title: 'Yay! nodeGame server is running.'
                 });
             }
             else {
+                colors = servernode.homePage.colors;
+                gamesObj = servernode.info.games;
                 listOfGames = J.keys(gamesObj);
+                // Remove aliases.
                 filteredGames = listOfGames.filter(function(name) {
-                    return gamesObj.hasOwnProperty(name) &&
-                     name != 'experiment';
+                    return (!gamesObj[name].alias ||
+                            gamesObj[name].alias.indexOf(name) === -1);
                 });
-                if (servernode.demoPage.order === 'alphabetical'){
+                if (J.isArray(servernode.homePage.order)) {
+                    filteredGames =
+                        servernode.homePage.order.map(function(name) {
+                            if (filteredGames.indexOf(name) === -1) {
+                                servernode.logger.warn('homePage.order game ' +
+                                                       'not found: ' + name);
+                            }
+                            else {
+                                return name;
+                            }
+                        });
+                }
+                else {
                     filteredGames.sort();
                 }
-                else if (servernode.demoPage.order.constructor === Array){
-                    var temp = servernode.demoPage.order;
-                    temp.filter(function(name) {
-                        return filteredGames.indexOf(name) !== 0;
-                    });
-                    filteredGames = temp;
-                }
                 i = 0;
-                for (var j=0; j<filteredGames.length; j++) {
+                for (j = 0; j < filteredGames.length; j++) {
                     name = filteredGames[j];
-                    if (i >= colors.length) {
-                        i = 0;
-                    }
+                    if (i >= colors.length) i = 0;
                     color = colors[i];
-
-                    games.push({
+                    card = J.mixin(gamesObj[name].info.card || {}, {
                         name: name.charAt(0).toUpperCase() + name.slice(1),
+                        description: gamesObj[name].info.description
+                    });
+                    games.push({
+                        name: card.name,
                         color: color,
-                        url: gamesObj[name].info.card.url,
-                        description: gamesObj[name].info.card.description,
-                        abstract: gamesObj[name].info.card.abstract,
-                        wiki: gamesObj[name].info.card.wiki,
-                        icon: gamesObj[name].info.card.icon
+                        url: card.url,
+                        description: card.description,
+                        // TODO: rename abstract to publication.
+                        // abstract is a JS reserved word.
+                        abstract: card.abstract,
+                        wiki: card.wiki,
+                        icon: card.icon
                     });
                     i++;
-
                 }
-                res.render('index_menu', {
-                    title: servernode.demoPage.title,
+                res.render('homepage', {
+                    title: servernode.homePage.title,
                     games: games
                 });
             }

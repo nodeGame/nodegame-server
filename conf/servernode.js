@@ -30,12 +30,13 @@ function configure(servernode) {
     // The name of the server.
     servernode.name = "nodeGame server";
 
-    // Displays demo page with list of games.
-    servernode.demoPage = {
+    // Displays home page with list of games.
+    servernode.homePage = {
         enabled: true,
         title: "nodeGame v" + servernode.version + " Showcase",
         colors: ['teal', 'green', 'indigo', 'blue'],
-        order: "alphabetical" // either alphabetical or an array of game names
+        // Default alphabetical, or customize with an array of game names.
+        // order: [ 'game1', 'game2', 'game3', ... ]
     };
 
     // Default games directory.
