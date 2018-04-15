@@ -1,7 +1,7 @@
 /**
  * # servernode.js
  *
- * Copyright(c) 2015 Stefano Balietti
+ * Copyright(c) 2018 Stefano Balietti
  * MIT Licensed
  *
  * Configuration file for ServerNode in nodegame-server.
