@@ -1,35 +1,42 @@
 col {
-    padding: 5em;
+  padding: 5em;
 }
 
 nav {
-    height: 60px;
-    background-color: #0273a2;
-    }
+  height: 60px;
+  background-color: #0273a2;
+}
+
+@media only screen and (min-width: 992px) {  
+  nav .brand-logo {
+    margin: 0 auto;
+  }
+}
+
+/* This makes the card panel larger */
+.card-panel {
+  box-sizing: content-box;
+}
 
 nav .brand-logo {
-    font-size: 3vw
- }
-
-.brand-logo {
-    margin-right: 5em;
-    margin-top: 0px;
-    white-space: nowrap;
+  margin-right: 5em;
+  margin-top: 0px;
+  white-space: nowrap;
 }
 
 ul, li {
-    display: inline;
-    margin-right: 10px;
+  display: inline;
+  margin-right: 10px;
 }
 
 .footer {
-    margin-top: 130px;
-    padding-top: 50px;
-    color: #fff;
-    /*background-color: #0d47a1;*/
-    background-color: #484c56;
-    min-height: 200px;
-    height: 4em;
+  margin-top: 130px;
+  padding-top: 50px;
+  color: #fff;
+  /*background-color: #0d47a1;*/
+  background-color: #484c56;
+  min-height: 200px;
+  height: 4em;
 }
 
 .top {
