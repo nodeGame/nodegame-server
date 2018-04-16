@@ -1,6 +1,8 @@
 # nodegame-server change log
 
-# 4.0.0 (current)
+# 4.0.0
+- Home Page.
+- Updated Css.
 - Improved `ServerChannel.connectBot` with new options.
 - Improved internal method traverseDirectory to serve info about files to monitor.
 - Nested directory in log/ folder are ignored.
