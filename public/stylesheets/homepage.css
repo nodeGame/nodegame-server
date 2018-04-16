@@ -7,10 +7,11 @@ nav {
   background-color: #0273a2;
 }
 
-@media only screen and (min-width: 992px) {  
-  nav .brand-logo {
-    margin: 0 auto;
-  }
+/* Makes sure it is always centered */
+nav .brand-logo {
+  left: 50%;
+  -webkit-transform: translateX(-50%);
+  transform: translateX(-50%);
 }
 
 /* This makes the card panel larger */
@@ -19,7 +20,6 @@ nav {
 }
 
 nav .brand-logo {
-  margin-right: 5em;
   margin-top: 0px;
   white-space: nowrap;
 }
