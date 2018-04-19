@@ -184,16 +184,14 @@ function configure(app, servernode) {
                     // if not in card, or if no card is defined.
                     card = J.mixin(gamesObj[name].info.card || {}, {
                         name: name.charAt(0).toUpperCase() + name.slice(1),
-                        description: gamesObj[name].info.description
+                        description: gamesObj[name].info.card.description
                     });
                     games.push({
                         name: card.name,
                         color: color,
                         url: card.url,
                         description: card.description,
-                        // TODO: rename abstract to publication.
-                        // abstract is a JS reserved word.
-                        abstract: card.abstract,
+                        publication: card.publication,
                         wiki: card.wiki,
                         icon: card.icon
                     });
