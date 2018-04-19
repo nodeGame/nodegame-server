@@ -42,7 +42,7 @@ function configure(servernode) {
         title: "nodeGame v" + servernode.version + " Showcase",
 
         // The name of logo file. Empty no logo. Default: "nodegame_logo.png".
-        logo: "",
+        logo: "nodegame_logo.png",
 
         // The background colors of the cards to access the games.
         // Colors are repeated in the same order if there are more games
