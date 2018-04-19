@@ -191,9 +191,7 @@ function configure(app, servernode) {
                         color: color,
                         url: card.url,
                         description: card.description,
-                        // TODO: rename abstract to publication.
-                        // abstract is a JS reserved word.
-                        abstract: card.abstract,
+                        publication: card.publication,
                         wiki: card.wiki,
                         icon: card.icon
                     });
@@ -202,7 +200,9 @@ function configure(app, servernode) {
                 res.render('homepage', {
                     title: servernode.homePage.title,
                     games: games,
-                    nodeGameCard: servernode.homePage.nodeGameCard
+                    nodeGameCard: servernode.homePage.nodeGameCard,
+                    footerContent: servernode.homePage.footerContent,
+                    logo: servernode.homePage.logo
                 });
             }
 

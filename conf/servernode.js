@@ -41,6 +41,9 @@ function configure(servernode) {
         // The title to be displayed in the top bar.
         title: "nodeGame v" + servernode.version + " Showcase",
 
+        // The name of logo file. Empty no logo. Default: "nodegame_logo.png".
+        logo: "",
+
         // The background colors of the cards to access the games.
         // Colors are repeated in the same order if there are more games
         // than colors.
@@ -51,7 +54,11 @@ function configure(servernode) {
         // cardsOrder: [ 'game1', 'game2', 'game3' ],
 
         // Displays a nodeGame card at last. Default: TRUE.
-        nodeGameCard: true
+        nodeGameCard: true,
+
+        // Displays nodeGame info in footer. Default: TRUE.
+        footerContent: true
+
     };
 
     // Default games directory.
