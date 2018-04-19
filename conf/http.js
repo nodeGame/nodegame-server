@@ -200,7 +200,9 @@ function configure(app, servernode) {
                 res.render('homepage', {
                     title: servernode.homePage.title,
                     games: games,
-                    nodeGameCard: servernode.homePage.nodeGameCard
+                    nodeGameCard: servernode.homePage.nodeGameCard,
+                    footerContent: servernode.homePage.footerContent,
+                    logo: servernode.homePage.logo
                 });
             }
 
