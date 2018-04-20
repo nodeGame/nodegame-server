@@ -1,0 +1,84 @@
+html5
+    head
+        meta(name='description', content='')
+        meta(name='keywords', content='')
+        meta(name='viewport', content='width=device-width, initial-scale=1.0')
+        link(rel='stylesheet', href='//cdnjs.cloudflare.com/ajax/libs/materialize/0.100.2/css/materialize.min.css')
+        script(src='//ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js')
+        script(src='//cdnjs.cloudflare.com/ajax/libs/materialize/0.100.2/js/materialize.min.js')  
+        link(rel='stylesheet', href='/stylesheets/homepage.css')
+        link(rel='stylesheet', href='https://fonts.googleapis.com/icon?family=Material+Icons')
+    body
+        div.navbar-fixed
+                nav.z-depth-4
+                    div.nav-wrapper.brand-logo 
+                        if (logo)
+                            img(src="images/nodegame_logo.png", width="70", align="left")
+                        span #{title}
+        br
+        br
+        br
+        .container
+            .row
+                each game in games
+                    span(class='col s12 m6 l4 xl4 center')  
+                        div(style='border-radius: 15px', class='center card lighten-2 small z-depth-3 '+ game.color)           
+                            div(style='border-radius: 15px; top: 15%; width:80%; height:60%', class='card-panel center waves-effect waves-light hoverable lighten-3 activator z-depth-3 white')
+                                span(class='card-title text-darken-1 activator')
+                                    h4(class='activator') #{game.name}
+                                    if (game.icon)
+                                        i(class='material-icons large') #{game.icon}
+                            .card-reveal
+                                span(class='card-title right') x
+                                p(class='flow-text') #{game.description}
+                                    ul
+                                        if (game.url)
+                                            li
+                                                a(href=game.url, class='btn-floating cyan tooltipped z-depth-2', target='_blank', data-delay="0", data-tooltip='Github Project') 
+                                                    i(class='material-icons') code
+                                        if (game.publication)
+                                            li
+                                                a(href=game.publication, class='btn-floating pink tooltipped z-depth-2', target='_blank', data-delay="0", data-tooltip='Research Publication')
+                                                    i(class='material-icons') assessment
+                                        if (game.wiki)
+                                            li
+                                                a(href=game.wiki, class='btn-floating blue tooltipped z-depth-2', target='_blank', data-delay="0", data-tooltip='Wikipedia')
+                                                    i(class='material-icons') book
+                                        li
+                                            a(href='/'+game.name, class='btn-floating btn-large green pulse tooltipped z-depth-2', target='_blank', data-delay="0", data-tooltip='Play Demo')
+                                                i(class='large material-icons') play_circle_filled
+                if nodeGameCard
+                    span(class='col s12 m6 l4 xl4 center')  
+                        div(style='border-radius: 15px', class='center card lighten-2 small z-depth-3 white')           
+                            div(style='border-radius: 15px; top: 15%; width:80%; height:60%', class='card-panel center waves-effect waves-light hoverable lighten-3 activator z-depth-3 white')
+                                span(class='card-title text-darken-1 activator')
+                                    h4(class='activator') About
+                                    i(class='material-icons medium') info
+                            .card-reveal
+                                span(class='card-title right') x
+                                p(class='flow-text') nodeGame is a framework for fast, scalable, multiplayer, real-time experiments in the browser.
+                                
+
+        footer.footer
+            if (footerContent)
+                .container
+                    .row
+                        .col.l6.s12
+                            h5.white-text More about 
+                                a(href='https://nodegame.org/', target='_', class='tooltipped', data-delay='0', data-tooltip='Fast, scalable JavaScript for large-scale, online, multiplayer, real-time games and experiments in the browser.') nodeGame
+                        span(class="col 16 s12", style="width: 50%;")
+                            p.grey-text.text-lighten-4 
+                                a(href="https://twitter.com/nodegameorg", class="twitter-follow-button social", data-show-count="false", data-size="large", data-show-screen-name="false") Follow @nodegameorg
+                                    script(async, src="//platform.twitter.com/widgets.js", charset="utf-8")
+                                a(class="github-button social", href="https://github.com/nodeGame/nodegame", data-icon="octicon-star", data-size="large", data-show-count="true", aria-label="Star nodeGame/nodegame on GitHub") Star
+                                    script(async, defer, src="https://buttons.github.io/buttons.js", charset="utf-8")
+                                a(class="social", style="margin-top:0; top:0;", href="https://groups.google.com/forum/?fromgroups#!forum/nodegame", target="_blank")
+                                    button(id="forum-button")
+                                        img(style="margin-top:0; top:0; height: 20px", src="images/google-group-scaled.png", alt="Forum", align="right")
+                                        span Forum
+                    p Balietti (2017) "nodeGame: Real-Time, Synchronous, Online Experiments in the Browser" Behavior Research Methods Volume 49, Issue 5, pp. 1696-1715.
+                                        
+                
+                    .col.l4.offset-l2.s12
+                        h6.white-text Web design by 
+                            a(href='https://github.com/ewenw/', target='_') Ewen

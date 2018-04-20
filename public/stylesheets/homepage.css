@@ -1,0 +1,104 @@
+col {
+  padding: 5em;
+}
+
+nav {
+  height: 60px;
+  background-color: #EEE;
+}
+
+/* Makes sure it is always centered */
+nav .brand-logo {
+  left: 50%;
+  -webkit-transform: translateX(-50%);
+  transform: translateX(-50%);
+}
+
+/* This makes the card panel larger */
+.card-panel {
+  box-sizing: content-box;
+}
+
+nav .brand-logo {
+  margin-top: 0px;
+  white-space: nowrap;
+  color: #444444;
+}
+
+nav .brand-logo img {
+  margin-top: 0.3em;
+  margin-right: 0.5em;
+}
+
+ul, li {
+  display: inline;
+  margin-right: 10px;
+}
+
+.footer {
+  box-shadow: 0 50vh 0 50vh #484c56;
+  margin-top: 130px;
+  padding-top: 20px;
+  color: #fff;
+  /*background-color: #0d47a1;*/
+  background-color: #484c56;
+  min-height: 200px;
+  height: 4em;
+}
+
+.top {
+  padding-top: 10px;
+  color: #484c56;
+  background-color: #fcfcff;
+  width: 100%;
+  height: 60px;
+}
+
+body {
+  background-image: url("../images/circles-dark.png");
+  background-repeat: repeat;
+}
+
+#forum-button {
+  height: 30px;
+  border: 1px solid #CCC;
+  box-shadow: 0;
+  border-radius: 5px;
+  vertical-align:top;
+  background: #FFFFFD;
+  font-size: 12px;
+  font-family:-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+
+
+.media {
+  margin-left: 15px;
+}
+
+#forum-button {
+  height: 27px;
+  border: 1px solid #CCC;
+  margin-left: 10px;
+  box-shadow: 0;
+  border-radius: 5px;
+  vertical-align: top;
+  background: #FFFFFD;
+  font-size: 12px;
+  font-family:-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+
+#forum-button span{
+  vertical-align: top;
+  font-size: 12px;
+  margin-left: 3px;
+  color: black;
+}
+
+#twitter-widget-0 {
+  margin-right: 10px;
+}
+
+footer a {
+  font-weight: 400;
+  text-decoration: underline;
+}
