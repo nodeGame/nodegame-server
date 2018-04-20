@@ -182,7 +182,7 @@ function configure(app, servernode) {
                     color = colors[i];
                     // Mixin name and description from package.json
                     // if not in card, or if no card is defined.
-                    card = J.mixin(gamesObj[name].info.card || {}, {
+                    card = J.mixout(gamesObj[name].info.card || {}, {
                         name: name.charAt(0).toUpperCase() + name.slice(1),
                         description: gamesObj[name].info.description
                     });
