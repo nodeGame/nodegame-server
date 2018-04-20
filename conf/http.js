@@ -184,7 +184,7 @@ function configure(app, servernode) {
                     // if not in card, or if no card is defined.
                     card = J.mixout(gamesObj[name].info.card || {}, {
                         name: name.charAt(0).toUpperCase() + name.slice(1),
-                        description: gamesObj[name].info.description
+                        description: gamesObj[name].info.card.description
                     });
                     games.push({
                         name: card.name,
