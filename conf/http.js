@@ -161,8 +161,9 @@ function configure(app, servernode) {
                 listOfGames = J.keys(gamesObj);
                 // Remove aliases.
                 filteredGames = listOfGames.filter(function(name) {
-                    return (!gamesObj[name].alias ||
-                            gamesObj[name].alias.indexOf(name) === -1);
+                    return (!gamesObj[name].errored &&
+                            (!gamesObj[name].alias ||
+                             gamesObj[name].alias.indexOf(name) === -1));
                 });
                 if (J.isArray(servernode.homePage.cardsOrder)) {
                     filteredGames =
@@ -180,7 +181,7 @@ function configure(app, servernode) {
                     name = filteredGames[j];
                     if (i >= colors.length) i = 0;
                     color = colors[i];
-                    // Mixin name and description from package.json
+                    // Mixout name and description from package.json
                     // if not in card, or if no card is defined.
                     card = J.mixout(gamesObj[name].info.card || {}, {
                         name: name.charAt(0).toUpperCase() + name.slice(1),
