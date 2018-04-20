@@ -36,6 +36,7 @@ ul, li {
 }
 
 .footer {
+  box-shadow: 0 50vh 0 50vh #484c56;
   margin-top: 130px;
   padding-top: 20px;
   color: #fff;
