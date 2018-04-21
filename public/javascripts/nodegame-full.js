@@ -23963,7 +23963,7 @@ if (!Array.prototype.indexOf) {
         partner = this.plot.getProperty(nextStep, 'partner');
         if (!partner) partner = null;
         else if (partner === true) partner = this.partner;
-        else if ('function' === typeof partner) partner= partner.call(this);
+        else if ('function' === typeof partner) partner = partner.call(this);
         this.setPartner(partner, true);
 
         if (stageInit) {
@@ -46081,7 +46081,7 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # EndScreen
- * Copyright(c) 2017 Stefano Balietti <ste@nodegame.org>
+ * Copyright(c) 2018 Stefano Balietti <ste@nodegame.org>
  * MIT Licensed
  *
  * Creates an interface to display final earnings, exit code, etc.
@@ -46370,10 +46370,9 @@ if (!Array.prototype.indexOf) {
             exitCodeElement = document.createElement('div');
             exitCodeElement.className = 'input-group';
 
-            exitCodeParaElement = document.createElement('p');
+            exitCodeParaElement = document.createElement('span');
             exitCodeParaElement.innerHTML = '<strong>' +
-                                            this.getText('exitCode') +
-                                            '</strong>';
+                this.getText('exitCode') + '</strong>';
 
             exitCodeInputElement = document.createElement('input');
             exitCodeInputElement.id = 'exit_code';
@@ -46384,9 +46383,9 @@ if (!Array.prototype.indexOf) {
             exitCodeGroup = document.createElement('span');
             exitCodeGroup.className = 'input-group-btn';
 
-            exitCodeBtn = document.createElement('input');
-            exitCodeBtn.className = 'btn btn-secondary';
-            exitCodeBtn.value = this.getText('copyButton');
+            exitCodeBtn = document.createElement('button');
+            exitCodeBtn.className = 'btn btn-default endscreen-copy-btn';
+            exitCodeBtn.innerHTML = this.getText('copyButton');
             exitCodeBtn.type = 'button';
             exitCodeBtn.onclick = function() {
                 that.copy(exitCodeInputElement.value);
@@ -46651,6 +46650,8 @@ if (!Array.prototype.indexOf) {
          * ### Feedback.showCharCount
          *
          * If TRUE, the character count is shown
+         *
+         * Default: true
          *
          * @see Feedback.charCounter
          */
