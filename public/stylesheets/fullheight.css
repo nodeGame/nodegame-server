@@ -1,8 +1,11 @@
-/* Allows the iframe to stretch to 100% of the page height */
+/*  This is a legacy css. Not needed in in v4. */
 
-body {
-    margin:0;
-    padding:0;
+html {
+    height: 98%;
 }
-html { height: 98%;}
-body { height: 98%; width: 98%; margin: auto; }
+body {
+    padding:0;
+    height: 98%;
+    width: 98%;
+    margin: auto;
+}

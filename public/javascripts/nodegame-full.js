@@ -473,762 +473,8 @@ if (!Array.prototype.indexOf) {
 }
 
 /**
- * # Shelf.JS
- * Copyright 2014 Stefano Balietti
- * GPL licenses.
- *
- * Persistent Client-Side Storage
- *
- * ---
- */
-(function(exports){
-
-    var version = '0.5';
-
-    var store = exports.store = function(key, value, options, type) {
-	options = options || {};
-	type = (options.type && options.type in store.types) ? options.type : store.type;
-	if (!type || !store.types[type]) {
-	    store.log("Cannot save/load value. Invalid storage type selected: " + type, 'ERR');
-	    return;
-	}
-	store.log('Accessing ' + type + ' storage');
-
-	return store.types[type](key, value, options);
-    };
-
-    // Adding functions and properties to store
-    ///////////////////////////////////////////
-    store.prefix = "__shelf__";
-
-    store.verbosity = 0;
-    store.types = {};
-
-
-    var mainStorageType = "volatile";
-
-    //if Object.defineProperty works...
-    try {
-
-	Object.defineProperty(store, 'type', {
-	    set: function(type){
-		if ('undefined' === typeof store.types[type]) {
-		    store.log('Cannot set store.type to an invalid type: ' + type);
-		    return false;
-		}
-		mainStorageType = type;
-		return type;
-	    },
-	    get: function(){
-		return mainStorageType;
-	    },
-	    configurable: false,
-	    enumerable: true
-	});
-    }
-    catch(e) {
-	store.type = mainStorageType; // default: memory
-    }
-
-    store.addType = function(type, storage) {
-	store.types[type] = storage;
-	store[type] = function(key, value, options) {
-	    options = options || {};
-	    options.type = type;
-	    return store(key, value, options);
-	};
-
-	if (!store.type || store.type === "volatile") {
-	    store.type = type;
-	}
-    };
-
-    // TODO: create unit test
-    store.onquotaerror = undefined;
-    store.error = function() {
-	console.log("shelf quota exceeded");
-	if ('function' === typeof store.onquotaerror) {
-	    store.onquotaerror(null);
-	}
-    };
-
-    store.log = function(text) {
-	if (store.verbosity > 0) {
-	    console.log('Shelf v.' + version + ': ' + text);
-	}
-
-    };
-
-    store.isPersistent = function() {
-	if (!store.types) return false;
-	if (store.type === "volatile") return false;
-	return true;
-    };
-
-    //if Object.defineProperty works...
-    try {
-	Object.defineProperty(store, 'persistent', {
-	    set: function(){},
-	    get: store.isPersistent,
-	    configurable: false
-	});
-    }
-    catch(e) {
-	// safe case
-	store.persistent = false;
-    }
-
-    store.decycle = function(o) {
-	if (JSON && JSON.decycle && 'function' === typeof JSON.decycle) {
-	    o = JSON.decycle(o);
-	}
-	return o;
-    };
-
-    store.retrocycle = function(o) {
-	if (JSON && JSON.retrocycle && 'function' === typeof JSON.retrocycle) {
-	    o = JSON.retrocycle(o);
-	}
-	return o;
-    };
-
-    store.stringify = function(o) {
-	if (!JSON || !JSON.stringify || 'function' !== typeof JSON.stringify) {
-	    throw new Error('JSON.stringify not found. Received non-string value and could not serialize.');
-	}
-
-	o = store.decycle(o);
-	return JSON.stringify(o);
-    };
-
-    store.parse = function(o) {
-	if ('undefined' === typeof o) return undefined;
-	if (JSON && JSON.parse && 'function' === typeof JSON.parse) {
-	    try {
-		o = JSON.parse(o);
-	    }
-	    catch (e) {
-		store.log('Error while parsing a value: ' + e, 'ERR');
-		store.log(o);
-	    }
-	}
-
-	o = store.retrocycle(o);
-	return o;
-    };
-
-    // ## In-memory storage
-    // ### fallback for all browsers to enable the API even if we can't persist data
-    (function() {
-
-	var memory = {},
-	timeout = {};
-
-	function copy(obj) {
-	    return store.parse(store.stringify(obj));
-	}
-
-	store.addType("volatile", function(key, value, options) {
-
-	    if (!key) {
-		return copy(memory);
-	    }
-
-	    if (value === undefined) {
-		return copy(memory[key]);
-	    }
-
-	    if (timeout[key]) {
-		clearTimeout(timeout[key]);
-		delete timeout[key];
-	    }
-
-	    if (value === null) {
-		delete memory[key];
-		return null;
-	    }
-
-	    memory[key] = value;
-	    if (options.expires) {
-		timeout[key] = setTimeout(function() {
-		    delete memory[key];
-		    delete timeout[key];
-		}, options.expires);
-	    }
-
-	    return value;
-	});
-    }());
-
-}('undefined' !== typeof module && 'undefined' !== typeof module.exports ? module.exports: this));
-/**
- * ## Amplify storage for Shelf.js
- *
- * v. 1.1.0 22.05.2013 a275f32ee7603fbae6607c4e4f37c4d6ada6c3d5
- *
- * Important! When updating to next Amplify.JS release, remember to change:
- *
- * - JSON.stringify -> store.stringify to keep support for cyclic objects
- * - JSON.parse -> store.parse (cyclic objects)
- * - store.name -> store.prefix (check)
- * - rprefix -> regex
- * -  "__amplify__" -> store.prefix
- *
- * ---
- */
-(function(exports) {
-
-    var store = exports.store;
-
-    if (!store) {
-	throw new Error('amplify.shelf.js: shelf.js core not found.');
-    }
-
-    if ('undefined' === typeof window) {
-	throw new Error('amplify.shelf.js:  window object not found.');
-    }
-
-    var regex = new RegExp("^" + store.prefix);
-    function createFromStorageInterface( storageType, storage ) {
-	store.addType( storageType, function( key, value, options ) {
-	    var storedValue, parsed, i, remove,
-	    ret = value,
-	    now = (new Date()).getTime();
-
-	    if ( !key ) {
-		ret = {};
-		remove = [];
-		i = 0;
-		try {
-		    // accessing the length property works around a localStorage bug
-		    // in Firefox 4.0 where the keys don't update cross-page
-		    // we assign to key just to avoid Closure Compiler from removing
-		    // the access as "useless code"
-		    // https://bugzilla.mozilla.org/show_bug.cgi?id=662511
-		    key = storage.length;
-
-		    while ( key = storage.key( i++ ) ) {
-			if ( regex.test( key ) ) {
-			    parsed = store.parse( storage.getItem( key ) );
-			    if ( parsed.expires && parsed.expires <= now ) {
-				remove.push( key );
-			    } else {
-				ret[ key.replace( rprefix, "" ) ] = parsed.data;
-			    }
-			}
-		    }
-		    while ( key = remove.pop() ) {
-			storage.removeItem( key );
-		    }
-		} catch ( error ) {}
-		return ret;
-	    }
-
-	    // protect against name collisions with direct storage
-	    key = store.prefix + key;
-
-	    if ( value === undefined ) {
-		storedValue = storage.getItem( key );
-		parsed = storedValue ? store.parse( storedValue ) : { expires: -1 };
-		if ( parsed.expires && parsed.expires <= now ) {
-		    storage.removeItem( key );
-		} else {
-		    return parsed.data;
-		}
-	    } else {
-		if ( value === null ) {
-		    storage.removeItem( key );
-		} else {
-		    parsed = store.stringify({
-			data: value,
-			expires: options.expires ? now + options.expires : null
-		    });
-		    try {
-			storage.setItem( key, parsed );
-			// quota exceeded
-		    } catch( error ) {
-			// expire old data and try again
-			store[ storageType ]();
-			try {
-			    storage.setItem( key, parsed );
-			} catch( error ) {
-			    throw store.error();
-			}
-		    }
-		}
-	    }
-
-	    return ret;
-	});
-    }
-
-    // localStorage + sessionStorage
-    // IE 8+, Firefox 3.5+, Safari 4+, Chrome 4+, Opera 10.5+, iPhone 2+, Android 2+
-    for ( var webStorageType in { localStorage: 1, sessionStorage: 1 } ) {
-	// try/catch for file protocol in Firefox and Private Browsing in Safari 5
-	try {
-	    // Safari 5 in Private Browsing mode exposes localStorage
-	    // but doesn't allow storing data, so we attempt to store and remove an item.
-	    // This will unfortunately give us a false negative if we're at the limit.
-	    window[ webStorageType ].setItem(store.prefix, "x" );
-	    window[ webStorageType ].removeItem(store.prefix );
-	    createFromStorageInterface( webStorageType, window[ webStorageType ] );
-	} catch( e ) {}
-    }
-
-    // globalStorage
-    // non-standard: Firefox 2+
-    // https://developer.mozilla.org/en/dom/storage#globalStorage
-    if ( !store.types.localStorage && window.globalStorage ) {
-	// try/catch for file protocol in Firefox
-	try {
-	    createFromStorageInterface( "globalStorage",
-			                window.globalStorage[ window.location.hostname ] );
-	    // Firefox 2.0 and 3.0 have sessionStorage and globalStorage
-	    // make sure we default to globalStorage
-	    // but don't default to globalStorage in 3.5+ which also has localStorage
-	    if ( store.type === "sessionStorage" ) {
-		store.type = "globalStorage";
-	    }
-	} catch( e ) {}
-    }
-
-    // userData
-    // non-standard: IE 5+
-    // http://msdn.microsoft.com/en-us/library/ms531424(v=vs.85).aspx
-    (function() {
-	// IE 9 has quirks in userData that are a huge pain
-	// rather than finding a way to detect these quirks
-	// we just don't register userData if we have localStorage
-	if ( store.types.localStorage ) {
-	    return;
-	}
-
-	// append to html instead of body so we can do this from the head
-	var div = document.createElement( "div" ),
-	attrKey = store.prefix; // was "amplify" and not __amplify__
-	div.style.display = "none";
-	document.getElementsByTagName( "head" )[ 0 ].appendChild( div );
-
-	// we can't feature detect userData support
-	// so just try and see if it fails
-	// surprisingly, even just adding the behavior isn't enough for a failure
-	// so we need to load the data as well
-	try {
-	    div.addBehavior( "#default#userdata" );
-	    div.load( attrKey );
-	} catch( e ) {
-	    div.parentNode.removeChild( div );
-	    return;
-	}
-
-	store.addType( "userData", function( key, value, options ) {
-	    div.load( attrKey );
-	    var attr, parsed, prevValue, i, remove,
-	    ret = value,
-	    now = (new Date()).getTime();
-
-	    if ( !key ) {
-		ret = {};
-		remove = [];
-		i = 0;
-		while ( attr = div.XMLDocument.documentElement.attributes[ i++ ] ) {
-		    parsed = store.parse( attr.value );
-		    if ( parsed.expires && parsed.expires <= now ) {
-			remove.push( attr.name );
-		    } else {
-			ret[ attr.name ] = parsed.data;
-		    }
-		}
-		while ( key = remove.pop() ) {
-		    div.removeAttribute( key );
-		}
-		div.save( attrKey );
-		return ret;
-	    }
-
-	    // convert invalid characters to dashes
-	    // http://www.w3.org/TR/REC-xml/#NT-Name
-	    // simplified to assume the starting character is valid
-	    // also removed colon as it is invalid in HTML attribute names
-	    key = key.replace( /[^\-._0-9A-Za-z\xb7\xc0-\xd6\xd8-\xf6\xf8-\u037d\u037f-\u1fff\u200c-\u200d\u203f\u2040\u2070-\u218f]/g, "-" );
-	    // adjust invalid starting character to deal with our simplified sanitization
-	    key = key.replace( /^-/, "_-" );
-
-	    if ( value === undefined ) {
-		attr = div.getAttribute( key );
-		parsed = attr ? store.parse( attr ) : { expires: -1 };
-		if ( parsed.expires && parsed.expires <= now ) {
-		    div.removeAttribute( key );
-		} else {
-		    return parsed.data;
-		}
-	    } else {
-		if ( value === null ) {
-		    div.removeAttribute( key );
-		} else {
-		    // we need to get the previous value in case we need to rollback
-		    prevValue = div.getAttribute( key );
-		    parsed = store.stringify({
-			data: value,
-			expires: (options.expires ? (now + options.expires) : null)
-		    });
-		    div.setAttribute( key, parsed );
-		}
-	    }
-
-	    try {
-		div.save( attrKey );
-		// quota exceeded
-	    } catch ( error ) {
-		// roll the value back to the previous value
-		if ( prevValue === null ) {
-		    div.removeAttribute( key );
-		} else {
-		    div.setAttribute( key, prevValue );
-		}
-
-		// expire old data and try again
-		store.userData();
-		try {
-		    div.setAttribute( key, parsed );
-		    div.save( attrKey );
-		} catch ( error ) {
-		    // roll the value back to the previous value
-		    if ( prevValue === null ) {
-			div.removeAttribute( key );
-		    } else {
-			div.setAttribute( key, prevValue );
-		    }
-		    throw store.error();
-		}
-	    }
-	    return ret;
-	});
-    }());
-
-}(this));
-/**
- * ## Cookie storage for Shelf.js
- * Copyright 2015 Stefano Balietti
- *
- * Original library from:
- * See http://code.google.com/p/cookies/
- */
-(function(exports) {
-
-    var store = exports.store;
-
-    if (!store) {
-	throw new Error('cookie.shelf.js: shelf.js core not found.');
-    }
-
-    if ('undefined' === typeof window) {
-	throw new Error('cookie.shelf.js: window object not found.');
-    }
-
-    var cookie = (function() {
-
-	var resolveOptions, assembleOptionsString, parseCookies, constructor;
-        var defaultOptions = {
-	    expiresAt: null,
-	    path: '/',
-	    domain:  null,
-	    secure: false
-	};
-
-	/**
-	 * resolveOptions - receive an options object and ensure all options
-         * are present and valid, replacing with defaults where necessary
-	 *
-	 * @access private
-	 * @static
-	 * @parameter Object options - optional options to start with
-	 * @return Object complete and valid options object
-	 */
-	resolveOptions = function(options){
-
-	    var returnValue, expireDate;
-
-	    if(typeof options !== 'object' || options === null){
-		returnValue = defaultOptions;
-	    }
-	    else {
-		returnValue = {
-		    expiresAt: defaultOptions.expiresAt,
-		    path: defaultOptions.path,
-		    domain: defaultOptions.domain,
-		    secure: defaultOptions.secure
-		};
-
-		if (typeof options.expiresAt === 'object' && options.expiresAt instanceof Date) {
-		    returnValue.expiresAt = options.expiresAt;
-		}
-		else if (typeof options.hoursToLive === 'number' && options.hoursToLive !== 0){
-		    expireDate = new Date();
-		    expireDate.setTime(expireDate.getTime() + (options.hoursToLive * 60 * 60 * 1000));
-		    returnValue.expiresAt = expireDate;
-		}
-
-		if (typeof options.path === 'string' && options.path !== '') {
-		    returnValue.path = options.path;
-		}
-
-		if (typeof options.domain === 'string' && options.domain !== '') {
-		    returnValue.domain = options.domain;
-		}
-
-		if (options.secure === true) {
-		    returnValue.secure = options.secure;
-		}
-	    }
-
-	    return returnValue;
-	};
-
-	/**
-	 * assembleOptionsString - analyze options and assemble appropriate string for setting a cookie with those options
-	 *
-	 * @access private
-	 * @static
-	 * @parameter options OBJECT - optional options to start with
-	 * @return STRING - complete and valid cookie setting options
-	 */
-	assembleOptionsString = function (options) {
-	    options = resolveOptions(options);
-
-	    return (
-		(typeof options.expiresAt === 'object' && options.expiresAt instanceof Date ? '; expires=' + options.expiresAt.toGMTString() : '') +
-		    '; path=' + options.path +
-		    (typeof options.domain === 'string' ? '; domain=' + options.domain : '') +
-		    (options.secure === true ? '; secure' : '')
-	    );
-	};
-
-	/**
-	 * parseCookies - retrieve document.cookie string and break it into a hash with values decoded and unserialized
-	 *
-	 * @access private
-	 * @static
-	 * @return OBJECT - hash of cookies from document.cookie
-	 */
-	parseCookies = function() {
-	    var cookies = {}, i, pair, name, value, separated = document.cookie.split(';'), unparsedValue;
-	    for(i = 0; i < separated.length; i = i + 1){
-		pair = separated[i].split('=');
-		name = pair[0].replace(/^\s*/, '').replace(/\s*$/, '');
-
-		try {
-		    value = decodeURIComponent(pair[1]);
-		}
-		catch(e1) {
-		    value = pair[1];
-		}
-
-                //						if (JSON && 'object' === typeof JSON && 'function' === typeof JSON.parse) {
-                //							try {
-                //								unparsedValue = value;
-                //								value = JSON.parse(value);
-                //							}
-                //							catch (e2) {
-                //								value = unparsedValue;
-                //							}
-                //						}
-
-		cookies[name] = store.parse(value);
-	    }
-	    return cookies;
-	};
-
-	constructor = function(){};
-
-
-	/**
-	 * get - get one, several, or all cookies
-	 *
-	 * @access public
-	 * @paramater Mixed cookieName - String:name of single cookie; Array:list of multiple cookie names; Void (no param):if you want all cookies
-	 * @return Mixed - Value of cookie as set; Null:if only one cookie is requested and is not found; Object:hash of multiple or all cookies (if multiple or all requested);
-	 */
-	constructor.prototype.get = function(cookieName) {
-
-	    var returnValue, item, cookies = parseCookies();
-
-	    if(typeof cookieName === 'string') {
-		returnValue = (typeof cookies[cookieName] !== 'undefined') ? cookies[cookieName] : null;
-	    }
-	    else if (typeof cookieName === 'object' && cookieName !== null) {
-		returnValue = {};
-		for (item in cookieName) {
-		    if (typeof cookies[cookieName[item]] !== 'undefined') {
-			returnValue[cookieName[item]] = cookies[cookieName[item]];
-		    }
-		    else {
-			returnValue[cookieName[item]] = null;
-		    }
-		}
-	    }
-	    else {
-		returnValue = cookies;
-	    }
-
-	    return returnValue;
-	};
-
-	/**
-	 * filter - get array of cookies whose names match the provided RegExp
-	 *
-	 * @access public
-	 * @paramater Object RegExp - The regular expression to match against cookie names
-	 * @return Mixed - Object:hash of cookies whose names match the RegExp
-	 */
-	constructor.prototype.filter = function (cookieNameRegExp) {
-	    var cookieName, returnValue = {}, cookies = parseCookies();
-
-	    if (typeof cookieNameRegExp === 'string') {
-		cookieNameRegExp = new RegExp(cookieNameRegExp);
-	    }
-
-	    for (cookieName in cookies) {
-		if (cookieName.match(cookieNameRegExp)) {
-		    returnValue[cookieName] = cookies[cookieName];
-		}
-	    }
-
-	    return returnValue;
-	};
-
-	/**
-	 * set - set or delete a cookie with desired options
-	 *
-	 * @access public
-	 * @paramater String cookieName - name of cookie to set
-	 * @paramater Mixed value - Any JS value. If not a string, will be JSON encoded; NULL to delete
-	 * @paramater Object options - optional list of cookie options to specify
-	 * @return void
-	 */
-	constructor.prototype.set = function(cookieName, value, options){
-	    if (typeof options !== 'object' || options === null) {
-		options = {};
-	    }
-
-	    if (typeof value === 'undefined' || value === null) {
-		value = '';
-		options.hoursToLive = -8760;
-	    }
-
-	    else if (typeof value !== 'string'){
-                //						if(typeof JSON === 'object' && JSON !== null && typeof store.stringify === 'function') {
-                //
-                //							value = JSON.stringify(value);
-                //						}
-                //						else {
-                //							throw new Error('cookies.set() received non-string value and could not serialize.');
-                //						}
-
-		value = store.stringify(value);
-	    }
-
-
-	    var optionsString = assembleOptionsString(options);
-
-	    document.cookie = cookieName + '=' + encodeURIComponent(value) + optionsString;
-	};
-
-	/**
-	 * del - delete a cookie (domain and path options must match those with which the cookie was set; this is really an alias for set() with parameters simplified for this use)
-	 *
-	 * @access public
-	 * @paramater MIxed cookieName - String name of cookie to delete, or Bool true to delete all
-	 * @paramater Object options - optional list of cookie options to specify (path, domain)
-	 * @return void
-	 */
-	constructor.prototype.del = function(cookieName, options) {
-	    var allCookies = {}, name;
-
-	    if(typeof options !== 'object' || options === null) {
-		options = {};
-	    }
-
-	    if(typeof cookieName === 'boolean' && cookieName === true) {
-		allCookies = this.get();
-	    }
-	    else if(typeof cookieName === 'string') {
-		allCookies[cookieName] = true;
-	    }
-
-	    for(name in allCookies) {
-		if(typeof name === 'string' && name !== '') {
-		    this.set(name, null, options);
-		}
-	    }
-	};
-
-	/**
-	 * test - test whether the browser is accepting cookies
-	 *
-	 * @access public
-	 * @return Boolean
-	 */
-	constructor.prototype.test = function() {
-	    var returnValue = false, testName = 'cT', testValue = 'data';
-
-	    this.set(testName, testValue);
-
-	    if(this.get(testName) === testValue) {
-		this.del(testName);
-		returnValue = true;
-	    }
-
-	    return returnValue;
-	};
-
-	/**
-	 * setOptions - set default options for calls to cookie methods
-	 *
-	 * @access public
-	 * @param Object options - list of cookie options to specify
-	 * @return void
-	 */
-	constructor.prototype.setOptions = function(options) {
-	    if(typeof options !== 'object') {
-		options = null;
-	    }
-
-	    defaultOptions = resolveOptions(options);
-	};
-
-	return new constructor();
-    })();
-
-    // if cookies are supported by the browser
-    if (cookie.test()) {
-
-	store.addType("cookie", function(key, value, options) {
-
-	    if ('undefined' === typeof key) {
-		return cookie.get();
-	    }
-
-	    if ('undefined' === typeof value) {
-		return cookie.get(key);
-	    }
-
-	    // Set to NULL means delete
-	    if (value === null) {
-		cookie.del(key);
-		return null;
-	    }
-
-	    return cookie.set(key, value, options);
-	});
-    }
-
-}(this));
-
-/**
  * # JSUS: JavaScript UtilS.
- * Copyright(c) 2015 Stefano Balietti
+ * Copyright(c) 2017 Stefano Balietti <ste@nodegame.org>
  * MIT Licensed
  *
  * Collection of general purpose javascript functions. JSUS helps!
@@ -1257,9 +503,7 @@ if (!Array.prototype.indexOf) {
      *
      * @param {string} txt Text to output
      */
-    JSUS.log = function(txt) {
-        console.log(txt);
-    };
+    JSUS.log = function(txt) { console.log(txt); };
 
     /**
      * ## JSUS.extend
@@ -1277,8 +521,6 @@ if (!Array.prototype.indexOf) {
      * @param {object|function} target The object to extend
      *
      * @return {object|function} target The extended object
-     *
-     * @see JSUS.get
      */
     JSUS.extend = function(additional, target) {
         var name, prop;
@@ -1329,28 +571,35 @@ if (!Array.prototype.indexOf) {
     /**
      * ## JSUS.require
      *
-     * Returns a copy of one / all the objects extending JSUS
+     * Returns a copy/reference of one/all the JSUS components
      *
-     * The first parameter is a string representation of the name of
-     * the requested extending object. If no parameter is passed a copy
-     * of all the extending objects is returned.
+     * @param {string} component The name of the requested JSUS library.
+     *   If undefined, all JSUS components are returned. Default: undefined.
+     * @param {boolean} clone Optional. If TRUE, the requested component
+     *   is cloned before being returned. Default: TRUE
      *
-     * @param {string} className The name of the requested JSUS library
-     *
-     * @return {function|boolean} The copy of the JSUS library, or
-     *   FALSE if the library does not exist
+     * @return {function|boolean} The copy of the JSUS component, or
+     *   FALSE if the library does not exist, or cloning is not possible
      */
-    JSUS.require = JSUS.get = function(className) {
-        if ('undefined' === typeof JSUS.clone) {
-            JSUS.log('JSUS.clone not found. Cannot continue.');
+    JSUS.require = function(component, clone) {
+        var out;
+        clone = 'undefined' === typeof clone ? true : clone;
+        if (clone && 'undefined' === typeof JSUS.clone) {
+            JSUS.log('JSUS.require: JSUS.clone not found, but clone ' +
+                     'requested. Cannot continue.');
             return false;
         }
-        if ('undefined' === typeof className) return JSUS.clone(JSUS._classes);
-        if ('undefined' === typeof JSUS._classes[className]) {
-            JSUS.log('Could not find class ' + className);
-            return false;
+        if ('undefined' === typeof component) {
+            out = JSUS._classes;
         }
-        return JSUS.clone(JSUS._classes[className]);
+        else {
+            out = JSUS._classes[component]
+            if ('undefined' === typeof out) {
+                JSUS.log('JSUS.require: could not find component ' + component);
+                return false;
+            }
+        }
+        return clone ? JSUS.clone(out) : out;
     };
 
     /**
@@ -1367,7 +616,6 @@ if (!Array.prototype.indexOf) {
     };
 
     // ## Node.JS includes
-    // if node
     if (JSUS.isNodeJS()) {
         require('./lib/compatibility');
         require('./lib/obj');
@@ -1380,7 +628,10 @@ if (!Array.prototype.indexOf) {
         require('./lib/queue');
         require('./lib/fs');
     }
-    // end node
+    else {
+        // Exports J in the browser.
+        exports.J = exports.JSUS;
+    }
 
 })(
     'undefined' !== typeof module && 'undefined' !== typeof module.exports ?
@@ -1453,7 +704,7 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # ARRAY
- * Copyright(c) 2016 Stefano Balietti
+ * Copyright(c) 2017 Stefano Balietti <ste@nodegame.org>
  * MIT Licensed
  *
  * Collection of static functions to manipulate arrays
@@ -1585,22 +836,26 @@ if (!Array.prototype.indexOf) {
      * If an error occurs returns FALSE.
      *
      * @param {array} array The array to loop in
-     * @param {Function} func The callback for each element in the array
+     * @param {Function} cb The callback for each element in the array
      * @param {object} context Optional. The context of execution of the
      *   callback. Defaults ARRAY.each
-     *
-     * @return {boolean} TRUE, if execution was successful
      */
-    ARRAY.each = function(array, func, context) {
-        if ('object' !== typeof array) return false;
-        if (!func) return false;
+    ARRAY.each = function(array, cb, context) {
+        var i, len;
+        if ('object' !== typeof array) {
+            throw new TypeError('ARRAY.each: array must be object. Found: ' +
+                                array);
+        }
+        if ('function' !== typeof cb) {
+            throw new TypeError('ARRAY.each: cb must be function. Found: ' +
+                                cb);
+        }
 
         context = context || this;
-        var i, len = array.length;
+        len = array.length;
         for (i = 0 ; i < len; i++) {
-            func.call(context, array[i]);
+            cb.call(context, array[i], i);
         }
-        return true;
     };
 
     /**
@@ -1634,8 +889,8 @@ if (!Array.prototype.indexOf) {
         }
 
         len = arguments.length;
-        if (len === 3) args = [null, arguments[2]];
-        else if (len === 4) args = [null, arguments[2], arguments[3]];
+        if (len === 3) args = [ null, arguments[2] ];
+        else if (len === 4) args = [ null, arguments[2], arguments[3] ];
         else {
             len = len - 1;
             args = new Array(len);
@@ -2210,32 +1465,10 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # DOM
- *
- * Copyright(c) 2016 Stefano Balietti
+ * Copyright(c) 2017 Stefano Balietti <ste@nodegame.org>
  * MIT Licensed
  *
- * Collection of static functions related to DOM manipulation
- *
  * Helper library to perform generic operation with DOM elements.
- *
- * The general syntax is the following: Every HTML element has associated
- * a get* and a add* method, whose syntax is very similar.
- *
- * - The get* method creates the element and returns it.
- * - The add* method creates the element, append it as child to a root element,
- *     and then returns it.
- *
- * The syntax of both method is the same, but the add* method
- * needs the root element as first parameter. E.g.
- *
- * - getButton(id, text, attributes);
- * - addButton(root, id, text, attributes);
- *
- * The last parameter is generally an object containing a list of
- * of key-values pairs as additional attributes to set to the element.
- *
- * Only the methods which do not follow the above-mentioned syntax
- * will receive further explanation.
  */
 (function(JSUS) {
 
@@ -2245,15 +1478,159 @@ if (!Array.prototype.indexOf) {
 
     function DOM() {}
 
-    // ## GENERAL
+    // ## GET/ADD
+
+    /**
+     * ### DOM.get
+     *
+     * Creates a generic HTML element with specified attributes
+     *
+     * @param {string} elem The name of the tag
+     * @param {object|string} attributes Optional. Object containing
+     *   attributes for the element. If string, the id of the element. If
+     *   the request element is an 'iframe', the `name` attribute is set
+     *   equal to the `id` attribute.
+     *
+     * @return {HTMLElement} The newly created HTML element
+     *
+     * @see DOM.add
+     * @see DOM.addAttributes
+     */
+    DOM.get = function(name, attributes) {
+        var el;
+        el = document.createElement(name);
+        if ('string' === typeof attributes) el.id = attributes;
+        else if (attributes) this.addAttributes(el, attributes);
+        // For firefox, name of iframe must be set as well.
+        if (name === 'iframe' && el.id && !el.name) el.name = el.id;
+        return el;
+    };
+
+    /**
+     * ### DOM.add|append
+     *
+     * Creates and append an element with specified attributes to a root
+     *
+     * @param {string} name The name of the HTML tag
+     * @param {HTMLElement} root The root element to which the new element
+     *   will be appended
+     * @param {object|string} options Optional. Object containing
+     *   attributes for the element and rules about how to insert it relative
+     *   to root. Available options: insertAfter, insertBefore (default:
+     *   child of root). If string, it is the id of the element. Examples:
+     *
+     * ```javascript
+     * // Appends a new new to the body.
+     * var div = DOM.add('div', document.body);
+     * // Appends a new new to the body with id 'myid'.
+     * var div1 = DOM.add('div', document.body, 'myid');
+     * // Appends a new new to the body with id 'myid2' and class name 'c'.
+     * var div2 = DOM.add('div', document.body, { id: 'myid2', className: 'c'});
+     * // Appends a new div after div1 with id 'myid'.
+     * var div3 = DOM.add('div', div1, { id: 'myid3', insertAfter: true });
+     * // Appends a new div before div2 with id 'myid'.
+     * var div3 = DOM.add('div', div2, { id: 'myid3', insertBefore: true });
+     * ```
+     *
+     * @return {HTMLElement} The newly created HTML element
+     *
+     * @see DOM.get
+     * @see DOM.addAttributes
+     */
+    DOM.add = DOM.append = function(name, root, options) {
+        var el;
+        el = this.get(name, options);
+        if (options && options.insertBefore) {
+            if (options.insertAfter) {
+                throw new Error('DOM.add: options.insertBefore and ' +
+                                'options.insertBefore cannot be ' +
+                                'both set.');
+            }
+            if (!root.parentNode) {
+                throw new Error('DOM.add: root.parentNode not found. ' +
+                                'Cannot insert before.');
+            }
+            root.parentNode.insertBefore(el, root);
+        }
+        else if (options && options.insertAfter) {
+            if (!root.parentNode) {
+                throw new Error('DOM.add: root.parentNode not found. ' +
+                                'Cannot insert after.');
+            }
+            DOM.insertAfter(el, root);
+        }
+        else {
+            root.appendChild(el);
+        }
+        return el;
+    };
+
+    /**
+     * ### DOM.addAttributes
+     *
+     * Adds attributes to an HTML element and returns it
+     *
+     * Attributes are defined as key-values pairs and added
+     *
+     * Special cases:
+     *
+     *   - 'className': alias for class
+     *   - 'class': add a class to the className property (does not overwrite)
+     *   - 'style': adds property to the style property (see DOM.style)
+     *   - 'id': the id of the element
+     *   - 'innerHTML': the innerHTML property of the element (overwrites)
+     *   - 'insertBefore': ignored
+     *   - 'insertAfter': ignored
+     *
+     * @param {HTMLElement} elem The element to decorate
+     * @param {object} attributes Object containing attributes to
+     *   add to the element
+     *
+     * @return {HTMLElement} The element with speficied attributes added
+     *
+     * @see DOM.addClass
+     * @see DOM.style
+     */
+     DOM.addAttributes = function(elem, attributes) {
+        var key;
+        if (!DOM.isElement(elem)) {
+            throw new TypeError('DOM.addAttributes: elem must be ' +
+                                'HTMLElement. Found: ' + elem);
+        }
+        if ('undefined' === typeof attributes) return elem;
+        if ('object' !== typeof attributes) {
+            throw new TypeError('DOM.addAttributes: attributes must be ' +
+                                'object or undefined. Found: ' + attributes);
+        }
+        for (key in attributes) {
+            if (attributes.hasOwnProperty(key)) {
+                if (key === 'id' || key === 'innerHTML') {
+                    elem[key] = attributes[key];
+                }
+                else if (key === 'class' || key === 'className') {
+                    DOM.addClass(elem, attributes[key]);
+                }
+                else if (key === 'style') {
+                    DOM.style(elem, attributes[key]);
+                }
+                else if (key !== 'insertBefore' && key !== 'insertAfter') {
+                    elem.setAttribute(key, attributes[key]);
+                }
+            }
+        }
+        return elem;
+    };
+
+    // ## WRITE
 
     /**
      * ### DOM.write
      *
      * Write a text, or append an HTML element or node, into a root element
      *
-     * @param {Element} root The HTML element where to write into
-     * @param {mixed} text The text to write. Default, an ampty string
+     * @param {HTMLElement} root The HTML element where to write into
+     * @param {string|HTMLElement} text The text to write or an element
+     *    to append. Default: an ampty string
      *
      * @return {TextNode} The text node inserted in the root element
      *
@@ -2275,19 +1652,19 @@ if (!Array.prototype.indexOf) {
      *
      * Default break element is <br> tag
      *
-     * @param {Element} root The HTML element where to write into
-     * @param {mixed} text The text to write. Default, an ampty string
+     * @param {HTMLElement} root The HTML element where to write into
+     * @param {string|HTMLElement} text The text to write or an element
+     *    to append. Default: an ampty string
      * @param {string} rc the name of the tag to use as a break element
      *
      * @return {TextNode} The text node inserted in the root element
      *
      * @see DOM.write
-     * @see DOM.addBreak
      */
     DOM.writeln = function(root, text, rc) {
         var content;
         content = DOM.write(root, text);
-        this.addBreak(root, rc);
+        this.add(rc || 'br', root);
         return content;
     };
 
@@ -2416,7 +1793,7 @@ if (!Array.prototype.indexOf) {
                 span = document.createElement('em');
             }
             else {
-                span = JSUS.getElement('span', null, args[key]);
+                span = DOM.get('span', args[key]);
             }
 
             text = string.substring(idx_replace, idx_finish);
@@ -2435,6 +1812,8 @@ if (!Array.prototype.indexOf) {
 
         return root;
     };
+
+    // ## ELEMENTS
 
     /**
      * ### DOM.isNode
@@ -2484,12 +1863,19 @@ if (!Array.prototype.indexOf) {
      *
      * @param {Node} parent The parent node
      * @param {array} order Optional. A pre-specified order. Defaults, random
+     * @param {function} cb Optional. A callback to execute one each shuffled
+     *   element (after re-positioning). This is always the last parameter,
+     *   so if order is omitted, it goes second. The callback takes as input:
+     *     - the element
+     *     - the new order
+     *     - the old order
+     *
      *
      * @return {array} The order used to shuffle the nodes
      */
-    DOM.shuffleElements = function(parent, order) {
-        var i, len, idOrder, children, child;
-        var id, forceId, missId;
+    DOM.shuffleElements = function(parent, order, cb) {
+        var i, len, numOrder, idOrder, children, child;
+        var id;
         if (!JSUS.isNode(parent)) {
             throw new TypeError('DOM.shuffleElements: parent must be a node. ' +
                                'Found: ' + parent);
@@ -2499,14 +1885,23 @@ if (!Array.prototype.indexOf) {
             return false;
         }
         if (order) {
-            if (!JSUS.isArray(order)) {
-                throw new TypeError('DOM.shuffleElements: order must array.' +
-                                   'Found: ' + order);
+            if ('undefined' === typeof cb && 'function' === typeof order) {
+                cb = order;
             }
-            if (order.length !== parent.children.length) {
-                throw new Error('DOM.shuffleElements: order length must ' +
-                                'match the number of children nodes.');
+            else {
+                if (!JSUS.isArray(order)) {
+                    throw new TypeError('DOM.shuffleElements: order must be ' +
+                                        'array. Found: ' + order);
+                }
+                if (order.length !== parent.children.length) {
+                    throw new Error('DOM.shuffleElements: order length must ' +
+                                    'match the number of children nodes.');
+                }
             }
+        }
+        if (cb && 'function' !== typeof cb) {
+            throw new TypeError('DOM.shuffleElements: order must be ' +
+                                'array. Found: ' + order);
         }
 
         // DOM4 compliant browsers.
@@ -2522,16 +1917,19 @@ if (!Array.prototype.indexOf) {
             }
         }
 
+        // Get all ids.
         len = children.length;
         idOrder = new Array(len);
+        if (cb) numOrder = new Array(len);
         if (!order) order = JSUS.sample(0, (len-1));
         for (i = 0 ; i < len; i++) {
             id = children[order[i]].id;
             if ('string' !== typeof id || id === "") {
                 throw new Error('DOM.shuffleElements: no id found on ' +
-                                'child n. ' + order[i] + '.');
+                                'child n. ' + order[i]);
             }
             idOrder[i] = id;
+            if (cb) numOrder[i] = order[i];
         }
 
         // Two fors are necessary to follow the real sequence (Live List).
@@ -2539,454 +1937,72 @@ if (!Array.prototype.indexOf) {
         // could be unreliable.
         for (i = 0 ; i < len; i++) {
             parent.appendChild(children[idOrder[i]]);
+            if (cb) cb(children[idOrder[i]], i, numOrder[i]);
         }
         return idOrder;
     };
 
     /**
-     * ### DOM.shuffleNodes
-     *
-     * It actually shuffles Elements.
-     *
-     * @deprecated
-     */
-    DOM.shuffleNodes = function(parent, order) {
-        console.log('***DOM.shuffleNodes is deprecated. ' +
-                    'Use Dom.shuffleElements instead.***');
-        return DOM.shuffleElements(parent, order);
-    };
-
-    /**
-     * ### DOM.getElement
-     *
-     * Creates a generic HTML element with id and attributes as specified
-     *
-     * @param {string} elem The name of the tag
-     * @param {string} id Optional. The id of the tag
-     * @param {object} attributes Optional. Object containing attributes for
-     *   the newly created element
-     *
-     * @return {HTMLElement} The newly created HTML element
-     *
-     * @see DOM.addAttributes2Elem
-     */
-    DOM.getElement = function(elem, id, attributes) {
-        var e = document.createElement(elem);
-        if ('undefined' !== typeof id) {
-            e.id = id;
-        }
-        return this.addAttributes2Elem(e, attributes);
-    };
-
-    /**
-     * ### DOM.addElement
-     *
-     * Creates and appends a generic HTML element with specified attributes
-     *
-     * @param {string} elem The name of the tag
-     * @param {HTMLElement} root The root element to which the new element will
-     *   be appended
-     * @param {string} id Optional. The id of the tag
-     * @param {object} attributes Optional. Object containing attributes for
-     *   the newly created element
-     *
-     * @return {HTMLElement} The newly created HTML element
-     *
-     * @see DOM.getElement
-     * @see DOM.addAttributes2Elem
-     */
-    DOM.addElement = function(elem, root, id, attributes) {
-        var el = this.getElement(elem, id, attributes);
-        return root.appendChild(el);
-    };
-
-    /**
-     * ### DOM.addAttributes2Elem
-     *
-     * Adds attributes to an HTML element and returns it.
-     *
-     * Attributes are defined as key-values pairs.
-     * Attributes 'label' is ignored, attribute 'className' ('class') and
-     * 'style' are special and are delegated to special methods.
-     *
-     * @param {HTMLElement} e The element to decorate
-     * @param {object} a Object containing attributes to add to the element
-     *
-     * @return {HTMLElement} The decorated element
-     *
-     * @see DOM.addLabel
-     * @see DOM.addClass
-     * @see DOM.style
-     */
-    DOM.addAttributes2Elem = function(e, a) {
-        var key;
-        if (!e || !a) return e;
-        if ('object' != typeof a) return e;
-        for (key in a) {
-            if (a.hasOwnProperty(key)) {
-                if (key === 'id') {
-                    e.id = a[key];
-                }
-                else if (key === 'class' || key === 'className') {
-                    DOM.addClass(e, a[key]);
-                }
-                else if (key === 'style') {
-                    DOM.style(e, a[key]);
-                }
-                else if (key === 'label') {
-                    // Handle the case.
-                    JSUS.log('DOM.addAttributes2Elem: label attribute is not ' +
-                             'supported. Use DOM.addLabel instead.');
-                }
-                else {
-                    e.setAttribute(key, a[key]);
-                }
-
-
-                // TODO: handle special cases
-                // <!--
-                //else {
-                //
-                //    // If there is no parent node,
-                //    // the legend cannot be created
-                //    if (!e.parentNode) {
-                //        node.log('Cannot add label: ' +
-                //                 'no parent element found', 'ERR');
-                //        continue;
-                //    }
-                //
-                //    this.addLabel(e.parentNode, e, a[key]);
-                //}
-                // -->
-            }
-        }
-        return e;
-    };
-
-    /**
      * ### DOM.populateSelect
      *
-     * Appends a list of options into a HTML select element.
-     * The second parameter list is an object containing
-     * a list of key-values pairs as text-value attributes for
-     * the option.
+     * Appends a list of options into a HTML select element
      *
      * @param {HTMLElement} select HTML select element
-     * @param {object} list Options to add to the select element
+     * @param {object} options Optional. List of options to add to
+     *   the select element. List is in the format of key-values pairs
+     *   as innerHTML and value attributes of the option.
+     *
+     * @return {HTMLElement} select The updated select element
      */
-    DOM.populateSelect = function(select, list) {
+    DOM.populateSelect = function(select, options) {
         var key, opt;
-        if (!select || !list) return;
-        for (key in list) {
-            if (list.hasOwnProperty(key)) {
-                opt = document.createElement('option');
-                opt.value = list[key];
-                opt.appendChild(document.createTextNode(key));
-                select.appendChild(opt);
+        if (!DOM.isElement(select)) {
+            throw new TypeError('DOM.populateSelect: select must be ' +
+                                'HTMLElement. Found: ' + select);
+        }
+        if (options) {
+            if ('object' !== typeof options) {
+                throw new TypeError('DOM.populateSelect: options must be ' +
+                                    'object or undefined. Found: ' + options);
+            }
+            for (key in options) {
+                if (options.hasOwnProperty(key)) {
+                    opt = document.createElement('option');
+                    opt.value = key;
+                    opt.innerHTML = options[key];
+                    select.appendChild(opt);
+                }
             }
         }
+        return select;
     };
 
     /**
      * ### DOM.removeChildrenFromNode
      *
-     * Removes all children from a node.
+     * Removes all children from a node
      *
-     * @param {HTMLElement} e HTML element.
+     * @param {HTMLNode} node HTML node.
      */
-    DOM.removeChildrenFromNode = function(e) {
-        while (e.hasChildNodes()) {
-            e.removeChild(e.firstChild);
+    DOM.removeChildrenFromNode = function(node) {
+        while (node.hasChildNodes()) {
+            node.removeChild(node.firstChild);
         }
     };
 
     /**
      * ### DOM.insertAfter
      *
-     * Insert a node element after another one.
+     * Inserts a node element after another one
      *
-     * The first parameter is the node to add.
+     * @param {Node} node The node element to insert
+     * @param {Node} referenceNode The node element after which the
+     *   the insertion is performed
      *
+     * @return {Node} The inserted node
      */
     DOM.insertAfter = function(node, referenceNode) {
-        referenceNode.insertBefore(node, referenceNode.nextSibling);
-    };
-
-    /**
-     * ### DOM.generateUniqueId
-     *
-     * Generate a unique id for the page (frames included).
-     *
-     * TODO: now it always create big random strings, it does not actually
-     * check if the string exists.
-     *
-     */
-    DOM.generateUniqueId = function(prefix) {
-        var search = [window];
-        if (window.frames) {
-            search = search.concat(window.frames);
-        }
-
-        function scanDocuments(id) {
-            var found = true;
-            while (found) {
-                for (var i=0; i < search.length; i++) {
-                    found = search[i].document.getElementById(id);
-                    if (found) {
-                        id = '' + id + '_' + JSUS.randomInt(0, 1000);
-                        break;
-                    }
-                }
-            }
-            return id;
-        }
-
-
-        return scanDocuments(prefix + '_' + JSUS.randomInt(0, 10000000));
-        //return scanDocuments(prefix);
-    };
-
-    // ## GET/ADD
-
-    /**
-     * ### DOM.getButton
-     *
-     */
-    DOM.getButton = function(id, text, attributes) {
-        var sb;
-        sb = document.createElement('button');
-        if ('undefined' !== typeof id) sb.id = id;
-        sb.appendChild(document.createTextNode(text || 'Send'));
-        return this.addAttributes2Elem(sb, attributes);
-    };
-
-    /**
-     * ### DOM.addButton
-     *
-     */
-    DOM.addButton = function(root, id, text, attributes) {
-        var b = this.getButton(id, text, attributes);
-        return root.appendChild(b);
-    };
-
-    /**
-     * ### DOM.getFieldset
-     *
-     */
-    DOM.getFieldset = function(id, legend, attributes) {
-        var f = this.getElement('fieldset', id, attributes);
-        var l = document.createElement('Legend');
-        l.appendChild(document.createTextNode(legend));
-        f.appendChild(l);
-        return f;
-    };
-
-    /**
-     * ### DOM.addFieldset
-     *
-     */
-    DOM.addFieldset = function(root, id, legend, attributes) {
-        var f = this.getFieldset(id, legend, attributes);
-        return root.appendChild(f);
-    };
-
-    /**
-     * ### DOM.getTextInput
-     *
-     */
-    DOM.getTextInput = function(id, attributes) {
-        var ti =  document.createElement('input');
-        if ('undefined' !== typeof id) ti.id = id;
-        ti.setAttribute('type', 'text');
-        return this.addAttributes2Elem(ti, attributes);
-    };
-
-    /**
-     * ### DOM.addTextInput
-     *
-     */
-    DOM.addTextInput = function(root, id, attributes) {
-        var ti = this.getTextInput(id, attributes);
-        return root.appendChild(ti);
-    };
-
-    /**
-     * ### DOM.getTextArea
-     *
-     */
-    DOM.getTextArea = function(id, attributes) {
-        var ta =  document.createElement('textarea');
-        if ('undefined' !== typeof id) ta.id = id;
-        return this.addAttributes2Elem(ta, attributes);
-    };
-
-    /**
-     * ### DOM.addTextArea
-     *
-     */
-    DOM.addTextArea = function(root, id, attributes) {
-        var ta = this.getTextArea(id, attributes);
-        return root.appendChild(ta);
-    };
-
-    /**
-     * ### DOM.getCanvas
-     *
-     */
-    DOM.getCanvas = function(id, attributes) {
-        var canvas = document.createElement('canvas');
-        var context = canvas.getContext('2d');
-
-        if (!context) {
-            alert('Canvas is not supported');
-            return false;
-        }
-
-        canvas.id = id;
-        return this.addAttributes2Elem(canvas, attributes);
-    };
-
-    /**
-     * ### DOM.addCanvas
-     *
-     */
-    DOM.addCanvas = function(root, id, attributes) {
-        var c = this.getCanvas(id, attributes);
-        return root.appendChild(c);
-    };
-
-    /**
-     * ### DOM.getSlider
-     *
-     */
-    DOM.getSlider = function(id, attributes) {
-        var slider = document.createElement('input');
-        slider.id = id;
-        slider.setAttribute('type', 'range');
-        return this.addAttributes2Elem(slider, attributes);
-    };
-
-    /**
-     * ### DOM.addSlider
-     *
-     */
-    DOM.addSlider = function(root, id, attributes) {
-        var s = this.getSlider(id, attributes);
-        return root.appendChild(s);
-    };
-
-    /**
-     * ### DOM.getRadioButton
-     *
-     */
-    DOM.getRadioButton = function(id, attributes) {
-        var radio = document.createElement('input');
-        radio.id = id;
-        radio.setAttribute('type', 'radio');
-        return this.addAttributes2Elem(radio, attributes);
-    };
-
-    /**
-     * ### DOM.addRadioButton
-     *
-     */
-    DOM.addRadioButton = function(root, id, attributes) {
-        var rb = this.getRadioButton(id, attributes);
-        return root.appendChild(rb);
-    };
-
-    /**
-     * ### DOM.getLabel
-     *
-     */
-    DOM.getLabel = function(forElem, id, labelText, attributes) {
-        if (!forElem) return false;
-        var label = document.createElement('label');
-        label.id = id;
-        label.appendChild(document.createTextNode(labelText));
-
-        if ('undefined' === typeof forElem.id) {
-            forElem.id = this.generateUniqueId();
-        }
-
-        label.setAttribute('for', forElem.id);
-        this.addAttributes2Elem(label, attributes);
-        return label;
-    };
-
-    /**
-     * ### DOM.addLabel
-     *
-     */
-    DOM.addLabel = function(root, forElem, id, labelText, attributes) {
-        if (!root || !forElem || !labelText) return false;
-        var l = this.getLabel(forElem, id, labelText, attributes);
-        root.insertBefore(l, forElem);
-        return l;
-    };
-
-    /**
-     * ### DOM.getSelect
-     *
-     */
-    DOM.getSelect = function(id, attributes) {
-        return this.getElement('select', id, attributes);
-    };
-
-    /**
-     * ### DOM.addSelect
-     *
-     */
-    DOM.addSelect = function(root, id, attributes) {
-        return this.addElement('select', root, id, attributes);
-    };
-
-    /**
-     * ### DOM.getIFrame
-     *
-     */
-    DOM.getIFrame = function(id, attributes) {
-        attributes = attributes || {};
-        if (!attributes.name) {
-            attributes.name = id; // For Firefox
-        }
-        return this.getElement('iframe', id, attributes);
-    };
-
-    /**
-     * ### DOM.addIFrame
-     *
-     */
-    DOM.addIFrame = function(root, id, attributes) {
-        var ifr = this.getIFrame(id, attributes);
-        return root.appendChild(ifr);
-    };
-
-    /**
-     * ### DOM.addBreak
-     *
-     */
-    DOM.addBreak = function(root, rc) {
-        var RC = rc || 'br';
-        var br = document.createElement(RC);
-        return root.appendChild(br);
-        //return this.insertAfter(br,root);
-    };
-
-    /**
-     * ### DOM.getDiv
-     *
-     */
-    DOM.getDiv = function(id, attributes) {
-        return this.getElement('div', id, attributes);
-    };
-
-    /**
-     * ### DOM.addDiv
-     *
-     */
-    DOM.addDiv = function(root, id, attributes) {
-        return this.addElement('div', root, id, attributes);
+        return referenceNode.insertBefore(node, referenceNode.nextSibling);
     };
 
     // ## CSS / JS
@@ -2994,48 +2010,74 @@ if (!Array.prototype.indexOf) {
     /**
      * ### DOM.addCSS
      *
-     * If no root element is passed, it tries to add the CSS
-     * link element to document.head, document.body, and
-     * finally document. If it fails, returns FALSE.
+     * Adds a CSS link to the page
      *
+     * @param {string} cssPath The path to the css
+     * @param {HTMLElement} root Optional. The root element. If no root
+     *    element is passed, it tries document.head, document.body, and
+     *    document. If it fails, it throws an error.
+     * @param {object|string} attributes Optional. Object containing
+     *   attributes for the element. If string, the id of the element
+     *
+     * @return {HTMLElement} The link element
      */
-    DOM.addCSS = function(root, css, id, attributes) {
+    DOM.addCSS = function(cssPath, root, attributes) {
+        if ('string' !== typeof cssPath || cssPath.trim() === '') {
+            throw new TypeError('DOM.addCSS: cssPath must be a non-empty ' +
+                                'string. Found: ' + cssPath);
+        }
         root = root || document.head || document.body || document;
-        if (!root) return false;
-
-        attributes = attributes || {};
-
-        attributes = JSUS.merge(attributes, {rel : 'stylesheet',
-                                             type: 'text/css',
-                                             href: css
-                                            });
-
-        return this.addElement('link', root, id, attributes);
+        if (!root) {
+            throw new Error('DOM.addCSS: root is undefined, and could not ' +
+                            'detect a valid root for css: ' + cssPath);
+        }
+        attributes = JSUS.mixin({
+            rel : 'stylesheet',
+            type: 'text/css',
+            href: cssPath
+        }, attributes);
+        return this.add('link', root, attributes);
     };
 
     /**
      * ### DOM.addJS
      *
+     * Adds a JavaScript script to the page
+     *
+     * @param {string} cssPath The path to the css
+     * @param {HTMLElement} root Optional. The root element. If no root
+     *    element is passed, it tries document.head, document.body, and
+     *    document. If it fails, it throws an error.
+     * @param {object|string} attributes Optional. Object containing
+     *   attributes for the element. If string, the id of the element
+     *
+     * @return {HTMLElement} The link element
+     *
      */
-    DOM.addJS = function(root, js, id, attributes) {
+    DOM.addJS = function(jsPath, root, attributes) {
+        if ('string' !== typeof jsPath || jsPath.trim() === '') {
+            throw new TypeError('DOM.addCSS: jsPath must be a non-empty ' +
+                                'string. Found: ' + jsPath);
+        }
         root = root || document.head || document.body || document;
-        if (!root) return false;
-
-        attributes = attributes || {};
-
-        attributes = JSUS.merge(attributes, {charset : 'utf-8',
-                                             type: 'text/javascript',
-                                             src: js
-                                            });
-
-        return this.addElement('script', root, id, attributes);
+        if (!root) {
+            throw new Error('DOM.addCSS: root is undefined, and could not ' +
+                            'detect a valid root for css: ' + jsPath);
+        }
+        attributes = JSUS.mixin({
+            charset : 'utf-8',
+            type: 'text/javascript',
+            src: jsPath
+        }, attributes);
+        return this.add('script', root, attributes);
     };
+
+    // ## STYLE
 
     /**
      * ### DOM.highlight
      *
-     * Provides a simple way to highlight an HTML element
-     * by adding a colored border around it.
+     * Highlights an element by adding a custom border around it
      *
      * Three pre-defined modes are implemented:
      *
@@ -3047,22 +2089,22 @@ if (!Array.prototype.indexOf) {
      * color as HEX value. Examples:
      *
      * ```javascript
-     * highlight(myDiv, 'WARN'); // yellow border
+     * highlight(myDiv, 'WARN');  // yellow border
      * highlight(myDiv);          // red border
-     * highlight(myDiv, '#CCC'); // grey border
+     * highlight(myDiv, '#CCC');  // grey border
      * ```
      *
      * @param {HTMLElement} elem The element to highlight
      * @param {string} code The type of highlight
+     *
+     * @return {HTMLElement} elem The styled element
      *
      * @see DOM.addBorder
      * @see DOM.style
      */
     DOM.highlight = function(elem, code) {
         var color;
-        if (!elem) return;
-
-        // default value is ERR
+        // Default value is ERR.
         switch (code) {
         case 'OK':
             color =  'green';
@@ -3074,31 +2116,29 @@ if (!Array.prototype.indexOf) {
             color = 'red';
             break;
         default:
-            if (code.charAt(0) === '#') {
-                color = code;
-            }
-            else {
-                color = 'red';
-            }
+            if (code.charAt(0) === '#') color = code;
+            else color = 'red';
         }
-
         return this.addBorder(elem, color);
     };
 
     /**
      * ### DOM.addBorder
      *
-     * Adds a border around the specified element. Color,
-     * width, and type can be specified.
+     * Adds a border around the specified element
+     *
+     * @param {HTMLElement} elem The element to which adding the borders
+     * @param {string} color Optional. The color of border. Default: 'red'.
+     * @param {string} width Optional. The width of border. Default: '5px'.
+     * @param {string} type Optional. The type of border. Default: 'solid'.
+     *
+     * @return {HTMLElement} The element to which a border has been added
      */
     DOM.addBorder = function(elem, color, width, type) {
         var properties;
-        if (!elem) return;
-
         color = color || 'red';
         width = width || '5px';
         type = type || 'solid';
-
         properties = { border: width + ' ' + type + ' ' + color };
         return DOM.style(elem, properties);
     };
@@ -3117,16 +2157,101 @@ if (!Array.prototype.indexOf) {
      */
     DOM.style = function(elem, properties) {
         var i;
-        if (!elem || !properties) return;
-        if (!DOM.isElement(elem)) return;
-
-        for (i in properties) {
-            if (properties.hasOwnProperty(i)) {
-                elem.style[i] = properties[i];
+        if (!DOM.isElement(elem)) {
+            throw new TypeError('DOM.style: elem must be HTMLElement. ' +
+                                'Found: ' + elem);
+        }
+        if (properties) {
+            if ('object' !== typeof properties) {
+                throw new TypeError('DOM.style: properties must be object or ' +
+                                    'undefined. Found: ' + properties);
+            }
+            for (i in properties) {
+                if (properties.hasOwnProperty(i)) {
+                    elem.style[i] = properties[i];
+                }
             }
         }
         return elem;
     };
+
+    // ## ID
+
+    /**
+     * ### DOM.generateUniqueId
+     *
+     * Generates a unique id for the whole page, frames included
+     *
+     * The resulting id is of the type: prefix_randomdigits.
+     *
+     * @param {string} prefix Optional. A given prefix. Default: a random
+     *   string of 8 characters.
+     * @param {boolean} checkFrames Optional. If TRUE, the id will be unique
+     *   all frames as well. Default: TRUE
+     *
+     * @return {string} id The unique id
+     */
+    DOM.generateUniqueId = (function() {
+        var limit;
+        limit = 100;
+
+        // Returns TRUE if id is NOT found in all docs (optimized).
+        function scanDocuments(docs, id) {
+            var i, len;
+            len = docs.length;
+            if (len === 1) {
+                return !docs[0].document.getElementById(id);
+            }
+            if (len === 2) {
+                return !!(docs[0].document.getElementById(id) &&
+                          docs[1].document.getElementById(id));
+            }
+            i = -1;
+            for ( ; ++i < len ; ) {
+                if (docs[i].document.getElementById(id)) return false;
+            }
+            return true;
+        }
+
+        return function(prefix, checkFrames) {
+            var id, windows;
+            var found, counter;
+
+            if (prefix) {
+                if ('string' !== typeof prefix && 'number' !== typeof prefix) {
+                    throw new TypeError('DOM.generateUniqueId: prefix must ' +
+                                        'be string or number. Found: ' +
+                                        prefix);
+                }
+            }
+            else {
+                prefix = JSUS.randomString(8, 'a');
+            }
+            id = prefix + '_';
+
+            windows = [ window ];
+            if ((checkFrames || 'undefined' === typeof checkFrames) &&
+                window.frames) {
+
+                windows = windows.concat(window.frames);
+            }
+
+            found = true;
+            counter = -1;
+            while (found) {
+                id = prefix + '_' + JSUS.randomInt(1000);
+                found = scanDocuments(windows, id);
+                if (++counter > limit) {
+                    throw new Error('DOM.generateUniqueId: could not ' +
+                                    'find unique id within ' + limit +
+                                    ' trials.');
+                }
+            }
+            return id;
+        };
+    })();
+
+    // ## CLASSES
 
     /**
      * ### DOM.removeClass
@@ -3134,17 +2259,26 @@ if (!Array.prototype.indexOf) {
      * Removes a specific class from the classNamex attribute of a given element
      *
      * @param {HTMLElement} el An HTML element
-     * @param {string} c The name of a CSS class already in the element
+     * @param {string} className The name of a CSS class already in the element
      *
      * @return {HTMLElement|undefined} The HTML element with the removed
      *   class, or undefined if the inputs are misspecified
      */
-    DOM.removeClass = function(el, c) {
+    DOM.removeClass = function(elem, className) {
         var regexpr, o;
-        if (!el || !c) return;
-        regexpr = new RegExp('(?:^|\\s)' + c + '(?!\\S)');
-        o = el.className = el.className.replace( regexpr, '' );
-        return el;
+        if (!DOM.isElement(elem)) {
+            throw new TypeError('DOM.removeClass: elem must be HTMLElement. ' +
+                                'Found: ' + elem);
+        }
+        if (className) {
+            if ('string' !== typeof className || className.trim() === '') {
+                throw new TypeError('DOM.removeClass: className must be ' +
+                                    'HTMLElement. Found: ' + className);
+            }
+            regexpr = new RegExp('(?:^|\\s)' + className + '(?!\\S)');
+            o = elem.className = elem.className.replace(regexpr, '' );
+        }
+        return elem;
     };
 
     /**
@@ -3154,19 +2288,27 @@ if (!Array.prototype.indexOf) {
      *
      * Takes care not to overwrite already existing classes.
      *
-     * @param {HTMLElement} el An HTML element
-     * @param {string|array} c The name/s of CSS class/es
+     * @param {HTMLElement} elem An HTML element
+     * @param {string|array} className The name/s of CSS class/es
      *
-     * @return {HTMLElement|undefined} The HTML element with the additional
+     * @return {HTMLElement} The HTML element with the additional
      *   class, or undefined if the inputs are misspecified
      */
-    DOM.addClass = function(el, c) {
-        if (!el) return;
-        if (c instanceof Array) c = c.join(' ');
-        else if ('string' !== typeof c) return;
-        if (!el.className || el.className === '') el.className = c;
-        else el.className += (' ' + c);
-        return el;
+    DOM.addClass = function(elem, className) {
+        if (!DOM.isElement(elem)) {
+            throw new TypeError('DOM.addClass: elem must be HTMLElement. ' +
+                                'Found: ' + elem);
+        }
+        if (className) {
+            if (className instanceof Array) className = className.join(' ');
+            if ('string' !== typeof className || className.trim() === '') {
+                throw new TypeError('DOM.addClass: className must be ' +
+                                    'HTMLElement. Found: ' + className);
+            }
+            if (!elem.className) elem.className = className;
+            else elem.className += (' ' + className);
+        }
+        return elem;
     };
 
     /**
@@ -3241,67 +2383,13 @@ if (!Array.prototype.indexOf) {
     DOM.getIFrameAnyChild = function(iframe) {
         var contentDocument;
         if (!iframe) return;
-        contentDocument = W.getIFrameDocument(iframe);
+        contentDocument = DOM.getIFrameDocument(iframe);
         return contentDocument.head || contentDocument.body ||
             contentDocument.lastChild ||
             contentDocument.getElementsByTagName('html')[0];
     };
 
-    // ## RIGHT-CLICK
-
-    /**
-     * ### DOM.disableRightClick
-     *
-     * Disables the popup of the context menu by right clicking with the mouse
-     *
-     * @param {Document} Optional. A target document object. Defaults, document
-     *
-     * @see DOM.enableRightClick
-     */
-    DOM.disableRightClick = function(doc) {
-        doc = doc || document;
-        if (doc.layers) {
-            doc.captureEvents(Event.MOUSEDOWN);
-            doc.onmousedown = function clickNS4(e) {
-                if (doc.layers || doc.getElementById && !doc.all) {
-                    if (e.which == 2 || e.which == 3) {
-                        return false;
-                    }
-                }
-            };
-        }
-        else if (doc.all && !doc.getElementById) {
-            doc.onmousedown = function clickIE4() {
-                if (event.button == 2) {
-                    return false;
-                }
-            };
-        }
-        doc.oncontextmenu = new Function("return false");
-    };
-
-    /**
-     * ### DOM.enableRightClick
-     *
-     * Enables the popup of the context menu by right clicking with the mouse
-     *
-     * It unregisters the event handlers created by `DOM.disableRightClick`
-     *
-     * @param {Document} Optional. A target document object. Defaults, document
-     *
-     * @see DOM.disableRightClick
-     */
-    DOM.enableRightClick = function(doc) {
-        doc = doc || document;
-        if (doc.layers) {
-            doc.releaseEvents(Event.MOUSEDOWN);
-            doc.onmousedown = null;
-        }
-        else if (doc.all && !doc.getElementById) {
-            doc.onmousedown = null;
-        }
-        doc.oncontextmenu = null;
-    };
+    // ## EVENTS
 
     /**
      * ### DOM.addEvent
@@ -3348,72 +2436,6 @@ if (!Array.prototype.indexOf) {
         capture = !!capture;
         if (element.detachEvent) return element.detachEvent('on' + event, func);
         else return element.removeEventListener(event, func, capture);
-    };
-
-    /**
-     * ### DOM.disableBackButton
-     *
-     * Disables/re-enables backward navigation in history of browsed pages
-     *
-     * When disabling, it inserts twice the current url.
-     *
-     * It will still be possible to manually select the uri in the
-     * history pane and nagivate to it.
-     *
-     * @param {boolean} disable Optional. If TRUE disables back button,
-     *   if FALSE, re-enables it. Default: TRUE.
-     *
-     * @return {boolean} The state of the back button (TRUE = disabled),
-     *   or NULL if the method is not supported by browser.
-     */
-    DOM.disableBackButton = (function(isDisabled) {
-        return function(disable) {
-            disable = 'undefined' === typeof disable ? true : disable;
-            if (disable && !isDisabled) {
-                if (!history.pushState || !history.go) {
-                    node.warn('DOM.disableBackButton: method not ' +
-                              'supported by browser.');
-                    return null;
-                }
-                history.pushState(null, null, location.href);
-                window.onpopstate = function(event) {
-                    history.go(1);
-                };
-            }
-            else if (isDisabled) {
-                window.onpopstate = null;
-            }
-            isDisabled = disable;
-            return disable;
-        };
-    })(false);
-
-    /**
-     * ### DOM.playSound
-     *
-     * Plays a sound
-     *
-     * @param {various} sound Audio tag or path to audio file to be played
-     */
-    DOM.playSound = 'undefined' === typeof Audio ?
-        function() {
-            console.log('JSUS.playSound: Audio tag not supported in your' +
-                    ' browser. Cannot play sound.');
-        } :
-        function(sound) {
-        var audio;
-        if ('string' === typeof sound) {
-            audio = new Audio(sound);
-        }
-        else if ('object' === typeof sound &&
-            'function' === typeof sound.play) {
-            audio = sound;
-        }
-        else {
-            throw new TypeError('JSUS.playSound: sound must be string' +
-               ' or audio element.');
-        }
-        audio.play();
     };
 
     /**
@@ -3472,6 +2494,129 @@ if (!Array.prototype.indexOf) {
         onFocusChange(undefined, cb);
     };
 
+    // ## UI
+
+    /**
+     * ### DOM.disableRightClick
+     *
+     * Disables the popup of the context menu by right clicking with the mouse
+     *
+     * @param {Document} Optional. A target document object. Defaults, document
+     *
+     * @see DOM.enableRightClick
+     */
+    DOM.disableRightClick = function(doc) {
+        doc = doc || document;
+        if (doc.layers) {
+            doc.captureEvents(Event.MOUSEDOWN);
+            doc.onmousedown = function clickNS4(e) {
+                if (doc.layers || doc.getElementById && !doc.all) {
+                    if (e.which == 2 || e.which == 3) {
+                        return false;
+                    }
+                }
+            };
+        }
+        else if (doc.all && !doc.getElementById) {
+            doc.onmousedown = function clickIE4() {
+                if (event.button == 2) {
+                    return false;
+                }
+            };
+        }
+        doc.oncontextmenu = function() { return false; };
+    };
+
+    /**
+     * ### DOM.enableRightClick
+     *
+     * Enables the popup of the context menu by right clicking with the mouse
+     *
+     * It unregisters the event handlers created by `DOM.disableRightClick`
+     *
+     * @param {Document} Optional. A target document object. Defaults, document
+     *
+     * @see DOM.disableRightClick
+     */
+    DOM.enableRightClick = function(doc) {
+        doc = doc || document;
+        if (doc.layers) {
+            doc.releaseEvents(Event.MOUSEDOWN);
+            doc.onmousedown = null;
+        }
+        else if (doc.all && !doc.getElementById) {
+            doc.onmousedown = null;
+        }
+        doc.oncontextmenu = null;
+    };
+
+    /**
+     * ### DOM.disableBackButton
+     *
+     * Disables/re-enables backward navigation in history of browsed pages
+     *
+     * When disabling, it inserts twice the current url.
+     *
+     * It will still be possible to manually select the uri in the
+     * history pane and nagivate to it.
+     *
+     * @param {boolean} disable Optional. If TRUE disables back button,
+     *   if FALSE, re-enables it. Default: TRUE.
+     *
+     * @return {boolean} The state of the back button (TRUE = disabled),
+     *   or NULL if the method is not supported by browser.
+     */
+    DOM.disableBackButton = (function(isDisabled) {
+        return function(disable) {
+            disable = 'undefined' === typeof disable ? true : disable;
+            if (disable && !isDisabled) {
+                if (!history.pushState || !history.go) {
+                    JSUS.log('DOM.disableBackButton: method not ' +
+                             'supported by browser.');
+                    return null;
+                }
+                history.pushState(null, null, location.href);
+                window.onpopstate = function(event) {
+                    history.go(1);
+                };
+            }
+            else if (isDisabled) {
+                window.onpopstate = null;
+            }
+            isDisabled = disable;
+            return disable;
+        };
+    })(false);
+
+    // ## EXTRA
+
+    /**
+     * ### DOM.playSound
+     *
+     * Plays a sound
+     *
+     * @param {various} sound Audio tag or path to audio file to be played
+     */
+    DOM.playSound = 'undefined' === typeof Audio ?
+        function() {
+            console.log('JSUS.playSound: Audio tag not supported in your' +
+                    ' browser. Cannot play sound.');
+        } :
+        function(sound) {
+        var audio;
+        if ('string' === typeof sound) {
+            audio = new Audio(sound);
+        }
+        else if ('object' === typeof sound &&
+            'function' === typeof sound.play) {
+            audio = sound;
+        }
+        else {
+            throw new TypeError('JSUS.playSound: sound must be string' +
+               ' or audio element.');
+        }
+        audio.play();
+    };
 
     /**
      * ### DOM.blinkTitle
@@ -3585,7 +2730,8 @@ if (!Array.prototype.indexOf) {
             }
             else if (!JSUS.isArray(titles)) {
                 throw new TypeError(where + 'titles must be string, ' +
-                                    'array of strings or undefined.');
+                                    'array of strings or undefined. Found: ' +
+                                    titles);
             }
             rotationId = 0;
             period = options.period || 1000;
@@ -3669,9 +2815,9 @@ if (!Array.prototype.indexOf) {
         d = document;
         e = d.documentElement;
         g = d.getElementsByTagName('body')[0];
-        x = w.innerWidth || e.clientWidth || g.clientWidth,
+        x = w.innerWidth || e.clientWidth || g.clientWidth;
         y = w.innerHeight|| e.clientHeight|| g.clientHeight;
-        return !dim ? {x: x, y: y} : dim === 'x' ? x : y;
+        return !dim ? { x: x, y: y } : dim === 'x' ? x : y;
     };
 
     // ## Helper methods
@@ -3755,8 +2901,8 @@ if (!Array.prototype.indexOf) {
             }
             // All others.
             else {
-                window.onpageshow = window.onpagehide
-                    = window.onfocus = window.onblur = onchangeCb;
+                window.onpageshow = window.onpagehide =
+                    window.onfocus = window.onblur = onchangeCb;
             }
         };
     })('undefined' !== typeof document ? document : null);
@@ -3840,7 +2986,7 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # OBJ
- * Copyright(c) 2016 Stefano Balietti
+ * Copyright(c) 2017 Stefano Balietti <ste@nodegame.org>
  * MIT Licensed
  *
  * Collection of static functions to manipulate JavaScript objects
@@ -4173,38 +3319,167 @@ if (!Array.prototype.indexOf) {
     /**
      * ## OBJ.keys
      *
-     * Scans an object an returns all the keys of the properties,
-     * into an array.
+     * Returns all the keys of an object until desired level of nestedness
      *
-     * The second paramter controls the level of nested objects
-     * to be evaluated. Defaults 0 (nested properties are skipped).
+     * The second parameter can be omitted, and the level can be specified
+     * inside the options object passed as second parameter.
      *
      * @param {object} obj The object from which extract the keys
-     * @param {number} level Optional. The level of recursion. Defaults 0
+     * @param {number} level Optional. How many nested levels to scan.
+     *   Default: 0, meaning 0 recursion, i.e., only first level keys.
+     * @param {object} options Optional. Configuration options:
+     *
+     *   - type: 'all':   all keys (default),
+     *           'level': keys of the specified level,
+     *           'leaf':  keys that are leaves, i.e., keys that are at the
+     *                    the desired level or that do not point to an object
+     *   - concat: true/false: If TRUE, keys are prefixed by parent keys
+     *   - separator: a character to inter between parent and children keys;
+     *                 (default: '.')
+     *   - distinct: if TRUE, only unique keys are returned  (default: false)
+     *   - parent: the name of initial parent key (default: '')
+     *   - array: an array to which the keys will be appended (default: [])
+     *   - skip: an object containing keys to skip
+     *   - cb: a callback to be applied to every key before adding to results.
+     *         The return value of the callback is interpreted as follows:
+     *         - string|number: inserted as it is
+     *         - array: concatenated
+     *         - undefined: the original key is inserted
+     *         - null: nothing is inserted
      *
      * @return {array} The array containing the extracted keys
      *
      * @see Object.keys
      */
-    OBJ.keys = OBJ.objGetAllKeys = function(obj, level, curLevel) {
-        var result, key;
-        if (!obj) return [];
-        level = 'number' === typeof level && level >= 0 ? level : 0;
-        curLevel = 'number' === typeof curLevel && curLevel >= 0 ? curLevel : 0;
-        result = [];
-        for (key in obj) {
-            if (obj.hasOwnProperty(key)) {
-                result.push(key);
-                if (curLevel < level) {
-                    if ('object' === typeof obj[key]) {
-                        result = result.concat(OBJ.objGetAllKeys(obj[key],
-                                                                 (curLevel+1)));
+    OBJ.keys = (function() {
+        return function(obj, level, options) {
+            var keys, type, allKeys, leafKeys, levelKeys;
+            var separator, myLevel, curParent;
+
+            if (arguments.length === 2 && 'object' === typeof level) {
+                options = level;
+                level = options.level;
+            }
+
+            options = options || {};
+
+            type = options.type ? options.type.toLowerCase() : 'all';
+            if (type === 'all') allKeys = true;
+            else if (type === 'leaf') leafKeys = true;
+            else if (type === 'level') levelKeys = true;
+            else throw new Error('keys: unknown type option: ' + type);
+
+            if (options.cb && 'function' !== typeof options.cb) {
+                throw new TypeError('JSUS.keys: options.cb must be function ' +
+                                    'or undefined. Found: ' + options.cb);
+            }
+
+            if ('undefined' === typeof level) myLevel = 0;
+            else if ('number' === typeof level) myLevel = level;
+            else if ('string' === typeof level) myLevel = parseInt(level, 10);
+            if ('number' !== typeof myLevel || isNaN(myLevel)) {
+                throw new Error('JSUS.keys: level must be number, undefined ' +
+                                'or a parsable string. Found: ' + level);
+            }
+            // No keys at level -1;
+            if (level < 0) return [];
+
+            if (options.concat) {
+                if ('undefined' === typeof options.separator) separator = '.';
+                else separator = options.separator;
+            }
+
+            if (options.parent) curParent = options.parent + separator;
+            else curParent = '';
+
+            if (!options.concat && options.distinct) keys = {};
+
+            return _keys(obj, myLevel, 0, curParent, options.concat,
+                         allKeys, leafKeys, levelKeys, separator,
+                         options.array || [], keys, options.skip || {},
+                         options.cb);
+        }
+
+        function _keys(obj, level, curLevel, curParent,
+                       concatKeys, allKeys, leafKeys, levelKeys,
+                       separator, res, uniqueKeys, skipKeys, cb) {
+
+            var key, isLevel, isObj, tmp;
+            isLevel = curLevel === level;
+            for (key in obj) {
+                if (obj.hasOwnProperty(key)) {
+
+                    isObj = 'object' === typeof obj[key];
+                    if (allKeys ||
+                        (leafKeys && (isLevel || !isObj)) ||
+                        (levelKeys && isLevel)) {
+
+                        if (concatKeys) {
+                            tmp = curParent + key;
+                            if (!skipKeys[tmp]) {
+                                if (cb) _doCb(tmp, res, cb);
+                                else res.push(tmp);
+                            }
+                        }
+                        else if (!skipKeys[key]) {
+                            if (uniqueKeys){
+                                if (!uniqueKeys[key]) {
+                                    if (cb) _doCb(key, res, cb);
+                                    else res.push(key);
+                                    uniqueKeys[key] = true;
+                                }
+                            }
+                            else {
+                                if (cb) _doCb(key, res, cb);
+                                else res.push(key);
+                            }
+                        }
+                    }
+                    if (isObj && (curLevel < level)) {
+                        _keys(obj[key], level, (curLevel+1),
+                              concatKeys ? curParent + key + separator : key,
+                              concatKeys, allKeys, leafKeys, levelKeys,
+                              separator, res, uniqueKeys, skipKeys, cb);
                     }
                 }
             }
+            return res;
         }
-        return result;
-    };
+
+        function _doCb(key, res, cb) {
+            var tmp;
+            tmp = cb(key);
+            // If string, substitute it.
+            if ('string' === typeof tmp || 'number' === typeof tmp) {
+                res.push(tmp);
+            }
+            // If array, expand it.
+            else if (JSUS.isArray(tmp) && tmp.length) {
+                if (tmp.length < 4) {
+                    res.push(tmp[0]);
+                    if (tmp.length > 1) {
+                        res.push(tmp[1]);
+                        if (tmp.length > 2) {
+                            res.push(tmp[2]);
+                        }
+                    }
+                }
+                else {
+                    (function() {
+                        var i = -1, len = tmp.length;
+                        for ( ; ++i < len ; ) {
+                            res.push(tmp[i]);
+                        }
+                    })(tmp, res);
+                }
+            }
+            else if ('undefined' === typeof tmp) {
+                res.push(key);
+            }
+            // Else, e.g. null, ignore it.
+        }
+    })();
+
 
     /**
      * ## OBJ.implode
@@ -4480,6 +3755,8 @@ if (!Array.prototype.indexOf) {
      *
      * @param {object} obj1 The object to which the new properties will be added
      * @param {object} obj2 The mixin-in object
+     *
+     * @return {object} obj1
      */
     OBJ.mixin = function(obj1, obj2) {
         var i;
@@ -4489,6 +3766,7 @@ if (!Array.prototype.indexOf) {
         for (i in obj2) {
             obj1[i] = obj2[i];
         }
+        return obj1;
     };
 
     /**
@@ -4501,6 +3779,8 @@ if (!Array.prototype.indexOf) {
      *
      * @param {object} obj1 The object to which the new properties will be added
      * @param {object} obj2 The mixin-in object
+     *
+     * @return {object} obj1
      */
     OBJ.mixout = function(obj1, obj2) {
         var i;
@@ -4510,6 +3790,7 @@ if (!Array.prototype.indexOf) {
         for (i in obj2) {
             if ('undefined' === typeof obj1[i]) obj1[i] = obj2[i];
         }
+        return obj1;
     };
 
     /**
@@ -4522,6 +3803,8 @@ if (!Array.prototype.indexOf) {
      *
      * @param {object} obj1 The object to which the new properties will be added
      * @param {object} obj2 The mixin-in object
+     *
+     * @return {object} obj1
      */
     OBJ.mixcommon = function(obj1, obj2) {
         var i;
@@ -4531,6 +3814,7 @@ if (!Array.prototype.indexOf) {
         for (i in obj2) {
             if ('undefined' !== typeof obj1[i]) obj1[i] = obj2[i];
         }
+        return obj1;
     };
 
     /**
@@ -4569,7 +3853,7 @@ if (!Array.prototype.indexOf) {
     };
 
     /**
-     * ## OBJ.subobj
+     * ## OBJ.subobj | subObj
      *
      * Creates a copy of an object containing only the properties
      * passed as second parameter
@@ -4587,7 +3871,7 @@ if (!Array.prototype.indexOf) {
      *
      * @see OBJ.getNestedValue
      */
-    OBJ.subobj = function(o, select) {
+    OBJ.subobj = OBJ.subObj = function(o, select) {
         var out, i, key;
         if (!o) return false;
         out = {};
@@ -5128,7 +4412,7 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # RANDOM
- * Copyright(c) 2016 Stefano Balietti
+ * Copyright(c) 2017 Stefano Balietti <ste@nodegame.org>
  * MIT Licensed
  *
  * Generates pseudo-random numbers
@@ -5142,18 +4426,31 @@ if (!Array.prototype.indexOf) {
     /**
      * ## RANDOM.random
      *
-     * Generates a pseudo-random floating point number between
-     * [a,b), a inclusive and b exclusive.
+     * Generates a pseudo-random floating point number in interval [a,b)
      *
-     * @param {number} a The lower limit
-     * @param {number} b The upper limit
+     * Interval is a inclusive and b exclusive.
+     *
+     * If b is undefined, the interval is [0, a).
+     *
+     * If both a and b are undefined the interval is [0, 1)
+     *
+     * @param {number} a Optional. The lower limit, or the upper limit
+     *   if b is undefined
+     * @param {number} b Optional. The upper limit
      *
      * @return {number} A random floating point number in [a,b)
      */
     RANDOM.random = function(a, b) {
         var c;
-        a = ('undefined' === typeof a) ? 0 : a;
-        b = ('undefined' === typeof b) ? 0 : b;
+        if ('undefined' === typeof b) {
+            if ('undefined' === typeof a) {
+                return Math.random();
+            }
+            else {
+                b = a;
+                a = 0;                
+            }
+        }
         if (a === b) return a;
 
         if (b < a) {
@@ -5168,6 +4465,8 @@ if (!Array.prototype.indexOf) {
      * ## RANDOM.randomInt
      *
      * Generates a pseudo-random integer between (a,b] a exclusive, b inclusive
+     *
+     * @TODO: Change to interval [a,b], and allow 1 parameter for [0,a)
      *
      * @param {number} a The lower limit
      * @param {number} b The upper limit
@@ -5184,9 +4483,9 @@ if (!Array.prototype.indexOf) {
     /**
      * ## RANDOM.sample
      *
-     * Generates a randomly shuffled sequence of numbers in (a,b)
+     * Generates a randomly shuffled sequence of numbers in [a,b)]
      *
-     * Both _a_ and _b_ are inclued in the interval.
+     * Both _a_ and _b_ are included in the interval.
      *
      * @param {number} a The lower limit
      * @param {number} b The upper limit
@@ -5517,6 +4816,20 @@ if (!Array.prototype.indexOf) {
         return result;
     };
 
+    /**
+     * ### RANDOM.randomEmail
+     *
+     * Creates a random email address
+     *
+     * @TODO: add options.
+     *
+     * @return {string} result The random email
+     */
+    RANDOM.randomEmail = function() {
+        return RANDOM.randomString(RANDOM.randomInt(5,15), '!Aa0') + '@' +
+            RANDOM.randomString(RANDOM.randomInt(3,10))  + '.' +
+            RANDOM.randomString(RANDOM.randomInt(2,3));
+    };
 
     JSUS.extend(RANDOM);
 
@@ -5524,7 +4837,7 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # TIME
- * Copyright(c) 2015 Stefano Balietti
+ * Copyright(c) 2017 Stefano Balietti
  * MIT Licensed
  *
  * Collection of static functions related to the generation,
@@ -5645,13 +4958,24 @@ if (!Array.prototype.indexOf) {
         return result;
     };
 
+
+    /**
+     * ## TIME.now
+     *
+     * Shortcut to Date.now (when existing), or its polyfill
+     *
+     * @return {number} The timestamp now
+     */
+    TIME.now = 'function' === typeof Date.now ?
+        Date.now : function() { return new Date().getTime(); }
+
     JSUS.extend(TIME);
 
 })('undefined' !== typeof JSUS ? JSUS : module.parent.exports.JSUS);
 
 /**
  * # PARSE
- * Copyright(c) 2016 Stefano Balietti
+ * Copyright(c) 2017 Stefano Balietti <ste@nodegame.org>
  * MIT Licensed
  *
  * Collection of static functions related to parsing strings
@@ -5701,7 +5025,7 @@ if (!Array.prototype.indexOf) {
         var regex, results;
         if (referer && 'string' !== typeof referer) {
             throw new TypeError('JSUS.getQueryString: referer must be string ' +
-                                'or undefined.');
+                                'or undefined. Found: ' + referer);
         }
         referer = referer || window.location.search;
         if ('undefined' === typeof name) return referer;
@@ -5969,6 +5293,28 @@ if (!Array.prototype.indexOf) {
     };
 
     /**
+     * ## PARSE.isEmail
+     *
+     * Returns TRUE if the email's format is valid
+     *
+     * @param {string} The email to check
+     *
+     * @return {boolean} TRUE, if the email format is valid
+     */
+    PARSE.isEmail = function(email) {
+        var idx;
+        if ('string' !== typeof email) return false;
+        if (email.trim().length < 5) return false;
+        idx = email.indexOf('@');
+        if (idx === -1 || idx === 0 || idx === (email.length-1)) return false;
+        idx = email.lastIndexOf('.');
+        if (idx === -1 || idx === (email.length-1) || idx > (idx+1)) {
+            return false;
+        }
+        return true;
+    };
+
+    /**
      * ## PARSE.range
      *
      * Decodes semantic strings into an array of integers
@@ -6047,7 +5393,7 @@ if (!Array.prototype.indexOf) {
         if ('number' === typeof expr) expr = '' + expr;
         else if ('string' !== typeof expr) {
             throw new TypeError('PARSE.range: expr must be string, number, ' +
-                                'undefined.');
+                                'undefined. Found: ' + expr);
         }
         // If no available numbers defined, assumes all possible are allowed.
         if ('undefined' === typeof available) {
@@ -6061,19 +5407,20 @@ if (!Array.prototype.indexOf) {
         else if ('object' === typeof available) {
             if ('function' !== typeof available.next) {
                 throw new TypeError('PARSE.range: available.next must be ' +
-                                    'function.');
+                                    'function. Found: ' + available.next);
             }
             if ('function' !== typeof available.isFinished) {
                 throw new TypeError('PARSE.range: available.isFinished must ' +
-                                    'be function.');
+                                    'be function. Found: ' +
+                                    available.isFinished);
             }
             if ('number' !== typeof available.begin) {
                 throw new TypeError('PARSE.range: available.begin must be ' +
-                                    'number.');
+                                    'number. Found: ' + available.begin);
             }
             if ('number' !== typeof available.end) {
                 throw new TypeError('PARSE.range: available.end must be ' +
-                                    'number.');
+                                    'number. Found: ' + available.end);
             }
 
             begin = available.begin;
@@ -6086,8 +5433,8 @@ if (!Array.prototype.indexOf) {
 
             numbers = available.match(/([-+]?\d+)/g);
             if (numbers === null) {
-                throw new Error(
-                    'PARSE.range: no numbers in available: ' + available);
+                throw new Error('PARSE.range: no numbers in available: ' +
+                                available);
             }
             lowerBound = Math.min.apply(null, numbers);
 
@@ -6107,7 +5454,8 @@ if (!Array.prototype.indexOf) {
         }
         else {
             throw new TypeError('PARSE.range: available must be string, ' +
-                                'array, object or undefined.');
+                                'array, object or undefined. Found: ' +
+                                available);
         }
 
         // end -> maximal available value.
@@ -6271,7 +5619,8 @@ if (!Array.prototype.indexOf) {
     if ('undefined' !== typeof Function.prototype.name) {
         PARSE.funcName = function(func) {
             if ('function' !== typeof func) {
-                throw new TypeError('PARSE.funcName: func must be function.');
+                throw new TypeError('PARSE.funcName: func must be function. ' +
+                                    'Found: ' + func);
             }
             return func.name;
         };
@@ -6280,7 +5629,8 @@ if (!Array.prototype.indexOf) {
         PARSE.funcName = function(func) {
             var funcNameRegex, res;
             if ('function' !== typeof func) {
-                throw new TypeError('PARSE.funcName: func must be function.');
+                throw new TypeError('PARSE.funcName: func must be function. ' +
+                                   'Found: ' + func);
             }
             funcNameRegex = /function\s([^(]{1,})\(/;
             res = (funcNameRegex).exec(func.toString());
@@ -6294,13 +5644,13 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # NDDB: N-Dimensional Database
- * Copyright(c) 2017 Stefano Balietti
+ * Copyright(c) 2017 Stefano Balietti <ste@nodegame.org>
  * MIT Licensed
  *
  * NDDB is a powerful and versatile object database for node.js and the browser.
  * ---
  */
-(function(exports, J, store) {
+(function(exports, J) {
 
     "use strict";
 
@@ -8485,6 +7835,50 @@ if (!Array.prototype.indexOf) {
         return this.breed(shuffled);
     };
 
+    /**
+     * ### NDDB.random
+     *
+     * Breeds a new database with N randomly selected items
+     *
+     * @param {number} N How many random items to include
+     *
+     * @return {NDDB} A new instance of NDDB with the shuffled entries
+     */
+    NDDB.prototype.random = function(N, strict) {
+        var i, len, used, out, idx;
+        if ('number' !== typeof N) {
+            this.throwErr('TypeError', 'random',
+                          'N must be number Found: ' + N);
+        }
+        if (N < 1) {
+            this.throwErr('Error', 'random', 'N must be > 0. Found: ' + N);
+        }
+        len = this.db.length;
+        if (N > len && strict !== false) {
+            this.throwErr('Error', 'random', 'not enough items in db. Found: ' +
+                          len + '. Requested: ' + N);
+        }
+        // Heuristic.
+        if (N < (len/3)) {
+            i = 0;
+            out = new Array(N);
+            used = {};
+            while (i < N) {
+                idx = J.randomInt(0, len)-1;
+                if ('undefined' === typeof used[idx]) {
+                    used[idx] = true;
+                    out[i] = this.db[idx];
+                    i++;
+                }
+            }
+        }
+        else {
+            out = J.shuffle(this.db);
+            out = out.slice(0, N);
+        }
+        return this.breed(out);
+    };
+
     // ## Custom callbacks
 
     /**
@@ -8563,12 +7957,11 @@ if (!Array.prototype.indexOf) {
     /**
      * ### NDDB.map
      *
-     * Applies a callback function to each element in the db, store
-     * the results in an array and returns it.
+     * Maps a callback to each element of the db and returns an array
      *
      * It accepts a variable number of input arguments, but the first one
-     * must be a valid callback, and all the following are passed as parameters
-     * to the callback
+     * must be a valid callback, and all the following are passed as
+     * parameters to the callback.
      *
      * @return {array} out The result of the mapping
      *
@@ -8662,7 +8055,7 @@ if (!Array.prototype.indexOf) {
         len = db.length;
         if (len) {
             for (i = 0; i < len; i++) {
-                res = this.emit('update', db[i], update);
+                res = this.emit('update', db[i], update, i);
                 if (res === true) {
                     J.mixin(db[i], update);
                     if (updateRules.indexes) {
@@ -10029,7 +9422,7 @@ if (!Array.prototype.indexOf) {
         // Add to index directly (bypass api).
         this.nddbid.resolve[o._nddbid] = this.db.length;
         // End create index.
-        res = this.emit('insert', o);
+        res = this.emit('insert', o, this.db.length);
         // Stop inserting elements if one callback returned FALSE.
         if (res === false) return false;
         this.db.push(o);
@@ -10540,7 +9933,7 @@ if (!Array.prototype.indexOf) {
         if ('undefined' === typeof dbidx) return false;
         o = this.nddb.db[dbidx];
         if ('undefined' === typeof o) return false;
-        res = this.nddb.emit('remove', o);
+        res = this.nddb.emit('remove', o, dbidx);
         if (res === false) return false;
         this.nddb.db.splice(dbidx, 1);
         this._remove(idx);
@@ -10572,7 +9965,7 @@ if (!Array.prototype.indexOf) {
         if ('undefined' === typeof dbidx) return false;
         nddb = this.nddb;
         o = nddb.db[dbidx];
-        res = nddb.emit('update', o, update);
+        res = nddb.emit('update', o, update, dbidx);
         if (res === false) return false;
         J.mixin(o, update);
         // We do indexes separately from the other components of _autoUpdate
@@ -10623,10 +10016,7 @@ if (!Array.prototype.indexOf) {
     ('undefined' !== typeof module && 'undefined' !== typeof module.exports) ?
         module.exports : window ,
     ('undefined' !== typeof module && 'undefined' !== typeof module.exports) ?
-        module.parent.exports.JSUS || require('JSUS').JSUS : JSUS,
-    ('object' === typeof module && 'function' === typeof require) ?
-        module.parent.exports.store ||
-        require('shelf.js/build/shelf-fs.js').store : this.store
+        module.parent.exports.JSUS || require('JSUS').JSUS : JSUS
 );
 
 /**
@@ -10652,13 +10042,13 @@ if (!Array.prototype.indexOf) {
     node.support = JSUS.compatibility();
 
     // Auto-Generated.
-    node.version = '3.5.4';
+    node.version = '4.0.0';
 
 })(window);
 
 /**
  * # Variables
- * Copyright(c) 2017 Stefano Balietti
+ * Copyright(c) 2017 Stefano Balietti <ste@nodegame.org>
  * MIT Licensed
  *
  * `nodeGame` variables and constants module
@@ -12269,7 +11659,7 @@ if (!Array.prototype.indexOf) {
 /**
  * # GameStage
  *
- * Copyright(c) 2016 Stefano Balietti
+ * Copyright(c) 2018 Stefano Balietti
  * MIT Licensed
  *
  * Representation of the stage of a game:
@@ -12352,7 +11742,7 @@ if (!Array.prototype.indexOf) {
             }
             if (gameStage.charAt(0) === '.') {
                 throw new Error('GameStage constructor: gameStage name ' +
-                                'cannot start with a dot.');
+                                'cannot start with a dot. Name: ' + gameStage);
             }
 
             tokens = gameStage.split('.');
@@ -12395,7 +11785,8 @@ if (!Array.prototype.indexOf) {
         else if ('number' === typeof gameStage) {
             if (gameStage % 1 !== 0) {
                throw new TypeError('GameStage constructor: gameStage ' +
-                                   'cannot be a non-integer number.');
+                                   'cannot be a non-integer number. Found: ' +
+                                   gameStage);
             }
             this.stage = gameStage;
             if (this.stage === 0) {
@@ -12410,7 +11801,8 @@ if (!Array.prototype.indexOf) {
         // Defaults or error.
         else if (gameStage !== null && 'undefined' !== typeof gameStage) {
             throw new TypeError('GameStage constructor: gameStage must be ' +
-                                'string, object, number, undefined, or null.');
+                                'string, object, number, undefined, or null. ' +
+                                'Found: ' + gameStage);
         }
 
         // At this point we must have positive numbers, or strings for step
@@ -12436,7 +11828,7 @@ if (!Array.prototype.indexOf) {
         }
         else {
             throw new Error('GameStage constructor: gameStage.round must ' +
-                            'be number.');
+                            'be number. Found: ' + this.round);
         }
 
         if (err) {
@@ -12499,7 +11891,8 @@ if (!Array.prototype.indexOf) {
     GameStage.toHash = function(gs, str) {
         var hash, i, idx, properties, symbols;
         if (!gs || 'object' !== typeof gs) {
-            throw new TypeError('GameStage.toHash: gs must be object.');
+            throw new TypeError('GameStage.toHash: gs must be object. Found: ' +
+                                gs);
         }
         if (!str || !str.length) {
             return gs.stage + '.' + gs.step + '.' + gs.round;
@@ -13230,16 +12623,19 @@ if (!Array.prototype.indexOf) {
      *
      * Creates an instance of Player
      *
-     * @param {object} pl The object literal representing the player
+     * @param {object} player The object literal representing the player.
+     *   Must contain at very least the `id` property
      */
     function Player(player) {
         var key;
 
         if ('object' !== typeof player) {
-            throw new TypeError('Player constructor: player must be object.');
+            throw new TypeError('Player constructor: player must be object. ' +
+                               'Found: ' + player);
         }
         if ('string' !== typeof player.id) {
-            throw new TypeError('Player constructor: id must be string.');
+            throw new TypeError('Player constructor: id must be string. ' +
+                                'Found: ' + player.id);
         }
 
         // ## Default properties
@@ -15140,7 +14536,7 @@ if (!Array.prototype.indexOf) {
  *
  * Push players to advance to next step, otherwise disconnects them.
  *
- * Copyright(c) 2016 Stefano Balietti
+ * Copyright(c) 2018 Stefano Balietti
  * MIT Licensed
  */
 (function(exports, parent) {
@@ -15293,6 +14689,8 @@ if (!Array.prototype.indexOf) {
         };
 
         node.silly('push-manager: starting timer: ' + offset + ', ' + stage);
+        // console.log('push-manager: starting timer: ', offset, stage);
+
 
         that = this;
         pushCb = function() { that.pushGame.call(that, stage, conf); };
@@ -15319,6 +14717,7 @@ if (!Array.prototype.indexOf) {
     PushManager.prototype.clearTimer = function() {
         if (this.timer && !this.timer.isStopped()) {
             this.node.silly('push-manager: timer cleared.');
+            // console.log('push-manager: timer cleared.');
             this.timer.stop();
         }
     };
@@ -15351,7 +14750,7 @@ if (!Array.prototype.indexOf) {
         var m, node, replyWaitTime, checkPushWaitTime;
         node = this.node;
 
-        console.log('checking clients');
+        // console.log('push-manager: checking clients');
         node.silly('push-manager: checking clients.');
 
         if ('object' === typeof conf) {
@@ -15372,7 +14771,7 @@ if (!Array.prototype.indexOf) {
             if (p.stageLevel !== DONE &&
                 GameStage.compare(p.stage, stage) === 0) {
 
-                console.log('push needed');
+                // console.log('push needed: ', p.id);
                 node.warn('push needed: ' + p.id);
                 // Send push.
                 node.get(PUSH_STEP,
@@ -15447,7 +14846,7 @@ if (!Array.prototype.indexOf) {
         var msg;
         // No reply to GET, disconnect client.
         node.warn('push-manager: disconnecting: ' + p.id);
-
+        // console.log('push-manager: disconnecting: ' + p.id);
         msg = node.msg.create({
             target: 'SERVERCOMMAND',
             text: 'DISCONNECT',
@@ -15720,7 +15119,7 @@ if (!Array.prototype.indexOf) {
         this.exactRecoveryCb = null;
         this.exactCbCalled = false;
 
-        this.changeHandler = function() { return true; };
+        this.changeHandler = function(op, obj) { return true; };
         this.checkSize = function() { return true; };
     };
 
@@ -15948,7 +15347,7 @@ if (!Array.prototype.indexOf) {
         var that;
         that = this;
         this.node.events.step.on('in.say.PCONNECT', function(p) {
-            that.changehandler('pconnect', p);
+            that.changeHandler('pconnect', p);
         }, 'plManagerCon');
         this.node.events.step.on('in.say.PDISCONNECT', function(p) {
             that.changeHandler('pdisconnect', p);
@@ -17503,19 +16902,21 @@ if (!Array.prototype.indexOf) {
     Stager.prototype.cloneStep = function(stepId, newStepId) {
         var step;
         if ('string' !== typeof stepId) {
-            throw new TypeError('Stager.cloneStep: stepId must be string.');
+            throw new TypeError('Stager.cloneStep: stepId must be string. ' +
+                               'Found: ' + stepId);
         }
         if ('string' !== typeof newStepId) {
-            throw new TypeError('Stager.cloneStep: newStepId must be string.');
+            throw new TypeError('Stager.cloneStep: newStepId must be ' +
+                                'string. Found: ' + newStepId);
         }
         if (this.steps[newStepId]) {
             throw new Error('Stager.cloneStep: newStepId already taken: ' +
-                            newStepId + '.');
+                            newStepId);
         }
         step = this.steps[stepId];
         if (!step) {
             throw new Error('Stager.cloneStep: step not found: ' +
-                            stepId + '.');
+                            stepId);
         }
         step = J.clone(step);
         step.id = newStepId;
@@ -19667,11 +19068,22 @@ if (!Array.prototype.indexOf) {
         /**
          * ### Socket.buffer
          *
-         * Buffer of queued messages
+         * Buffer of queued incoming messages
          *
          * @api private
          */
         this.buffer = [];
+
+        /**
+         * ### Socket.outBuffer
+         *
+         * Buffer of queued outgoing messages
+         *
+         * TODO: implement!
+         *
+         * @api private
+         */
+        // this.outBuffer = [];
 
         /**
          * ### Socket.session
@@ -20347,16 +19759,26 @@ if (!Array.prototype.indexOf) {
     Socket.prototype.send = function(msg) {
         var outEvent;
 
-        if (!this.isConnected()) {
-            this.node.err('Socket.send: cannot send message. No open socket.');
+        if (!msg.from || msg.from === this.node.UNDEFINED_PLAYER) {
+            this.node.err('Socket.send: cannot send message. ' +
+                          'Player undefined. Message discarded.');
             return false;
         }
 
-        if (!msg.from || msg.from === this.node.UNDEFINED_PLAYER) {
+        if (!this.isConnected()) {
             this.node.err('Socket.send: cannot send message. ' +
-                          'Player undefined.');
+                          'No open socket. Message discarded.');
+
+            // TODO: test this
+            // this.outBuffer.push(msg);
             return false;
         }
+
+        // TODO: test this
+        // if (!this.node.game.isReady()) {
+        //     this.outBuffer.push(msg);
+        //     return false;
+        // }
 
         // Emit out event, if required.
         if (this.emitOutMsg) {
@@ -20526,7 +19948,7 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # Roler
- * Copyright(c) 2017 Stefano Balietti
+ * Copyright(c) 2017 Stefano Balietti <ste@nodegame.org>
  * MIT Licensed
  *
  * Handles assigning roles to matches.
@@ -21282,6 +20704,9 @@ if (!Array.prototype.indexOf) {
             throw new TypeError('Roler.replaceId: newId should be a ' +
                                 'non-empty string. Found: ' + newId);
         }
+
+        // No id was assigned yet.
+        if (!this.id2RoleMatches) return false;
 
         // Update id2RoleMatches and role2IdMatches at the same time.
         m = this.id2RoleMatches;
@@ -22282,6 +21707,9 @@ if (!Array.prototype.indexOf) {
      * @see Matcher.matches
      */
     Matcher.prototype.normalizeRound = function(round) {
+        if (!this.matches) {
+            throw new TypeError('Matcher.normalizeRound: no matches found.');
+        }
         if ('number' !== typeof round || isNaN(round) || round < 1) {
             throw new TypeError('Matcher.normalizeRound: round must be a ' +
                                 'number > 0. Found: ' + round);
@@ -22314,6 +21742,9 @@ if (!Array.prototype.indexOf) {
             throw new TypeError('Matcher.replaceId: newId should be a ' +
                                 'non-empty string. Found: ' + newId);
         }
+
+        // No id was assigned yet.
+        if (!this.resolvedMatches) return false;
 
         // IdsMap.
         m = this.idsMap[oldId];
@@ -22379,7 +21810,6 @@ if (!Array.prototype.indexOf) {
 
         // Update resolvedMatchesById.
         m = this.resolvedMatchesById;
-
         for (i in m) {
             if (m.hasOwnProperty(i)) {
                 if (i === oldId) {
@@ -22388,22 +21818,25 @@ if (!Array.prototype.indexOf) {
                 }
                 else {
                     lenJ = m[i].length;
-                    if (lenJ == 1) {
-                        m[i][0] = newId;
-                    }
-                    else if (lenJ === 2) {
-                        if (m[i][0] === oldId) m[i][0] = newId;
-                        else m[i][1] = newId;
-                    }
-                    else {
-                        j = -1;
-                        for ( ; ++j < lenJ ; ) {
-                            if (m[i][j] === oldId) {
-                                m[i][j] = newId;
-                                break;
-                            }
+                    // THIS OPTIMIZATION DOES NOT SEEM TO WORK.
+                    // In fact, there might be more matches with the same
+                    // partner in sequence.
+                    // And also if === 1, it should be checked.
+                    // if (lenJ == 1) {
+                    //     m[i][0] = newId;
+                    // }
+                    // else if (lenJ === 2) {
+                    //     if (m[i][0] === oldId) m[i][0] = newId;
+                    //     else m[i][1] = newId;
+                    // }
+                    // else {
+                    j = -1;
+                    for ( ; ++j < lenJ ; ) {
+                        if (m[i][j] === oldId) {
+                            m[i][j] = newId;
                         }
                     }
+                    // }
                 }
             }
         }
@@ -22480,7 +21913,7 @@ if (!Array.prototype.indexOf) {
     }
 
     /**
-     * ### pairMatcher
+     * ### pairMatcherOld
      *
      * Creates tournament schedules for different algorithms
      *
@@ -22507,118 +21940,247 @@ if (!Array.prototype.indexOf) {
      *
      * @return {array} matches The matches according to the algorithm
      */
-     function pairMatcher(alg, n, options) {
-         var ps, matches, bye;
-         var i, lenI, j, lenJ, jj;
-         var id1, id2;
-         var roundsLimit, cycle, cycleI, skipBye;
+    function pairMatcherOld(alg, n, options) {
+        var ps, matches, bye;
+        var i, lenI, j, lenJ, jj;
+        var id1, id2;
+        var roundsLimit, cycle, cycleI, skipBye;
 
-         if ('number' === typeof n && n > 1) {
-             ps = J.seq(0, (n-1));
-         }
-         else if (J.isArray(n) && n.length > 1) {
-             ps = n.slice();
-             n = ps.length;
-         }
-         else {
-             throw new TypeError('pairMatcher.' + alg + ': n must be ' +
-                                 'number > 1 or array of length > 1.');
-         }
-         options = options || {};
+        if ('number' === typeof n && n > 1) {
+            ps = J.seq(0, (n-1));
+        }
+        else if (J.isArray(n) && n.length > 1) {
+            ps = n.slice();
+            n = ps.length;
+        }
+        else {
+            throw new TypeError('pairMatcher.' + alg + ': n must be ' +
+                                'number > 1 or array of length > 1.');
+        }
+        options = options || {};
 
-         bye = 'undefined' !== typeof options.bye ? options.bye : -1;
-         skipBye = options.skipBye || false;
+        bye = 'undefined' !== typeof options.bye ? options.bye : -1;
+        skipBye = options.skipBye || false;
 
-         // Make sure we have even numbers.
-         if ((n % 2) === 1) {
-             ps.push(bye);
-             n += 1;
-         }
+        // Make sure we have even numbers.
+        if ((n % 2) === 1) {
+            ps.push(bye);
+            n += 1;
+        }
 
-         // Limit rounds.
-         if ('number' === typeof options.rounds) {
-             if (options.rounds <= 0) {
-                 throw new Error('pairMatcher.' + alg + ': options.rounds ' +
-                                 'must be a positive number or undefined. ' +
-                                 'Found: ' + options.rounds);
-             }
-             if (options.rounds > (n-1)) {
-                 throw new Error('pairMatcher.' + alg + ': ' +
-                                 'options.rounds cannot be greater than ' +
-                                 (n-1) + '. Found: ' + options.rounds);
-             }
-             // Here roundsLimit does not depend on n (must be smaller).
-             roundsLimit = options.rounds;
-         }
-         else {
-             roundsLimit = n-1;
-         }
+        // Limit rounds.
+        if ('number' === typeof options.rounds) {
+            if (options.rounds <= 0) {
+                throw new Error('pairMatcher.' + alg + ': options.rounds ' +
+                                'must be a positive number or undefined. ' +
+                                'Found: ' + options.rounds);
+            }
+            if (options.rounds > (n-1)) {
+                throw new Error('pairMatcher.' + alg + ': ' +
+                                'options.rounds cannot be greater than ' +
+                                (n-1) + '. Found: ' + options.rounds);
+            }
+            // Here roundsLimit does not depend on n (must be smaller).
+            roundsLimit = options.rounds;
+        }
+        else {
+            roundsLimit = n-1;
+        }
 
-         if ('undefined' !== typeof options.cycle) {
-             cycle = options.cycle;
-             if (cycle !== 'mirror_invert' && cycle !== 'mirror' &&
-                 cycle !== 'repeat_invert' && cycle !== 'repeat') {
+        if ('undefined' !== typeof options.cycle) {
+            cycle = options.cycle;
+            if (cycle !== 'mirror_invert' && cycle !== 'mirror' &&
+                cycle !== 'repeat_invert' && cycle !== 'repeat') {
 
-                 throw new Error('pairMatcher.' + alg + ': options.cycle ' +
-                                 'must be equal to "mirror"/"mirror_invert", ' +
-                                 '"repeat"/"repeat_invert" or undefined . ' +
-                                 'Found: ' + options.cycle);
-             }
+                throw new Error('pairMatcher.' + alg + ': options.cycle ' +
+                                'must be equal to "mirror"/"mirror_invert", ' +
+                                '"repeat"/"repeat_invert" or undefined . ' +
+                                'Found: ' + options.cycle);
+            }
 
-             matches = new Array(roundsLimit*2);
-         }
-         else {
-             matches = new Array(roundsLimit);
-         }
+            matches = new Array(roundsLimit*2);
+        }
+        else {
+            matches = new Array(roundsLimit);
+        }
 
-         i = -1, lenI = roundsLimit;
-         for ( ; ++i < lenI ; ) {
-             // Shuffle list of ids for random.
-             if (alg === 'random') ps = J.shuffle(ps);
-             // Create a new array for round i.
-             lenJ = n / 2;
-             matches[i] = skipBye ? new Array(lenJ-1) : new Array(lenJ);
-             // Check if new need to cycle.
-             if (cycle) {
-                 if (cycle === 'mirror' || cycle === 'mirror_invert') {
-                     cycleI = (roundsLimit*2) -i -1;
-                 }
-                 else {
-                     cycleI = i+roundsLimit;
-                 }
-                 matches[cycleI] = skipBye ?
-                     new Array(lenJ-1) : new Array(lenJ);
-             }
-             // Counter jj is updated only if not skipBye,
-             // otherwise we create holes in the matches array.
-             jj = j = -1;
-             for ( ; ++j < lenJ ; ) {
-                 id1 = ps[j];
-                 id2 = ps[n - 1 - j];
-                 if (!skipBye || (id1 !== bye && id2 !== bye)) {
-                     jj++;
-                     // Insert match.
-                     matches[i][jj] = [ id1, id2 ];
-                     // Insert cycle match (if any).
-                     if (cycle === 'repeat') {
-                         matches[cycleI][jj] = [ id1, id2 ];
-                     }
-                     else if (cycle === 'repeat_invert') {
-                         matches[cycleI][jj] = [ id2, id1 ];
-                     }
-                     else if (cycle === 'mirror') {
-                         matches[cycleI][jj] = [ id1, id2 ];
-                     }
-                     else if (cycle === 'mirror_invert') {
-                         matches[cycleI][jj] = [ id2, id1 ];
-                     }
-                 }
-             }
-             // Permutate for next round.
-             ps.splice(1, 0, ps.pop());
-         }
-         return matches;
-     }
+        i = -1, lenI = roundsLimit;
+        for ( ; ++i < lenI ; ) {
+            // Shuffle list of ids for random.
+            if (alg === 'random') ps = J.shuffle(ps);
+            // Create a new array for round i.
+            lenJ = n / 2;
+            matches[i] = skipBye ? new Array(lenJ-1) : new Array(lenJ);
+            // Check if new need to cycle.
+            if (cycle) {
+                if (cycle === 'mirror' || cycle === 'mirror_invert') {
+                    cycleI = (roundsLimit*2) -i -1;
+                }
+                else {
+                    cycleI = i+roundsLimit;
+                }
+                matches[cycleI] = skipBye ?
+                    new Array(lenJ-1) : new Array(lenJ);
+            }
+            // Counter jj is updated only if not skipBye,
+            // otherwise we create holes in the matches array.
+            jj = j = -1;
+            for ( ; ++j < lenJ ; ) {
+                id1 = ps[j];
+                id2 = ps[n - 1 - j];
+                if (!skipBye || (id1 !== bye && id2 !== bye)) {
+                    jj++;
+                    // Insert match.
+                    matches[i][jj] = [ id1, id2 ];
+                    // Insert cycle match (if any).
+                    if (cycle === 'repeat') {
+                        matches[cycleI][jj] = [ id1, id2 ];
+                    }
+                    else if (cycle === 'repeat_invert') {
+                        matches[cycleI][jj] = [ id2, id1 ];
+                    }
+                    else if (cycle === 'mirror') {
+                        matches[cycleI][jj] = [ id1, id2 ];
+                    }
+                    else if (cycle === 'mirror_invert') {
+                        matches[cycleI][jj] = [ id2, id1 ];
+                    }
+                }
+            }
+            // Permutate for next round.
+            ps.splice(1, 0, ps.pop());
+        }
+        return matches;
+    }
+
+
+    function pairMatcher(alg, n, options) {
+        var ps, matches, bye;
+        var i, lenI, j, lenJ, jj;
+        var id1, id2;
+        var roundsLimit, cycle, cycleI, skipBye;
+        var fixedRolesNoSameMatch;
+
+        if ('number' === typeof n && n > 1) {
+            ps = J.seq(0, (n-1));
+        }
+        else if (J.isArray(n) && n.length > 1) {
+            ps = n.slice();
+            n = ps.length;
+        }
+        else {
+            throw new TypeError('pairMatcher.' + alg + ': n must be ' +
+                                'number > 1 or array of length > 1.');
+        }
+        options = options || {};
+
+        bye = 'undefined' !== typeof options.bye ? options.bye : -1;
+        skipBye = options.skipBye || false;
+
+        // Make sure we have even numbers.
+        if ((n % 2) === 1) {
+            ps.push(bye);
+            n += 1;
+        }
+
+        // Does not work.
+        if (options.fixedRoles && (options.canMatchSameRole === false)) {
+            fixedRolesNoSameMatch = true;
+        }
+
+        // Limit rounds.
+        if ('number' === typeof options.rounds) {
+            if (options.rounds <= 0) {
+                throw new Error('pairMatcher.' + alg + ': options.rounds ' +
+                                'must be a positive number or undefined. ' +
+                                'Found: ' + options.rounds);
+            }
+            if (options.rounds > (n-1)) {
+                throw new Error('pairMatcher.' + alg + ': ' +
+                                'options.rounds cannot be greater than ' +
+                                (n-1) + '. Found: ' + options.rounds);
+            }
+            // Here roundsLimit does not depend on n (must be smaller).
+            roundsLimit = options.rounds;
+        }
+        else if (fixedRolesNoSameMatch) {
+            roundsLimit = Math.floor(n/2);
+        }
+        else {
+            roundsLimit = n-1;
+        }
+
+        if ('undefined' !== typeof options.cycle) {
+            cycle = options.cycle;
+            if (cycle !== 'mirror_invert' && cycle !== 'mirror' &&
+                cycle !== 'repeat_invert' && cycle !== 'repeat') {
+
+                throw new Error('pairMatcher.' + alg + ': options.cycle ' +
+                                'must be equal to "mirror"/"mirror_invert", ' +
+                                '"repeat"/"repeat_invert" or undefined . ' +
+                                'Found: ' + options.cycle);
+            }
+
+            matches = new Array(roundsLimit*2);
+        }
+        else {
+            matches = new Array(roundsLimit);
+        }
+
+        i = -1, lenI = roundsLimit;
+        for ( ; ++i < lenI ; ) {
+            // Shuffle list of ids for random.
+            if (alg === 'random') ps = J.shuffle(ps);
+            // Create a new array for round i.
+            lenJ = n / 2;
+            matches[i] = skipBye ? new Array(lenJ-1) : new Array(lenJ);
+            // Check if new need to cycle.
+            if (cycle) {
+                if (cycle === 'mirror' || cycle === 'mirror_invert') {
+                    cycleI = (roundsLimit*2) -i -1;
+                }
+                else {
+                    cycleI = i+roundsLimit;
+                }
+                matches[cycleI] = skipBye ?
+                    new Array(lenJ-1) : new Array(lenJ);
+            }
+            // Counter jj is updated only if not skipBye,
+            // otherwise we create holes in the matches array.
+            jj = j = -1;
+            for ( ; ++j < lenJ ; ) {
+                if (fixedRolesNoSameMatch) {
+                    id1 = ps[j*2];
+                    id2 = ps[((i*2)+(j*2)+1) % n];
+                }
+                else {
+                    id1 = ps[j];
+                    id2 = ps[n - 1 - j];
+                }
+                if (!skipBye || (id1 !== bye && id2 !== bye)) {
+                    jj++;
+                    // Insert match.
+                    matches[i][jj] = [ id1, id2 ];
+                    // Insert cycle match (if any).
+                    if (cycle === 'repeat') {
+                        matches[cycleI][jj] = [ id1, id2 ];
+                    }
+                    else if (cycle === 'repeat_invert') {
+                        matches[cycleI][jj] = [ id2, id1 ];
+                    }
+                    else if (cycle === 'mirror') {
+                        matches[cycleI][jj] = [ id1, id2 ];
+                    }
+                    else if (cycle === 'mirror_invert') {
+                        matches[cycleI][jj] = [ id2, id1 ];
+                    }
+                }
+            }
+            // Permutate for next round.
+            if (!fixedRolesNoSameMatch) ps.splice(1, 0, ps.pop());
+        }
+        return matches;
+    }
 
     /**
      * ## fetchMatch
@@ -22827,10 +22389,13 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # MatcherManager
- * Copyright(c) 2017 Stefano Balietti
+ * Copyright(c) 2017 Stefano Balietti <ste@nodegame.org>
  * MIT Licensed
  *
  * Handles matching roles to players and players to players.
+ *
+ * ---
+ * nodegame.org
  */
 (function(exports, parent) {
 
@@ -22887,6 +22452,12 @@ if (!Array.prototype.indexOf) {
          */
         this.lastMatches = null;
 
+        /**
+         * ### MatcherManager.lastMatchesById
+         *
+         * Reference to the last matches organized by id of client
+         */
+        this.lastMatchesById = {};
     }
 
     /**
@@ -22916,7 +22487,7 @@ if (!Array.prototype.indexOf) {
      *
      * Parses a conf object and returns the desired matches of roles and players
      *
-     * Stores a reference of last matches under `MatcherManager.lastMatches`.
+     * Stores references of last settings and matches.
      *
      * Returned matches are in a format which is ready to be sent out as
      * remote options. That is:
@@ -22938,7 +22509,10 @@ if (!Array.prototype.indexOf) {
      *
      * @return {array} Array of matches ready to be sent out as remote options.
      *
+     * @see randomPairs
      * @see MatcherManager.lastMatches
+     * @see MatcherManager.lastMatchesById
+     * @see MatcherManager.lastSettings
      * @see Matcher.match
      * @see Game.gotoStep
      */
@@ -22970,7 +22544,6 @@ if (!Array.prototype.indexOf) {
                             '" did not return matches.');
         }
 
-        this.lastMatches = matches;
         return matches;
     };
 
@@ -23025,7 +22598,7 @@ if (!Array.prototype.indexOf) {
             mod = 'ARRAY';
         }
 
-        if ('undefined' !== typeof round && 'number' === typeof round) {
+        if ('undefined' !== typeof round && 'number' !== typeof round) {
             throw new TypeError('MatcherManager.getMatches: round ' +
                                 'must be undefined or number. Found: ' + round);
         }
@@ -23135,12 +22708,42 @@ if (!Array.prototype.indexOf) {
      *
      * @see Matcher.replaceId
      * @see Roler.replaceId
+     *
+     * @experimental
+     *
+     * TODO: this does not scale up. Maybe have another registry of
+     * substituted ids.
+     *
+     * TODO: maybe return info about the replaced id, e.g. current
+     * options, instead of boolean.
      */
     MatcherManager.prototype.replaceId = function(oldId, newId) {
         var res;
         res = this.matcher.replaceId(oldId, newId);
         res = res && this.roler.replaceId(oldId, newId);
         return res;
+    };
+
+    /**
+     * ### MatcherManager.getSetupFor
+     *
+     * Returns the setup object (partner and role options) for a specific id
+     *
+     * @param {string} id The id to get the setup object for
+     *
+     * @return {object} The requested setup object
+     *
+     * @see Matcher.match
+     * @see round2index
+     */
+    MatcherManager.prototype.getSetupFor = function(id) {
+        var out;
+        if ('string' !== typeof id) {
+            throw new TypeError('MatcherManager.getSetupFor: id must be ' +
+                                'string. Found: ' + id);
+        }
+        out = this.lastMatchesById[id];
+        return out || null;
     };
 
     // ## Helper Methods.
@@ -23191,11 +22794,19 @@ if (!Array.prototype.indexOf) {
         var r1, r2;
         var ii, i, len;
         var roundMatches, nMatchesIdx, match, id1, id2, missId;
-        var matches,  sayPartner, doRoles;
+        var matches, matchesById, sayPartner, doRoles;
         var opts, roles, matchedRoles;
 
         var game, n;
         var nRounds;
+
+        // Delete previous results.
+        this.lastMatches = null;
+        this.lastMatchesById = null;
+
+        // Init local variables.
+
+        matchesById = {};
 
         sayPartner = 'undefined' === typeof settings.sayPartner ?
             true : !!settings.sayPartner;
@@ -23225,7 +22836,9 @@ if (!Array.prototype.indexOf) {
                 rounds: nRounds,
                 // cycle: settings.cycle,
                 skipBye: settings.skipBye,
-                bye: settings.bye
+                bye: settings.bye,
+                fixedRoles: settings.fixedRoles,
+                canMatchSameRole: settings.canMatchSameRole
             });
             this.matcher.setIds(game.pl.id.getAllKeys());
             // Generates new random matches for this round.
@@ -23246,7 +22859,9 @@ if (!Array.prototype.indexOf) {
                     rounds: nRounds,
                     cycle: settings.cycle,
                     skipBye: settings.skipBye,
-                    bye: settings.bye
+                    bye: settings.bye,
+                    fixedRoles: settings.fixedRoles,
+                    canMatchSameRole: settings.canMatchSameRole
                 });
                 this.matcher.setIds(game.pl.id.getAllKeys());
                 // Generates matches.
@@ -23311,6 +22926,9 @@ if (!Array.prototype.indexOf) {
                     }
                     // Add options to array.
                     matches[ii] = opts;
+
+                    // Keep reference.
+                    matchesById[id1] = opts.options;
                 }
 
                 // Prepare options to send to player 2, if role2 is defined.
@@ -23329,22 +22947,29 @@ if (!Array.prototype.indexOf) {
                     }
                     // Add options to array.
                     matches[ii] = opts;
+
+                    // Keep reference.
+                    matchesById[id2] = opts.options;
                 }
             }
             else if (sayPartner) {
                 if (id1 !== missId) {
                     opts = { id: id1, options: { partner: id2 } };
                     matches[ii] = opts;
+                    matchesById[id1] = opts.options;
                 }
                 if (id2 !== missId) {
                     if (id1 !== missId) ii++;
                     opts = { id: id2, options: { partner: id1 } };
                     matches[ii] = opts;
+                    matchesById[id2] = opts.options;
                 }
             }
         }
 
-        // Store reference to last valid settings.
+        // Store references.
+        this.lastMatches = matches;
+        this.lastMatchesById = matchesById;
         this.lastSettings = settings;
 
         return matches;
@@ -23358,19 +22983,20 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # GameDB
- * Copyright(c) 2016 Stefano Balietti
+ * Copyright(c) 2017 Stefano Balietti
  * MIT Licensed
  *
  * Provides a simple, lightweight NO-SQL database for nodeGame
  *
  * Entries are stored as GameBit messages.
  *
- * It automatically creates indexes.
+ * It automatically indexes inserted items by:
  *
- * 1. by player,
- * 2. by stage
+ *  - player,
+ *  - stage.
  *
  * @see GameStage.compare
+ * @see NDDB
  */
 (function(exports, parent) {
 
@@ -23472,7 +23098,7 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # Game
- * Copyright(c) 2017 Stefano Balietti
+ * Copyright(c) 2017 Stefano Balietti <ste@nodegame.org>
  * MIT Licensed
  *
  * Handles the flow of the game
@@ -23693,11 +23319,10 @@ if (!Array.prototype.indexOf) {
          *
          * TRUE, if DONE was emitted and evaluated successfully
          *
-         * If TRUE, when PLAYING is emitted the game will try to step
-         * immediately.
+         * If TRUE, when PLAYING is emitted `node.done` is called
+         * immediately, and the game tries to step forward.
          *
          * @see NodeGameClient.done
-         * @see Game.doneCalled
          */
         this.willBeDone = false;
 
@@ -23722,7 +23347,7 @@ if (!Array.prototype.indexOf) {
          *
          * @see Game.step
          */
-        this._steppedSteps = [new GameStage()];
+        this._steppedSteps = [ new GameStage() ];
 
         /**
          * ### Game._breakStage
@@ -24187,6 +23812,7 @@ if (!Array.prototype.indexOf) {
         if (this.plot.getProperty(nextStep, 'syncStepping')) {
 
             matcherOptions = this.plot.getProperty(nextStep, 'matcher');
+
             if (matcherOptions) {
 
                 // matches = [
@@ -24218,7 +23844,6 @@ if (!Array.prototype.indexOf) {
                         node.remoteCommand('goto_step', pid, remoteOptions);
                     }
                 }
-
             }
             else {
                 if (curStep.stage === 0) {
@@ -24276,7 +23901,7 @@ if (!Array.prototype.indexOf) {
         // Here we start processing the new STEP.
 
         // TODO maybe update also in case of string.
-        node.emit('STEPPING');
+        node.emit('STEPPING', curStep, nextStep);
 
         // Check for stage/step existence:
         nextStageObj = this.plot.getStage(nextStep);
@@ -24316,22 +23941,29 @@ if (!Array.prototype.indexOf) {
         // inserted in the plot, or be already in the plot.
         role = this.plot.getProperty(nextStep, 'role');
 
-        if (!role) role = null;
-        else if (role === true) role = this.role;
-        else if ('function' === typeof role) role = role.call(this);
-
-        if (role === null && this.getProperty('roles') !== null) {
-            throw new Error('Game.gotoStep: "role" is null, but "roles" ' +
-                            'are found in step ' + nextStep);
+        if (role === true) {
+            if (!this.role) {
+                throw new Error('Game.gotoStep: "role" is true, but no ' +
+                                'previous role is found in step ' + nextStep);
+            }
         }
+        else {
+            if (!role) role = null;
+            else if ('function' === typeof role) role = role.call(this);
 
-        // Overwrites step properties if a role is set.
-        this.setRole(role, true);
+            if (role === null && this.getProperty('roles') !== null) {
+                throw new Error('Game.gotoStep: "role" is null, but "roles" ' +
+                                'are found in step ' + nextStep);
+            }
+
+            // Overwrites step properties if a role is set.
+            this.setRole(role, true);
+        }
 
         partner = this.plot.getProperty(nextStep, 'partner');
         if (!partner) partner = null;
         else if (partner === true) partner = this.partner;
-        else if ('function' === typeof partner) partner= partner.call(this);
+        else if ('function' === typeof partner) partner = partner.call(this);
         this.setPartner(partner, true);
 
         if (stageInit) {
@@ -24376,7 +24008,11 @@ if (!Array.prototype.indexOf) {
         // Update list of stepped steps.
         this._steppedSteps.push(nextStep);
 
-        this.execStep(this.getCurrentGameStage());
+        // If we should be done now, we emit PLAYING without executing the step.
+        // node.game.willBeDone is already set, and will trigger node.done().
+        if (this.beDone) node.emit('PLAYING');
+        else this.execStep(this.getCurrentGameStage());
+
         return true;
     };
 
@@ -24392,10 +24028,11 @@ if (!Array.prototype.indexOf) {
         var widget, widgetObj, widgetRoot;
         var widgetCb, widgetExit, widgetDone;
         var doneCb, origDoneCb, exitCb, origExitCb;
-        var w, frame, uri, frameOptions, frameAutoParse;
+        var w, frame, uri, frameOptions, frameAutoParse, reloadFrame;
 
         if ('object' !== typeof step) {
-            throw new Error('Game.execStep: step must be object.');
+            throw new TypeError('Game.execStep: step must be object. Found: ' +
+                                step);
         }
 
         cb = this.plot.getProperty(step, 'cb');
@@ -24443,7 +24080,7 @@ if (!Array.prototype.indexOf) {
             };
 
             // Make the step callback.
-            // TODO: check. Does it work with roles?
+            // Notice: This works with roles also.
             if (cb) {
                 origCb = cb;
                 cb = function() {
@@ -24532,10 +24169,6 @@ if (!Array.prototype.indexOf) {
             }
         }
 
-        // TODO: compare currently loaded frame, with
-        // requested frame. If it the same, and no forceReload flag is found
-        // it is not passed to W.loadFrame.
-
         // Handle frame loading natively, if required.
         if (frame) {
             w = this.node.window;
@@ -24544,6 +24177,7 @@ if (!Array.prototype.indexOf) {
                                 step + ', but nodegame-window is not loaded.');
             }
             frameOptions = {};
+            if ('function' === typeof frame) frame = frame.call(node.game);
             if ('string' === typeof frame) {
                 uri = frame;
             }
@@ -24570,21 +24204,43 @@ if (!Array.prototype.indexOf) {
             }
             else {
                 throw new TypeError('Game.execStep: frame must be string or ' +
-                                    'object: ' + frame + '. ' +
+                                    'object. Found: ' + frame + '. ' +
                                     'Step: ' + step);
 
             }
 
-            // In case we are not changing frame, we do not reload it,
-            // unless we are forced to.
-            if (uri === w.unprocessedUri && !frameOptions.forceReload) {
-                this.execCallback(cb);
+            // We reload the frame if (order matters):
+            // - regardless of uri, follows what frameOptions.reload says;
+            // - it is a different uri from previous step;
+            // - it is the same uri, but different stage or round.
+            if ('undefined' !== typeof frame.reload) {
+                reloadFrame = !!frame.reload;
             }
             else {
+                reloadFrame = uri !== w.unprocessedUri;
+                if (!reloadFrame) {
+                    // Get the previously played step
+                    // (-2, because current step is already inserted).
+                    reloadFrame =
+                        this._steppedSteps[this._steppedSteps.length-2];
+                    if (reloadFrame) {
+                        reloadFrame = (reloadFrame.round !== step.round ||
+                                       reloadFrame.stage !== step.stage);
+                    }
+                    else {
+                        reloadFrame = true;
+                    }
+                }
+            }
+
+            if (reloadFrame) {
                 // Auto load frame and wrap cb.
                 this.execCallback(function() {
                     this.node.window.loadFrame(uri, cb, frameOptions);
                 });
+            }
+            else {
+                this.execCallback(cb);
             }
         }
         else {
@@ -24648,6 +24304,23 @@ if (!Array.prototype.indexOf) {
      * @deprecated
      */
     Game.prototype.getCurrentStep = Game.prototype.getCurrentStepObj;
+
+    /**
+     * ### Game.getCurrentStageObj
+     *
+     * Returns the object representing the current game stage.
+     *
+     * The returning object includes all the properties, such as:
+     * _id_, _init_, etc.
+     *
+     * @return {object} The game-stage as defined in the stager.
+     *
+     * @see Stager
+     * @see GamePlot
+     */
+    Game.prototype.getCurrentStageObj = function() {
+        return this.plot.getStage(this.getCurrentGameStage());
+    };
 
     /**
      * ### Game.getCurrentStepProperty
@@ -24849,21 +24522,18 @@ if (!Array.prototype.indexOf) {
      * @see Game.shouldPublishUpdate
      */
     Game.prototype.publishUpdate = function(type, update) {
-        var node;
         if ('string' !== typeof type) {
-            throw new TypeError('Game.publishUpdate: type must be string.');
+            throw new TypeError('Game.publishUpdate: type must be string. ' +
+                               'Found: ' + type);
         }
         if (type !== 'stage' &&
             type !== 'stageLevel' &&
             type !== 'stateLevel') {
 
-            throw new Error(
-                'Game.publishUpdate: unknown update type (' + type + ')');
+            throw new Error('Game.publishUpdate: unknown update type: ' + type);
         }
-        node = this.node;
-
         if (this.shouldPublishUpdate(type, update)) {
-            node.socket.send(node.msg.create({
+            this.node.socket.send(this.node.msg.create({
                 target: constants.target.PLAYER_UPDATE,
                 data: update,
                 text: type,
@@ -25093,6 +24763,11 @@ if (!Array.prototype.indexOf) {
         if (!this.isReady()) return false;
         if (!this.sizeManager.checkSize()) return false;
 
+        // `syncOnLoaded` forces clients to wait for all the others to be
+        // fully loaded before releasing the control of the screen to the
+        // players. This introduces a little overhead in
+        // communications and delay in the execution of a stage. It is
+        // not necessary in local networks, and it is FALSE by default.
         syncOnLoaded = this.plot.getProperty(curGameStage, 'syncOnLoaded');
         if (!syncOnLoaded) return true;
         return node.game.pl.isStepLoaded(curGameStage);
@@ -25268,14 +24943,15 @@ if (!Array.prototype.indexOf) {
             }
             roles = this.getProperty('roles');
             if (!roles) {
-                throw new Error('Game.setRole: trying to set role "' + role +
-                                '", but \'roles\' not found in current step: ' +
+                throw new Error('Game.setRole: trying to set role "' +
+                                role + '", but \'roles\' not found in ' +
+                                'current step: ' +
                                 this.getCurrentGameStage());
             }
             roleObj = roles[role];
             if (!roleObj) {
-                throw new Error('Game.setRole: role "' + role + '" not found ' +
-                                'in current step: ' +
+                throw new Error('Game.setRole: role "' + role +
+                                '" not found in current step: ' +
                                 this.getCurrentGameStage());
             }
 
@@ -25285,6 +24961,7 @@ if (!Array.prototype.indexOf) {
                     this.plot.tmpCache(prop, roleObj[prop]);
                 }
             }
+
         }
         else if (role !== null) {
             throw new TypeError('Game.setRole: role must be string or null. ' +
@@ -25359,10 +25036,13 @@ if (!Array.prototype.indexOf) {
      *
      * Valid options:
      *
-     *   - willBeDone: sets game.willBeDone to TRUE,
+     *   - willBeDone: game will be done after loading the frame and executing
+     *       the step callback function,
+     *   - beDone: game is done without loading the frame or
+     *       executing the step callback function,
      *   - plot: add entries to the tmpCache of the plot,
      *   - cb: a callback executed with the game context, and with options
-     *         object itself as parameter
+     *       object itself as parameter
      *
      * @param {Game} game The game instance
      * @param {object} options The options to process
@@ -25370,11 +25050,18 @@ if (!Array.prototype.indexOf) {
      * @see Game.gotoStep
      * @see GamePlot.tmpCache
      * @see Game.willBeDone
+     * @see Game.beDone
      */
     function processGotoStepOptions(game, options) {
         var prop;
 
-        if (options.willBeDone) {
+        // Be done.. now! Skips Game.execStep.
+        if (options.beDone) {
+            game.willBeDone = true;
+            game.beDone = true;
+        }
+        else if (options.willBeDone) {
+            // TODO: why not setting willBeDone? It was not working, check!
             // Call node.done() immediately after PLAYING is emitted.
             game.node.once('PLAYING', function() {
                 game.node.done();
@@ -25412,362 +25099,8 @@ if (!Array.prototype.indexOf) {
 );
 
 /**
- * # GameSession
- * Copyright(c) 2015 Stefano Balietti
- * MIT Licensed
- *
- * `nodeGame` session manager
- */
-(function(exports, node) {
-
-    "use strict";
-
-    // ## Global scope
-
-    var J = node.JSUS;
-
-    // Exposing constructor.
-    exports.GameSession = GameSession;
-    exports.GameSession.SessionManager = SessionManager;
-
-    GameSession.prototype = new SessionManager();
-    GameSession.prototype.constructor = GameSession;
-
-    /**
-     * ## GameSession constructor
-     *
-     * Creates a new instance of GameSession
-     *
-     * @param {NodeGameClient} node A reference to the node object.
-     */
-    function GameSession(node) {
-        SessionManager.call(this);
-
-        /**
-         * ### GameSession.node
-         *
-         * The reference to the node object.
-         */
-        this.node = node;
-
-        // Register default variables in the session.
-        this.register('player', {
-            set: function(p) {
-                node.createPlayer(p);
-            },
-            get: function() {
-                return node.player;
-            }
-        });
-
-        this.register('game.memory', {
-            set: function(value) {
-                node.game.memory.clear(true);
-                node.game.memory.importDB(value);
-            },
-            get: function() {
-                return (node.game.memory) ? node.game.memory.fetch() : null;
-            }
-        });
-
-        this.register('events.history', {
-            set: function(value) {
-                node.events.history.history.clear(true);
-                node.events.history.history.importDB(value);
-            },
-            get: function() {
-                return node.events.history ?
-                    node.events.history.history.fetch() : null;
-            }
-        });
-
-        this.register('stage', {
-            set: function() {
-                // GameSession.restoreStage
-            },
-            get: function() {
-                return node.player.stage;
-            }
-        });
-
-        this.register('node.env');
-    }
-
-
-//    GameSession.prototype.restoreStage = function(stage) {
-//
-//        try {
-//            // GOTO STATE
-//            node.game.execStage(node.plot.getStep(stage));
-//
-//            var discard = ['LOG',
-//                           'STATECHANGE',
-//                           'WINDOW_LOADED',
-//                           'BEFORE_LOADING',
-//                           'LOADED',
-//                           'in.say.STATE',
-//                           'UPDATED_PLIST',
-//                           'NODEGAME_READY',
-//                           'out.say.STATE',
-//                           'out.set.STATE',
-//                           'in.say.PLIST',
-//                           'STAGEDONE', // maybe not here
-//                           'out.say.HI'
-//                          ];
-//
-//            // RE-EMIT EVENTS
-//            node.events.history.remit(node.game.getStateLevel(), discard);
-//            node.info('game stage restored');
-//            return true;
-//        }
-//        catch(e) {
-//            node.err('could not restore game stage. ' +
-//                     'An error has occurred: ' + e);
-//            return false;
-//        }
-//
-//    };
-
-    /**
-     * ## SessionManager constructor
-     *
-     * Creates a new session manager.
-     */
-    function SessionManager() {
-
-        /**
-         * ### SessionManager.session
-         *
-         * Container of all variables registered in the session.
-         */
-        this.session = {};
-    }
-
-    // ## SessionManager methods
-
-    /**
-     * ### SessionManager.getVariable (static)
-     *
-     * Default session getter.
-     *
-     * @param {string} p The path to a variable included in _node_
-     * @return {mixed} The requested variable
-     */
-    SessionManager.getVariable = function(p) {
-        return J.getNestedValue(p, node);
-    };
-
-    /**
-     * ### SessionManager.setVariable (static)
-     *
-     * Default session setter.
-     *
-     * @param {string} p The path to the variable to set in _node_
-     * @param {mixed} value The value to set
-     */
-    SessionManager.setVariable = function(p, value) {
-        J.setNestedValue(p, value, node);
-    };
-
-    /**
-     * ### SessionManager.register
-     *
-     * Register a new variable to the session
-     *
-     * Overwrites previously registered variables with the same name.
-     *
-     * Usage example:
-     *
-     * ```javascript
-     * node.session.register('player', {
-     *       set: function(p) {
-     *           node.createPlayer(p);
-     *       },
-     *       get: function() {
-     *           return node.player;
-     *       }
-     * });
-     * ```
-     *
-     * @param {string} path A string containing a path to a variable
-     * @param {object} conf Optional. Configuration object containing setters
-     *   and getters
-     */
-    SessionManager.prototype.register = function(path, conf) {
-        if ('string' !== typeof path) {
-            throw new TypeError('SessionManager.register: path must be ' +
-                                'string.');
-        }
-        if (conf && 'object' !== typeof conf) {
-            throw new TypeError('SessionManager.register: conf must be ' +
-                                'object or undefined.');
-        }
-
-        this.session[path] = {
-
-            get: (conf && conf.get) ?
-                conf.get : function() {
-                    return J.getNestedValue(path, node);
-                },
-
-            set: (conf && conf.set) ?
-                conf.set : function(value) {
-                    J.setNestedValue(path, value, node);
-                }
-        };
-
-        return this.session[path];
-    };
-
-    /**
-     * ### SessionManager.unregister
-     *
-     * Unegister a variable from session
-     *
-     * @param {string} path A string containing a path to a variable previously
-     *   registered.
-     *
-     * @see SessionManager.register
-     */
-    SessionManager.prototype.unregister = function(path) {
-        if ('string' !== typeof path) {
-            throw new TypeError('SessionManager.unregister: path must be ' +
-                                'string.');
-        }
-        if (!this.session[path]) {
-            node.warn('SessionManager.unregister: path is not registered ' +
-                      'in the session: ' + path + '.');
-            return false;
-        }
-
-        delete this.session[path];
-        return true;
-    };
-
-    /**
-     * ### SessionManager.clear
-     *
-     * Unegister all registered session variables
-     *
-     * @see SessionManager.unregister
-     */
-    SessionManager.prototype.clear = function() {
-        this.session = {};
-    };
-
-    /**
-     * ### SessionManager.get
-     *
-     * Returns the value/s of one/all registered session variable/s
-     *
-     * @param {string|undefined} path A previously registred variable or
-     *   undefined to return all values
-     *
-     * @see SessionManager.register
-     */
-    SessionManager.prototype.get = function(path) {
-        var session = {};
-        // Returns one variable.
-        if ('string' === typeof path) {
-            return this.session[path] ? this.session[path].get() : undefined;
-        }
-        // Returns all registered variables.
-        else if ('undefined' === typeof path) {
-            for (path in this.session) {
-                if (this.session.hasOwnProperty(path)) {
-                    session[path] = this.session[path].get();
-                }
-            }
-            return session;
-        }
-        else {
-            throw new TypeError('SessionManager.get: path must be string or ' +
-                                'undefined.');
-        }
-    };
-
-    /**
-     * ### SessionManager.isRegistered
-     *
-     * Returns TRUE, if a variable is registred
-     *
-     * @param {string} path A previously registred variable
-     *
-     * @return {boolean} TRUE, if the variable is registered
-     *
-     * @see SessionManager.register
-     * @see SessionManager.unregister
-     */
-    SessionManager.prototype.isRegistered = function(path) {
-        if ('string' !== typeof path) {
-            throw new TypeError('SessionManager.isRegistered: path must be ' +
-                                'string.');
-        }
-        return this.session.hasOwnProperty(path);
-    };
-
-    /**
-     * ### SessionManager.serialize
-     *
-     * Returns an object containing that can be to restore the session
-     *
-     * The serialized session is an object containing _getter_, _setter_, and
-     * current value of each of the registered session variables.
-     *
-     * @return {object} session The serialized session
-     *
-     * @see SessionManager.restore
-     */
-    SessionManager.prototype.serialize = function() {
-        var session = {};
-        for (var path in this.session) {
-            if (this.session.hasOwnProperty(path)) {
-                session[path] = {
-                    value: this.session[path].get(),
-                    get: this.session[path].get,
-                    set: this.session[path].set
-                };
-            }
-        }
-        return session;
-    };
-
-    /**
-     * ### SessionManager.restore
-     *
-     * Restore a previously serialized session object
-     *
-     * @param {object} session A serialized session object
-     * @param {boolean} register Optional. If TRUE, every path is also
-     *    registered before being restored.
-     */
-    SessionManager.prototype.restore = function(session, register) {
-        var i;
-        if ('object' !== typeof session) {
-            throw new TypeError('SessionManager.restore: session must be ' +
-                                'object.');
-        }
-        register = 'undefined' !== typeof register ? register : true;
-        for (i in session) {
-            if (session.hasOwnProperty(i)) {
-                if (register) this.register(i, session[i]);
-                session[i].set(session[i].value);
-            }
-        }
-    };
-
-//    SessionManager.prototype.store = function() {
-//        //node.store(node.socket.id, this.get());
-//    };
-
-})(
-    'undefined' != typeof node ? node : module.exports,
-    'undefined' != typeof node ? node : module.parent.exports
-);
-
-/**
  * # Timer
- * Copyright(c) 2016 Stefano Balietti
+ * Copyright(c) 2017 Stefano Balietti
  * MIT Licensed
  *
  * Timing-related utility functions
@@ -25870,7 +25203,7 @@ if (!Array.prototype.indexOf) {
             var i, time, pt, cpt, pausedTime;
             pt = that._pausedTimestamps;
             cpt = that._cumulPausedTimestamps;
-            time = (new Date()).getTime();
+            time = J.now();
             for (i in pt) {
                 if (pt[i] && pt.hasOwnProperty(i)) {
                     pausedTime = time - pt[i];
@@ -25915,7 +25248,8 @@ if (!Array.prototype.indexOf) {
             ('object' !== typeof options && 'number' !== typeof options)) {
 
             throw new TypeError('Timer.createTimer: options must be ' +
-                                'undefined, object or number.');
+                                'undefined, object or number. Found: ' +
+                                options);
         }
 
         if ('number' === typeof options) options = { milliseconds: options };
@@ -25925,8 +25259,8 @@ if (!Array.prototype.indexOf) {
             J.uniqueKey(this.timers, 'timer_' + J.randomInt(0, 10000000));
 
         if (this.timers[options.name]) {
-            throw new Error('Timer.createTimer: timer ' + options.name +
-                            ' already existing.');
+            throw new Error('Timer.createTimer: timer name already in use: ' +
+                            options.name);
         }
 
         // If game is paused add options startPaused, unless user
@@ -25987,13 +25321,13 @@ if (!Array.prototype.indexOf) {
         if ('string' === typeof gameTimer) {
             if (!this.timers[gameTimer]) {
                 throw new Error('node.timer.destroyTimer: gameTimer not ' +
-                                'found: ' + gameTimer + '.');
+                                'found: ' + gameTimer);
             }
             gameTimer = this.timers[gameTimer];
         }
         if ('object' !== typeof gameTimer) {
             throw new Error('node.timer.destroyTimer: gameTimer must be ' +
-                            'string or object.');
+                            'string or object. Found: ' + gameTimer);
         }
 
         // Stop timer.
@@ -26061,7 +25395,8 @@ if (!Array.prototype.indexOf) {
      */
     Timer.prototype.getTimer = function(name) {
         if ('string' !== typeof name) {
-            throw new TypeError('Timer.getTimer: name must be string.');
+            throw new TypeError('Timer.getTimer: name must be string. Found: ' +
+                                name);
         }
         return this.timers[name] || null;
     };
@@ -26074,19 +25409,24 @@ if (!Array.prototype.indexOf) {
      * @param {string} name The name of the timestamp
      * @param {number|undefined} time Optional. The time in ms as returned by
      *   Date.getTime(). Default: Current time.
+     *
+     * @return {number} time The value of the timestamp set
+     *
+     * @see Timer.getTimestamp
      */
     Timer.prototype.setTimestamp = function(name, time) {
         var i;
         // Default time: Current time
-        if ('undefined' === typeof time) time = (new Date()).getTime();
+        if ('undefined' === typeof time) time = J.now();
 
         // Check inputs:
         if ('string' !== typeof name) {
-            throw new Error('Timer.setTimestamp: name must be a string');
+            throw new Error('Timer.setTimestamp: name must be a string. ' +
+                            'Found: ' + name);
         }
         if ('number' !== typeof time) {
             throw new Error('Timer.setTimestamp: time must be a number or ' +
-                            'undefined');
+                            'undefined. Found: ' + time);
         }
 
         // We had at least one pause.
@@ -26110,6 +25450,7 @@ if (!Array.prototype.indexOf) {
             }
         }
         this.timestamps[name] = time;
+        return time;
     };
 
     /**
@@ -26125,14 +25466,11 @@ if (!Array.prototype.indexOf) {
     Timer.prototype.getTimestamp = function(name) {
         // Check input:
         if ('string' !== typeof name) {
-            throw new Error('Timer.getTimestamp: name must be a string');
+            throw new Error('Timer.getTimestamp: name must be a string. ' +
+                            'Found: ' + name);
         }
-        if (this.timestamps.hasOwnProperty(name)) {
-            return this.timestamps[name];
-        }
-        else {
-            return null;
-        }
+        if (this.timestamps.hasOwnProperty(name)) return this.timestamps[name];
+        else return null;
     };
 
     /**
@@ -26166,11 +25504,12 @@ if (!Array.prototype.indexOf) {
         var currentTime;
 
         // Get current time:
-        currentTime = (new Date()).getTime();
+        currentTime = J.now();
 
         // Check input:
         if ('string' !== typeof name) {
-            throw new TypeError('Timer.getTimeSince: name must be string.');
+            throw new TypeError('Timer.getTimeSince: name must be string. ' +
+                                'Found: ' + name);
         }
 
         if (this.timestamps.hasOwnProperty(name)) {
@@ -26206,24 +25545,26 @@ if (!Array.prototype.indexOf) {
 
         // Check input:
         if ('string' !== typeof nameFrom) {
-            throw new TypeError('Timer.getTimeDiff: nameFrom must be string.');
+            throw new TypeError('Timer.getTimeDiff: nameFrom must be string.' +
+                               'Found: ' + nameFrom);
         }
         if ('string' !== typeof nameTo) {
-            throw new TypeError('Timer.getTimeDiff: nameTo must be string.');
+            throw new TypeError('Timer.getTimeDiff: nameTo must be string. ' +
+                                'Found: ' + nameTo);
         }
 
         timeFrom = this.timestamps[nameFrom];
 
         if ('undefined' === typeof timeFrom || timeFrom === null) {
             throw new Error('Timer.getTimeDiff: nameFrom does not resolve to ' +
-                            'a valid timestamp.');
+                            'a valid timestamp: ' + nameFrom);
         }
 
         timeTo = this.timestamps[nameTo];
 
         if ('undefined' === typeof timeTo || timeTo === null) {
             throw new Error('Timer.getTimeDiff: nameTo does not resolve to ' +
-                            'a valid timestamp.');
+                            'a valid timestamp: ' + nameTo);
         }
 
         if (effective) {
@@ -26257,7 +25598,8 @@ if (!Array.prototype.indexOf) {
     Timer.prototype.randomEmit = function(event, maxWait) {
         var args, i, len;
         if ('string' !== typeof event) {
-            throw new TypeError('Timer.randomEmit: event must be string.');
+            throw new TypeError('Timer.randomEmit: event must be string. ' +
+                                'Found: ' + event);
         }
         len = arguments.length;
         if (len == 3) {
@@ -26296,14 +25638,15 @@ if (!Array.prototype.indexOf) {
     Timer.prototype.randomExec = function(func, maxWait, ctx) {
         var args, i, len;
         if ('function' !== typeof func) {
-            throw new TypeError('Timer.randomExec: func must be function.');
+            throw new TypeError('Timer.randomExec: func must be function. ' +
+                               'Found: ' + func);
         }
         if ('undefined' === typeof ctx) {
             ctx = this.node.game;
         }
         else if ('object' !== typeof ctx && 'function' !== typeof ctx) {
             throw new TypeError('Timer.randomExec: ctx must be object, ' +
-                                'function or undefined.');
+                                'function or undefined. Found: ' + ctx);
         }
         len = arguments.length;
         if (len == 4) {
@@ -26441,7 +25784,7 @@ if (!Array.prototype.indexOf) {
         }
         else if ('number' !== typeof maxWait) {
             throw new TypeError('Timer.' + method + ': maxWait must ' +
-                                    'be number or undefined.');
+                                'be number or undefined. Found: ' + maxWait);
         }
 
         waitTime = Math.random() * maxWait;
@@ -26526,70 +25869,84 @@ if (!Array.prototype.indexOf) {
         /**
          * ### node
          *
-         * Internal reference to node.
+         * Internal reference to node
          */
         this.node = node;
 
         /**
          * ### name
          *
-         * Internal name of the timer.
+         * Internal name of the timer
          */
         this.name = options.name || 'timer_' + J.randomInt(0, 1000000);
 
         /**
          * ### GameTimer.status
          *
-         * Numerical index keeping the current the state of the GameTimer obj.
+         * Numerical index keeping the current the state of the GameTimer obj
          */
         this.status = GameTimer.UNINITIALIZED;
 
         /**
          * ### GameTimer.options
          *
-         * The current settings for the GameTimer.
+         * The current settings for the GameTimer
          */
         this.options = options;
 
         /**
          * ### GameTimer.timerId
          *
-         * The ID of the javascript interval.
+         * The ID of the javascript interval
          */
         this.timerId = null;
 
         /**
          * ### GameTimer.timeLeft
          *
-         * Total running time of timer.
+         * Total running time of timer
          */
         this.milliseconds = null;
 
         /**
          * ### GameTimer.timeLeft
          *
-         * Milliseconds left before time is up.
+         * Milliseconds left before time is up
          */
         this.timeLeft = null;
 
         /**
+         * ### GameTimer.timeLeft
+         *
+         * Milliseconds left when the last stop was called
+         */
+        this.timeLeftAtStop = null;
+
+        /**
          * ### GameTimer.timePassed
          *
-         * Milliseconds already passed from the start of the timer.
+         * Milliseconds already passed from the start of the timer
          */
         this.timePassed = 0;
 
         /**
+         * ### GameTimer.timePassed
+         *
+         * Milliseconds already passed when the last stop was called
+         */
+        this.timePassedAtStop = null;
+
+        /**
          * ### GameTimer.update
          *
-         * The frequency of update for the timer (in milliseconds).
+         * The frequency of update for the timer (in milliseconds)
          */
         this.update = undefined;
 
         /**
          * ### GameTimer.updateRemaining
          *
-         * Milliseconds remaining for current update.
+         * Milliseconds remaining for current update
          */
         this.updateRemaining = 0;
 
@@ -26750,7 +26107,7 @@ if (!Array.prototype.indexOf) {
                 }
             }
             else {
-                this.timeup = this.timeup || 'TIMEUP'
+                this.timeup = this.timeup || 'TIMEUP';
             }
 
             if (options.hooks) {
@@ -26826,7 +26183,7 @@ if (!Array.prototype.indexOf) {
         }
         else {
             throw new TypeError('GameTimer.fire: h must be function, string ' +
-                                'or object.');
+                                'or object. Found: ' + h);
         }
     };
 
@@ -26867,7 +26224,7 @@ if (!Array.prototype.indexOf) {
         }
 
         // Remember time of start (used by this.pause to compute remaining time)
-        this.updateStart = (new Date()).getTime();
+        this.updateStart = J.now();
 
         // Fires the event immediately if time is zero.
         // Double check necessary in strict mode.
@@ -26978,7 +26335,7 @@ if (!Array.prototype.indexOf) {
             }
             else {
                 // Save the difference of time left.
-                timestamp = (new Date()).getTime();
+                timestamp = J.now();
                 this.updateRemaining =
                     this.update - (timestamp - this.updateStart);
             }
@@ -27023,7 +26380,7 @@ if (!Array.prototype.indexOf) {
 
         this.startPaused = false;
 
-        this.updateStart = (new Date()).getTime();
+        this.updateStart = J.now();
 
         that = this;
         // Run rest of this "update" interval:
@@ -27059,7 +26416,9 @@ if (!Array.prototype.indexOf) {
         clearInterval(this.timerId);
         clearTimeout(this.timerId);
         this.timerId = null;
+        this.timePassedAtStop = this.timePassed;
         this.timePassed = 0;
+        this.timeLeftAtStop = this.timeLeft;
         this.timeLeft = null;
         this.startPaused = null;
         this.updateRemaining = 0;
@@ -27187,12 +26546,13 @@ if (!Array.prototype.indexOf) {
         if ('undefined' === typeof sync) return this.stagerSync;
         if ('boolean' !== typeof sync) {
             throw new TypeError('GameTimer.syncWithStager: sync must be ' +
-                                'boolean or undefined.');
+                                'boolean or undefined. Found: ' + sync);
         }
         if (property) {
             if ('string' !== typeof property) {
                 throw new TypeError('GameTimer.syncWithStager: property ' +
-                                    'must be string or undefined.');
+                                    'must be string or undefined. Found: ' +
+                                    property);
             }
             this.setStagerProperty(property);
         }
@@ -27261,7 +26621,7 @@ if (!Array.prototype.indexOf) {
         checkDestroyed(this, 'setStagerProperty');
         if ('string' === typeof property) {
             throw new TypeError('GameTimer.setStageProperty: property must ' +
-                                'be string.');
+                                'be string. Found: ' + property);
         }
         this.stagerProperty = property;
     };
@@ -27381,7 +26741,7 @@ if (!Array.prototype.indexOf) {
         that.status = GameTimer.RUNNING;
         that.timePassed += that.update;
         that.timeLeft -= that.update;
-        that.updateStart = (new Date()).getTime();
+        that.updateStart = J.now();
         // Fire custom hooks from the latest to the first if any.
         for (i = that.hooks.length; i > 0; i--) {
             that.fire(that.hooks[(i-1)]);
@@ -28228,6 +27588,9 @@ if (!Array.prototype.indexOf) {
      * @see Matcher.matches
      */
     Matcher.prototype.normalizeRound = function(round) {
+        if (!this.matches) {
+            throw new TypeError('Matcher.normalizeRound: no matches found.');
+        }
         if ('number' !== typeof round || isNaN(round) || round < 1) {
             throw new TypeError('Matcher.normalizeRound: round must be a ' +
                                 'number > 0. Found: ' + round);
@@ -28260,6 +27623,9 @@ if (!Array.prototype.indexOf) {
             throw new TypeError('Matcher.replaceId: newId should be a ' +
                                 'non-empty string. Found: ' + newId);
         }
+
+        // No id was assigned yet.
+        if (!this.resolvedMatches) return false;
 
         // IdsMap.
         m = this.idsMap[oldId];
@@ -28325,7 +27691,6 @@ if (!Array.prototype.indexOf) {
 
         // Update resolvedMatchesById.
         m = this.resolvedMatchesById;
-
         for (i in m) {
             if (m.hasOwnProperty(i)) {
                 if (i === oldId) {
@@ -28334,22 +27699,25 @@ if (!Array.prototype.indexOf) {
                 }
                 else {
                     lenJ = m[i].length;
-                    if (lenJ == 1) {
-                        m[i][0] = newId;
-                    }
-                    else if (lenJ === 2) {
-                        if (m[i][0] === oldId) m[i][0] = newId;
-                        else m[i][1] = newId;
-                    }
-                    else {
-                        j = -1;
-                        for ( ; ++j < lenJ ; ) {
-                            if (m[i][j] === oldId) {
-                                m[i][j] = newId;
-                                break;
-                            }
+                    // THIS OPTIMIZATION DOES NOT SEEM TO WORK.
+                    // In fact, there might be more matches with the same
+                    // partner in sequence.
+                    // And also if === 1, it should be checked.
+                    // if (lenJ == 1) {
+                    //     m[i][0] = newId;
+                    // }
+                    // else if (lenJ === 2) {
+                    //     if (m[i][0] === oldId) m[i][0] = newId;
+                    //     else m[i][1] = newId;
+                    // }
+                    // else {
+                    j = -1;
+                    for ( ; ++j < lenJ ; ) {
+                        if (m[i][j] === oldId) {
+                            m[i][j] = newId;
                         }
                     }
+                    // }
                 }
             }
         }
@@ -28426,7 +27794,7 @@ if (!Array.prototype.indexOf) {
     }
 
     /**
-     * ### pairMatcher
+     * ### pairMatcherOld
      *
      * Creates tournament schedules for different algorithms
      *
@@ -28453,118 +27821,247 @@ if (!Array.prototype.indexOf) {
      *
      * @return {array} matches The matches according to the algorithm
      */
-     function pairMatcher(alg, n, options) {
-         var ps, matches, bye;
-         var i, lenI, j, lenJ, jj;
-         var id1, id2;
-         var roundsLimit, cycle, cycleI, skipBye;
+    function pairMatcherOld(alg, n, options) {
+        var ps, matches, bye;
+        var i, lenI, j, lenJ, jj;
+        var id1, id2;
+        var roundsLimit, cycle, cycleI, skipBye;
 
-         if ('number' === typeof n && n > 1) {
-             ps = J.seq(0, (n-1));
-         }
-         else if (J.isArray(n) && n.length > 1) {
-             ps = n.slice();
-             n = ps.length;
-         }
-         else {
-             throw new TypeError('pairMatcher.' + alg + ': n must be ' +
-                                 'number > 1 or array of length > 1.');
-         }
-         options = options || {};
+        if ('number' === typeof n && n > 1) {
+            ps = J.seq(0, (n-1));
+        }
+        else if (J.isArray(n) && n.length > 1) {
+            ps = n.slice();
+            n = ps.length;
+        }
+        else {
+            throw new TypeError('pairMatcher.' + alg + ': n must be ' +
+                                'number > 1 or array of length > 1.');
+        }
+        options = options || {};
 
-         bye = 'undefined' !== typeof options.bye ? options.bye : -1;
-         skipBye = options.skipBye || false;
+        bye = 'undefined' !== typeof options.bye ? options.bye : -1;
+        skipBye = options.skipBye || false;
 
-         // Make sure we have even numbers.
-         if ((n % 2) === 1) {
-             ps.push(bye);
-             n += 1;
-         }
+        // Make sure we have even numbers.
+        if ((n % 2) === 1) {
+            ps.push(bye);
+            n += 1;
+        }
 
-         // Limit rounds.
-         if ('number' === typeof options.rounds) {
-             if (options.rounds <= 0) {
-                 throw new Error('pairMatcher.' + alg + ': options.rounds ' +
-                                 'must be a positive number or undefined. ' +
-                                 'Found: ' + options.rounds);
-             }
-             if (options.rounds > (n-1)) {
-                 throw new Error('pairMatcher.' + alg + ': ' +
-                                 'options.rounds cannot be greater than ' +
-                                 (n-1) + '. Found: ' + options.rounds);
-             }
-             // Here roundsLimit does not depend on n (must be smaller).
-             roundsLimit = options.rounds;
-         }
-         else {
-             roundsLimit = n-1;
-         }
+        // Limit rounds.
+        if ('number' === typeof options.rounds) {
+            if (options.rounds <= 0) {
+                throw new Error('pairMatcher.' + alg + ': options.rounds ' +
+                                'must be a positive number or undefined. ' +
+                                'Found: ' + options.rounds);
+            }
+            if (options.rounds > (n-1)) {
+                throw new Error('pairMatcher.' + alg + ': ' +
+                                'options.rounds cannot be greater than ' +
+                                (n-1) + '. Found: ' + options.rounds);
+            }
+            // Here roundsLimit does not depend on n (must be smaller).
+            roundsLimit = options.rounds;
+        }
+        else {
+            roundsLimit = n-1;
+        }
 
-         if ('undefined' !== typeof options.cycle) {
-             cycle = options.cycle;
-             if (cycle !== 'mirror_invert' && cycle !== 'mirror' &&
-                 cycle !== 'repeat_invert' && cycle !== 'repeat') {
+        if ('undefined' !== typeof options.cycle) {
+            cycle = options.cycle;
+            if (cycle !== 'mirror_invert' && cycle !== 'mirror' &&
+                cycle !== 'repeat_invert' && cycle !== 'repeat') {
 
-                 throw new Error('pairMatcher.' + alg + ': options.cycle ' +
-                                 'must be equal to "mirror"/"mirror_invert", ' +
-                                 '"repeat"/"repeat_invert" or undefined . ' +
-                                 'Found: ' + options.cycle);
-             }
+                throw new Error('pairMatcher.' + alg + ': options.cycle ' +
+                                'must be equal to "mirror"/"mirror_invert", ' +
+                                '"repeat"/"repeat_invert" or undefined . ' +
+                                'Found: ' + options.cycle);
+            }
 
-             matches = new Array(roundsLimit*2);
-         }
-         else {
-             matches = new Array(roundsLimit);
-         }
+            matches = new Array(roundsLimit*2);
+        }
+        else {
+            matches = new Array(roundsLimit);
+        }
 
-         i = -1, lenI = roundsLimit;
-         for ( ; ++i < lenI ; ) {
-             // Shuffle list of ids for random.
-             if (alg === 'random') ps = J.shuffle(ps);
-             // Create a new array for round i.
-             lenJ = n / 2;
-             matches[i] = skipBye ? new Array(lenJ-1) : new Array(lenJ);
-             // Check if new need to cycle.
-             if (cycle) {
-                 if (cycle === 'mirror' || cycle === 'mirror_invert') {
-                     cycleI = (roundsLimit*2) -i -1;
-                 }
-                 else {
-                     cycleI = i+roundsLimit;
-                 }
-                 matches[cycleI] = skipBye ?
-                     new Array(lenJ-1) : new Array(lenJ);
-             }
-             // Counter jj is updated only if not skipBye,
-             // otherwise we create holes in the matches array.
-             jj = j = -1;
-             for ( ; ++j < lenJ ; ) {
-                 id1 = ps[j];
-                 id2 = ps[n - 1 - j];
-                 if (!skipBye || (id1 !== bye && id2 !== bye)) {
-                     jj++;
-                     // Insert match.
-                     matches[i][jj] = [ id1, id2 ];
-                     // Insert cycle match (if any).
-                     if (cycle === 'repeat') {
-                         matches[cycleI][jj] = [ id1, id2 ];
-                     }
-                     else if (cycle === 'repeat_invert') {
-                         matches[cycleI][jj] = [ id2, id1 ];
-                     }
-                     else if (cycle === 'mirror') {
-                         matches[cycleI][jj] = [ id1, id2 ];
-                     }
-                     else if (cycle === 'mirror_invert') {
-                         matches[cycleI][jj] = [ id2, id1 ];
-                     }
-                 }
-             }
-             // Permutate for next round.
-             ps.splice(1, 0, ps.pop());
-         }
-         return matches;
-     }
+        i = -1, lenI = roundsLimit;
+        for ( ; ++i < lenI ; ) {
+            // Shuffle list of ids for random.
+            if (alg === 'random') ps = J.shuffle(ps);
+            // Create a new array for round i.
+            lenJ = n / 2;
+            matches[i] = skipBye ? new Array(lenJ-1) : new Array(lenJ);
+            // Check if new need to cycle.
+            if (cycle) {
+                if (cycle === 'mirror' || cycle === 'mirror_invert') {
+                    cycleI = (roundsLimit*2) -i -1;
+                }
+                else {
+                    cycleI = i+roundsLimit;
+                }
+                matches[cycleI] = skipBye ?
+                    new Array(lenJ-1) : new Array(lenJ);
+            }
+            // Counter jj is updated only if not skipBye,
+            // otherwise we create holes in the matches array.
+            jj = j = -1;
+            for ( ; ++j < lenJ ; ) {
+                id1 = ps[j];
+                id2 = ps[n - 1 - j];
+                if (!skipBye || (id1 !== bye && id2 !== bye)) {
+                    jj++;
+                    // Insert match.
+                    matches[i][jj] = [ id1, id2 ];
+                    // Insert cycle match (if any).
+                    if (cycle === 'repeat') {
+                        matches[cycleI][jj] = [ id1, id2 ];
+                    }
+                    else if (cycle === 'repeat_invert') {
+                        matches[cycleI][jj] = [ id2, id1 ];
+                    }
+                    else if (cycle === 'mirror') {
+                        matches[cycleI][jj] = [ id1, id2 ];
+                    }
+                    else if (cycle === 'mirror_invert') {
+                        matches[cycleI][jj] = [ id2, id1 ];
+                    }
+                }
+            }
+            // Permutate for next round.
+            ps.splice(1, 0, ps.pop());
+        }
+        return matches;
+    }
+
+
+    function pairMatcher(alg, n, options) {
+        var ps, matches, bye;
+        var i, lenI, j, lenJ, jj;
+        var id1, id2;
+        var roundsLimit, cycle, cycleI, skipBye;
+        var fixedRolesNoSameMatch;
+
+        if ('number' === typeof n && n > 1) {
+            ps = J.seq(0, (n-1));
+        }
+        else if (J.isArray(n) && n.length > 1) {
+            ps = n.slice();
+            n = ps.length;
+        }
+        else {
+            throw new TypeError('pairMatcher.' + alg + ': n must be ' +
+                                'number > 1 or array of length > 1.');
+        }
+        options = options || {};
+
+        bye = 'undefined' !== typeof options.bye ? options.bye : -1;
+        skipBye = options.skipBye || false;
+
+        // Make sure we have even numbers.
+        if ((n % 2) === 1) {
+            ps.push(bye);
+            n += 1;
+        }
+
+        // Does not work.
+        if (options.fixedRoles && (options.canMatchSameRole === false)) {
+            fixedRolesNoSameMatch = true;
+        }
+
+        // Limit rounds.
+        if ('number' === typeof options.rounds) {
+            if (options.rounds <= 0) {
+                throw new Error('pairMatcher.' + alg + ': options.rounds ' +
+                                'must be a positive number or undefined. ' +
+                                'Found: ' + options.rounds);
+            }
+            if (options.rounds > (n-1)) {
+                throw new Error('pairMatcher.' + alg + ': ' +
+                                'options.rounds cannot be greater than ' +
+                                (n-1) + '. Found: ' + options.rounds);
+            }
+            // Here roundsLimit does not depend on n (must be smaller).
+            roundsLimit = options.rounds;
+        }
+        else if (fixedRolesNoSameMatch) {
+            roundsLimit = Math.floor(n/2);
+        }
+        else {
+            roundsLimit = n-1;
+        }
+
+        if ('undefined' !== typeof options.cycle) {
+            cycle = options.cycle;
+            if (cycle !== 'mirror_invert' && cycle !== 'mirror' &&
+                cycle !== 'repeat_invert' && cycle !== 'repeat') {
+
+                throw new Error('pairMatcher.' + alg + ': options.cycle ' +
+                                'must be equal to "mirror"/"mirror_invert", ' +
+                                '"repeat"/"repeat_invert" or undefined . ' +
+                                'Found: ' + options.cycle);
+            }
+
+            matches = new Array(roundsLimit*2);
+        }
+        else {
+            matches = new Array(roundsLimit);
+        }
+
+        i = -1, lenI = roundsLimit;
+        for ( ; ++i < lenI ; ) {
+            // Shuffle list of ids for random.
+            if (alg === 'random') ps = J.shuffle(ps);
+            // Create a new array for round i.
+            lenJ = n / 2;
+            matches[i] = skipBye ? new Array(lenJ-1) : new Array(lenJ);
+            // Check if new need to cycle.
+            if (cycle) {
+                if (cycle === 'mirror' || cycle === 'mirror_invert') {
+                    cycleI = (roundsLimit*2) -i -1;
+                }
+                else {
+                    cycleI = i+roundsLimit;
+                }
+                matches[cycleI] = skipBye ?
+                    new Array(lenJ-1) : new Array(lenJ);
+            }
+            // Counter jj is updated only if not skipBye,
+            // otherwise we create holes in the matches array.
+            jj = j = -1;
+            for ( ; ++j < lenJ ; ) {
+                if (fixedRolesNoSameMatch) {
+                    id1 = ps[j*2];
+                    id2 = ps[((i*2)+(j*2)+1) % n];
+                }
+                else {
+                    id1 = ps[j];
+                    id2 = ps[n - 1 - j];
+                }
+                if (!skipBye || (id1 !== bye && id2 !== bye)) {
+                    jj++;
+                    // Insert match.
+                    matches[i][jj] = [ id1, id2 ];
+                    // Insert cycle match (if any).
+                    if (cycle === 'repeat') {
+                        matches[cycleI][jj] = [ id1, id2 ];
+                    }
+                    else if (cycle === 'repeat_invert') {
+                        matches[cycleI][jj] = [ id2, id1 ];
+                    }
+                    else if (cycle === 'mirror') {
+                        matches[cycleI][jj] = [ id1, id2 ];
+                    }
+                    else if (cycle === 'mirror_invert') {
+                        matches[cycleI][jj] = [ id2, id1 ];
+                    }
+                }
+            }
+            // Permutate for next round.
+            if (!fixedRolesNoSameMatch) ps.splice(1, 0, ps.pop());
+        }
+        return matches;
+    }
 
     /**
      * ## fetchMatch
@@ -28773,13 +28270,12 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # NodeGameClient
- * Copyright(c) 2015 Stefano Balietti
+ * Copyright(c) 2017 Stefano Balietti
  * MIT Licensed
  *
- * nodeGame: Real-time social experiments in the browser.
+ * nodeGame: Online Real-Time Synchronous Experiments.
  *
- * `nodeGame` is a free, open source javascript framework for online,
- * multiplayer games in the browser.
+ * http://nodegame.org
  */
 (function(exports, parent) {
 
@@ -28793,7 +28289,6 @@ if (!Array.prototype.indexOf) {
         GameMsgGenerator = parent.GameMsgGenerator,
         Socket = parent.Socket,
         Game = parent.Game,
-        GameSession = parent.GameSession,
         Timer = parent.Timer,
         constants = parent.constants;
 
@@ -28972,7 +28467,8 @@ if (!Array.prototype.indexOf) {
          *
          * @experimental
          */
-        this.session = new GameSession(this);
+        // TODO: not used for now.
+        // this.session = new GameSession(this);
 
         /**
          * ### node.player
@@ -29430,17 +28926,20 @@ if (!Array.prototype.indexOf) {
     NGC.prototype.alias = function(alias, events, modifier) {
         var that;
         if ('string' !== typeof alias) {
-            throw new TypeError('node.alias: alias must be string.');
+            throw new TypeError('node.alias: alias must be string. Found: ' +
+                                alias);
         }
         if ('string' === typeof events) {
             events = [events];
         }
         if (!J.isArray(events)) {
-            throw new TypeError('node.alias: events must be array or string.');
+            throw new TypeError('node.alias: events must be array or string. ' +
+                                'Found: ' + events);
         }
         if (modifier && 'function' !== typeof modifier) {
             throw new TypeError(
-                'node.alias: modifier must be function or undefined.');
+                'node.alias: modifier must be function or undefined. Found: ' +
+                    modifier);
         }
 
         that = this;
@@ -29618,7 +29117,7 @@ if (!Array.prototype.indexOf) {
     /**
      * ### NodeGameClient.setLanguage
      *
-     * Sets the language for a playerList
+     * Sets the language for the client
      *
      * @param {object|string} lang Language information. If string, it must
      *   be the full name, and the the first 2 letters lower-cased are used
@@ -29630,18 +29129,20 @@ if (!Array.prototype.indexOf) {
      *      path: 'en/' // Optional, default equal to shortName + '/'.
      *   }``
      *
-     * @param {boolean} prefix Optional. If TRUE, the window uri prefix is
-     *   set to the value of lang.path. node.window must be defined,
+     * @param {boolean} updateUriPrefix Optional. If TRUE, the window uri
+     *   prefix isset to the value of lang.path. node.window must be defined,
      *   otherwise a warning is shown. Default, FALSE.
+     * @param {boolean} sayIt Optional. If TRUE, a LANG message is sent to
+     *   the server to notify the selection. Default: FALSE.
      *
-     * @return {object|string} The language object or string
+     * @return {object} The language object
      *
      * @see node.setup.lang
      * @see GameWindow.setUriPrefix
      *
      * @emit LANGUAGE_SET
      */
-    NGC.prototype.setLanguage = function(lang, prefix) {
+    NGC.prototype.setLanguage = function(lang, updateUriPrefix, sayIt) {
         var language;
         language = 'string' === typeof lang ? makeLanguageObj(lang) : lang;
 
@@ -29659,14 +29160,23 @@ if (!Array.prototype.indexOf) {
             this.player.lang.path = language.shortName + '/';
         }
 
-        if (prefix) {
+        // Updates the URI prefix.
+        if (updateUriPrefix) {
             if ('undefined' !== typeof this.window) {
                 this.window.setUriPrefix(this.player.lang.path);
             }
             else {
-                node.warn('node.setLanguage: prefix is true, but no window ' +
-                          'found.');
+                node.warn('node.setLanguage: updateUriPrefix is true, ' +
+                          'but window not found. Are you in a browser?');
             }
+        }
+
+        // Send a message to notify server.
+        if (sayIt) {
+            node.socket.send(node.msg.create({
+                target: 'LANG',
+                data: this.player.lang
+            }));
         }
 
         this.emit('LANGUAGE_SET');
@@ -29676,6 +29186,15 @@ if (!Array.prototype.indexOf) {
 
     // ## Helper functions.
 
+    /**
+     * ### makeLanguageObj
+     *
+     * From a language string returns a fully formatted obj
+     *
+     * @param {string} langStr The language string.
+     *
+     * @return {object} The language object
+     */
     function makeLanguageObj(langStr) {
         var shortName;
         shortName = langStr.toLowerCase().substr(0,2);
@@ -30070,7 +29589,8 @@ if (!Array.prototype.indexOf) {
 
         game = this.game;
         if (game.willBeDone || game.getStageLevel() >= GETTING_DONE) {
-            this.err('node.done: done already called in this step.');
+            this.err('node.done: done already called in step: ' +
+                     game.getCurrentGameStage());
             return false;
         }
 
@@ -30139,6 +29659,9 @@ if (!Array.prototype.indexOf) {
         // Keep track that the game will be done (done is asynchronous)
         // to avoid calling `node.done` multiple times in the same stage.
         game.willBeDone = true;
+
+        // TODO: it is possible that DONE messages (in.set.DATA) are sent
+        // to server before PLAYING is set. Is this OK?
 
         // Args can be the original arguments array, or
         // the one returned by the done callback.
@@ -30214,7 +29737,10 @@ if (!Array.prototype.indexOf) {
  * Copyright(c) 2016 Stefano Balietti
  * MIT Licensed
  *
- * `nodeGame` commands
+ * `nodeGame` commands for admins
+ *
+ * Command messages sent by players will be filtered out by the server.
+ *
  */
 (function(exports, node) {
 
@@ -30226,20 +29752,19 @@ if (!Array.prototype.indexOf) {
     /**
      * ### NodeGameClient.redirect
      *
-     * Redirects a player to the specified url
+     * Redirects a client to the specified url
      *
-     * Works only if it is a monitor client to send
-     * the message, i.e. players cannot redirect each
-     * other.
+     * Examples:
      *
-     * Examples
+     * ```javascript
      *
-     *  // Redirect to http://mydomain/mygame/missing_auth
-     *  node.redirect('missing_auth', 'xxx');
+     * // Redirect to http://mydomain/mygame/missing_auth
+     * node.redirect('missing_auth', 'xxx');
      *
-     *  // Redirect to external urls
-     *  node.redirect('http://www.google.com');
-     *
+     * // Redirect to external urls
+     * node.redirect('http://www.google.com');
+     * ```
+
      * @param {string} url the url of the redirection
      * @param {string} who A player id or any other valid _to_ field
      */
@@ -30263,9 +29788,6 @@ if (!Array.prototype.indexOf) {
      * ### NodeGameClient.remoteCommand
      *
      * Executes a game command on a client
-     *
-     * By default, only admins can send use this method, as messages
-     * sent by players will be filtered out by the server.
      *
      * @param {string} command The command to execute
      * @param {string|array} to The id or the array of ids of client/s
@@ -30604,11 +30126,11 @@ if (!Array.prototype.indexOf) {
 
         if (node.conf.incomingAdded && !force) {
             node.err('node.addDefaultIncomingListeners: listeners already ' +
-                     'added once. Use the force flag to re-add.');
+                     'added. Use "force" to add again');
             return false;
         }
 
-        this.info('node: adding incoming listeners.');
+        this.info('node: adding incoming listeners');
 
         /**
          * ## in.say.BYE
@@ -30849,8 +30371,7 @@ if (!Array.prototype.indexOf) {
          * Executes a game command (pause, resume, etc.)
          */
         node.events.ng.on( IN + say + 'GAMECOMMAND', function(msg) {
-            if (!checkGameCommandMsg(msg)) return;
-            node.emit('NODEGAME_GAMECOMMAND_' + msg.text, msg.data);
+            emitGameCommandMsg(node, msg);
         });
 
         /**
@@ -30860,8 +30381,7 @@ if (!Array.prototype.indexOf) {
          */
         node.events.ng.on( IN + get + 'GAMECOMMAND', function(msg) {
             var res;
-            if (!checkGameCommandMsg(msg)) return;
-            res = node.emit('NODEGAME_GAMECOMMAND_' + msg.text, msg.data);
+            res = emitGameCommandMsg(node, msg);
             if (!J.isEmpty(res)) {
                 // New key must contain msg.id.
                 node.say(msg.text + '_' + msg.id, msg.from, res);
@@ -30897,18 +30417,19 @@ if (!Array.prototype.indexOf) {
             }
         });
 
-        /**
-         * ## in.get.SESSION
-         *
-         * Gets the value of a variable registered in the session
-         *
-         * If msg.text is undefined returns all session variables
-         *
-         * @see GameSession.get
-         */
-        node.events.ng.on( IN + get + 'SESSION', function(msg) {
-            return node.session.get(msg.text);
-        });
+// TODO: not used for now.
+//         /**
+//          * ## in.get.SESSION
+//          *
+//          * Gets the value of a variable registered in the session
+//          *
+//          * If msg.text is undefined returns all session variables
+//          *
+//          * @see GameSession.get
+//          */
+//         node.events.ng.on( IN + get + 'SESSION', function(msg) {
+//             return node.session.get(msg.text);
+//         });
 
         /**
          * ## in.get.PLOT
@@ -30993,21 +30514,22 @@ if (!Array.prototype.indexOf) {
     // ## Helper functions.
 
     /**
-     * ### checkGameCommandMsg
+     * ### emitGameCommandMsg
      *
-     * Checks that the incoming message contains a valid command and options
-     *
-     * Msg.data contains the options for the command. If string, it will be
-     * parsed with JSUS.parse
+     * Checks that the incoming message is valid, parses its data, and emits it
      *
      * @param {GameMsg} msg The incoming message
      *
+     * @return {mixed} The return value of the emit call
+     *
      * @see JSUS.parse
+     * @see node.emit
      */
-    function checkGameCommandMsg(msg) {
-        if ('string' !== typeof msg.text || msg.text.trim() === '') {
+    function emitGameCommandMsg(node, msg) {
+        var opts;
+        if ('string' !== typeof msg.text) {
             node.err('"in.' + msg.action + '.GAMECOMMAND": msg.text must be ' +
-                     'a non-empty string: ' + msg.text);
+                     'string. Found: ' + msg.text);
             return false;
         }
         if (!parent.constants.gamecommands[msg.text]) {
@@ -31016,10 +30538,8 @@ if (!Array.prototype.indexOf) {
             return false;
         }
 
-        // Parse msg.data.
-        if ('string' === typeof msg.data) msg.data = J.parse(msg.data);
-
-        return true;
+        opts = 'string' === typeof msg.data ? J.parse(msg.data) : msg.data;
+        return node.emit('NODEGAME_GAMECOMMAND_' + msg.text, opts);
     }
 
 })(
@@ -31076,12 +30596,9 @@ if (!Array.prototype.indexOf) {
 
         function done() {
             var res;
-            // No incoming messages should be emitted before
-            // evaluating the step rule and definitely setting
-            // the stageLevel to DONE, otherwise the stage of
-            // other clients could change in between.
             node.game.setStageLevel(stageLevels.GETTING_DONE);
             node.game.willBeDone = false;
+            node.game.beDone = false;
             node.emit('REALLY_DONE');
             res = node.game.shouldStep(stageLevels.DONE);
             node.game.setStageLevel(stageLevels.DONE);
@@ -31101,17 +30618,14 @@ if (!Array.prototype.indexOf) {
          */
         this.events.ng.on('DONE', function() {
             // Execute done handler before updating stage.
-            var stageLevel;
 
-            stageLevel = node.game.getStageLevel();
+            // If willBeDone is not set, then PLAYING called DONE earlier.
+            // Can happen if node.done() is called before PLAYING.
+            if (!node.game.willBeDone) return;
 
             // TODO check >=.
-            if (stageLevel >= stageLevels.PLAYING) {
-                done();
-            }
-            else {
-                node.game.willBeDone = true;
-            }
+            if (node.game.getStageLevel() >= stageLevels.PLAYING) done();
+            else node.game.willBeDone = true;
         });
 
         /**
@@ -31845,6 +31359,7 @@ if (!Array.prototype.indexOf) {
      * Adds a battery of setup functions
      *
      * @param {boolean} force Whether to force re-adding the aliases
+     *
      * @return {boolean} TRUE on success
      */
     NGC.prototype.addDefaultAliases = function(force) {
@@ -31871,7 +31386,14 @@ if (!Array.prototype.indexOf) {
         });
 
         // ### node.on.stage
-        this.alias('stage', 'in.set.STAGE');
+        this.alias('stage', 'STEPPING', function(cb) {
+            return function(curStep, newStep) {
+                if (curStep.stage !== newStep.stage) cb(curStep, newStep);
+            };
+        });
+
+        // ### node.on.stage
+        this.alias('step', 'STEPPING');
 
         // ### node.on.plist
         this.alias('plist', ['in.set.PLIST', 'in.say.PLIST']);
@@ -31915,16 +31437,6 @@ if (!Array.prototype.indexOf) {
         this.alias('mdisconnect', 'in.say.MDISCONNECT', function(cb) {
             return function(msg) {
                 cb.call(that.game, msg.data);
-            };
-        });
-
-        // ### node.on.stepdone
-        // Uses the step rule to determine when a step is DONE.
-        this.alias('stepdone', 'UPDATED_PLIST', function(cb) {
-            return function() {
-                if (that.game.shouldStep()) {
-                    cb.call(that.game, that.game.pl);
-                }
             };
         });
 
@@ -32247,7 +31759,7 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # GameWindow
- * Copyright(c) 2017 Stefano Balietti
+ * Copyright(c) 2017 Stefano Balietti <ste@nodegame.org>
  * MIT Licensed
  *
  * API to interface nodeGame with the browser window
@@ -32266,20 +31778,14 @@ if (!Array.prototype.indexOf) {
 
     "use strict";
 
-    var J, DOM;
+    var DOM;
 
     var constants, windowLevels, screenLevels;
     var CB_EXECUTED, WIN_LOADING, lockedUpdate;
 
-    J = node.JSUS;
-    if (!J) {
-        throw new Error('GameWindow: JSUS object not found. Aborting.');
-    }
-
-    DOM = J.get('DOM');
-    if (!DOM) {
-        throw new Error('GameWindow: JSUS DOM object not found. Aborting.');
-    }
+    if (!J) throw new Error('GameWindow: JSUS not found. Aborting.');
+    DOM = J.require('DOM');
+    if (!DOM) throw new Error('GameWindow: J.require("DOM") failed.');
 
     constants = node.constants;
     windowLevels = constants.windowLevels;
@@ -32309,6 +31815,7 @@ if (!Array.prototype.indexOf) {
         storeCacheNow:   false,
         storeCacheLater: false
     };
+    GameWindow.defaults.infoPanel = undefined;
 
     function onLoadStd(iframe, cb) {
         var iframeWin;
@@ -32497,9 +32004,9 @@ if (!Array.prototype.indexOf) {
         /**
          * ### GameWindow.defaultHeaderPosition
          *
-         * The default header position. 'left'.
+         * The default header position. 'top'.
          */
-        this.defaultHeaderPosition = 'left';
+        this.defaultHeaderPosition = 'top';
 
         /**
          * ### GameWindow.conf
@@ -32666,6 +32173,26 @@ if (!Array.prototype.indexOf) {
          */
         this.isIE = !!document.createElement('span').attachEvent;
 
+        /**
+         * ### GameWindow.headerOffset
+         *
+         * Contains the current offset (widht or height) for the header
+         *
+         * Content below/above/next to it needs to be slided accordingly.
+         *
+         * @see W.adjustHeaderOffset
+         */
+        this.headerOffset = 0;
+
+        /**
+         * ### GameWindow.willResizeFrame
+         *
+         * Boolean flag saying whether a call to resize the frame is in progress
+         *
+         * @see W.adjustFrameHeight
+         */
+        this.willResizeFrame = false;
+
         // Add setup functions.
         this.addDefaultSetups();
 
@@ -32821,14 +32348,13 @@ if (!Array.prototype.indexOf) {
      */
     GameWindow.prototype.setStateLevel = function(level) {
         if ('string' !== typeof level) {
-            throw new TypeError('GameWindow.setStateLevel: ' +
-                                'level must be string.');
+            throw new TypeError('GameWindow.setStateLevel: level must ' +
+                                'be string. Found: ' + level);
         }
         if ('undefined' === typeof windowLevels[level]) {
             throw new Error('GameWindow.setStateLevel: unrecognized level: ' +
-                            level + '.');
+                            level);
         }
-
         this.stateLevel = windowLevels[level];
     };
 
@@ -32870,12 +32396,12 @@ if (!Array.prototype.indexOf) {
      */
     GameWindow.prototype.setScreenLevel = function(level) {
         if ('string' !== typeof level) {
-            throw new TypeError('GameWindow.setScreenLevel: ' +
-                                'level must be string.');
+            throw new TypeError('GameWindow.setScreenLevel: level must ' +
+                                'be string. Found: ' + level);
         }
         if ('undefined' === typeof screenLevels[level]) {
             throw new Error('GameWindow.setScreenLevel: unrecognized level: ' +
-                            level + '.');
+                            level);
         }
 
         this.screenState = screenLevels[level];
@@ -33027,46 +32553,122 @@ if (!Array.prototype.indexOf) {
      */
     GameWindow.prototype.generateFrame = function(root, frameName, force) {
         var iframe;
-        if (!force && this.frameElement) {
-            throw new Error('GameWindow.generateFrame: a frame element is ' +
-                            'already existing. It cannot be duplicated.');
+        if (this.frameElement) {
+            if (!force) {
+                throw new Error('GameWindow.generateFrame: frame is ' +
+                                'already existing. Use force to regenerate.');
+            }
+            this.destroyFrame();
         }
 
         root = root || this.frameRoot || document.body;
 
         if (!J.isElement(root)) {
-            throw new Error('GameWindow.generateFrame: invalid root element.');
+            throw new Error('GameWindow.generateFrame: root must be ' +
+                            'undefined or HTMLElement. Found: ' + root);
         }
 
         frameName = frameName || 'ng_mainframe';
 
-        if ('string' !== typeof frameName) {
+        if ('string' !== typeof frameName || frameName.trim() === '') {
             throw new Error('GameWindow.generateFrame: frameName must be ' +
-                            'string.');
+                            'undefined or a non-empty string. Found: ' +
+                            frameName);
         }
 
         if (document.getElementById(frameName)) {
-            throw new Error('GameWindow.generateFrame: frameName must be ' +
-                            'unique.');
+            throw new Error('GameWindow.generateFrame: frameName is not ' +
+                            'unique in DOM: ' + frameName);
         }
 
-        iframe = W.addIFrame(root, frameName);
+        iframe = W.add('iframe', root, frameName);
         // Method .replace does not add the uri to the history.
         iframe.contentWindow.location.replace('about:blank');
 
         // For IE8.
         iframe.frameBorder = 0;
 
+        // Avoid scrolling.
+        iframe.scrolling = "no";
+
         this.setFrame(iframe, frameName, root);
 
-        if (this.frameElement) {
-            adaptFrame2HeaderPosition(this);
-        }
+        if (this.getHeader()) adaptFrame2HeaderPosition();
 
         // Emit event.
         node.events.ng.emit('FRAME_GENERATED', iframe);
 
+        // Add listener on resizing the page.
+        document.body.onresize = function() {
+            W.adjustFrameHeight(0, 120);
+        };
+
         return iframe;
+    };
+
+    /**
+     * ### GameWindow.generateInfoPanel
+     *
+     * Appends a configurable div element at to "top" of the page
+     *
+     * @param {Element} root Optional. The HTML element to which the info
+     *   panel will be appended. Default:
+     *
+     *   - above the main frame, or
+     *   - below the header, or
+     *   - inside _documents.body_.
+     *
+     * @param {string} frameName Optional. The name of the iframe. Default:
+     *   'ng_mainframe'
+     * @param {boolean} force Optional. Will create the frame even if an
+     *   existing one is found. Default: FALSE
+     *
+     * @return {InfoPanel} A reference to the InfoPanel object
+     *
+     * @see GameWindow.infoPanel
+     *
+     * @emit INFOPANEL_GENERATED
+     */
+    GameWindow.prototype.generateInfoPanel = function(root, options, force) {
+        var infoPanelDiv;
+
+        if (this.infoPanel) {
+            if (!force) {
+                throw new Error('GameWindow.generateInfoPanel: info panel is ' +
+                                'already existing. Use force to regenerate.');
+            }
+            else {
+                this.infoPanel.destroy();
+                this.infoPanel = null;
+            }
+        }
+        options = options || {};
+
+        this.infoPanel = new node.InfoPanel(options);
+        infoPanelDiv = this.infoPanel.infoPanelDiv;
+
+        root = options.root;
+        if (root) {
+            if (!J.isElement(root)) {
+                throw new Error('GameWindow.generateInfoPanel: root must be ' +
+                                'undefined or HTMLElement. Found: ' + root);
+            }
+            root.appendChild(infoPanelDiv);
+        }
+        else if (this.frameElement) {
+            document.body.insertBefore(infoPanelDiv, this.frameElement);
+        }
+        else if (this.headerElement) {
+           J.insertAfter(this.headerElement, infoPanelDiv);
+        }
+        else {
+            document.body.appendChild(infoPanelDiv);
+        }
+
+        // Emit event.
+        node.events.ng.emit('INFOPANEL_GENERATED', this.infoPanel);
+
+        return this.infoPanel;
     };
 
     /**
@@ -33084,13 +32686,16 @@ if (!Array.prototype.indexOf) {
      */
     GameWindow.prototype.setFrame = function(iframe, iframeName, root) {
         if (!J.isElement(iframe)) {
-            throw new Error('GameWindow.setFrame: iframe must be HTMLElement.');
+            throw new TypeError('GameWindow.setFrame: iframe must be ' +
+                                'HTMLElement. Found: ' + iframe);
         }
         if ('string' !== typeof iframeName) {
-            throw new Error('GameWindow.setFrame: iframeName must be string.');
+            throw new TypeError('GameWindow.setFrame: iframeName must be ' +
+                                'string. Found: ' + iframeName);
         }
         if (!J.isElement(root)) {
-            throw new Error('GameWindow.setFrame: invalid root element.');
+            throw new TypeError('GameWindow.setFrame: root must be ' +
+                                'HTMLElement. Found: ' + root);
         }
 
         this.frameRoot = root;
@@ -33175,38 +32780,42 @@ if (!Array.prototype.indexOf) {
      *   _document.lastElementChild_
      * @param {string} headerName Optional. The name (id) of the header.
      *   Default: 'ng_header'
-     * @param {boolean} force Optional. Will create the header even if an
-     *   existing one is found. Default: FALSE
+     * @param {boolean} force Optional. Destroys the existing header,
+     *   if found. Default: FALSE
      *
      * @return {Element} The header element
      */
     GameWindow.prototype.generateHeader = function(root, headerName, force) {
         var header;
 
-        if (!force && this.headerElement) {
-            throw new Error('GameWindow.generateHeader: a header element is ' +
-                            'already existing. It cannot be duplicated.');
+        if (this.headerElement) {
+            if (!force) {
+                throw new Error('GameWindow.generateHeader: header is ' +
+                                'already existing. Use force to regenerate.');
+            }
+            this.destroyHeader();
         }
 
         root = root || document.body || document.lastElementChild;
 
         if (!J.isElement(root)) {
-            throw new Error('GameWindow.generateHeader: invalid root element.');
+            throw new Error('GameWindow.generateHeader: root must be ' +
+                            'undefined or HTMLElement. Found: ' + root);
         }
 
         headerName = headerName || 'ng_header';
 
         if ('string' !== typeof headerName) {
             throw new Error('GameWindow.generateHeader: headerName must be ' +
-                            'string.');
+                            'string. Found: ' + headerName);
         }
 
         if (document.getElementById(headerName)) {
-            throw new Error('GameWindow.generateHeader: headerName must be ' +
-                            'unique.');
+            throw new Error('GameWindow.generateHeader: headerName is not ' +
+                            'unique in DOM: ' + headerName);
         }
 
-        header = this.addElement('div', root, headerName);
+        header = this.add('div', root, headerName);
 
         // If generateHeader is called after generateFrame, and the default
         // header position is not bottom, we need to move the header in front.
@@ -33237,78 +32846,81 @@ if (!Array.prototype.indexOf) {
      * @see GameWindow.defaultHeaderPosition
      * @see adaptFrame2HeaderPosition
      */
-    GameWindow.prototype.setHeaderPosition = function(position) {
-        var validPositions, pos, oldPos;
-        if ('string' !== typeof position) {
-            throw new TypeError('GameWindow.setHeaderPosition: position ' +
-                                'must be string.');
-        }
-        pos = position.toLowerCase();
-
-        // Do something only if there is a change in the position.
-        if (this.headerPosition === pos) return;
-
+    GameWindow.prototype.setHeaderPosition = (function() {
+        var validPositions;
         // Map: position - css class.
         validPositions = {
-            'top': 'ng_header_position-horizontal-t',
-            'bottom': 'ng_header_position-horizontal-b',
-            'right': 'ng_header_position-vertical-r',
-            'left': 'ng_header_position-vertical-l'
+            top: 'ng_header_position-horizontal-t',
+            bottom: 'ng_header_position-horizontal-b',
+            right: 'ng_header_position-vertical-r',
+            left: 'ng_header_position-vertical-l'
         };
 
-        if ('undefined' === typeof validPositions[pos]) {
-            node.err('GameWindow.setHeaderPosition: invalid header ' +
-                     'position: ' + pos  + '.');
-            return;
-        }
-        if (!this.headerElement) {
-            throw new Error('GameWindow.setHeaderPosition: headerElement ' +
-                            'not found.');
-        }
+        return function(position) {
+            var pos, oldPos;
+            if ('string' !== typeof position) {
+                throw new TypeError('GameWindow.setHeaderPosition: position ' +
+                                    'must be string. Found: ' + position);
+            }
+            pos = position.toLowerCase();
 
-        W.removeClass(this.headerElement, 'ng_header_position-[a-z-]*');
-        W.addClass(this.headerElement, validPositions[pos]);
+            // Do something only if there is a change in the position.
+            if (this.headerPosition === pos) return;
 
-        oldPos = this.headerPosition;
+            if ('undefined' === typeof validPositions[pos]) {
+                node.err('GameWindow.setHeaderPosition: invalid header ' +
+                         'position: ' + pos);
+                return;
+            }
+            if (!this.headerElement) {
+                throw new Error('GameWindow.setHeaderPosition: headerElement ' +
+                                'not found.');
+            }
 
-        // Store the new position in a reference variable
-        // **before** adaptFrame2HeaderPosition is called
-        this.headerPosition = pos;
+            W.removeClass(this.headerElement, 'ng_header_position-[a-z-]*');
+            W.addClass(this.headerElement, validPositions[pos]);
 
-        if (this.frameElement) {
-            adaptFrame2HeaderPosition(this, oldPos);
-        }
-    };
+            oldPos = this.headerPosition;
+
+            // Store the new position in a reference variable
+            // **before** adaptFrame2HeaderPosition is called
+            this.headerPosition = pos;
+
+            if (this.frameElement) adaptFrame2HeaderPosition(oldPos);
+        };
+    })();
 
     /**
      * ### GameWindow.setHeader
      *
      * Sets the new header element and update related references
      *
-     * @param {Element} header The new header
+     * @param {HTMLElement} header The new header
      * @param {string} headerName The name of the header
-     * @param {Element} root The HTML element to which the header is appended
+     * @param {HTMLElement} root The element to which the header is appended
      *
-     * @return {Element} The new header
+     * @return {HTMLElement} The header
      *
      * @see GameWindow.generateHeader
      */
     GameWindow.prototype.setHeader = function(header, headerName, root) {
         if (!J.isElement(header)) {
             throw new Error(
-                'GameWindow.setHeader: header must be HTMLElement.');
+                'GameWindow.setHeader: header must be HTMLElement. Found: ' +
+                    header);
         }
         if ('string' !== typeof headerName) {
-            throw new Error('GameWindow.setHeader: headerName must be string.');
+            throw new Error('GameWindow.setHeader: headerName must be ' +
+                            'string. Found: ' + headerName);
         }
         if (!J.isElement(root)) {
-            throw new Error('GameWindow.setHeader: invalid root element.');
+            throw new Error('GameWindow.setHeader: root must be ' +
+                            'HTMLElement. Found: ' + root);
         }
 
         this.headerElement = header;
         this.headerName = headerName;
         this.headerRoot = root;
-
 
         // Emit event.
         node.events.ng.emit('HEADER_GENERATED', header);
@@ -33377,6 +32989,8 @@ if (!Array.prototype.indexOf) {
         this.headerName = null;
         this.headerRoot = null;
         this.headerPosition = null;
+        this.headerOffset = 0;
+        this.adjustHeaderOffset(true);
     };
 
     /**
@@ -33413,11 +33027,11 @@ if (!Array.prototype.indexOf) {
     GameWindow.prototype.initLibs = function(globalLibs, frameLibs) {
         if (globalLibs && !J.isArray(globalLibs)) {
             throw new TypeError('GameWindow.initLibs: globalLibs must be ' +
-                                'array or undefined.');
+                                'array or undefined. Found: ' + globalLibs);
         }
         if (frameLibs && 'object' !== typeof frameLibs) {
             throw new TypeError('GameWindow.initLibs: frameLibs must be ' +
-                                'object or undefined.');
+                                'object or undefined. Found: ' + frameLibs);
         }
         if (!globalLibs && !frameLibs) {
             throw new Error('GameWindow.initLibs: frameLibs and frameLibs ' +
@@ -33445,8 +33059,8 @@ if (!Array.prototype.indexOf) {
         var iframe, iframeName;
         uri = uri || '/pages/testpage.htm';
         if ('string' !== typeof uri) {
-            throw new TypeError('GameWindow.precacheTest: uri must string or ' +
-                                'undefined.');
+            throw new TypeError('GameWindow.precacheTest: uri must string ' +
+                                'or undefined. Found: ' + uri);
         }
         iframe = document.createElement('iframe');
         iframe.style.display = 'none';
@@ -33506,11 +33120,11 @@ if (!Array.prototype.indexOf) {
 
         if (!J.isArray(uris)) {
             throw new TypeError('GameWindow.preCache: uris must be string ' +
-                                'or array.');
+                                'or array. Found: ' + uris);
         }
         if (callback && 'function' !== typeof callback) {
             throw new TypeError('GameWindow.preCache: callback must be ' +
-                                'function or undefined.');
+                                'function or undefined. Found: ' + callback);
         }
 
         // Don't preload if an empty array is passed.
@@ -33591,7 +33205,7 @@ if (!Array.prototype.indexOf) {
     };
 
     /**
-     * ### GameWindow.getElementById
+     * ### GameWindow.getElementById | gid
      *
      * Returns the element with the given id
      *
@@ -33603,7 +33217,9 @@ if (!Array.prototype.indexOf) {
      *
      * @see GameWindow.getElementsByTagName
      */
-    GameWindow.prototype.getElementById = function(id) {
+    GameWindow.prototype.getElementById =
+        GameWindow.prototype.gid = function(id) {
+
         var el, frameDocument;
 
         frameDocument = this.getFrameDocument();
@@ -33701,15 +33317,16 @@ if (!Array.prototype.indexOf) {
         var lastURI;
 
         if ('string' !== typeof uri) {
-            throw new TypeError('GameWindow.loadFrame: uri must be string.');
+            throw new TypeError('GameWindow.loadFrame: uri must be ' +
+                                'string. Found: ' + uri);
         }
         if (func && 'function' !== typeof func) {
             throw new TypeError('GameWindow.loadFrame: func must be function ' +
-                                'or undefined.');
+                                'or undefined. Found: ' + func);
         }
         if (opts && 'object' !== typeof opts) {
             throw new TypeError('GameWindow.loadFrame: opts must be object ' +
-                                'or undefined.');
+                                'or undefined. Found: ' + opts);
         }
         opts = opts || {};
 
@@ -33754,7 +33371,7 @@ if (!Array.prototype.indexOf) {
                 }
                 else {
                     throw new Error('GameWindow.loadFrame: unkown cache ' +
-                                    'load mode: ' + opts.cache.loadMode + '.');
+                                    'load mode: ' + opts.cache.loadMode);
                 }
             }
             if (opts.cache.storeMode) {
@@ -33772,8 +33389,7 @@ if (!Array.prototype.indexOf) {
                 }
                 else {
                     throw new Error('GameWindow.loadFrame: unkown cache ' +
-                                    'store mode: ' + opts.cache.storeMode +
-                                    '.');
+                                    'store mode: ' + opts.cache.storeMode);
                 }
             }
         }
@@ -33781,13 +33397,15 @@ if (!Array.prototype.indexOf) {
         if ('undefined' !== typeof opts.autoParse) {
             if ('object' !== typeof opts.autoParse) {
                 throw new TypeError('GameWindow.loadFrame: opts.autoParse ' +
-                                    'must be object or undefined.');
+                                    'must be object or undefined. Found: ' +
+                                    opts.autoParse);
             }
             if ('undefined' !== typeof opts.autoParsePrefix) {
                 if ('string' !== typeof opts.autoParsePrefix) {
                     throw new TypeError('GameWindow.loadFrame: opts.' +
                                         'autoParsePrefix must be string ' +
-                                        'or undefined.');
+                                        'or undefined. Found: ' +
+                                        opts.autoParsePrefix);
                 }
                 autoParsePrefix = opts.autoParsePrefix;
             }
@@ -33795,7 +33413,8 @@ if (!Array.prototype.indexOf) {
                 if ('string' !== typeof opts.autoParseMod) {
                     throw new TypeError('GameWindow.loadFrame: opts.' +
                                         'autoParseMod must be string ' +
-                                        'or undefined.');
+                                        'or undefined. Found: ' +
+                                        opts.autoParseMod);
                 }
                 autoParseMod = opts.autoParseMod;
             }
@@ -34017,7 +33636,7 @@ if (!Array.prototype.indexOf) {
     GameWindow.prototype.setUriPrefix = function(uriPrefix) {
         if (uriPrefix !== null && 'string' !== typeof uriPrefix) {
             throw new TypeError('GameWindow.setUriPrefix: uriPrefix must be ' +
-                                'string or null.');
+                                'string or null. Found: ' + uriPrefix);
         }
         this.conf.uriPrefix = this.uriPrefix = uriPrefix;
     };
@@ -34028,7 +33647,7 @@ if (!Array.prototype.indexOf) {
      * Sets the variable uriChannel
      *
      * Trailing and preceding slashes are added if missing.
-     * 
+     *
      * @param {string|null} uriChannel The current uri of the channel,
      *   or NULL to delete it
      *
@@ -34045,9 +33664,178 @@ if (!Array.prototype.indexOf) {
             throw new TypeError('GameWindow.uriChannel: uriChannel must be ' +
                                 'string or null. Found: ' + uriChannel);
         }
-        
+
         this.uriChannel = uriChannel;
     };
+
+    /**
+     * ### GameWindow.adjustFrameHeight
+     *
+     * Resets the min-height style of the iframe to fit its content properly
+     *
+     * Takes into the available height of the page, and the actual
+     * content of the iframe, which is stretched to either:
+     *
+     *  - (almost) till the end of the page,
+     *  - or to fit its content, if larger than page height (with scrollbar).
+     *
+     * @param {number} userMinHeight Optional. If set minHeight cannot be
+     *   less than this value. Default: 0
+     * @param {number} delay. If set, a timeout is created before the
+     *   the frame is actually adjusted. Multiple calls will be
+     *   evaluated only once at the end of a new timeout. Default: undefined
+     *
+     * @see W.willResizeFrame
+     * @see W.adjustHeaderOffset
+     */
+    GameWindow.prototype.adjustFrameHeight = (function() {
+        var nextTimeout, adjustIt;
+
+        adjustIt = function(userMinHeight) {
+            var iframe, minHeight, contentHeight;
+
+            W.adjustHeaderOffset();
+
+            iframe = W.getFrame();
+            // Iframe might have been destroyed already, e.g. in a test.
+            if (!iframe || !iframe.contentWindow) return;
+
+            // Try to find out how tall the frame should be.
+            minHeight = window.innerHeight || window.clientHeight;
+
+            contentHeight = iframe.contentWindow.document.body.offsetHeight;
+            // Rule of thumb.
+            contentHeight += 60;
+
+            if (W.headerPosition === "top") contentHeight += W.headerOffset;
+
+            if (minHeight < contentHeight) minHeight = contentHeight;
+            if (minHeight < (userMinHeight || 0)) minHeight = userMinHeight;
+
+            // Adjust min-height based on content.
+            iframe.style['min-height'] = minHeight + 'px';
+        };
+
+        return function(userMinHeight, delay) {
+            if ('undefined' === typeof delay) {
+                adjustIt(userMinHeight);
+                return;
+            }
+            if (W.willResizeFrame) {
+                nextTimeout = true;
+                return;
+            }
+            W.willResizeFrame = setTimeout(function() {
+                W.willResizeFrame = null;
+                // If another timeout call was requested, do nothing now.
+                if (nextTimeout) {
+                    nextTimeout = false;
+                    W.adjustFrameHeight(userMinHeight, delay);
+                }
+                else {
+                    adjustIt(userMinHeight);
+                }
+            }, delay);
+        };
+
+    })();
+
+    /**
+     * ### GameWindow.adjustHeaderOffset
+     *
+     * Slides frame and/or infoPanel so that the header does not overlap
+     *
+     * Adjusts the CSS padding of the elements depending of the header
+     * position, but only if the size of of the header has changed from
+     * last time.
+     *
+     * @param {boolean} force Optional. If TRUE, padding is adjusted
+     *   regardless of whether the size of the header has changed
+     *   from last time
+     *
+     * @see W.headerOffset
+     */
+    GameWindow.prototype.adjustHeaderOffset = function(force) {
+        var position, frame, header, infoPanel, offset, offsetPx;
+
+        header = W.getHeader();
+        position = W.headerPosition;
+
+        // Do not apply padding if nothing has changed.
+        if (!force &&
+            (!header && W.headerOffset ||
+             (position === "top" &&
+              header.offsetHeight === W.headerOffset))) {
+
+            return;
+        }
+
+        frame = W.getFrame();
+        infoPanel = W.infoPanel;
+        // No frame nor infoPanel, nothing to do.
+        if (!frame && !infoPanel) return;
+
+        switch(position) {
+        case 'top':
+            offset = header ? header.offsetHeight : 0;
+            offsetPx = offset + 'px';
+            if (infoPanel && infoPanel.isVisible) {
+                infoPanel.infoPanelDiv.style['padding-top'] = offsetPx;
+                frame.style['padding-top'] = 0;
+            }
+            else {
+                if (infoPanel && infoPanel.infoPanelDiv) {
+                    infoPanel.infoPanelDiv.style['padding-top'] = 0;
+                }
+                frame.style['padding-top'] = offsetPx;
+            }
+            break;
+        case 'bottom':
+            offset = header ? header.offsetHeight : 0;
+            offsetPx = offset + 'px';
+            frame.style['padding-bottom'] = offsetPx;
+            if (infoPanel && infoPanel.infoPanelDiv) {
+                infoPanel.infoPanelDiv.style['padding-top'] = 0;
+            }
+            break;
+        case 'right':
+            offset = header ? header.offsetWidth : 0;
+            offsetPx = offset + 'px';
+            if (frame) frame.style['padding-right'] = offsetPx;
+            if (infoPanel && infoPanel.isVisible) {
+                infoPanel.infoPanelDiv.style['padding-right'] = offsetPx;
+            }
+            break;
+        case 'left':
+            offset = header ? header.offsetWidth : 0;
+            offsetPx = offset + 'px';
+            if (frame) frame.style['padding-left'] = offsetPx;
+            if (infoPanel && infoPanel.isVisible) {
+                infoPanel.infoPanelDiv.style['padding-left'] = offsetPx;
+            }
+            break;
+        default:
+            // When header is destroyed, for example.
+            if (position !== null) {
+                throw new Error('GameWindow.adjustHeaderOffset: invalid ' +
+                                'header position. Found: ' + position);
+            }
+            if (header) {
+                throw new Error('GameWindow.adjustHeaderOffset: something ' +
+                                'is wrong. Header found, but position is ' +
+                                'null.');
+            }
+            // Remove all padding.
+            if (frame) frame.style.padding = 0;
+            if (infoPanel && infoPanel.infoPanelDiv) {
+                infoPanel.infoPanelDiv.padding = 0;
+            }
+        }
+
+        // Store the value of current offset.
+        W.headerOffset = offset;
+    };
+
 
     // ## Helper functions
 
@@ -34117,14 +33905,14 @@ if (!Array.prototype.indexOf) {
             }
 
             func();
+
+            // Important. We need a timeout (120), because some changes might
+            // take time to be reflected in the DOM.
+            W.adjustFrameHeight(0, 120);
         };
 
-        if (loadCache) {
-            reloadScripts(iframe, afterScripts);
-        }
-        else {
-            afterScripts();
-        }
+        if (loadCache) reloadScripts(iframe, afterScripts);
+        else afterScripts();
     }
 
     /**
@@ -34277,49 +34065,45 @@ if (!Array.prototype.indexOf) {
      *
      * The frame element must exists or an error will be thrown.
      *
-     * @param {GameWindow} W The current GameWindow object
      * @param {string} oldHeaderPos Optional. The previous position of the
      *   header
      *
      * @api private
      */
-    function adaptFrame2HeaderPosition(W, oldHeaderPos) {
-        var position;
-        if (!W.frameElement) {
-            throw new Error('adaptFrame2HeaderPosition: frame not found.');
-        }
+    function adaptFrame2HeaderPosition(oldHeaderPos) {
+        var position, frame, header;
 
-        // If no header is found, simulate the 'top' position to better
-        // fit the whole screen.
+        frame = W.getFrame();
+        if (!frame) return;
+
+        header = W.getHeader();
+
+        // If no header is found, simulate the 'top' position
+        // to better fit the whole screen.
         position = W.headerPosition || 'top';
 
-        // When we move from bottom to any other configuration, we need
-        // to move the header before the frame.
+        // When we move from bottom to any other configuration,
+        // we need to move the header before the frame.
         if (oldHeaderPos === 'bottom' && position !== 'bottom') {
-            W.getFrameRoot().insertBefore(W.headerElement, W.frameElement);
+            W.getFrameRoot().insertBefore(W.headerElement, frame);
         }
 
-        W.removeClass(W.frameElement, 'ng_mainframe-header-[a-z-]*');
+        W.removeClass(frame, 'ng_mainframe-header-[a-z-]*');
         switch(position) {
         case 'right':
-            W.addClass(W.frameElement, 'ng_mainframe-header-vertical-r');
+            W.addClass(frame, 'ng_mainframe-header-vertical-r');
             break;
         case 'left':
-            W.addClass(W.frameElement, 'ng_mainframe-header-vertical-l');
+            W.addClass(frame, 'ng_mainframe-header-vertical-l');
             break;
         case 'top':
-            W.addClass(W.frameElement, 'ng_mainframe-header-horizontal');
-            // There might be no header yet.
-            if (W.headerElement) {
-                W.getFrameRoot().insertBefore(W.headerElement, W.frameElement);
-            }
+            W.addClass(frame, 'ng_mainframe-header-horizontal-t');
+            if (header) W.getFrameRoot().insertBefore(header, frame);
             break;
         case 'bottom':
-            W.addClass(W.frameElement, 'ng_mainframe-header-horizontal');
-            // There might be no header yet.
-            if (W.headerElement) {
-                W.getFrameRoot().insertBefore(W.headerElement,
-                                              W.frameElement.nextSibling);
+            W.addClass(frame, 'ng_mainframe-header-horizontal-b');
+            if (header) {
+                W.getFrameRoot().insertBefore(header, frame.nextSibling);
             }
             break;
         }
@@ -34361,7 +34145,7 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # setup.window
- * Copyright(c) 2015 Stefano Balietti
+ * Copyright(c) 2017 Stefano Balietti
  * MIT Licensed
  *
  * GameWindow setup functions
@@ -34371,7 +34155,6 @@ if (!Array.prototype.indexOf) {
 (function(window, node) {
 
     var GameWindow = node.GameWindow;
-    var J = node.JSUS;
 
     /**
      * ### GameWindow.addDefaultSetups
@@ -34746,30 +34529,28 @@ if (!Array.prototype.indexOf) {
      * Requires the waitScreen widget to be loaded.
      *
      * @param {string} text Optional. The text to be shown in the locked screen
+     * @param {number} countdown Optional. The expected max total time the
+     *   the screen will stay locked (in ms). A countdown will be displayed
      *
+     * @see WaitScreen.lock
      * TODO: check if this can be called in any stage.
      */
-    GameWindow.prototype.lockScreen = function(text) {
-        var that;
-        that = this;
-
+    GameWindow.prototype.lockScreen = function(text, countdown) {
         if (!this.waitScreen) {
-            throw new Error('GameWindow.lockScreen: waitScreen not found.');
+            throw new Error('GameWindow.lockScreen: waitScreen not found');
         }
         if (text && 'string' !== typeof text) {
             throw new TypeError('GameWindow.lockScreen: text must be string ' +
-                                'or undefined');
+                                'or undefined. Found: ' + text);
         }
-        // Feb 16.02.2015
-        // Commented out the time-out part. It causes the browser to get stuck
-        // on a locked screen, because the method is invoked multiple times.
-        // If no further problem is found out, it can be eliminated.
-        // if (!this.isReady()) {
-        //   setTimeout(function() { that.lockScreen(text); }, 100);
-        // }
+        if (countdown && 'number' !== typeof countdown || countdown < 0) {
+            throw new TypeError('GameWindow.lockScreen: countdown must be ' +
+                                'a positive number or undefined. Found: ' +
+                                countdown);
+        }
         this.setScreenLevel('LOCKING');
         text = text || 'Screen locked. Please wait...';
-        this.waitScreen.lock(text);
+        this.waitScreen.lock(text, countdown);
         this.setScreenLevel('LOCKED');
     };
 
@@ -34865,36 +34646,36 @@ if (!Array.prototype.indexOf) {
             W.init(node.conf.window);
         });
 
-        node.on('HIDE', function(idOrObj) {
-            var el;
-            console.log('***GameWindow.on.HIDE is deprecated. Use ' +
-                        'GameWindow.hide() instead.***');
-            el = getElement(idOrObj, 'GameWindow.on.HIDE');
-            if (el) el.style.display = 'none';
-        });
-
-        node.on('SHOW', function(idOrObj) {
-            var el;
-            console.log('***GameWindow.on.SHOW is deprecated. Use ' +
-                        'GameWindow.show() instead.***');
-            el = getElement(idOrObj, 'GameWindow.on.SHOW');
-            if (el) el.style.display = '';
-        });
-
-        node.on('TOGGLE', function(idOrObj) {
-            var el;
-            console.log('***GameWindow.on.TOGGLE is deprecated. Use ' +
-                        'GameWindow.toggle() instead.***');
-            el = getElement(idOrObj, 'GameWindow.on.TOGGLE');
-            if (el) {
-                if (el.style.display === 'none') {
-                    el.style.display = '';
-                }
-                else {
-                    el.style.display = 'none';
-                }
-            }
-        });
+//         node.on('HIDE', function(idOrObj) {
+//             var el;
+//             console.log('***GameWindow.on.HIDE is deprecated. Use ' +
+//                         'GameWindow.hide() instead.***');
+//             el = getElement(idOrObj, 'GameWindow.on.HIDE');
+//             if (el) el.style.display = 'none';
+//         });
+//
+//         node.on('SHOW', function(idOrObj) {
+//             var el;
+//             console.log('***GameWindow.on.SHOW is deprecated. Use ' +
+//                         'GameWindow.show() instead.***');
+//             el = getElement(idOrObj, 'GameWindow.on.SHOW');
+//             if (el) el.style.display = '';
+//         });
+//
+//         node.on('TOGGLE', function(idOrObj) {
+//             var el;
+//             console.log('***GameWindow.on.TOGGLE is deprecated. Use ' +
+//                         'GameWindow.toggle() instead.***');
+//             el = getElement(idOrObj, 'GameWindow.on.TOGGLE');
+//             if (el) {
+//                 if (el.style.display === 'none') {
+//                     el.style.display = '';
+//                 }
+//                 else {
+//                     el.style.display = 'none';
+//                 }
+//             }
+//         });
 
         // Disable all the input forms found within a given id element.
         node.on('INPUT_DISABLE', function(id) {
@@ -34939,10 +34720,10 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # WaitScreen
- * Copyright(c) 2016 Stefano Balietti
+ * Copyright(c) 2018 Stefano Balietti
  * MIT Licensed
  *
- * Covers the screen with a gray layer, disables inputs, and displays a message
+ * Overlays the screen, disables inputs, and displays a message/timer
  *
  * www.nodegame.org
  */
@@ -34955,13 +34736,13 @@ if (!Array.prototype.indexOf) {
 
     // ## Meta-data
 
-    WaitScreen.version = '0.8.0';
-    WaitScreen.description = 'Show a standard waiting screen';
+    WaitScreen.version = '0.9.0';
+    WaitScreen.description = 'Shows a standard waiting screen';
 
     // ## Helper functions
 
     var inputTags, len;
-    inputTags = ['button', 'select', 'textarea', 'input'];
+    inputTags = [ 'button', 'select', 'textarea', 'input' ];
     len = inputTags.length;
 
     /**
@@ -35005,38 +34786,40 @@ if (!Array.prototype.indexOf) {
     }
 
     function event_REALLY_DONE(text) {
+        var countdown;
         text = text || W.waitScreen.defaultTexts.waiting;
         if (!node.game.shouldStep()) {
             if (W.isScreenLocked()) {
                 W.waitScreen.updateText(text);
             }
             else {
-                W.lockScreen(text);
+                if (node.game.timer.milliseconds) {
+                    // 2000 to make sure it does reach 0 and stays there.
+                    countdown = node.game.timer.milliseconds -
+                        node.timer.getTimeSince('step', true) + 2000;
+                    if (countdown < 0) countdown = 0;
+                }
+                W.lockScreen(text, countdown);
             }
         }
     }
 
-    function event_STEPPING(text) {
-        text = text || W.waitScreen.defaultTexts.stepping;
-        if (W.isScreenLocked()) {
-            W.waitScreen.updateText(text);
-        }
-        else {
-            W.lockScreen(text);
-        }
+    function event_STEPPING() {
+        var text;
+        text = W.waitScreen.defaultTexts.stepping;
+        if (W.isScreenLocked()) W.waitScreen.updateText(text);
+        else W.lockScreen(text);
     }
 
     function event_PLAYING() {
-        if (W.isScreenLocked()) {
-            W.unlockScreen();
-        }
+        if (W.isScreenLocked()) W.unlockScreen();
     }
 
     function event_PAUSED(text) {
         text = text || W.waitScreen.defaultTexts.paused;
         if (W.isScreenLocked()) {
             W.waitScreen.beforePauseInnerHTML =
-                W.waitScreen.waitingDiv.innerHTML;
+                W.waitScreen.contentDiv.innerHTML;
             W.waitScreen.updateText(text);
         }
         else {
@@ -35110,6 +34893,42 @@ if (!Array.prototype.indexOf) {
         this.enabled = false;
 
         /**
+         * ### WaitScreen.contentDiv
+         *
+         * Div containing the main content of the wait screen
+         */
+        this.contentDiv = null;
+
+        /**
+         * ### WaitScreen.countdownDiv
+         *
+         * Div containing the countdown span and other text
+         *
+         * @see WaitScreen.countdown
+         * @see WaitScreen.countdownSpan
+         */
+        this.countdownDiv = null;
+
+        /**
+         * ### WaitScreen.countdownSpan
+         *
+         * Span containing a countdown timer for the max waiting
+         *
+         * @see WaitScreen.countdown
+         * @see WaitScreen.countdownDiv
+         */
+        this.countdownSpan = null;
+
+        /**
+         * ### WaitScreen.countdown
+         *
+         * Countdown of max waiting time
+         *
+         * @see WaitScreen.countdown
+         */
+        this.countdown = null;
+
+        /**
          * ### WaitScreen.text
          *
          * Default texts for default events
@@ -35171,18 +34990,22 @@ if (!Array.prototype.indexOf) {
      *
      * Locks the screen
      *
-     * Overlays a gray div on top of the page and disables all inputs.
+     * Overlays a gray div on top of the page and disables all inputs
      *
      * If called on an already locked screen, the previous text is destroyed.
      * Use `WaitScreen.updateText` to modify an existing text.
      *
      * @param {string} text Optional. If set, displays the text on top of the
      *   gray string
+     * @param {number} countdown Optional. The expected max total time the
+     *   the screen will stay locked (in ms). A countdown will be displayed,
+     *   at the end of which a text replaces the countdown, but the screen
+     *   stays locked until the unlock command is received.
      *
      * @see WaitScreen.unlock
      * @see WaitScren.updateText
      */
-    WaitScreen.prototype.lock = function(text) {
+    WaitScreen.prototype.lock = function(text, countdown) {
         var frameDoc;
         if ('undefined' === typeof document.getElementsByTagName) {
             node.warn('WaitScreen.lock: cannot lock inputs.');
@@ -35191,23 +35014,60 @@ if (!Array.prototype.indexOf) {
         lockUnlockedInputs(document);
 
         frameDoc = W.getFrameDocument();
-
-        // TODO: cleanup refactor.
-        // Using this for IE8 compatibility.
-        // frameDoc = W.getIFrameDocument(W.getFrame());
-
         if (frameDoc) lockUnlockedInputs(frameDoc);
 
         if (!this.waitingDiv) {
             if (!this.root) {
                 this.root = W.getFrameRoot() || document.body;
             }
-            this.waitingDiv = W.addDiv(this.root, this.id);
+            this.waitingDiv = W.add('div', this.root, this.id);
+
+            this.contentDiv = W.add('div', this.waitingDiv,
+                                    'ng_waitscreen-content-div');
         }
         if (this.waitingDiv.style.display === 'none') {
             this.waitingDiv.style.display = '';
         }
-        this.waitingDiv.innerHTML = text;
+        this.contentDiv.innerHTML = text;
+
+        if (countdown) {
+            if (!this.countdownDiv) {
+                this.countdownDiv = W.add('div', this.waitingDiv,
+                                          'ng_waitscreen-countdown-div');
+
+                this.countdownDiv.innerHTML = '<br>Do not refresh the page!' +
+                    '<br>Maximum Waiting Time: ';
+
+                this.countdownSpan = W.add('span', this.countdownDiv,
+                                           'ng_waitscreen-countdown-span');
+            }
+
+            this.countdown = countdown;
+            this.countdownSpan.innerHTML = formatCountdown(countdown);
+            this.countdownDiv.style.display = '';
+
+            this.countdownInterval = setInterval(function() {
+                var w;
+                w = W.waitScreen;
+                if (!W.isScreenLocked()) {
+                    clearInterval(w.countdownInterval);
+                    return;
+                }
+
+                w.countdown -= 1000;
+                if (w.countdown < 0) {
+                    clearInterval(w.countdownInterval);
+                    w.countdownDiv.style.display = 'none';
+                    w.contentDiv.innerHTML = 'Resuming soon...';
+                }
+                else {
+                    w.countdownSpan.innerHTML = formatCountdown(w.countdown);
+                }
+            }, 1000);
+        }
+        else if (this.countdownDiv) {
+            this.countdownDiv.style.display = 'none';
+        }
     };
 
     /**
@@ -35225,6 +35085,8 @@ if (!Array.prototype.indexOf) {
                 this.waitingDiv.style.display = 'none';
             }
         }
+        if (this.countdownInterval) clearInterval(this.countdownInterval);
+
         // Re-enables all previously locked input forms in the page.
         try {
             len = this.lockedInputs.length;
@@ -35251,10 +35113,11 @@ if (!Array.prototype.indexOf) {
     WaitScreen.prototype.updateText = function(text, append) {
         append = append || false;
         if ('string' !== typeof text) {
-            throw new TypeError('WaitScreen.updateText: text must be string.');
+            throw new TypeError('WaitScreen.updateText: text must be ' +
+                                'string. Found: ' + text);
         }
-        if (append) this.waitingDiv.innerHTML += text;
-        else this.waitingDiv.innerHTML = text;
+        if (append) this.contentDiv.innerHTML += text;
+        else this.contentDiv.innerHTML = text;
     };
 
     /**
@@ -35280,18 +35143,353 @@ if (!Array.prototype.indexOf) {
         this.disable();
     };
 
+
+    // ## Helper functions.
+
+    function formatCountdown(time) {
+        var out;
+        out = '';
+        time = J.parseMilliseconds(time);
+        if (time[2]) out += time[2] + ' min ';
+        if (time[3]) out += time[3] + ' sec';
+        return out || 0;
+    }
+
+
 })(
     ('undefined' !== typeof node) ? node : module.parent.exports.node,
     ('undefined' !== typeof window) ? window : module.parent.exports.window
 );
 
 /**
- * # selector
- * Copyright(c) 2015 Stefano Balietti
+ * # InfoPanel
+ * Copyright(c) 2017 Stefano Balietti <ste@nodegame.org>
  * MIT Licensed
  *
- * Utility functions to create and manipulate meaninful HTML select lists for
- * nodeGame
+ * Adds a configurable extra panel at the top of the screen
+ *
+ * InfoPanel is normally placed between header and main frame.
+ *
+ * www.nodegame.org
+ */
+(function(exports, window) {
+
+    "use strict";
+
+    exports.InfoPanel = InfoPanel;
+
+    function InfoPanel(options) {
+        this.init(options || {});
+    }
+
+    /**
+     * ### InfoPanel.init
+     *
+     * Inits the Info panel
+     *
+     * @param {object} options Optional. Configuration options.
+     *   Available options (defaults):
+     *
+     *    - 'className': a class name for the info panel div (''),
+     *    - 'isVisible': if TRUE, the info panel is open immediately (false),
+     *    - 'onStep:' an action to perform every new step (null),
+     *    - 'onStage:' an action to perform every new stage (null).
+     */
+    InfoPanel.prototype.init = function(options) {
+        var that;
+        options = options || {};
+
+        this.infoPanelDiv = document.createElement('div');
+        this.infoPanelDiv.id = 'ng_info-panel';
+
+        /**
+         * ### InfoPanel.actionsLog
+         *
+         * Array containing the list of open/close events and a timestamp
+         *
+         * Entries in the actions log are objects: with keys 'create',
+         * 'open', 'close', 'clear', 'destroy' and a timestamp.
+         *
+         * @see InfoPanel.open
+         * @see InfoPanel.close
+         */
+        this.actionsLog = [];
+
+        /**
+         * ### InfoPanel._buttons
+         *
+         * Collection of buttons created via `createToggleButton` method
+         *
+         * @see InfoPanel.createToggleButton
+         */
+        this._buttons = [];
+
+        /**
+         * ### InfoPanel.className
+         *
+         * Class name of info panel
+         *
+         * Default: ''
+         */
+        if ('undefined' === typeof options.className) {
+            this.infoPanelDiv.className = '';
+        }
+        else if ('string' === typeof options.className) {
+            this.infoPanelDiv.className = options.className;
+        }
+        else {
+            throw new TypeError('InfoPanel constructor: options.className ' +
+                                'must be a string or undefined. ' +
+                                'Found: ' + options.className);
+        }
+
+        /**
+         * ### InfoPanel.isVisible
+         *
+         * Boolean indicating visibility of info panel div
+         *
+         * Default: FALSE
+         */
+        if ('undefined' === typeof options.isVisible) {
+            this.isVisible = false;
+        }
+        else if ('boolean' === typeof options.isVisible) {
+            this.isVisible = options.isVisible;
+        }
+        else {
+            throw new TypeError('InfoPanel constructor: options.isVisible ' +
+                                'must be a boolean or undefined. ' +
+                                'Found: ' + options.isVisible);
+        }
+
+        this.infoPanelDiv.style.display = this.isVisible ? 'block' : 'none';
+        this.actionsLog.push({ created: J.now() });
+
+        /**
+         * ### InfoPanel.onStep
+         *
+         * Performs an action ('clear', 'open', 'close') at every new step
+         *
+         * Default: null
+         */
+        if ('undefined' !== typeof options.onStep) {
+            if ('open' === options.onStep ||
+                'close' === options.onStep ||
+                'clear' ===  options.onStep) {
+
+                this.onStep = options.onStep;
+            }
+            else {
+                throw new TypeError('InfoPanel constructor: options.onStep ' +
+                                    'must be string "open", "close", "clear" ' +
+                                    'or undefined. Found: ' + options.onStep);
+            }
+        }
+        else {
+            options.onStep = null;
+        }
+
+        /**
+         * ### InfoPanel.onStage
+         *
+         * Performs an action ('clear', 'open', 'close') at every new stage
+         *
+         * Default: null
+         */
+        if ('undefined' !== typeof options.onStage) {
+            if ('open' === options.onStage ||
+                'close' === options.onStage ||
+                'clear' ===  options.onStage) {
+
+                this.onStage = options.onStage;
+            }
+            else {
+                throw new TypeError('InfoPanel constructor: options.onStage ' +
+                                    'must be string "open", "close", "clear" ' +
+                                    'or undefined. Found: ' + options.onStage);
+            }
+        }
+        else {
+            options.onStage = null;
+        }
+
+        if (this.onStep || this.onStage) {
+            that = this;
+            node.events.game.on('STEPPING', function(curStep, newStep) {
+                var newStage;
+                newStage = curStep.stage !== newStep.stage;
+
+                if ((that.onStep === 'close' && that.isVisible) ||
+                    (newStage && that.onStage === 'close')) {
+
+                    that.close();
+                }
+                else if (that.onStep === 'open' ||
+                         (newStage && that.onStage === 'open')) {
+
+                    that.open();
+                }
+                else if (that.onStep === 'clear' ||
+                         (newStage && that.onStage === 'clear')) {
+
+                    that.clear();
+                }
+            });
+        }
+    };
+
+    /**
+     * ### InfoPanel.clear
+     *
+     * Clears the content of the Info Panel
+     */
+    InfoPanel.prototype.clear = function() {
+        this.infoPanelDiv.innerHTML = '';
+        this.actionsLog.push({ clear: J.now() });
+        W.adjustHeaderOffset(true);
+    };
+
+    /**
+     * ### InfoPanel.getPanel
+     *
+     * Returns the HTML element of the panel (div)
+     *
+     * @return {HTMLElement} The Info Panel
+     *
+     * @see InfoPanel.infoPanelDiv
+     */
+    InfoPanel.prototype.getPanel = function() {
+        return this.infoPanelDiv;
+    };
+
+    /**
+     * ### InfoPanel.destroy
+     *
+     * Removes the Info Panel from the DOM and the internal references to it
+     *
+     * @param {actionsLog} If TRUE, also the actions log is deleted, otherwise
+     *   the destroy action is added. Default: false.
+     *
+     * @see InfoPanel.infoPanelDiv
+     * @see InfoPanel._buttons
+     */
+    InfoPanel.prototype.destroy = function(actionsLog) {
+        var i, len;
+        if (actionsLog) this.actionsLog = [];
+        else this.actionsLog.push({ destroy: J.now() });
+
+        if (this.infoPanelDiv.parentNode) {
+            this.infoPanelDiv.parentNode.removeChild(this.infoPanelDiv);
+        }
+        this.isVisible = false;
+        this.infoPanelDiv = null;
+        i = -1, len = this._buttons.length;
+        for ( ; ++i < len ; ) {
+            if (this._buttons[i].parentNode) {
+                this._buttons[i].parentNode.removeChild(this._buttons[i]);
+            }
+        }
+        W.adjustHeaderOffset(true);
+    };
+
+    /**
+     * ### InfoPanel.toggle
+     *
+     * Toggles the visibility of the Info Panel
+     *
+     * @see InfoPanel.open
+     * @see InfoPanel.close
+     */
+    InfoPanel.prototype.toggle = function() {
+        if (this.isVisible) this.close();
+        else this.open();
+    };
+
+    /**
+     * ### InfoPanel.open
+     *
+     * Opens the Info Panel (if not already open)
+     *
+     * @see InfoPanel.toggle
+     * @see InfoPanel.close
+     * @see InfoPanel.isVisible
+     */
+    InfoPanel.prototype.open = function() {
+        if (this.isVisible) return;
+        this.actionsLog.push({ open: J.now() });
+        this.infoPanelDiv.style.display = 'block';
+        this.isVisible = true;
+        // Must be at the end.
+        W.adjustHeaderOffset(true);
+    };
+
+    /**
+     * ### InfoPanel.close
+     *
+     * Closes the Info Panel (if not already closed)
+     *
+     * @see InfoPanel.toggle
+     * @see InfoPanel.open
+     * @see InfoPanel.isVisible
+     */
+    InfoPanel.prototype.close = function() {
+        if (!this.isVisible) return;
+        this.actionsLog.push({ close: J.now() });
+        this.infoPanelDiv.style.display = 'none';
+        this.isVisible = false;
+        // Must be at the end.
+        W.adjustHeaderOffset(true);
+    };
+
+    /**
+     * ### InfoPanel.createToggleButton
+     *
+     * Creates an HTML button with a listener to toggle the InfoPanel
+     *
+     * Adds the button to the internal collection `_buttons`. All buttons
+     * are destroyed if the Info Panel is destroyed.
+     *
+     * @return {HTMLElement} button A button that toggles info panel
+     *
+     * @see InfoPanel._buttons
+     * @see InfoPanel.toggle
+     */
+    InfoPanel.prototype.createToggleButton = function(buttonLabel) {
+        var that, button;
+
+        buttonLabel = buttonLabel || 'Toggle Info Panel';
+        if ('string' !== typeof buttonLabel || buttonLabel.trim() === '') {
+            throw new Error('InfoPanel.createToggleButton: buttonLabel ' +
+                            'must be undefined or a non-empty string. Found: ' +
+                            buttonLabel);
+        }
+        button = document.createElement('button');
+        button.className = 'btn btn-lg btn-warning';
+        button.innerHTML = buttonLabel ;
+
+        that = this;
+        button.onclick = function() {
+            that.toggle();
+        };
+
+        this._buttons.push(button);
+
+        return button;
+    };
+
+})(
+    ('undefined' !== typeof node) ? node : module.parent.exports.node,
+    ('undefined' !== typeof window) ? window : module.parent.exports.window
+);;
+
+/**
+ * # selector
+ * Copyright(c) 2017 Stefano Balietti
+ * MIT Licensed
+ *
+ * Utility functions to create and manipulate HTML select lists
+ *
+ * Extra methods relevant for nodeGame variables are added.
  *
  * http://www.nodegame.org
  */
@@ -35299,7 +35497,6 @@ if (!Array.prototype.indexOf) {
 
     "use strict";
 
-    var J = node.JSUS;
     var constants = node.constants;
     var GameWindow = node.GameWindow;
 
@@ -35511,7 +35708,7 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # extra
- * Copyright(c) 2016 Stefano Balietti
+ * Copyright(c) 2017 Stefano Balietti
  * MIT Licensed
  *
  * GameWindow extras
@@ -35523,14 +35720,14 @@ if (!Array.prototype.indexOf) {
     "use strict";
 
     var GameWindow = node.GameWindow;
-    var J = node.JSUS;
-    var DOM = J.get('DOM');
+    var DOM = J.require('DOM');
 
     /**
      * ### GameWindow.getScreen
      *
-     * Returns the screen of the game, i.e. the innermost element
-     * inside which to display content
+     * Returns the "screen" of the game
+     *
+     * i.e. the innermost element inside which to display content
      *
      * In the following order the screen can be:
      *
@@ -35682,25 +35879,6 @@ if (!Array.prototype.indexOf) {
     };
 
     /**
-     * ### GameWindow.getScreenInfo
-     *
-     * Returns information about the screen in which nodeGame is running
-     *
-     * @return {object} A object containing the scren info
-     */
-    GameWindow.prototype.getScreenInfo = function() {
-        var screen = window.screen;
-        return {
-            height: screen.height,
-            widht: screen.width,
-            availHeight: screen.availHeight,
-            availWidth: screen.availWidht,
-            colorDepth: screen.colorDepth,
-            pixelDepth: screen.pixedDepth
-        };
-    };
-
-    /**
      * ### GameWindow.getLoadingDots
      *
      * Creates and returns a span element with incrementing dots inside
@@ -35720,7 +35898,8 @@ if (!Array.prototype.indexOf) {
     GameWindow.prototype.getLoadingDots = function(len, id) {
         var spanDots, i, limit, intervalId;
         if (len & len < 0) {
-            throw new Error('GameWindow.getLoadingDots: len < 0.');
+            throw new Error('GameWindow.getLoadingDots: len cannot be < 0. ' +
+                            'Found: ' + len);
         }
         len = len || 5;
         spanDots = document.createElement('span');
@@ -35782,24 +35961,28 @@ if (!Array.prototype.indexOf) {
      * Creates an HTML button element that will emit an event when clicked
      *
      * @param {string} event The event to emit when clicked
-     * @param {string} text Optional. The text on the button
-     * @param {string} id The id of the button
-     * @param {object} attributes Optional. The attributes of the button
+     * @param {string|object} attributes Optional. The attributes of the
+     *   button, or if string the text to display inside the button.
      *
      * @return {Element} The newly created button
+     *
+     * @see GameWindow.get
      */
-    GameWindow.prototype.getEventButton =
-    function(event, text, id, attributes) {
-
+    GameWindow.prototype.getEventButton = function(event, attributes) {
         var b;
         if ('string' !== typeof event) {
             throw new TypeError('GameWindow.getEventButton: event must ' +
-                                'be string.');
+                                'be string. Found: ' + event);
         }
-        b = this.getButton(id, text, attributes);
-        b.onclick = function() {
-            node.emit(event);
-        };
+        if ('string' === typeof attributes) {
+            attributes = { innerHTML: attributes };
+        }
+        else if (!attributes) {
+            attributes = {};
+        }
+        if (!attributes.innerHTML) attributes.innerHTML = event;
+        b = this.get('button', attributes);
+        b.onclick = function() { node.emit(event); };
         return b;
     };
 
@@ -35808,30 +35991,21 @@ if (!Array.prototype.indexOf) {
      *
      * Adds an EventButton to the specified root element
      *
-     * If no valid root element is provided, it is append as last element
-     * in the current screen.
-     *
      * @param {string} event The event to emit when clicked
-     * @param {string} text Optional. The text on the button
-     * @param {Element} root Optional. The root element
-     * @param {string} id The id of the button
-     * @param {object} attributes Optional. The attributes of the button
+     * @param {Element} root Optional. The root element. Default: last element
+     * on the page
+     * @param {string|object} attributes Optional. The attributes of the
+     *   button, or if string the text to display inside the button.
      *
      * @return {Element} The newly created button
      *
+     * @see GameWindow.get
      * @see GameWindow.getEventButton
      */
-    GameWindow.prototype.addEventButton =
-    function(event, text, root, id, attributes) {
+    GameWindow.prototype.addEventButton = function(event, root, attributes) {
         var eb;
-
-        if (!event) return;
-        if (!root) {
-            root = this.getScreen();
-        }
-
-        eb = this.getEventButton(event, text, id, attributes);
-
+        eb = this.getEventButton(event, attributes);
+        if (!root) root = this.getScreen();
         return root.appendChild(eb);
     };
 
@@ -35888,7 +36062,7 @@ if (!Array.prototype.indexOf) {
             prefix = arguments[2];
         }
 
-        if ('undefined' !== typeof prefix) {
+        if ('undefined' === typeof prefix) {
             prefix = 'ng_replace_';
         }
         else if (null === prefix) {
@@ -36257,8 +36431,7 @@ if (!Array.prototype.indexOf) {
 
     // ## Global scope
 
-    var document = window.document,
-    J = node.JSUS;
+    var document = window.document;
 
     var TriggerManager = node.TriggerManager;
 
@@ -36704,7 +36877,7 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # Table
- * Copyright(c) 2016 Stefano Balietti
+ * Copyright(c) 2017 Stefano Balietti
  * MIT Licensed
  *
  * Creates an HTML table that can be manipulated by an api.
@@ -36743,7 +36916,6 @@ if (!Array.prototype.indexOf) {
     exports.Table = Table;
     exports.Table.Cell = Cell;
 
-    var J = node.JSUS;
     var NDDB = node.NDDB;
     var HTMLRenderer = node.window.HTMLRenderer;
     var Entity = node.window.HTMLRenderer.Entity;
@@ -37659,7 +37831,7 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # Widget
- * Copyright(c) 2016 Stefano Balietti
+ * Copyright(c) 2017 Stefano Balietti <ste@nodegame.org>
  * MIT Licensed
  *
  * Prototype of a widget class
@@ -37922,10 +38094,13 @@ if (!Array.prototype.indexOf) {
      *
      * @param {string|HTMLElement|false} Optional. The title for the heading,
      *    div an HTML element, or false to remove the header completely.
+     * @param {object} Optional. Options to be passed to `W.add` if a new
+     *    heading div is created. Default: { className: 'panel-heading' }
      *
      * @see Widget.headingDiv
+     * @see GameWindow.add
      */
-    Widget.prototype.setTitle = function(title) {
+    Widget.prototype.setTitle = function(title, options) {
         var tmp;
         if (!this.panelDiv) {
             throw new Error('Widget.setTitle: panelDiv is missing.');
@@ -37941,8 +38116,15 @@ if (!Array.prototype.indexOf) {
         else {
             if (!this.headingDiv) {
                 // Add heading.
-                this.headingDiv = W.addDiv(this.panelDiv, undefined,
-                        {className: 'panel-heading'});
+                if (!options) {
+                    options = { className: 'panel-heading' };
+                }
+                else if ('object' !== typeof options) {
+                    throw new TypeError('Widget.setTitle: options must ' +
+                                        'be object or undefined. Found: ' +
+                                        options);
+                }
+                this.headingDiv = W.add('div', this.panelDiv, options);
                 // Move it to before the body (IE cannot have undefined).
                 tmp = (this.bodyDiv && this.bodyDiv.childNodes[0]) || null;
                 this.panelDiv.insertBefore(this.headingDiv, tmp);
@@ -37958,9 +38140,9 @@ if (!Array.prototype.indexOf) {
                 this.headingDiv.innerHTML = title;
             }
             else {
-                throw new TypeError(J.funcName(this) + '.setTitle: ' +
-                                    'title must be string, HTML element or ' +
-                                    'falsy. Found: ' + title);
+                throw new TypeError(J.funcName(this.constructor) +
+                                    '.setTitle: title must be string, ' +
+                                    'HTML element or falsy. Found: ' + title);
             }
         }
     };
@@ -37974,10 +38156,13 @@ if (!Array.prototype.indexOf) {
      *
      * @param {string|HTMLElement|false} Optional. The title for the header,
      *    an HTML element, or false to remove the header completely.
+     * @param {object} Optional. Options to be passed to `W.add` if a new
+     *    footer div is created. Default: { className: 'panel-footer' }
      *
      * @see Widget.footerDiv
+     * @see GameWindow.add
      */
-    Widget.prototype.setFooter = function(footer) {
+    Widget.prototype.setFooter = function(footer, options) {
         if (!this.panelDiv) {
             throw new Error('Widget.setFooter: panelDiv is missing.');
         }
@@ -37992,8 +38177,15 @@ if (!Array.prototype.indexOf) {
         else {
             if (!this.footerDiv) {
                 // Add footer.
-                this.footerDiv = W.addDiv(this.panelDiv, undefined,
-                        {className: 'panel-footer'});
+                if (!options) {
+                    options = { className: 'panel-footer' };
+                }
+                else if ('object' !== typeof options) {
+                    throw new TypeError('Widget.setFooter: options must ' +
+                                        'be object or undefined. Found: ' +
+                                        options);
+                }
+                this.footerDiv = W.add('div', this.panelDiv, options);
             }
 
             // Set footer contents.
@@ -38006,9 +38198,9 @@ if (!Array.prototype.indexOf) {
                 this.footerDiv.innerHTML = footer;
             }
             else {
-                throw new TypeError(J.funcName(this) + '.setFooter: ' +
-                                    'footer must be string, HTML element or ' +
-                                    'falsy. Found: ' + title);
+                throw new TypeError(J.funcName(this.constructor) +
+                                    '.setFooter: footer must be string, ' +
+                                    'HTML element or falsy. Found: ' + title);
             }
         }
     };
@@ -38024,13 +38216,403 @@ if (!Array.prototype.indexOf) {
      */
     Widget.prototype.setContext = function(context) {
         if ('string' !== typeof context) {
-            throw new TypeError(J.funcName(this) + '.setContext: ' +
-                                'footer must be string. Found: ' + context);
+            throw new TypeError(J.funcName(this.constructor) + '.setContext: ' +
+                                'context must be string. Found: ' + context);
 
         }
         W.removeClass(this.panelDiv, 'panel-[a-z]*');
         W.addClass(this.panelDiv, 'panel-' + context);
     };
+
+    /**
+     * ### Widget.addFrame
+     *
+     * Adds a border and margins around the bodyDiv element
+     *
+     * @param {string} context The type of bootstrap context.
+     *   Default: 'default'
+     *
+     * @see Widget.panelDiv
+     * @see Widget.bodyDiv
+     */
+    Widget.prototype.addFrame = function(context) {
+        if ('undefined' === typeof context) {
+            context = 'default';
+        }
+        else if ('string' !== typeof context || context.trim() === '') {
+            throw new TypeError(J.funcName(this.constructor) +
+                                '.addFrame: context must be a non-empty ' +
+                                'string or undefined. Found: ' + context);
+        }
+        if (this.panelDiv) {
+            if (this.panelDiv.className.indexOf('panel-') === -1) {
+                W.addClass(this.panelDiv, 'panel-' + context);
+            }
+        }
+        if (this.bodyDiv) {
+            if (this.bodyDiv.className.indexOf('panel-body') === -1) {
+                W.addClass(this.bodyDiv, 'panel-body');
+            }
+        }
+    };
+
+    /**
+     * ### Widget.removeFrame
+     *
+     * Removes the border and the margins around the bodyDiv element
+     *
+     * @see Widget.panelDiv
+     * @see Widget.bodyDiv
+     */
+    Widget.prototype.removeFrame = function() {
+        if (this.panelDiv) W.removeClass(this.panelDiv, 'panel-[a-z]*');
+        if (this.bodyDiv) W.removeClass(this.bodyDiv, 'panel-body');
+    };
+
+    /**
+     * ### Widget.setSound
+     *
+     * Checks and assigns the value of a sound to play to user
+     *
+     * Throws an error if value is invalid
+     *
+     * @param {string} name The name of the sound to check
+     * @param {mixed} path Optional. The path to the audio file. If undefined
+     *    the default value from Widget.sounds is used
+     *
+     * @see Widget.sounds
+     * @see Widget.getSound
+     * @see Widget.setSounds
+     * @see Widget.getSounds
+     */
+    Widget.prototype.setSound = function(name, value) {
+        strSetter(this, name, value, 'sounds', 'Widget.setSound');
+    };
+
+    /**
+     * ### Widget.setSounds
+     *
+     * Assigns multiple sounds at the same time
+     *
+     * @param {object} sounds Optional. Object containing sound paths
+     *
+     * @see Widget.sounds
+     * @see Widget.setSound
+     * @see Widget.getSound
+     * @see Widget.getSounds
+     */
+    Widget.prototype.setSounds = function(sounds) {
+        strSetterMulti(this, sounds, 'sounds', 'setSound',
+                       J.funcName(this.constructor) + '.setSounds');
+    };
+
+    /**
+     * ### Widget.getSound
+     *
+     * Returns the requested sound path
+     *
+     * @param {string} name The name of the sound variable.
+     * @param {mixed} param Optional. Additional info to pass to the
+     *   callback, if any
+     *
+     * @return {string} The requested sound
+     *
+     * @see Widget.sounds
+     * @see Widget.setSound
+     * @see Widget.getSound
+     * @see Widget.getSounds
+     */
+    Widget.prototype.getSound = function(name, param) {
+        return strGetter(this, name, 'sounds',
+                         J.funcName(this.constructor) + '.getSound', param);
+    };
+
+    /**
+     * ### Widget.getSounds
+     *
+     * Returns an object with selected sounds (paths)
+     *
+     * @param {object|array} keys Optional. An object whose keys, or an array
+     *   whose values, are used of  to select the properties to return.
+     *   Default: all properties in the collection object.
+     * @param {object} param Optional. Object containing parameters to pass
+     *   to the sounds functions (if any)
+     *
+     * @return {object} Selected sounds (paths)
+     *
+     * @see Widget.sounds
+     * @see Widget.setSound
+     * @see Widget.getSound
+     * @see Widget.setSounds
+     */
+    Widget.prototype.getSounds = function(keys, param) {
+        return strGetterMulti(this, 'sounds', 'getSound',
+                              J.funcName(this.constructor)
+                              + '.getSounds', keys, param);
+    };
+
+    /**
+     * ### Widget.getAllSounds
+     *
+     * Returns an object with all current sounds
+     *
+     * @param {object} param Optional. Object containing parameters to pass
+     *   to the sounds functions (if any)
+     *
+     * @return {object} All current sounds
+     *
+     * @see Widget.getSound
+     */
+    Widget.prototype.getAllSounds = function(param) {
+        return strGetterMulti(this, 'sounds', 'getSound',
+                              J.funcName(this.constructor) + '.getAllSounds',
+                              undefined, param);
+    };
+
+    /**
+     * ### Widget.setText
+     *
+     * Checks and assigns the value of a text to display to user
+     *
+     * Throws an error if value is invalid
+     *
+     * @param {string} name The name of the property to check
+     * @param {mixed} value Optional. The value for the text. If undefined
+     *    the default value from Widget.texts is used
+     *
+     * @see Widget.texts
+     * @see Widget.getText
+     * @see Widget.setTexts
+     * @see Widget.getTexts
+     */
+    Widget.prototype.setText = function(name, value) {
+        strSetter(this, name, value, 'texts',
+                  J.funcName(this.constructor) + '.setText');
+    };
+
+    /**
+     * ### Widget.setTexts
+     *
+     * Assigns all texts
+     *
+     * @param {object} texts Optional. Object containing texts
+     *
+     * @see Widget.texts
+     * @see Widget.setText
+     * @see Widget.getText
+     * @see Widget.getTexts
+     */
+    Widget.prototype.setTexts = function(texts) {
+        strSetterMulti(this, texts, 'texts', 'setText',
+                       J.funcName(this.constructor) + '.setTexts');
+    };
+
+    /**
+     * ### Widget.getText
+     *
+     * Returns the requested text
+     *
+     * @param {string} name The name of the text variable.
+     * @param {mixed} param Optional. Additional to pass to the callback, if any
+     *
+     * @return {string} The requested text
+     *
+     * @see Widget.texts
+     * @see Widget.setText
+     * @see Widget.setTexts
+     * @see Widget.getTexts
+     */
+    Widget.prototype.getText = function(name, param) {
+        return strGetter(this, name, 'texts',
+                         J.funcName(this.constructor) + '.getText', param);
+    };
+
+    /**
+     * ### Widget.getTexts
+     *
+     * Returns an object with selected texts
+     *
+     * @param {object|array} keys Optional. An object whose keys, or an array
+     *   whose values, are used of  to select the properties to return.
+     *   Default: all properties in the collection object.
+     * @param {object} param Optional. Object containing parameters to pass
+     *   to the sounds functions (if any)
+     *
+     * @return {object} Selected texts
+     *
+     * @see Widget.texts
+     * @see Widget.setText
+     * @see Widget.getText
+     * @see Widget.setTexts
+     * @see Widget.getAllTexts
+     */
+    Widget.prototype.getTexts = function(keys, param) {
+        return strGetterMulti(this, 'texts', 'getText',
+                              J.funcName(this.constructor)
+                              + '.getTexts', keys, param);
+    };
+
+    /**
+     * ### Widget.getAllTexts
+     *
+     * Returns an object with all current texts
+     *
+     * @param {object|array} param Optional. Object containing parameters
+     *   to pass to the texts functions (if any)
+     *
+     * @return {object} All current texts
+     *
+     * @see Widget.texts
+     * @see Widget.setText
+     * @see Widget.setTexts
+     * @see Widget.getText
+     */
+    Widget.prototype.getAllTexts = function(param) {
+        return strGetterMulti(this, 'texts', 'getText',
+                              J.funcName(this.constructor)
+                              + '.getAllTexts', undefined, param);
+    };
+
+    // ## Helper methods.
+
+    /**
+     * ### strGetter
+     *
+     * Returns the value a property from a collection in instance/constructor
+     *
+     * If the string is not found in the live instance, the default value
+     * from the same collection inside the contructor is returned instead.
+     *
+     * If the property is not found in the corresponding static
+     * collection in the constructor of the instance, an error is thrown.
+     *
+     * @param {object} that The main instance
+     * @param {string} name The name of the property inside the collection
+     * @param {string} collection The name of the collection inside the instance
+     * @param {string} method The name of the invoking method (for error string)
+     * @param {mixed} param Optional. If the value of the requested property
+     *   is a function, this parameter is passed to it to get a return value.
+     *
+     * @return {string} res The value of requested property as found
+     *   in the instance, or its default value as found in the constructor
+     */
+    function strGetter(that, name, collection, method, param) {
+        var res;
+        if (!that.constructor[collection].hasOwnProperty(name)) {
+            throw new Error(method + ': name not found: ' + name);
+        }
+        res = 'undefined' !== typeof that[collection][name] ?
+            that[collection][name] : that.constructor[collection][name];
+        if ('function' === typeof res) {
+            res = res(that, param);
+            if ('string' !== typeof res) {
+                throw new TypeError(method + ': cb "' + name +
+                                    'did not return a string. Found: ' + res);
+            }
+        }
+        return res;
+    }
+
+    /**
+     * ### strGetterMulti
+     *
+     * Same as strGetter, but returns multiple values at once
+     *
+     * @param {object} that The main instance
+     * @param {string} collection The name of the collection inside the instance
+     * @param {string} getMethod The name of the method to get each value
+     * @param {string} method The name of the invoking method (for error string)
+     * @param {object|array} keys Optional. An object whose keys, or an array
+     *   whose values, are used of this object are to select the properties
+     *   to return. Default: all properties in the collection object.
+     * @param {mixed} param Optional. If the value of the requested property
+     *    is a function, this parameter is passed to it, when invoked to get
+     *    a return value. Default: undefined
+     *
+     * @return {string} out The requested value.
+     *
+     * @see strGetter
+     */
+    function strGetterMulti(that, collection, getMethod, method, keys, param) {
+        var out, k, len;
+        if (!keys) keys = that.constructor[collection];
+        if ('undefined' === typeof param) {
+            param = {};
+        }
+        out = {};
+        if (J.isArray(keys)) {
+            k = -1, len = keys.length;
+            for ( ; ++k < len;) {
+                out[keys[k]] = that[getMethod](keys[k], param);
+            }
+        }
+        else {
+            for (k in keys) {
+                if (keys.hasOwnProperty(k)) {
+                    out[k] = that[getMethod](k, param);
+                }
+            }
+        }
+        return out;
+    }
+
+    /**
+     * ### strSetterMulti
+     *
+     * Same as strSetter, but sets multiple values at once
+     *
+     * @param {object} that The main instance
+     * @param {object} obj List of properties to set and their values
+     * @param {string} collection The name of the collection inside the instance
+     * @param {string} setMethod The name of the method to set each value
+     * @param {string} method The name of the invoking method (for error string)
+     *
+     * @see strSetter
+     */
+    function strSetterMulti(that, obj, collection, setMethod, method) {
+        var i;
+        if ('object' !== typeof obj && 'undefined' !== typeof obj) {
+            throw new TypeError(method + ': ' + collection +
+                                ' must be object or undefined. Found: ' + obj);
+        }
+        for (i in obj) {
+            if (obj.hasOwnProperty(i)) {
+                that[setMethod](i, obj[i]);
+            }
+        }
+    }
+
+    /**
+     * ### strSetter
+     *
+     * Sets the value of a property in a collection if string, function or false
+     *
+     * @param {object} that The main instance
+     * @param {string} name The name of the property to set
+     * @param {string|function|false} value The value for the property
+     * @param {string} collection The name of the collection inside the instance
+     * @param {string} method The name of the invoking method (for error string)
+     *
+     * @see strSetter
+     */
+    function strSetter(that, name, value, collection, method) {
+        if ('undefined' === typeof that.constructor[collection][name]) {
+            throw new TypeError(method + ': name not found: ' + name);
+        }
+        if ('string' === typeof value ||
+            'function' === typeof value ||
+            false === value) {
+
+            that[collection][name] = value;
+        }
+        else {
+            throw new TypeError(method + ': value for item "' + name +
+                                '" must be string, function or false. ' +
+                                'Found: ' + value);
+        }
+    }
+
+
 
 })(
     // Widgets works only in the browser environment.
@@ -38049,8 +38631,6 @@ if (!Array.prototype.indexOf) {
 (function(window, node) {
 
     "use strict";
-
-    var J = node.JSUS;
 
     // ## Widgets constructor
 
@@ -38159,6 +38739,8 @@ if (!Array.prototype.indexOf) {
             throw new TypeError('Widgets.register: w must be function.' +
                                'Found: ' + w);
         }
+        if ('undefined' === typeof w.sounds) w.sounds = {};
+        if ('undefined' === typeof w.texts) w.texts = {};
         // Add default properties to widget prototype.
         J.mixout(w.prototype, new node.Widget());
         this.widgets[name] = w;
@@ -38223,11 +38805,14 @@ if (!Array.prototype.indexOf) {
             throw new TypeError('Widgets.get: widgetName must be string.' +
                                'Found: ' + widgetName);
         }
-        if (options && 'object' !== typeof options) {
+        if (!options) {
+            options = {};
+        }
+        else if ('object' !== typeof options) {
             throw new TypeError('Widgets.get: options must be object or ' +
                                 'undefined. Found: ' + options);
         }
-        options = options || {};
+
         that = this;
 
         WidgetPrototype = J.getNestedValue(widgetName, this.widgets);
@@ -38278,9 +38863,16 @@ if (!Array.prototype.indexOf) {
             WidgetPrototype.className : options.className;
         widget.context = 'undefined' === typeof options.context ?
             WidgetPrototype.context : options.context;
+        widget.sounds = 'undefined' === typeof options.sounds ?
+            WidgetPrototype.sounds : options.sounds;
+        widget.texts = 'undefined' === typeof options.texts ?
+            WidgetPrototype.texts : options.texts;
+
 
         // Fixed properties.
 
+        // Widget Name.
+        widget.widgetName = widgetName;
         // Add random unique widget id.
         widget.wid = '' + J.randomInt(0,10000000000000000000);
         // Add enabled.
@@ -38383,6 +38975,8 @@ if (!Array.prototype.indexOf) {
      * @see Widgets.get
      */
     Widgets.prototype.append = function(w, root, options) {
+        var tmp;
+
         if ('string' !== typeof w && 'object' !== typeof w) {
             throw new TypeError('Widgets.append: w must be string or object. ' +
                                'Found: ' + w);
@@ -38397,6 +38991,7 @@ if (!Array.prototype.indexOf) {
         }
 
         // Init default values.
+        options = options || {};
 
         // If no root is defined, use the body element of the main frame,
         // if none is found, use the document.body.
@@ -38405,29 +39000,41 @@ if (!Array.prototype.indexOf) {
             if (root) root = root.body;
             if (!root) root = document.body;
         }
-        options = options || {};
+        else if (root === W.getHeader() &&
+                 'undefined' === typeof options.panel) {
+
+            options.panel = false;
+        }
 
         // Check if it is a object (new widget).
         // If it is a string is the name of an existing widget.
         // In this case a dependencies check is done.
         if ('string' === typeof w) w = this.get(w, options);
 
-        w.panelDiv = appendDiv(root, {
-            attributes: {
-                className: ['ng_widget', 'panel', 'panel-default', w.className]
-            }
-        });
+        // Add panelDiv (with or without panel).
+        tmp = options.panel === false ?
+            [ 'ng_widget',  'no-panel', w.className ] :
+            [ 'ng_widget', 'panel', 'panel-default', w.className ];
 
-        // Optionally add title.
-        if (w.title) w.setTitle(w.title);
+        w.panelDiv = W.append('div', root, { className: tmp });
 
-        // Add body.
-        w.bodyDiv = appendDiv(w.panelDiv, {
-            attributes: {className: 'panel-body'}
-        });
+        // Optionally add title (and div).
+        if (options.title !== false && w.title) {
+            tmp = options.panel === false ?
+                'no-panel-heading' : 'panel-heading';
+            w.setTitle(w.title, { className: tmp });
+        }
+
+        // Add body (with or without panel).
+        tmp = options.panel !== false ? 'panel-body' : 'no-panel-body';
+        w.bodyDiv = W.append('div', w.panelDiv, { className: tmp });
 
         // Optionally add footer.
-        if (w.footer) w.setFooter(w.footer);
+        if (w.footer) {
+            tmp = options.panel === false ?
+                'no-panel-heading' : 'panel-heading';
+            w.setFooter(w.footer);
+        }
 
         // Optionally set context.
         if (w.context) w.setContext(w.context);
@@ -38575,11 +39182,6 @@ if (!Array.prototype.indexOf) {
 
     // ## Helper functions
 
-    function appendDiv(root, options) {
-        // TODO: Check every parameter
-        return W.addDiv(root, undefined, options.attributes);
-    }
-
 //     function createListenerFunction(w, e, l) {
 //         if (!w || !e || !l) return;
 //         w.panelDiv[e] = function() { l.call(w); };
@@ -38616,7 +39218,7 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # Chat
- * Copyright(c) 2016 Stefano Balietti
+ * Copyright(c) 2017 Stefano Balietti
  * MIT Licensed
  *
  * Creates a simple configurable chat
@@ -38627,13 +39229,11 @@ if (!Array.prototype.indexOf) {
 
     "use strict";
 
-    var J = node.JSUS;
-
     node.widgets.register('Chat', Chat);
 
     // ## Meta-data
 
-    Chat.version = '0.5.1';
+    Chat.version = '0.5.2';
     Chat.description = 'Offers a uni-/bi-directional communication interface ' +
         'between players, or between players and the experimenter.';
 
@@ -38833,7 +39433,7 @@ if (!Array.prototype.indexOf) {
 
     Chat.prototype.append = function() {
 
-        this.chat = W.getElement('div', this.chatId);
+        this.chat = W.get('div', this.chatId);
         this.bodyDiv.appendChild(this.chat);
 
         if (this.mode !== Chat.modes.RECEIVER_ONLY) {
@@ -38843,7 +39443,7 @@ if (!Array.prototype.indexOf) {
                                            this.submitText,
                                            this.submitId);
             this.submit.className = 'btn btn-sm btn-secondary';
-            this.textarea = W.getElement('textarea', this.textareaId);
+            this.textarea = W.get('textarea', this.textareaId);
             // Append them.
             W.writeln('', this.bodyDiv);
             this.bodyDiv.appendChild(this.textarea);
@@ -38933,7 +39533,7 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # ChernoffFaces
- * Copyright(c) 2016 Stefano Balietti
+ * Copyright(c) 2017 Stefano Balietti
  * MIT Licensed
  *
  * Displays multidimensional data in the shape of a Chernoff Face.
@@ -38944,14 +39544,13 @@ if (!Array.prototype.indexOf) {
 
     "use strict";
 
-    var J = node.JSUS;
-    var Table = node.window.Table;
+    var Table = W.Table;
 
     node.widgets.register('ChernoffFaces', ChernoffFaces);
 
     // ## Meta-data
 
-    ChernoffFaces.version = '0.6.1';
+    ChernoffFaces.version = '0.6.2';
     ChernoffFaces.description =
         'Display parametric data in the form of a Chernoff Face.';
 
@@ -39296,7 +39895,7 @@ if (!Array.prototype.indexOf) {
                 time: time,
                 change: features
             });
-        };
+        }
 
         // Create a new FaceVector, if features is not one, mixing-in
         // new features and old ones.
@@ -39944,7 +40543,7 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # ChernoffFacesSimple
- * Copyright(c) 2015 Stefano Balietti
+ * Copyright(c) 2017 Stefano Balietti <ste@nodegame.org>
  * MIT Licensed
  *
  * Displays multidimensional data in the shape of a Chernoff Face.
@@ -39955,7 +40554,7 @@ if (!Array.prototype.indexOf) {
 
     "use strict";
 
-    var Table = node.window.Table;
+    var Table = W.Table;
 
     node.widgets.register('ChernoffFacesSimple', ChernoffFaces);
 
@@ -39969,7 +40568,7 @@ if (!Array.prototype.indexOf) {
 
     // ## Meta-data
 
-    ChernoffFaces.version = '0.3';
+    ChernoffFaces.version = '0.4';
     ChernoffFaces.description =
         'Display parametric data in the form of a Chernoff Face.';
 
@@ -40004,8 +40603,6 @@ if (!Array.prototype.indexOf) {
 
         this.features = null;
         this.controls = null;
-
-        this.init(this.options);
     }
 
     ChernoffFaces.prototype.init = function(options) {
@@ -40027,14 +40624,14 @@ if (!Array.prototype.indexOf) {
                 options.height : ChernoffFaces.defaults.canvas.heigth
         };
 
-        this.canvas = node.window.getCanvas(idCanvas, this.dims);
+        this.canvas = W.getCanvas(idCanvas, this.dims);
         this.fp = new FacePainter(this.canvas);
         this.fp.draw(new FaceVector(this.features));
 
         var sc_options = {
             id: 'cf_controls',
             features:
-                JSUS.mergeOnKey(FaceVector.defaults, this.features, 'value'),
+                J.mergeOnKey(FaceVector.defaults, this.features, 'value'),
             change: this.change,
             fieldset: {id: this.id + '_controls_fieldest',
                        legend: this.controls.legend || 'Controls'
@@ -40090,7 +40687,7 @@ if (!Array.prototype.indexOf) {
         this.fp.redraw(fv);
         // Without merging wrong values are passed as attributes
         this.sc.init({
-            features: JSUS.mergeOnKey(FaceVector.defaults, features, 'value')
+            features: J.mergeOnKey(FaceVector.defaults, features, 'value')
         });
         this.sc.refresh();
     };
@@ -40105,7 +40702,7 @@ if (!Array.prototype.indexOf) {
         this.fp.redraw(fv);
 
         var sc_options = {
-            features: JSUS.mergeOnKey(FaceVector.defaults, fv, 'value'),
+            features: J.mergeOnKey(FaceVector.defaults, fv, 'value'),
             change: this.change
         };
         this.sc.init(sc_options);
@@ -40117,7 +40714,7 @@ if (!Array.prototype.indexOf) {
     // FacePainter
     // The class that actually draws the faces on the Canvas
     function FacePainter(canvas, settings) {
-        this.canvas = new node.window.Canvas(canvas);
+        this.canvas = new W.Canvas(canvas);
         this.scaleX = canvas.width / ChernoffFaces.defaults.canvas.width;
         this.scaleY = canvas.height / ChernoffFaces.defaults.canvas.heigth;
     }
@@ -40131,8 +40728,8 @@ if (!Array.prototype.indexOf) {
 
         //console.log('Face Scale ' + face.scaleY + ' ' + face.scaleX );
 
-        var x = x || this.canvas.centerX;
-        var y = y || this.canvas.centerY;
+        x = x || this.canvas.centerX;
+        y = y || this.canvas.centerY;
 
         this.drawHead(face, x, y);
 
@@ -40323,7 +40920,7 @@ if (!Array.prototype.indexOf) {
 
     //TODO Scaling ?
     FacePainter.computeFaceOffset = function(face, offset, y) {
-        var y = y || 0;
+        y = y || 0;
         //var pos = y - face.head_radius * face.scaleY +
         //          face.head_radius * face.scaleY * 2 * offset;
         var pos = y - face.head_radius + face.head_radius * 2 * offset;
@@ -40332,7 +40929,7 @@ if (!Array.prototype.indexOf) {
     };
 
     FacePainter.computeEyebrowOffset = function(face, y) {
-        var y = y || 0;
+        y = y || 0;
         var eyemindistance = 2;
         return FacePainter.computeFaceOffset(face, face.eye_height, y) -
             eyemindistance - face.eyebrow_eyedistance;
@@ -40518,7 +41115,7 @@ if (!Array.prototype.indexOf) {
         var out = {};
         for (var key in FaceVector.defaults) {
             if (FaceVector.defaults.hasOwnProperty(key)) {
-                if (!JSUS.in_array(key,
+                if (!J.inArray(key,
                             ['color', 'lineWidth', 'scaleX', 'scaleY'])) {
 
                     out[key] = FaceVector.defaults[key].min +
@@ -40618,8 +41215,6 @@ if (!Array.prototype.indexOf) {
 (function(node) {
 
     "use strict";
-
-    var J = node.JSUS;
 
     node.widgets.register('ChoiceManager', ChoiceManager);
 
@@ -40740,8 +41335,12 @@ if (!Array.prototype.indexOf) {
      *       to the list
      *   - freeText: if TRUE, a textarea will be added under the list,
      *       if 'string', the text will be added inside the the textarea
+     *   - forms: the forms to displayed, formatted as explained in
+     *       `ChoiceManager.setForms`
      *
      * @param {object} options Configuration options
+     *
+     * @see ChoiceManager.setForms
      */
     ChoiceManager.prototype.init = function(options) {
         var tmp, that;
@@ -41115,7 +41714,7 @@ if (!Array.prototype.indexOf) {
         opts = opts || {};
         i = -1, len = this.forms.length;
         for ( ; ++i < len ; ) {
-            form = this.forms[i]
+            form = this.forms[i];
             obj.forms[form.id] = form.getValues(opts);
             if (obj.forms[form.id].choice === null) {
                 obj.missValues.push(form.id);
@@ -41169,13 +41768,11 @@ if (!Array.prototype.indexOf) {
 
     "use strict";
 
-    var J = node.JSUS;
-
     node.widgets.register('ChoiceTable', ChoiceTable);
 
     // ## Meta-data
 
-    ChoiceTable.version = '1.2.0';
+    ChoiceTable.version = '1.3.0';
     ChoiceTable.description = 'Creates a configurable table where ' +
         'each cell is a selectable choice.';
 
@@ -41223,12 +41820,9 @@ if (!Array.prototype.indexOf) {
         this.trs = [];
 
         /**
-         * ## ChoiceTable.listener
+         * ### ChoiceTable.listener
          *
          * The listener function
-         *
-         * @see GameChoice.enable
-         * @see GameChoice.disable
          */
         this.listener = function(e) {
             var name, value, td, oldSelected;
@@ -41390,9 +41984,22 @@ if (!Array.prototype.indexOf) {
         /**
          * ### ChoiceTable.order
          *
-         * The order of the choices as displayed (if shuffled)
+         * The current order of display of choices
+         *
+         * May differ from `originalOrder` if shuffled.
+         *
+         * @see ChoiceTable.originalOrder
          */
         this.order = null;
+
+        /**
+         * ### ChoiceTable.originalOrder
+         *
+         * The initial order of display of choices
+         *
+         * @see ChoiceTable.order
+         */
+        this.originalOrder = null;
 
         /**
          * ### ChoiceTable.correctChoice
@@ -41637,10 +42244,9 @@ if (!Array.prototype.indexOf) {
 
         // Set the groupOrder, if any.
         if ('number' === typeof options.groupOrder) {
-
             this.groupOrder = options.groupOrder;
         }
-        else if ('undefined' !== typeof options.group) {
+        else if ('undefined' !== typeof options.groupOrder) {
             throw new TypeError('ChoiceTable.init: options.groupOrder must ' +
                                 'be number or undefined. Found: ' +
                                 options.groupOrder);
@@ -41823,6 +42429,7 @@ if (!Array.prototype.indexOf) {
         // Save the order in which the choices will be added.
         this.order = J.seq(0, len-1);
         if (this.shuffleChoices) this.order = J.shuffle(this.order);
+        this.originalOrder = this.order;
 
         // Build the table and choices at once (faster).
         if (this.table) this.buildTableAndChoices();
@@ -41988,7 +42595,7 @@ if (!Array.prototype.indexOf) {
             throw new Error('ChoiceTable.renderSpecial: unknown type: ' + type);
         }
         td.className = className;
-        td.id = this.id + this.separator + 'special-cell-' + type
+        td.id = this.id + this.separator + 'special-cell-' + type;
         return td;
     };
 
@@ -42367,7 +42974,7 @@ if (!Array.prototype.indexOf) {
      * Highlights the choice table
      *
      * @param {string} The style for the table's border.
-     *   Default '1px solid red'
+     *   Default '3px solid red'
      *
      * @see ChoiceTable.highlighted
      */
@@ -42431,6 +43038,7 @@ if (!Array.prototype.indexOf) {
             obj.choice = opts.processChoice.call(this, obj.choice);
         }
         if (this.shuffleChoices) {
+            obj.originalOrder = this.originalOrder;
             obj.order = this.order;
         }
         if (this.group === 0 || this.group) {
@@ -42683,13 +43291,11 @@ if (!Array.prototype.indexOf) {
 
     "use strict";
 
-    var J = node.JSUS;
-
     node.widgets.register('ChoiceTableGroup', ChoiceTableGroup);
 
     // ## Meta-data
 
-    ChoiceTableGroup.version = '1.2.0';
+    ChoiceTableGroup.version = '1.3.0';
     ChoiceTableGroup.description = 'Groups together and manages sets of ' +
         'ChoiceTable widgets.';
 
@@ -42834,6 +43440,13 @@ if (!Array.prototype.indexOf) {
         this.itemsById = {};
 
         /**
+         * ### ChoiceTableGroup.itemsMap
+         *
+         * Maps items ids to the position in the items array
+         */
+        this.itemsMap = {};
+
+        /**
          * ### ChoiceTableGroup.choices
          *
          * Array of default choices (if passed as global parameter)
@@ -42859,9 +43472,22 @@ if (!Array.prototype.indexOf) {
         /**
          * ### ChoiceTableGroup.order
          *
-         * The order of the items as displayed (if shuffled)
+         * The current order of display of choices
+         *
+         * May differ from `originalOrder` if shuffled.
+         *
+         * @see ChoiceTableGroup.originalOrder
          */
         this.order = null;
+
+        /**
+         * ### ChoiceTableGroup.originalOrder
+         *
+         * The initial order of display of choices
+         *
+         * @see ChoiceTable.order
+         */
+        this.originalOrder = null;
 
         /**
          * ### ChoiceTableGroup.shuffleItems
@@ -43206,11 +43832,11 @@ if (!Array.prototype.indexOf) {
         var len;
         if (!J.isArray(items)) {
             throw new TypeError('ChoiceTableGroup.setItems: ' +
-                                'items must be array.');
+                                'items must be array. Found: ' + items);
         }
         if (!items.length) {
             throw new Error('ChoiceTableGroup.setItems: ' +
-                            'items is empty array.');
+                            'items is an empty array.');
         }
 
         len = items.length;
@@ -43220,6 +43846,7 @@ if (!Array.prototype.indexOf) {
         // Save the order in which the items will be added.
         this.order = J.seq(0, len-1);
         if (this.shuffleItems) this.order = J.shuffle(this.order);
+        this.originalOrder = this.order;
 
         // Build the table and items at once (faster).
         if (this.table) this.buildTable();
@@ -43669,20 +44296,41 @@ if (!Array.prototype.indexOf) {
      * JSUS.shuffleElements
      */
     ChoiceTableGroup.prototype.shuffle = function(opts) {
-        var order, i, len, j, lenJ;
-        if (!this.items || !this.items.length) return;
+        var order, i, len, j, lenJ, that, cb, newOrder;
+        if (!this.items) return;
+        len = this.items.length;
+        if (!len) return;
+        that = this;
+        newOrder = new Array(len);
+        // Updates the groupOrder property of each item,
+        // and saves the order of items correctly.
+        cb = function(el, newPos, oldPos) {
+            var i;
+            i = el.id.split(that.separator);
+            i = that.orientation === 'H' ? i[2] : i[0];
+            i = that.itemsMap[i];
+            that.items[i].groupOrder = (newPos+1);
+            newOrder[newPos] = i;
+        };
         order = J.shuffle(this.order);
         if (this.orientation === 'H') {
-            J.shuffleElements(this.table, order);
+            J.shuffleElements(this.table, order, cb);
         }
         else {
-            i = -1, len = this.trs.length;
-            for ( ; ++i < len ; ) {
-                J.shuffleElements(this.trs[i], order);
+            // Here we maintain the columns manually. Each TR contains TD
+            // belonging to different items, we make sure the order is the
+            // same for all TR.
+            len = this.trs.length;
+            for ( i = -1 ; ++i < len ; ) {
+                J.shuffleElements(this.trs[i], order, cb);
+                // Call cb only on first iteration.
+                cb = undefined;
             }
         }
-        this.order = order;
+        this.order = newOrder;
     };
+
+
 
     // ## Helper methods.
 
@@ -43757,8 +44405,9 @@ if (!Array.prototype.indexOf) {
      * @see mixinSettings
      */
     function getChoiceTable(that, i) {
-        var ct, s;
-        s = mixinSettings(that, that.itemsSettings[that.order[i]], i);
+        var ct, s, idx;
+        idx = that.order[i];
+        s = mixinSettings(that, that.itemsSettings[idx], i);
         ct = node.widgets.get('ChoiceTable', s);
         if (that.itemsById[ct.id]) {
             throw new Error('ChoiceTableGroup.buildTable: an item ' +
@@ -43769,7 +44418,8 @@ if (!Array.prototype.indexOf) {
                             'is missing a left cell: ' + s.id);
         }
         that.itemsById[ct.id] = ct;
-        that.items[i] = ct;
+        that.items[idx] = ct;
+        that.itemsMap[ct.id] = idx;
         return ct;
     }
 
@@ -43801,7 +44451,7 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # Controls
- * Copyright(c) 2015 Stefano Balietti
+ * Copyright(c) 2017 Stefano Balietti <ste@nodegame.org>
  * MIT Licensed
  *
  * Creates and manipulates a set of forms
@@ -43818,7 +44468,7 @@ if (!Array.prototype.indexOf) {
 
     // ## Meta-data
 
-    Controls.version = '0.5.0';
+    Controls.version = '0.5.1';
     Controls.description = 'Wraps a collection of user-inputs controls.';
 
     Controls.title = 'Controls';
@@ -43833,7 +44483,7 @@ if (!Array.prototype.indexOf) {
      * which is stored and forwarded to Controls.init.
      *
      *  The  options object can have the following attributes:
-     *   - Any option that can be passed to `node.window.List` constructor.
+     *   - Any option that can be passed to `W.List` constructor.
      *   - `change`: Event to fire when contents change.
      *   - `features`: Collection of collection attributes for individual
      *                 controls.
@@ -43875,18 +44525,16 @@ if (!Array.prototype.indexOf) {
          * Flag to indicate whether the list has changed
          */
         this.hasChanged = false;
-
-        this.init(options);
     }
 
     Controls.prototype.add = function(root, id, attributes) {
-        // TODO: node.window.addTextInput
-        //return node.window.addTextInput(root, id, attributes);
+        // TODO: replace W.addTextInput 
+        //return W.addTextInput(root, id, attributes);
     };
 
     Controls.prototype.getItem = function(id, attributes) {
-        // TODO: node.window.addTextInput
-        //return node.window.getTextInput(id, attributes);
+        // TODO: replace W.addTextInput
+        //return W.getTextInput(id, attributes);
     };
 
     // ## Controls methods
@@ -43899,7 +44547,7 @@ if (!Array.prototype.indexOf) {
      * @param {object} options Optional. Configuration options.
      *
      * The  options object can have the following attributes:
-     *   - Any option that can be passed to `node.window.List` constructor.
+     *   - Any option that can be passed to `W.List` constructor.
      *   - `change`: Event to fire when contents change.
      *   - `features`: Collection of collection attributes for individual
      *                 controls.
@@ -43919,12 +44567,10 @@ if (!Array.prototype.indexOf) {
         this.list = new W.List(options);
         this.listRoot = this.list.getRoot();
 
-        if (!options.features) {
-            return;
+        if (options.features) {
+            this.features = options.features;
+            this.populate();
         }
-
-        this.features = options.features;
-        this.populate();
     };
 
     /**
@@ -43947,8 +44593,11 @@ if (!Array.prototype.indexOf) {
                 idButton = this.options.submit.id;
                 this.option.submit = this.option.submit.name;
             }
-            this.submit = node.window.addButton(this.bodyDiv, idButton,
-                    this.options.submit, this.options.attributes);
+            this.submit = W.add('button', this.bodyDiv,
+                                J.merge(this.options.attributes, {
+                                    id: idButton,
+                                    innerHTML: this.options.submit
+                                }));
 
             this.submit.onclick = function() {
                 if (that.options.change) {
@@ -43995,8 +44644,11 @@ if (!Array.prototype.indexOf) {
                     };
                 }
 
-                if (attributes.label) {
-                    W.addLabel(container, elem, null, attributes.label);
+                if (attributes.label) {                    
+                    W.add('label', container, {
+                        'for': elem.id,
+                        innerHTML: attributes.label
+                    });
                 }
 
                 // Element added to the list.
@@ -44018,7 +44670,7 @@ if (!Array.prototype.indexOf) {
         var key, el;
         for (key in this.features) {
             if (this.features.hasOwnProperty(key)) {
-                el = node.window.getElementById(key);
+                el = W.getElementById(key);
                 if (el) {
                     // node.log('KEY: ' + key, 'DEBUG');
                     // node.log('VALUE: ' + el.value, 'DEBUG');
@@ -44038,7 +44690,7 @@ if (!Array.prototype.indexOf) {
         out = {};
         for (key in this.features) {
             if (this.features.hasOwnProperty(key)) {
-                el = node.window.getElementById(key);
+                el = W.getElementById(key);
                 if (el) out[key] = Number(el.value);
             }
         }
@@ -44046,7 +44698,7 @@ if (!Array.prototype.indexOf) {
     };
 
     Controls.prototype.highlight = function(code) {
-        return node.window.highlight(this.listRoot, code);
+        return W.highlight(this.listRoot, code);
     };
 
     // ## Sub-classes
@@ -44059,7 +44711,7 @@ if (!Array.prototype.indexOf) {
     SliderControls.prototype.__proto__ = Controls.prototype;
     SliderControls.prototype.constructor = SliderControls;
 
-    SliderControls.version = '0.2.1';
+    SliderControls.version = '0.2.2';
     SliderControls.description = 'Collection of Sliders.';
 
     SliderControls.title = 'Slider Controls';
@@ -44077,11 +44729,16 @@ if (!Array.prototype.indexOf) {
     }
 
     SliderControls.prototype.add = function(root, id, attributes) {
-        return node.window.addSlider(root, id, attributes);
+        attributes = attributes || {};
+        attributes.id = id;
+        attributes.type = 'range';
+        return W.add('input', root, attributes);
     };
 
     SliderControls.prototype.getItem = function(id, attributes) {
-        return node.window.getSlider(id, attributes);
+        attributes = attributes || {};
+        attributes.id = id;
+        return W.get('input', attributes);
     };
 
     /**
@@ -44148,7 +44805,7 @@ if (!Array.prototype.indexOf) {
     function RadioControls(options) {
         Controls.call(this,options);
         this.groupName = ('undefined' !== typeof options.name) ? options.name :
-            node.window.generateUniqueId();
+            W.generateUniqueId();
         this.radioElem = null;
     }
 
@@ -44196,37 +44853,33 @@ if (!Array.prototype.indexOf) {
         if ('undefined' === typeof attributes.name) {
             attributes.name = this.groupName;
         }
-
-        elem = node.window.addRadioButton(root, id, attributes);
+        attributes.id = id;
+        attributes.type = 'radio';
+        elem = W.add('input', root, attributes);
         // Adding the text for the radio button
         elem.appendChild(document.createTextNode(attributes.label));
         return elem;
     };
 
     RadioControls.prototype.getItem = function(id, attributes) {
-        //console.log('ADDDING radio');
-        //console.log(attributes);
+        attributes = attributes || {};
         // add the group name if not specified
         // TODO: is this a javascript bug?
         if ('undefined' === typeof attributes.name) {
-            //                  console.log(this);
-            //                  console.log(this.name);
-            //                  console.log('MODMOD ' + this.name);
             attributes.name = this.groupName;
         }
-        //console.log(attributes);
-        return node.window.getRadioButton(id, attributes);
+        attributes.id = id;
+        attributes.type = 'radio';
+        return W.get('input', attributes);
     };
 
     // Override getAllValues for Radio Controls
     RadioControls.prototype.getValues = function() {
-
-        for (var key in this.features) {
+        var key, el;
+        for (key in this.features) {
             if (this.features.hasOwnProperty(key)) {
-                var el = node.window.getElementById(key);
-                if (el.checked) {
-                    return el.value;
-                }
+                el = W.getElementById(key);
+                if (el.checked) return el.value;                
             }
         }
         return false;
@@ -44337,7 +44990,7 @@ if (!Array.prototype.indexOf) {
         var o, x, y;
         D3.call(this, options);
 
-        this.options = o = JSUS.merge(D3ts.defaults, options);
+        this.options = o = J.merge(D3ts.defaults, options);
         this.n = o.n;
         this.data = [0];
 
@@ -44443,7 +45096,7 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # DebugInfo
- * Copyright(c) 2016 Stefano Balietti
+ * Copyright(c) 2017 Stefano Balietti
  * MIT Licensed
  *
  * Display information about the state of a player
@@ -44454,15 +45107,13 @@ if (!Array.prototype.indexOf) {
 
     "use strict";
 
-    var J = node.JSUS;
-
-    var Table = node.window.Table;
+    var Table = W.Table;
 
     node.widgets.register('DebugInfo', DebugInfo);
 
     // ## Meta-data
 
-    DebugInfo.version = '0.6.0';
+    DebugInfo.version = '0.6.1';
     DebugInfo.description = 'Display basic info a client\'s status.';
 
     DebugInfo.title = 'Debug Info';
@@ -44635,6 +45286,7 @@ if (!Array.prototype.indexOf) {
 
     DisconnectBox.title = 'Disconnect';
     DisconnectBox.className = 'disconnectbox';
+    DisconnectBox.texts.leave = "Leave Experiment";
 
     // ## Dependencies
 
@@ -44664,7 +45316,7 @@ if (!Array.prototype.indexOf) {
      * @see DisconnectBox.writeStage
      */
     DisconnectBox.prototype.append = function() {
-        this.disconnectButton = W.getButton(undefined, 'Leave Experiment');
+        this.disconnectButton = W.get('button', this.getText('leave'));
         this.disconnectButton.className = 'btn btn-lg';
         this.bodyDiv.appendChild(this.disconnectButton);
 
@@ -44697,7 +45349,7 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # DoneButton
- * Copyright(c) 2016 Stefano Balietti
+ * Copyright(c) 2017 Stefano Balietti <ste@nodegame.org>
  * MIT Licensed
  *
  * Creates a button that if pressed emits node.done()
@@ -44708,20 +45360,17 @@ if (!Array.prototype.indexOf) {
 
     "use strict";
 
-    var J = node.JSUS;
-
     node.widgets.register('DoneButton', DoneButton);
 
     // ## Meta-data
 
-    DoneButton.version = '0.2.0';
+    DoneButton.version = '0.2.2';
     DoneButton.description = 'Creates a button that if ' +
         'pressed emits node.done().';
 
     DoneButton.title = 'Done Button';
     DoneButton.className = 'donebutton';
-
-    DoneButton.text = 'I am done';
+    DoneButton.texts.done = 'Done';
 
     // ## Dependencies
 
@@ -44767,8 +45416,6 @@ if (!Array.prototype.indexOf) {
             res = node.done();
             if (res) that.disable();
         };
-
-        this.init(options);
     }
 
     // ## DoneButton methods
@@ -44829,9 +45476,18 @@ if (!Array.prototype.indexOf) {
         }
         this.button.className = tmp;
 
-
+        this._setText = this.setText;
+        this.setText = function(text, value) {
+            this._setText(text, value);
+            this.button.value = value;
+        };
         // Button text.
-        this.setText(options.text);
+        if ('undefined' !== typeof options.text) {
+            this.setText('done', options.text);
+        }
+        else {
+            this.button.value = this.getText('done');
+        }
     };
 
     DoneButton.prototype.append = function() {
@@ -44906,7 +45562,7 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # DynamicTable
- * Copyright(c) 2016 Stefano Balietti
+ * Copyright(c) 2017 Stefano Balietti
  * MIT Licensed
  *
  * Extends the GameTable widgets by allowing dynamic reshaping
@@ -44921,21 +45577,18 @@ if (!Array.prototype.indexOf) {
 
     "use strict";
 
-    var GameStage = node.GameStage,
-    Table = node.window.Table,
-    HTMLRenderer = node.window.HTMLRenderer,
-    J = node.JSUS;
-
+    var GameStage = node.GameStage;
+    var Table = W.Table;
+    var HTMLRenderer = W.HTMLRenderer;
 
     node.widgets.register('DynamicTable', DynamicTable);
-
 
     DynamicTable.prototype = new Table();
     DynamicTable.prototype.constructor = Table;
 
 
     DynamicTable.id = 'dynamictable';
-    DynamicTable.version = '0.3.1';
+    DynamicTable.version = '0.3.2';
 
     DynamicTable.dependencies = {
         Table: {},
@@ -44944,7 +45597,6 @@ if (!Array.prototype.indexOf) {
     };
 
     function DynamicTable (options, data) {
-        //JSUS.extend(node.window.Table,this);
         Table.call(this, options, data);
         this.options = options;
 
@@ -45054,234 +45706,837 @@ if (!Array.prototype.indexOf) {
 
 })(node);
 
-(function() {  // self-executing function for encapsulation
+/**
+ * # EmailForm
+ * Copyright(c) 2017 Stefano Balietti <ste@nodegame.org>
+ * MIT Licensed
+ *
+ * Displays a form to input email
+ *
+ * www.nodegame.org
+ */
+(function(node) {
+
+    "use strict";
+
+    node.widgets.register('EmailForm', EmailForm);
+
+    // ## Meta-data
+
+    EmailForm.version = '0.9.0';
+    EmailForm.description = 'Displays a configurable email form.';
+
+    EmailForm.title = 'Email';
+    EmailForm.className = 'emailform';
+
+    EmailForm.texts.label = 'Enter your email:';
+    EmailForm.texts.errString = 'Not a valid email address, ' +
+                                'please correct it and submit it again.';
+
+    // ## Dependencies
+
+    EmailForm.dependencies = { JSUS: {} };
+
+    /**
+     * ## EmailForm constructor
+     *
+     * `EmailForm` sends a feedback message to the server
+     *
+     * @param {object} options configuration option
+     */
+    function EmailForm(options) {
+
+        /**
+         * ### EmailForm.onsubmit
+         *
+         * Options passed to `getValues` when the submit button is pressed
+         *
+         * @see Feedback.getValues
+         */
+        if (!options.onsubmit) {
+            this.onsubmit = { emailOnly: true, say: true, updateUI: true };
+        }
+        else if ('object' === typeof options.onsubmit) {
+            this.onsubmit = options.onsubmit;
+        }
+        else {
+            throw new TypeError('EmailForm constructor: options.onsubmit ' +
+                                'must be string or object. Found: ' +
+                                options.onsubmit);
+        }
+
+        /**
+         * ### EmailForm._email
+         *
+         * Internal storage of the value of the email
+         *
+         * This value is used when the form has not been created yet
+         *
+         * @see EmailForm.createForm
+         */
+        this._email = options.email || null;
+
+        /**
+         * ### EmailForm.attempts
+         *
+         * Invalid emails tried
+         */
+        this.attempts = [];
+
+        /**
+         * ### EmailForm.timeInput
+         *
+         * Time when the email was inserted (first character, last attempt)
+         */
+        this.timeInput = null;
+
+        /**
+         * ### EmailForm.formElement
+         *
+         * The email's HTML form
+         */
+        this.formElement = null;
+
+        /**
+         * ### EmailForm.inputElement
+         *
+         * The email's HTML input form
+         */
+        this.inputElement = null;
+
+        /**
+         * ### EmailForm.buttonElement
+         *
+         * The email's HTML submit button
+         */
+        this.buttonElement = null;
+    }
+
+    // ## EmailForm methods
+
+    EmailForm.prototype.createForm = function() {
+        var that;
+        var formElement, labelElement, inputElement, buttonElement;
+
+        that = this;
+
+        formElement = document.createElement('form');
+        formElement.className = 'emailform-form';
+
+        labelElement = document.createElement('label');
+        labelElement.innerHTML = this.getText('label');
+
+        inputElement = document.createElement('input');
+        inputElement.setAttribute('type', 'text');
+        inputElement.setAttribute('placeholder', 'Email');
+        inputElement.className = 'emailform-input form-control';
+
+        buttonElement = document.createElement('input');
+        buttonElement.setAttribute('type', 'submit');
+        buttonElement.setAttribute('value', 'Submit email');
+        buttonElement.className = 'btn btn-lg btn-primary ' +
+            'emailform-submit';
+
+        formElement.appendChild(labelElement);
+        formElement.appendChild(inputElement);
+        formElement.appendChild(buttonElement);
+
+        // Add listeners on input form.
+        J.addEvent(formElement, 'submit', function(event) {
+            event.preventDefault();
+            that.getValues(that.onsubmit);
+        }, true);
+        J.addEvent(formElement, 'input', function(event) {
+            if (!that.timeInput) that.timeInput = J.now();
+            if (that.isHighlighted()) that.unhighlight();
+        }, true);
+
+
+        // Store references.
+        this.formElement = formElement;
+        this.inputElement = inputElement;
+        this.buttonElement = buttonElement;
+
+        // If a value was previously set, insert it in the form.
+        if (this._email) this.formElement.value = this._email;
+        this._email = null;
+
+        return formElement;
+    };
+
+    /**
+     * ### EmailForm.verifyInput
+     *
+     * Verify current email, updates interface, and optionally marks attempt
+     *
+     * @param {boolean} markAttempt Optional. If TRUE, the current email
+     *    is added to the attempts array. Default: TRUE
+     * @param {boolean} updateUI Optional. If TRUE, the interface is updated.
+     *    Default: FALSE
+     *
+     * @return {boolean} TRUE, if the email is valid
+     *
+     * @see EmailForm.getValues
+     * @see getEmail
+     */
+    EmailForm.prototype.verifyInput = function(markAttempt, updateUI) {
+        var email, res;
+        email = getEmail.call(this);
+        res = J.isEmail(email);
+        if (res && updateUI) {
+            if (this.inputElement) this.inputElement.disabled = true;
+            if (this.buttonElement) {
+                this.buttonElement.disabled = true;
+                this.buttonElement.value = 'Sent!';
+            }
+        }
+        else {
+            if (updateUI && this.buttonElement) {
+                this.buttonElement.value = this.getText('errString');
+            }
+            if ('undefined' === typeof markAttempt || markAttempt) {
+                this.attempts.push(email);
+            }
+        }
+        return res;
+    };
+
+    /**
+     * ### EmailForm.append
+     *
+     * Appends widget to this.bodyDiv
+     */
+    EmailForm.prototype.append = function() {
+        this.createForm();
+        this.bodyDiv.appendChild(this.formElement);
+    };
+
+    /**
+     * ### EmailForm.setValues
+     *
+     * Set the value of the email input form
+     */
+    EmailForm.prototype.setValues = function(options) {
+        var email;
+        options = options || {};
+        if (!options.email) email = J.randomEmail();
+        else email = options.email;
+
+        if (!this.inputElement) this._email = email;
+        else this.inputElement.value = email;
+
+        this.timeInput = J.now();
+    };
+
+    /**
+     * ### EmailForm.getValues
+     *
+     * Returns the email and paradata
+     *
+     * @param {object} opts Optional. Configures the return value.
+     *   Available optionts:
+     *
+     *   - emailOnly:   If TRUE, returns just the email (default: FALSE),
+     *   - verify:      If TRUE, check if the email is valid (default: TRUE),
+     *   - reset:       If TRUTHY and the email is valid, then it resets
+     *       the email value before returning (default: FALSE),
+     *   - markAttempt: If TRUE, getting the value counts as an attempt
+     *       (default: TRUE),
+     *   - updateUI:    If TRUE, the UI (form, input, button) is updated.
+     *                  Default: FALSE.
+     *   - highlight:   If TRUE, if email is not the valid, widget is
+     *                  is highlighted. Default: (updateUI || FALSE).
+     *   - say:         If TRUE, and the email is valid, then it sends
+     *                  a data msg. Default: FALSE.
+     *   - sayAnyway:   If TRUE, it sends a data msg regardless of the
+     *                  validity of the email. Default: FALSE.
+     *
+     * @return {string|object} The email, and optional paradata
+     *
+     * @see EmailForm.sendValues
+     * @see EmailForm.verifyInput
+     * @see getEmail
+     */
+    EmailForm.prototype.getValues = function(opts) {
+        var email, res;
+        opts = opts || {};
+
+        email = getEmail.call(this);
+
+        if (opts.verify !== false) {
+            res = this.verifyInput(opts.markAttempt, opts.updateUI);
+        }
+
+        // Only value.
+        if (!opts.emailOnly) {
+            email = {
+                time: this.timeInput,
+                email: email,
+                attempts: this.attempts,
+                valid: res
+            };
+        }
+
+        if (res === false) {
+            if (opts.updateUI || opts.highlight) this.highlight();
+            this.timeInput = null;
+        }
+
+        // Send the message.
+        if ((opts.say && res) || opts.sayAnyway) {
+            this.sendValues({ values: email });
+        }
+
+        if (opts.reset) this.reset();
+
+        return email;
+    };
+
+    /**
+     * ### EmailForm.sendValues
+     *
+     * Sends a DATA message with label 'email' with current email and paradata
+     *
+     * @param {object} opts Optional. Options to pass to the `getValues`
+     *    method. Additional options:
+     *
+     *    - values: actual values to send, instead of the return
+     *        value of `getValues`
+     *    - to: recipient of the message. Default: 'SERVER'
+     *
+     * @return {string|object} The email, and optional paradata
+     *
+     * @see EmailForm.getValues
+     */
+    EmailForm.prototype.sendValues = function(opts) {
+        var values;
+        opts = opts || { emailOnly: true };
+        values = opts.values || this.getValues(opts);
+        node.say('email', opts.to || 'SERVER', values);
+        return values;
+    };
+
+    /**
+     * ### EmailForm.highlight
+     *
+     * Highlights the email form
+     *
+     * @param {string} The style for the form border. Default: '1px solid red'
+     *
+     * @see EmailForm.highlighted
+     */
+    EmailForm.prototype.highlight = function(border) {
+        if (!this.inputElement) return;
+        if (border && 'string' !== typeof border) {
+            throw new TypeError('EmailForm.highlight: border must be ' +
+                                'string or undefined. Found: ' + border);
+        }
+        this.inputElement.style.border = border || '3px solid red';
+        this.highlighted = true;
+    };
+
+    /**
+     * ### EmailForm.unhighlight
+     *
+     * Removes highlight from the form
+     *
+     * @see EmailForm.highlighted
+     */
+    EmailForm.prototype.unhighlight = function() {
+        if (!this.inputElement) return;
+        this.inputElement.style.border = '';
+        this.highlighted = false;
+    };
+
+    /**
+     * ### EmailForm.reset
+     *
+     * Resets email and collected paradata
+     */
+    EmailForm.prototype.reset = function() {
+        this.attempts = [];
+        this.timeInput = null;
+        this._email = null;
+
+        if (this.inputElement) this.inputElement.value = '';
+        if (this.isHighlighted()) this.unhighlight();
+    };
+
+    // ## Helper methods.
+
+    /**
+     * ### getEmail
+     *
+     * Returns the value of the email in form or in `_email`
+     *
+     * Must be invoked with right context
+     *
+     * @return {string|null} The value of the email, if any
+     */
+    function getEmail() {
+        return this.inputElement ? this.inputElement.value : this._email;
+    }
+
+})(node);
+
+/**
+ * # EndScreen
+ * Copyright(c) 2018 Stefano Balietti <ste@nodegame.org>
+ * MIT Licensed
+ *
+ * Creates an interface to display final earnings, exit code, etc.
+ *
+ * www.nodegame.org
+ */
+(function(node) {
+
+    "use strict";
 
     // Register the widget in the widgets collection.
     node.widgets.register('EndScreen', EndScreen);
 
-    // Add Meta-data
-    EndScreen.version = '0.1.0';
+    // ## Add Meta-data
+
+    EndScreen.version = '0.5.0';
     EndScreen.description = 'Game end screen. With end game message, ' +
-    'email form, and exit code.';
+                            'email form, and exit code.';
 
-    // Title is displayed in the header.
-    // is this necessary?
     EndScreen.title = 'End Screen';
-    // Classname is added to the widgets.
-    EndScreen.className = 'end-screen';
+    EndScreen.className = 'endscreen';
 
-    // Dependencies are checked when the widget is created.
-    EndScreen.dependencies = { JSUS: {} };
+    EndScreen.texts.headerMessage = 'Thank you for participating!';
+    EndScreen.texts.message = 'You have now completed this task ' +
+                               'and your data has been saved. ' +
+                               'Please go back to the Amazon Mechanical Turk ' +
+                               'web site and submit the HIT.';
+    EndScreen.texts.contactQuestion = 'Would you like to be contacted again' +
+                                       'for future experiments? If so, leave' +
+                                       'your email here and press submit: ';
+    EndScreen.texts.totalWin = 'Your total win:';
+    EndScreen.texts.exitCode = 'Your exit code:';
+    EndScreen.texts.errTotalWin = 'Error: invalid total win.';
+    EndScreen.texts.errExitCode = 'Error: invalid exit code.';
+    EndScreen.texts.copyButton = 'Copy';
+    EndScreen.texts.exitCopyMsg = 'Exit code copied to clipboard.';
+    EndScreen.texts.exitCopyError = 'Failed to copy exit code. Please copy it' +
+                                    ' manually.';
 
-    // Constructor taking a configuration parameter.
-    // The options object is always existing even if no
-    //
+    // ## Dependencies
+
+    // Checked when the widget is created.
+    EndScreen.dependencies = {
+        JSUS: {},
+        Feedback: {},
+        EmailForm: {}
+    };
+
+    /**
+     * ## EndScreen constructor
+     *
+     * Creates a new instance of EndScreen
+     *
+     * @param {object} options Configuration options
+     *
+     * @see EndScreen.init
+     */
     function EndScreen(options) {
-        this.options = options;
-        this.init(true, true);
+
+        /**
+         * ### EndScreen.showEmailForm
+         *
+         * If true, the email form is shown
+         *
+         * Default: true
+         */
+        if (options.email === false) {
+            options.showEmailForm = false;
+        }
+        else if ('undefined' === typeof options.showEmailForm) {
+            this.showEmailForm = true;
+        }
+        else if ('boolean' === typeof options.showEmailForm) {
+            this.showEmailForm = options.showEmailForm;
+        }
+        else {
+            throw new TypeError('EndScreen constructor: ' +
+                                'options.showEmailForm ' +
+                                'must be boolean or undefined. ' +
+                                'Found: ' + options.showEmailForm);
+        }
+
+        /**
+         * ### EndScreen.showFeedbackForm
+         *
+         * If true, the feedback form is shown
+         *
+         * Default: true
+         */
+        if (options.feedback === false) {
+            options.showFeedbackForm = false;
+        }
+        else if ('undefined' === typeof options.showFeedbackForm) {
+            this.showFeedbackForm = true;
+        }
+        else if ('boolean' === typeof options.showFeedbackForm) {
+            this.showFeedbackForm = options.showFeedbackForm;
+        }
+        else {
+            throw new TypeError('EndScreen constructor: ' +
+                                'options.showFeedbackForm ' +
+                                'must be boolean or undefined. ' +
+                                'Found: ' + options.showFeedbackForm);
+        }
+
+        /**
+         * ### EndScreen.showTotalWin
+         *
+         * If true, the total win is shown
+         *
+         * Default: true
+         */
+        if (options.totalWin === false) {
+            options.showTotalWin = false;
+        }
+        else if ('undefined' === typeof options.showTotalWin) {
+            this.showTotalWin = true;
+        }
+        else if ('boolean' === typeof options.showTotalWin) {
+            this.showTotalWin = options.showTotalWin;
+        }
+        else {
+            throw new TypeError('EndScreen constructor: ' +
+                                'options.showTotalWin ' +
+                                'must be boolean or undefined. ' +
+                                'Found: ' + options.showTotalWin);
+        }
+
+        /**
+         * ### EndScreen.showExitCode
+         *
+         * If true, the exit code is shown
+         *
+         * Default: true
+         */
+        if (options.exitCode === false) {
+            options.showExitCode !== false
+        }
+        else if ('undefined' === typeof options.showExitCode) {
+            this.showExitCode = true;
+        }
+        else if ('boolean' === typeof options.showExitCode) {
+            this.showExitCode = options.showExitCode;
+        }
+        else {
+            throw new TypeError('EndScreen constructor: ' +
+                                'options.showExitCode ' +
+                                'must be boolean or undefined. ' +
+                                'Found: ' + options.showExitCode);
+        }
+
+        /**
+         * ### EndScreen.totalWinCurrency
+         *
+         * The currency displayed after totalWin
+         *
+         * Default: 'USD'
+         */
+        if ('undefined' === typeof options.totalWinCurrency) {
+            this.totalWinCurrency = 'USD';
+        }
+        else if ('string' === typeof options.totalWinCurrency &&
+                 options.totalWinCurrency.trim() !== '') {
+
+            this.totalWinCurrency = options.totalWinCurrency;
+        }
+        else {
+            throw new TypeError('EndScreen constructor: ' +
+                                'options.totalWinCurrency must be undefined ' +
+                                'or a non-empty string. Found: ' +
+                                options.totalWinCurrency);
+        }
+
+        /**
+         * ### EndScreen.totalWinCb
+         *
+         * If defined, the return value is displayed inside the totalWin box
+         *
+         * Accepts two parameters: a data object (as sent from server), and
+         * the reference to the EndScreen.
+         */
+        if (options.totalWinCb) {
+            if ('function' === typeof options.totalWinCb) {
+                this.totalWinCb = options.totalWinCb;
+            }
+            else {
+                throw new TypeError('EndScreen constructor: ' +
+                                    'options.totalWinCb ' +
+                                    'must be function or undefined. ' +
+                                    'Found: ' + options.totalWinCb);
+            }
+        }
+
+        /**
+         * ### EndScreen.emailForm
+         *
+         * EmailForm widget element
+         *
+         * @see EmailForm
+         */
+        this.emailForm = null;
+
+        /**
+         * ### EndScreen.feedback
+         *
+         * Feedback widget element
+         *
+         * @see Feedback
+         */
+        this.feedback = null;
+
+        /**
+         * ### EndScreen.endScreenElement
+         *
+         * Endscreen HTML element
+         *
+         * Default: an HTML element,
+         * null initially, element added on append()
+         */
+        this.endScreenHTML = null;
     }
+
+    EndScreen.prototype.init = function(options) {
+        if (this.showEmailForm && !this.emailForm) {
+            this.emailForm = node.widgets.get('EmailForm', J.mixin({
+                label: this.getText('contactQuestion'),
+                onsubmit: { say: true, emailOnly: true, updateUI: true }
+            }, options.email));
+        }
+
+        if (this.showFeedbackForm) {
+            this.feedback = node.widgets.get('Feedback', options.feedback);
+        }
+    };
 
     // Implements the Widget.append method.
     EndScreen.prototype.append = function() {
-        this.bodyDiv.appendChild(this.endScreen);
-
-        var that;
-        var emailErrorString;
-        var emailButton, emailInput, emailForm;
-        var feedbackButton, feedbackForm, feedbackInput;
-        var charCounter;
-
-        that = this;
-
-        emailButton = W.getElementById('endscreen-submit-email');
-        emailForm = W.getElementById('endscreen-email-form');
-        emailInput = W.getElementById('endscreen-email');
-        emailErrorString = 'Not a valid email address, ' +
-                           'please correct it and submit again.';
-
-        feedbackForm = W.getElementById('endscreen-feedback-form');
-        feedbackInput = W.getElementById('endscreen-feedback');
-        feedbackButton = W.getElementById('endscreen-submit-feedback');
-
-        charCounter = W.getElementById('endscreen-char-count');
-
-        if (this.showEmailForm) {
-            emailForm.addEventListener('submit', function(event) {
-                event.preventDefault();
-
-                var email, indexAt, indexDot;
-                email = emailInput.value;
-                if (email.trim().length > 5) {
-                    indexAt = email.indexOf('@');
-                    if (indexAt !== -1 &&
-                        indexAt !== 0 &&
-                        indexAt !== (email.length-1)) {
-
-                        indexDot = email.lastIndexOf('.');
-                        if (indexDot !== -1 &&
-                            indexDot !== (email.length-1) &&
-                            indexDot > (indexAt+1)) {
-
-                            node.say('email', 'SERVER', email);
-
-                            emailButton.disabled = true;
-                            emailInput.disabled = true;
-                            emailButton.value = 'Sent!';
-                        }
-                    }
-                }
-                emailButton.value = emailErrorString;
-            }, true);
-        }
-
-        if (this.showFeedbackForm) {
-            feedbackForm.addEventListener('submit', function(event) {
-                var feedback;
-
-                event.preventDefault();
-                feedback = feedbackInput.value.trim();
-
-                if (feedback.length < that.maxFeedbackLength) {
-                    node.say('feedback', 'SERVER', feedback);
-
-                    feedbackButton.disabled = true;
-                    feedbackButton.value = 'Sent!';
-                }
-                else {
-                    feedbackButton.value = 'Please shorten your response ' +
-                                           'and submit again.';
-                }
-            });
-
-            feedbackForm.addEventListener('input', function(event) {
-                var charLeft;
-
-                charLeft = that.maxFeedbackLength - feedbackInput.value.length;
-                charCounter.innerHTML = Math.abs(charLeft);
-
-                if (charLeft < 0) {
-                    charCounter.innerHTML += ' characters over.';
-                }
-                else {
-                    charCounter.innerHTML += ' characters remaining.';
-                }
-            });
-        }
+        this.endScreenHTML = this.makeEndScreen();
+        this.bodyDiv.appendChild(this.endScreenHTML);
     };
 
-    EndScreen.prototype.init = function() {
-        var exitCode; // exit code
-        var topHTML, messageHTML, totalWinHTML, exitCodeHTML, emailHTML,
-            endHTML, endScreenHTML;
-        var endScreen;
+    /**
+     * ### EndScreen.makeEndScreen
+     *
+     * Builds up the end screen (HTML + nested widgets)
+     */
+    EndScreen.prototype.makeEndScreen = function() {
+        var endScreenElement;
+        var headerElement, messageElement;
+        var totalWinElement, totalWinParaElement, totalWinInputElement;
+        var exitCodeElement, exitCodeParaElement, exitCodeInputElement;
+        var exitCodeBtn, exitCodeGroup;
+        var that = this;
 
-        this.headerMessage = this.options.headerMessage ||
-        'Thank You for Participating!';
-        this.message = this.options.message ||
-        'You have now completed this task and your data has been saved. ' +
-        'Please go back to the Amazon Mechanical Turk web site and ' +
-        'submit the HIT.';
-        this.showEmailForm = 'showEmailForm' in this.options ?
-                            this.options.showEmailForm : true;
-        this.showFeedbackForm = 'showFeedbackForm' in this.options ?
-                            this.options.showFeedbackForm : true;
-        this.showTotalWin = 'showTotalWin' in this.options ?
-                            this.options.showTotalWin : true;
-        this.showExitCode = 'showExitCode' in this.options ?
-                            this.options.showExitCode : true;
-        this.maxFeedbackLength = this.options.maxFeedbackLength || 800;
+        endScreenElement = document.createElement('div');
+        endScreenElement.className = 'endscreen';
 
-        messageHTML = '<h1>' + this.headerMessage +'</h1>' + '<p>' +
-                      this.message + '</p>';
-        endScreenHTML = messageHTML;
+        headerElement = document.createElement('h1');
+        headerElement.innerHTML = this.getText('headerMessage');
+        endScreenElement.appendChild(headerElement);
+
+        messageElement = document.createElement('p');
+        messageElement.innerHTML = this.getText('message');
+        endScreenElement.appendChild(messageElement);
 
         if (this.showTotalWin) {
-            // totalWinHTML = '<p>Your total win: ' + totalWin + '</p>';
-            totalWinHTML = '<p>Your total win: ' +
-                           '<input id="endscreen-total" ' +
-                           'class="form-control" ' +
-                           'disabled></input>' +
-                           '</p>';
-            endScreenHTML += totalWinHTML;
-        }
-        if (this.showExitCode) {
-            // exitCodeHTML = '<p>Your Exit code: ' + exitCode + '</p>';
-            exitCodeHTML = '<p>Your exit code: ' +
-                           '<input id="endscreen-exit-code" ' +
-                           'class="form-control" disabled></input>' +
-                           '</p>';
-            endScreenHTML += exitCodeHTML;
-        }
-        if (this.showEmailForm) {
-            emailHTML = '<form id="endscreen-email-form">' +
-            '<label for="endscreen-email">' +
-            'Would you like to be contacted again ' +
-            'for future experiments? ' +
-            'If so, leave your email here and press submit:' +
-            '</label>' +
-            '<input id="endscreen-email" type="text" placeholder="Email" ' +
-            'class="form-control"/>' +
-            '<input class="btn btn-lg btn-primary" ' +
-            'id="endscreen-submit-email" ' +
-            'type="submit" value="Submit email"></input>' +
-            '</form>';
-            endScreenHTML += emailHTML;
-        }
-        if (this.showFeedbackForm) {
-            feedbackFormHTML = '<form id="endscreen-feedback-form">' +
-            '<label for="endscreen-feedback">' +
-            'Any feedback about the experiment? Let us know here:' +
-            '</label>' +
-            '<textarea id="endscreen-feedback" type="text" rows="3"' +
-            'class="form-control"></textarea>' +
-            '<span id="endscreen-char-count" class="badge">' +
-            this.maxFeedbackLength +
-            ' characters left</span>' +
-            '<input class="btn btn-lg btn-primary" ' +
-            'id="endscreen-submit-feedback" ' +
-            'type="submit" value="Submit feedback"></input>' +
-            '</form>';
-            endScreenHTML += feedbackFormHTML;
+            totalWinElement = document.createElement('div');
+
+            totalWinParaElement = document.createElement('p');
+            totalWinParaElement.innerHTML = '<strong>' +
+                this.getText('totalWin') +
+                '</strong>';
+
+            totalWinInputElement = document.createElement('input');
+            totalWinInputElement.className = 'endscreen-total form-control';
+            totalWinInputElement.setAttribute('disabled', 'true');
+
+            totalWinParaElement.appendChild(totalWinInputElement);
+            totalWinElement.appendChild(totalWinParaElement);
+
+            endScreenElement.appendChild(totalWinElement);
+            this.totalWinInputElement = totalWinInputElement;
         }
 
-        this.endScreen = document.createElement('div');
-        this.endScreen.class = this.className;
-        this.endScreen.id = 'endscreen';
-        this.endScreen.innerHTML = endScreenHTML;
-    }
+        if (this.showExitCode) {
+            exitCodeElement = document.createElement('div');
+            exitCodeElement.className = 'input-group';
+
+            exitCodeParaElement = document.createElement('span');
+            exitCodeParaElement.innerHTML = '<strong>' +
+                this.getText('exitCode') + '</strong>';
+
+            exitCodeInputElement = document.createElement('input');
+            exitCodeInputElement.id = 'exit_code';
+            exitCodeInputElement.className = 'endscreen-exit-code ' +
+                                             'form-control';
+            exitCodeInputElement.setAttribute('disabled', 'true');
+
+            exitCodeGroup = document.createElement('span');
+            exitCodeGroup.className = 'input-group-btn';
+
+            exitCodeBtn = document.createElement('button');
+            exitCodeBtn.className = 'btn btn-default endscreen-copy-btn';
+            exitCodeBtn.innerHTML = this.getText('copyButton');
+            exitCodeBtn.type = 'button';
+            exitCodeBtn.onclick = function() {
+                that.copy(exitCodeInputElement.value);
+            };
+
+            exitCodeGroup.appendChild(exitCodeBtn);
+            endScreenElement.appendChild(exitCodeParaElement);
+            exitCodeElement.appendChild(exitCodeGroup);
+            exitCodeElement.appendChild(exitCodeInputElement);
+
+            endScreenElement.appendChild(exitCodeElement);
+            this.exitCodeInputElement = exitCodeInputElement;
+        }
+
+        if (this.showEmailForm) {
+            node.widgets.append(this.emailForm, endScreenElement, {
+                title: false,
+                panel: false
+            });
+        }
+
+        if (this.showFeedbackForm) {
+            node.widgets.append(this.feedback, endScreenElement, {
+                title: false,
+                panel: false
+            });
+        }
+
+        return endScreenElement;
+    };
 
     // Implements the Widget.listeners method.
     EndScreen.prototype.listeners = function() {
-        // Listeners added here are automatically removed
-        // when the widget is destroyed.
+        var that;
+        that = this;
         node.on.data('WIN', function(message) {
-            var totalWin;
-            var exitCode;
-            var data;
-
-            var totalHTML, exitCodeHTML;
-
-            data = message.data;
-            totalWin = data.total;
-            exitCode = data.exit;
-
-            totalHTML = W.getElementById('endscreen-total');
-            exitCodeHTML = W.getElementById('endscreen-exit-code');
-
-            if (totalHTML) {
-                totalHTML.value = totalWin;
-            }
-
-            if (exitCodeHTML) {
-                exitCodeHTML.value = exitCode;
-            }
+            that.updateDisplay(message.data);
         });
     };
+
+    EndScreen.prototype.copy = function(text) {
+        var inp = document.createElement('input');
+        try {
+            document.body.appendChild(inp);
+            inp.value = text;
+            inp.select();
+            document.execCommand('copy', false);
+            inp.remove();
+            alert(this.getText('exitCopyMsg'));
+        } catch (err) {
+            alert(this.getText('exitCopyError'));
+        }
+    };
+
+    /**
+     * ### EndScreen.updateDisplay
+     *
+     * Updates the display
+     *
+     * @param {object} data An object containing the info to update. Format:
+     *    - total: The total won.
+     *    - exit: An exit code.
+     */
+    EndScreen.prototype.updateDisplay = function(data) {
+        var preWin, totalWin, totalRaw, exitCode;
+        var totalHTML, exitCodeHTML, ex, err;
+
+        if (this.totalWinCb) {
+            totalWin = this.totalWinCb(data, this);
+        }
+        else {
+            if ('undefined' === typeof data.total &&
+                'undefined' === typeof data.totalRaw) {
+
+                throw new Error('EndScreen.updateDisplay: data.total and ' +
+                                'data.totalRaw cannot be both undefined.');
+            }
+
+            if ('undefined' !== typeof data.total) {
+                totalWin = J.isNumber(data.total, 0);
+                if (totalWin === false) {
+                    node.err('EndScreen.updateDisplay: invalid data.total: ' +
+                             data.total);
+                    totalWin = this.getText('errTotalWin');
+                    err = true;
+                }
+            }
+
+            if (data.partials) {
+                if (!J.isArray(data.partials)) {
+                    node.err('EndScreen error, invalid partials win: ' +
+                             data.partials);
+                }
+                else {
+                    preWin = data.partials.join(' + ');
+                }
+            }
+
+            if ('undefined' !== typeof data.totalRaw) {
+                if (preWin) preWin += ' = ';
+                else preWin = '';
+                preWin += data.totalRaw;
+
+                // Get Exchange Rate.
+                ex = 'undefined' !== typeof data.exchangeRate ?
+                    data.exchangeRate : node.game.settings.EXCHANGE_RATE;
+
+                // If we have an exchange rate, check if we have a totalRaw.
+                if ('undefined' !== typeof ex) preWin += '*' + ex;
+
+                // Need to compute total manually.
+                if ('undefined' === typeof totalWin) {
+                    totalRaw = J.isNumber(data.totalRaw, 0);
+                    totalWin = parseFloat(ex*data.totalRaw).toFixed(2);
+                    totalWin = J.isNumber(totalWin, 0);
+                    if (totalWin === false) {
+                        node.err('EndScreen.updateDisplay: invalid : ' +
+                                 'totalWin calculation from totalRaw.');
+                        totalWin = this.getText('errTotalWin');
+                        err = true;
+                    }
+                }
+                if (!err) totalWin = preWin + ' = ' + totalWin;
+            }
+
+            if (!err) totalWin += ' ' + this.totalWinCurrency;
+        }
+
+        exitCode = data.exit;
+        if ('string' !== typeof exitCode) {
+            node.err('EndScreen error, invalid exit code: ' + exitCode);
+            exitCode = this.getText('errExitCode');
+        }
+
+        totalHTML = this.totalWinInputElement;
+        exitCodeHTML = this.exitCodeInputElement;
+
+        if (totalHTML && this.showTotalWin) {
+            totalHTML.value = totalWin;
+        }
+
+        if (exitCodeHTML && this.showExitCode) {
+            exitCodeHTML.value = exitCode;
+        }
+    };
+
 })(node);
 
 /**
  * # Feedback
- * Copyright(c) 2015 Stefano Balietti
+ * Copyright(c) 2017 Stefano Balietti
  * MIT Licensed
  *
  * Sends a feedback message to the server
@@ -45292,19 +46547,20 @@ if (!Array.prototype.indexOf) {
 
     "use strict";
 
-    var J = node.JSUS;
-
     node.widgets.register('Feedback', Feedback);
-
 
     // ## Meta-data
 
-    Feedback.version = '0.2';
-    Feedback.description = 'Displays a simple feedback form.';
+    Feedback.version = '1.0.1';
+    Feedback.description = 'Displays a configurable feedback form';
 
     Feedback.title = 'Feedback';
     Feedback.className = 'feedback';
 
+    Feedback.texts = {
+        label: 'Any feedback about the experiment? Let us know here:',
+        sent: 'Sent!'
+    };
 
     // ## Dependencies
 
@@ -45316,24 +46572,312 @@ if (!Array.prototype.indexOf) {
      * ## Feedback constructor
      *
      * `Feedback` sends a feedback message to the server
+     *
+     * @param {object} options Optional. Configuration option.
+     *   Available options:
+     *
+     *    - showCount: If TRUE, the character count is displayed
+     *    - minLength: The minimum number of characters in textarea
+     *    - maxLength: The max number of characters in textarea
+     *    - label: The text to display above the textarea
      */
-    function Feedback() {
-        /**
-         * ### Feedback.textarea
-         *
-         * The TEXTAREA wherein clients can enter feedback
-         */
-        this.textarea = null;
+    function Feedback(options) {
 
         /**
-         * ### Feedback.submit
+         * ### Feedback.maxLength
          *
-         * Button to submit the feedback form
+         * The maximum character length for feedback to be submitted
+         *
+         * Default: 800
          */
-        this.submit = null;
+        if ('undefined' === typeof options.maxLength) {
+            this.maxLength = 800;
+        }
+        else if (J.isNumber(options.maxLength, 0) !== false) {
+            this.maxLength = options.maxLength;
+        }
+        else {
+            throw new TypeError('Feedback constructor: options.maxLength ' +
+                                'must be a number >= 0 or undefined. ' +
+                                'Found: ' + options.maxLength);
+        }
+
+        /**
+         * ### Feedback.minLength
+         *
+         * The minimum character length for feedback to be submitted
+         *
+         * If minLength = 0, then there is no minimum length checked.
+         * Default: 1
+         */
+        if ('undefined' === typeof options.minLength) {
+            this.minLength = 1;
+        }
+        else if (J.isNumber(options.minLength, 0) !== false) {
+            this.minLength = options.minLength;
+        }
+        else {
+            throw new TypeError('Feedback constructor: options.minLength ' +
+                                'must be a number >= 0 or undefined. ' +
+                                'Found: ' + options.minLength);
+        }
+
+        /**
+         * ### Feedback.maxAttemptLength
+         *
+         * The maximum character length for an attempt to submit feedback
+         *
+         * Attempts are stored in the attempts array. This allows to store
+         * longer texts than accepts feedbacks
+         *
+         * Default: Max(2000, maxLength)
+         */
+        if ('undefined' === typeof options.maxAttemptLength) {
+            this.maxAttemptLength = 2000;
+        }
+        else if (J.isNumber(options.maxAttemptLength, 0) !== false) {
+            this.maxAttemptLength = Math.max(this.maxLength,
+                                                     options.maxAttemptLength);
+        }
+        else {
+            throw new TypeError('Feedback constructor: ' +
+                                'options.maxAttemptLength must be a number ' +
+                                '>= 0 or undefined. Found: ' +
+                                options.maxAttemptLength);
+        }
+
+        /**
+         * ### Feedback.showCharCount
+         *
+         * If TRUE, the character count is shown
+         *
+         * Default: true
+         *
+         * @see Feedback.charCounter
+         */
+        if ('undefined' === typeof options.showCount) {
+            this.showCharCount = true;
+        }
+        else {
+            this.showCharCount = !!options.showCount;
+        }
+
+        /**
+         * ### Feedback.onsubmit
+         *
+         * Options passed to `getValues` when the submit button is pressed
+         *
+         * @see Feedback.getValues
+         */
+        if (!options.onsubmit) {
+            this.onsubmit = { feedbackOnly: true, say: true, updateUI: true };
+        }
+        else if ('object' === typeof options.onsubmit) {
+            this.onsubmit = options.onsubmit;
+        }
+        else {
+            throw new TypeError('Feedback constructor: options.onsubmit ' +
+                                'must be string or object. Found: ' +
+                                options.onsubmit);
+        }
+
+        /**
+         * ### Feedback._feedback
+         *
+         * Internal storage of the value of the feedback
+         *
+         * This value is used when the form has not been created yet
+         *
+         * @see Feedback.createForm
+         */
+        this._feedback = options.feedback || null;
+
+        /**
+         * ### Feedback.attempts
+         *
+         * Invalid feedbacks tried
+         */
+        this.attempts = [];
+
+        /**
+         * ### Feedback.timeBegin
+         *
+         * Time when feedback was inserted (first character, last attempt)
+         */
+        this.timeBegin = null;
+
+        /**
+         * ### Feedback.feedbackHTML
+         *
+         * The HTML element containing the form elements
+         */
+        this.feedbackHTML = null;
+
+        /**
+         * ### Feedback.textareaElement
+         *
+         * The HTML textarea element containing the feedback
+         */
+        this.textareaElement = null;
+
+        /**
+         * ### Feedback.charCounter
+         *
+         * The HTML span element containing the characters count
+         */
+        this.charCounter = null;
+
+        /**
+         * ### Feedback.submitButton
+         *
+         * The HTML submit button
+         */
+        this.submitButton = null;
+
     }
 
     // ## Feedback methods
+
+    /**
+     * ### Feedback.createForm
+     *
+     * Builds the HTML forms
+     */
+    Feedback.prototype.createForm = function() {
+
+        var that;
+        var feedbackHTML;
+        var feedbackForm;
+        var feedbackLabel;
+        var feedbackTextarea;
+        var submit;
+        var charCounter;
+
+        that = this;
+
+        feedbackHTML = document.createElement('div');
+        feedbackHTML.className = 'feedback';
+
+        feedbackForm = document.createElement('form');
+        feedbackForm.className = 'feedback-form';
+        feedbackHTML.appendChild(feedbackForm);
+
+        feedbackLabel = document.createElement('label');
+        feedbackLabel.setAttribute('for', 'feedback-input');
+        feedbackLabel.innerHTML = this.getText('label');
+        feedbackForm.appendChild(feedbackLabel);
+
+        feedbackTextarea = document.createElement('textarea');
+        feedbackTextarea.className = 'feedback-textarea form-control';
+        feedbackTextarea.setAttribute('type', 'text');
+        feedbackTextarea.setAttribute('rows', '3');
+        feedbackForm.appendChild(feedbackTextarea);
+
+        submit = document.createElement('input');
+        submit.className = 'btn btn-lg btn-primary';
+        submit.setAttribute('type', 'submit');
+        submit.setAttribute('value', 'Submit feedback');
+        feedbackForm.appendChild(submit);
+
+        if (this.showCharCount) {
+            charCounter = document.createElement('span');
+            charCounter.className = 'feedback-char-count badge';
+            charCounter.innerHTML = this.maxLength;
+            // Until no char is inserted is hidden.
+            charCounter.style.display = 'none';
+            feedbackForm.appendChild(charCounter);
+        }
+
+        // Add listeners.
+        J.addEvent(feedbackForm, 'submit', function(event) {
+            event.preventDefault();
+            that.getValues(that.onsubmit);
+        });
+
+        J.addEvent(feedbackForm, 'input', function(event) {
+            that.verifyFeedback(false, true);
+        });
+
+        // Store references.
+        this.submitButton = submit;
+        this.feedbackHTML = feedbackHTML;
+        this.textareaElement = feedbackTextarea;
+        this.charCounter = charCounter || null;
+
+        // Check it once at the beginning to initialize counter.
+        this.verifyFeedback(false, true);
+
+        return feedbackHTML;
+    };
+
+    /**
+     * ### Feedback.verifyFeedback
+     *
+     * Verify feedback and optionally marks attempt and updates interface
+     *
+     * @param {boolean} markAttempt Optional. If TRUE, the current feedback
+     *    is added to the attempts array (if too long, may be truncateed).
+     *    Default: TRUE
+     * @param {boolean} updateUI Optional. If TRUE, the interface is updated.
+     *    Default: FALSE
+     *
+     * @return {boolean} TRUE, if the feedback is valid
+     *
+     * @see Feedback.getValues
+     * @see getFeedback
+     */
+    Feedback.prototype.verifyFeedback = function(markAttempt, updateUI) {
+        var feedback, length, updateCount, updateColor, res;
+        var submitButton, charCounter, tmp;
+
+        feedback = getFeedback.call(this);
+        length = feedback ? feedback.length : 0;
+
+        submitButton = this.submitButton;
+        charCounter = this.charCounter;
+
+        if (length < this.minLength) {
+            res = false;
+            tmp = this.minLength - length;
+            updateCount = tmp + ' character';
+            if (tmp > 1) updateCount += 's';
+            updateCount += ' needed.';
+            updateColor = '#a32020'; // #f2dede';
+        }
+        else if (length > this.maxLength) {
+            res = false;
+            tmp = length - this.maxLength;
+            updateCount = tmp + ' character';
+            if (tmp > 1) updateCount += 's';
+            updateCount += ' over.';
+            updateColor = '#a32020'; // #f2dede';
+        }
+        else {
+            res = true;
+            tmp = this.maxLength - length;
+            updateCount = tmp + ' character';
+            if (tmp > 1) updateCount += 's';
+            updateCount += ' remaining.';
+            updateColor = '#78b360'; // '#dff0d8';
+        }
+
+        if (updateUI) {
+            submitButton.disabled = !res;
+            if (charCounter) {
+                charCounter.style.display = length ? '' : 'none';
+                charCounter.style.backgroundColor = updateColor;
+                charCounter.innerHTML = updateCount;
+            }
+        }
+
+        if (!res && ('undefined' === typeof markAttempt || markAttempt)) {
+            if (length > this.maxAttemptLength) {
+                feedback = feedback.substr(0, this.maxAttemptLength);
+            }
+            this.attempts.push(feedback);
+        }
+        return res;
+    };
 
     /**
      * ### Feedback.append
@@ -45341,212 +46885,195 @@ if (!Array.prototype.indexOf) {
      * Appends widget to this.bodyDiv
      */
     Feedback.prototype.append = function() {
-        var that = this;
+        this.createForm();
+        this.bodyDiv.appendChild(this.feedbackHTML);
+    };
 
-        this.textarea = document.createElement('textarea');
-        this.submit = document.createElement('button');
-        this.submit.appendChild(document.createTextNode('Submit'));
-        this.submit.onclick = function() {
-            var feedback, sent;
-            feedback = that.textarea.value;
-            if (!feedback.length) {
-                J.highlight(that.textarea, 'ERR');
-                alert('Feedback is empty, not sent.');
-                return false;
-            }
-            sent = node.say('FEEDBACK', 'SERVER', {
+    /**
+     * ### Feedback.setValues
+     *
+     * Set the value of the feedback
+     */
+    Feedback.prototype.setValues = function(options) {
+        var feedback;
+        options = options || {};
+        if (!options.feedback) {
+            feedback = J.randomString(J.randomInt(0, this.maxLength),
+                                      'aA_1');
+        }
+        else {
+            feedback = options.feedback;
+        }
+
+        if (!this.feedbackHTML) this._feedback = feedback;
+        else this.feedbackHTML.value = feedback;
+
+        this.timeInputBegin = J.now();
+    };
+
+    /**
+     * ### Feedback.getValues
+     *
+     * Returns the feedback and paradata
+     *
+     * @param {object} opts Optional. Configures the return value.
+     *   Available optionts:
+     *
+     *   - feedbackOnly:If TRUE, returns just the feedback (default: FALSE),
+     *   - verify:      If TRUE, check if the feedback is valid (default: TRUE),
+     *   - reset:       If TRUTHY and the feedback is valid, then it resets
+     *       the feedback value before returning (default: FALSE),
+     *   - markAttempt: If TRUE, getting the value counts as an attempt
+     *       (default: TRUE),
+     *   - updateUI:    If TRUE, the UI (form, input, button) is updated.
+     *                  Default: FALSE.
+     *   - highlight:   If TRUE, if feedback is not the valid, widget is
+     *                  is highlighted. Default: (updateUI || FALSE).
+     *   - say:         If TRUE, and the feedback is valid, then it sends
+     *                  a data msg. Default: FALSE.
+     *   - sayAnyway:   If TRUE, it sends a data msg regardless of the
+     *                  validity of the feedback. Default: FALSE.
+     *
+     * @return {string|object} The feedback, and optional paradata
+     *
+     * @see Feedback.sendValues
+     * @see Feedback.verifyFeedback
+     * @see getFeedback
+     */
+    Feedback.prototype.getValues = function(opts) {
+        var feedback, res;
+
+        opts = opts || {};
+
+        feedback = getFeedback.call(this);
+
+        if (opts.verify !== false) res = this.verifyFeedback(opts.markAttempt,
+                                                             opts.updateUI);
+
+        if (res === false && opts.updateUI || opts.highlight) this.highlight();
+
+        // Only value.
+        if (!opts.feedbackOnly) {
+            feedback = {
+                timeBegin: this.timeInputBegin,
                 feedback: feedback,
-                userAgent: navigator.userAgent
-            });
-
-            if (sent) {
-                J.highlight(that.textarea, 'OK');
-                alert('Feedback sent. Thank you.');
-                that.textarea.disabled = true;
-                that.submit.disabled = true;
-            }
-            else {
-                J.highlight(that.textarea, 'ERR');
-                alert('An error has occurred, feedback not sent.');
-            }
-        };
-        this.bodyDiv.appendChild(this.textarea);
-        this.bodyDiv.appendChild(this.submit);
-    };
-
-    Feedback.prototype.listeners = function() {};
-
-})(node);
-
-/**
- * # GameBoard
- * Copyright(c) 2015 Stefano Balietti
- * MIT Licensed
- *
- * Displays a table of currently connected players
- *
- * www.nodegame.org
- */
-(function(node) {
-
-    "use strict";
-
-    node.widgets.register('GameBoard', GameBoard);
-
-    // ## Meta-data
-
-    GameBoard.version = '0.4.1';
-    GameBoard.description = 'Offer a visual representation of the state of ' +
-                            'all players in the game.';
-
-    GameBoard.title = 'Game Board';
-    GameBoard.className = 'gameboard';
-
-    /**
-     * ## GameBoard constructor
-     *
-     * `GameBoard` shows the currently connected players
-     */
-    function GameBoard(options) {
-        /**
-         * ### GameBoard.board
-         *
-         * The DIV wherein to display the players
-         */
-        this.board = null;
-
-        /**
-         * ### GameBoard.status
-         *
-         * The DIV wherein to display the status of the game board
-         */
-        this.status = null;
-    }
-
-    // ## GameBoard methods
-
-    /**
-     * ### GameBoard.append
-     *
-     * Appends widget to `this.bodyDiv` and updates the board
-     *
-     * @see GameBoard.updateBoard
-     */
-    GameBoard.prototype.append = function() {
-        this.status = node.window.addDiv(this.bodyDiv, 'gboard_status');
-        this.board = node.window.addDiv(this.bodyDiv, 'gboard');
-
-        this.updateBoard(node.game.pl);
-    };
-
-    GameBoard.prototype.listeners = function() {
-        var that = this;
-        node.on('UPDATED_PLIST', function() {
-            that.updateBoard(node.game.pl);
-        });
-    };
-
-    /**
-     * ### GameBoard.updateBoard
-     *
-     * Updates the information on the game board
-     *
-     * @see printLine
-     */
-    GameBoard.prototype.updateBoard = function(pl) {
-        var player, separator;
-        var that = this;
-
-        this.status.innerHTML = 'Updating...';
-
-        if (pl.size()) {
-            that.board.innerHTML = '';
-            pl.forEach( function(p) {
-                player = printLine(p);
-
-                W.write(player, that.board);
-
-                separator = printSeparator();
-                W.write(separator, that.board);
-            });
-        }
-        this.status.innerHTML = 'Connected players: ' + node.game.pl.length;
-    };
-
-    // ## Helper methods
-
-     /**
-     * ### printLine
-     *
-     * Returns a `String` describing the player passed in
-     *
-     * @param {Player} `p`. Player object which will be passed in by a call to
-     * `node.game.pl.forEach`.
-     *
-     * @return {String} A string describing the `Player` `p`.
-     *
-     * @see GameBoard.updateBoard
-     * @see nodegame-client/Player
-     */
-    function printLine(p) {
-
-        var line, levels, level;
-        levels = node.constants.stageLevels;
-
-        line = '[' + (p.name || p.id) + "]> \t";
-        line += '(' +  p.stage.round + ') ' + p.stage.stage + '.' +
-                p.stage.step;
-        line += ' ';
-
-        switch (p.stageLevel) {
-
-        case levels.UNINITIALIZED:
-            level = 'uninit.';
-            break;
-
-        case levels.INITIALIZING:
-            level = 'init...';
-            break;
-
-        case levels.INITIALIZING:
-            level = 'init!';
-            break;
-
-        case levels.LOADING:
-            level = 'loading';
-            break;
-
-        case levels.LOADED:
-            level = 'loaded';
-            break;
-
-        case levels.PLAYING:
-            level = 'playing';
-            break;
-        case levels.DONE:
-            level = 'done';
-            break;
-
-        default:
-            level = p.stageLevel;
-            break;
+                attempts: this.attempts,
+                valid: res
+            };
         }
 
-        return line + '(' + level + ')';
-    }
+        // Send the message.
+        if ((opts.say && res) || opts.sayAnyway) {
+            this.sendValues({ values: feedback });
+            if (opts.updateUI) {
+                this.submitButton.setAttribute('value', this.getText('sent'));
+                this.submitButton.disabled = true;
+                this.textareaElement.disabled = true;
+            }
+        }
 
-    function printSeparator() {
-        return W.getElement('hr', null, {style: 'color: #CCC;'});
+        if (opts.reset) this.reset();
+
+        return feedback;
+    };
+
+    /**
+     * ### Feedback.sendValues
+     *
+     * Sends a DATA message with label 'feedback' with feedback and paradata
+     *
+     * @param {object} opts Optional. Options to pass to the `getValues`
+     *    method. Additional options:
+     *
+     *    - values: actual values to send, instead of the return
+     *        value of `getValues`
+     *    - to: recipient of the message. Default: 'SERVER'
+     *
+     * @return {string|object} The feedback, and optional paradata
+     *
+     * @see Feedback.getValues
+     */
+    Feedback.prototype.sendValues = function(opts) {
+        var values;
+        opts = opts || { feedbackOnly: true };
+        values = opts.values || this.getValues(opts);
+        node.say('feedback', opts.to || 'SERVER', values);
+        return values;
+    };
+
+    /**
+     * ### Feedback.highlight
+     *
+     * Highlights the feedback form
+     *
+     * @param {string} The style for the form border. Default: '1px solid red'
+     *
+     * @see Feedback.highlighted
+     */
+    Feedback.prototype.highlight = function(border) {
+        if (!this.feedbackHTML) return;
+        if (border && 'string' !== typeof border) {
+            throw new TypeError('Feedback.highlight: border must be ' +
+                                'string or undefined. Found: ' + border);
+        }
+        this.feedbackHTML.style.border = border || '3px solid red';
+        this.highlighted = true;
+    };
+
+    /**
+     * ### Feedback.unhighlight
+     *
+     * Removes highlight from the form
+     *
+     * @see Feedback.highlighted
+     */
+    Feedback.prototype.unhighlight = function() {
+        if (!this.feedbackHTML) return;
+        this.feedbackHTML.style.border = '';
+        this.highlighted = false;
+    };
+
+    /**
+     * ### Feedback.reset
+     *
+     * Resets feedback and collected paradata
+     */
+    Feedback.prototype.reset = function() {
+        this.attempts = [];
+        this.timeInputBegin = null;
+        this._feedback = null;
+
+        if (this.feedbackHTML) this.feedbackHTML.value = '';
+        if (this.isHighlighted()) this.unhighlight();
+    };
+
+    // ## Helper functions.
+
+    /**
+     * ### getFeedback
+     *
+     * Returns the value of the feedback textarea or in `_feedback`
+     *
+     * Must be invoked with right context
+     *
+     * @return {string|null} The value of the feedback, if any
+     */
+    function getFeedback() {
+        var out;
+        out = this.feedbackHTML ? this.textareaElement.value : this._feedback;
+        return out ? out.trim() : out;
     }
 
 })(node);
 
 /**
  * # GameTable
- * Copyright(c) 2015 Stefano Balietti
+ * Copyright(c) 2017 Stefano Balietti
  * MIT Licensed
  *
  * Creates a table that renders in each cell data captured by fired events
+ *
+ * TODO: needs refactoring
  *
  * www.nodegame.org
  */
@@ -45559,42 +47086,30 @@ if (!Array.prototype.indexOf) {
 
     node.widgets.register('GameTable', GameTable);
 
-    // ## Defaults
+    // ## Meta-data.
+    GameTable.className = 'gametable';
+    GameTable.version = '0.3.1';
 
-    GameTable.defaults = {};
-    GameTable.defaults.id = 'gametable';
-    GameTable.defaults.fieldset = {
-        legend: 'Game Table',
-        id: 'gametable_fieldset'
-    };
-
-    // ## Meta-data
-
-    GameTable.version = '0.3';
-
-    // ## Dependencies
+    // ## Dependencies,
 
     GameTable.dependencies = {
         JSUS: {}
     };
 
-    function GameTable (options) {
+    function GameTable(options) {
         this.options = options;
-        this.id = options.id;
         this.name = options.name || GameTable.name;
 
         this.root = null;
         this.gtbl = null;
         this.plist = null;
-
-        this.init(this.options);
     }
 
     GameTable.prototype.init = function(options) {
 
         if (!this.plist) this.plist = new PlayerList();
 
-        this.gtbl = new node.window.Table({
+        this.gtbl = new W.Table({
             auto_update: true,
             id: options.id || this.id,
             render: options.render
@@ -45633,7 +47148,7 @@ if (!Array.prototype.indexOf) {
         node.on.plist(function(msg) {
             if (!msg.data.length) return;
 
-            //var diff = JSUS.arrayDiff(msg.data,that.plist.db);
+            //var diff = J.arrayDiff(msg.data,that.plist.db);
             var plist = new PlayerList({}, msg.data);
             var diff = plist.diff(that.plist);
             if (diff) {
@@ -45665,8 +47180,8 @@ if (!Array.prototype.indexOf) {
     GameTable.prototype.addLeft = function(state, player) {
         if (!state) return;
         state = new GameStage(state);
-        if (!JSUS.in_array({content:state.toString(), type: 'left'},
-                    this.gtbl.left)) {
+        if (!J.inArray({content:state.toString(), type: 'left'},
+                       this.gtbl.left)) {
 
             this.gtbl.add2Left(state.toString());
         }
@@ -45705,28 +47220,30 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # LanguageSelector
- * Copyright(c) 2015 Stefano Balietti
+ * Copyright(c) 2017 Stefano Balietti <ste@nodegame.org>
  * MIT Licensed
  *
  * Manages and displays information about languages available and selected
  *
+ * @TODO: bubble event in case of buttons (now there are many listeners).
+ *
  * www.nodegame.org
  */
- (function(node) {
+(function(node) {
 
     "use strict";
-
-    var J = node.JSUS;
 
     node.widgets.register('LanguageSelector', LanguageSelector);
 
     // ## Meta-data
 
-    LanguageSelector.version = '0.3.1';
+    LanguageSelector.version = '0.6.2';
     LanguageSelector.description = 'Display information about the current ' +
         'language and allows to change language.';
     LanguageSelector.title = 'Language';
     LanguageSelector.className = 'languageselector';
+
+    LanguageSelector.texts.loading = 'Loading language information...';
 
     // ## Dependencies
 
@@ -45827,8 +47344,46 @@ if (!Array.prototype.indexOf) {
          * ## LanguageSelector.usingButtons
          *
          * Flag indicating if the interface should have buttons
+         *
+         * Default: TRUE.
          */
-        this.usingButtons = null;
+        this.usingButtons = true;
+
+        /**
+         * ## LanguageSelector.updatePlayer
+         *
+         * Specifies when updating the player
+         *
+         * Available options:
+         *
+         *   - false: alias for 'never',
+         *   - 'never': never notifies,
+         *   - 'onselect': each time a selection is made,
+         *   - 'ondone': when current step is done.
+         *
+         * Default: 'ondone'
+         */
+        this.updatePlayer = 'ondone';
+
+        /**
+         * ## LanguageSelector.setUriPrefix
+         *
+         * If TRUE, the Window URI prefix is updated when the player is updated
+         *
+         * Default: TRUE.
+         *
+         * @see GameWindow.setUriPrefix
+         */
+        this.setUriPrefix = true;
+
+        /**
+         * ## LanguageSelector.notifyServer
+         *
+         * If TRUE, a message is sent to the server when the player is updated
+         *
+         * Default: TRUE.
+         */
+        this.notifyServer = true;
 
         /**
          * ### LanguageSelector.onLangCallback
@@ -45860,18 +47415,17 @@ if (!Array.prototype.indexOf) {
                 // Creates labeled buttons.
                 for (language in msg.data) {
                     if (msg.data.hasOwnProperty(language)) {
-                        that.optionsLabel[language] = W.getElement('label',
-                            language + 'Label', {
-                                'for': language + 'RadioButton'
-                            });
+                        that.optionsLabel[language] = W.get('label', {
+                            id: language + 'Label',
+                            'for': language + 'RadioButton'
+                        });
 
-                        that.optionsDisplay[language] = W.getElement('input',
-                            language + 'RadioButton', {
-                                type: 'radio',
-                                name: 'languageButton',
-                                value: msg.data[language].name
-                            }
-                        );
+                        that.optionsDisplay[language] = W.get('input', {
+                            id: language + 'RadioButton',
+                            type: 'radio',
+                            name: 'languageButton',
+                            value: msg.data[language].name
+                        });
 
                         that.optionsDisplay[language].onclick =
                             makeSetLanguageOnClick(language);
@@ -45881,23 +47435,24 @@ if (!Array.prototype.indexOf) {
                         that.optionsLabel[language].appendChild(
                             document.createTextNode(
                                 msg.data[language].nativeName));
-                        node.window.addElement('br', that.displayForm);
+                        W.add('br', that.displayForm);
                         that.optionsLabel[language].className =
                             'unselectedButtonLabel';
                         that.displayForm.appendChild(
-                                that.optionsLabel[language]);
+                            that.optionsLabel[language]);
                     }
                 }
             }
             else {
 
-                that.displaySelection = node.window.getElement('select',
-                    'selectLanguage');
+                that.displaySelection = W.get('select', 'selectLanguage');
                 for (language in msg.data) {
                     that.optionsLabel[language] =
                         document.createTextNode(msg.data[language].nativeName);
-                    that.optionsDisplay[language] = node.window.getElement(
-                        'option', language + 'Option', { value: language });
+                    that.optionsDisplay[language] = W.get('option', {
+                        id: language + 'Option',
+                        value: language
+                    });
                     that.optionsDisplay[language].appendChild(
                         that.optionsLabel[language]);
                     that.displaySelection.appendChild(
@@ -45906,15 +47461,17 @@ if (!Array.prototype.indexOf) {
                 }
                 that.displayForm.appendChild(that.displaySelection);
                 that.displayForm.onchange = function() {
-                    that.setLanguage(that.displaySelection.value);
+                    that.setLanguage(that.displaySelection.value,
+                                     that.updatePlayer === 'onselect');
                 };
             }
 
             that.loadingDiv.style.display = 'none';
             that.languagesLoaded = true;
 
-            // Initialize to English.
-            that.setLanguage('en');
+            // Initialize with current value inside player object,
+            // or default to English. Does not update the player object yet.
+            that.setLanguage(node.player.lang.shortName || 'en', false);
 
             // Extension point.
             if (that.onLangCallbackExtension) {
@@ -45922,9 +47479,9 @@ if (!Array.prototype.indexOf) {
                 that.onLangCallbackExtension = null;
             }
 
-            function makeSetLanguageOnClick(langName) {
+            function makeSetLanguageOnClick(langStr) {
                 return function() {
-                    that.setLanguage(langName);
+                    that.setLanguage(langStr, that.updatePlayer === 'onselect');
                 };
             }
         };
@@ -45937,8 +47494,6 @@ if (!Array.prototype.indexOf) {
          * @see LanguageSelector.onLangCallback
          */
         this.onLangCallbackExtension = null;
-
-        this.init(this.options);
     }
 
     // ## LanguageSelector methods
@@ -45956,16 +47511,48 @@ if (!Array.prototype.indexOf) {
         J.mixout(options, this.options);
         this.options = options;
 
-        this.usingButtons = this.options.usingButtons || true;
+        if ('undefined' !== typeof this.options.usingButtons) {
+            this.usingButtons = !!this.options.usingButtons;
+        }
+
+        if ('undefined' !== typeof this.options.notifyServer) {
+            if (false === this.options.notifyServer) {
+                this.options.notifyServer = 'never';
+            }
+            else if ('string' === typeof this.options.notifyServer) {
+                if ('never' === this.options.notifyServer ||
+                    'onselect' === this.options.notifyServer ||
+                    'ondone' === this.options.notifyServer) {
+
+                    this.notifyServer = this.options.notifyServer;
+                }
+                else {
+                    throw new Error('LanguageSelector.init: invalid value ' +
+                                    'for notifyServer: "' +
+                                    this.options.notifyServer + '". Valid ' +
+                                    'values: "never","onselect", "ondone".');
+                }
+            }
+            else {
+                throw new Error('LanguageSelector.init: options.notifyServer ' +
+                                'must be ' +
+                                this.options.notifyServer);
+            }
+        }
+
+        if ('undefined' !== typeof this.options.setUriPrefix) {
+            this.setUriPrefix = !!this.options.setUriPrefix;
+        }
 
         // Register listener.
         // TODO: should it be moved into the listeners method?
+        // TODO: calling init twice will add it twice.
         node.on.lang(this.onLangCallback);
 
         // Display initialization.
-        this.displayForm = node.window.getElement('form', 'radioButtonForm');
-        this.loadingDiv = node.window.addDiv(this.displayForm);
-        this.loadingDiv.innerHTML = 'Loading language information...';
+        this.displayForm = W.get('form', 'radioButtonForm');
+        this.loadingDiv = W.add('div', this.displayForm);
+        this.loadingDiv.innerHTML = this.getText('loading');
 
         this.loadLanguages();
     };
@@ -45977,13 +47564,16 @@ if (!Array.prototype.indexOf) {
     /**
      * ### LanguageSelector.setLanguage
      *
-     * Sets language and updates view
+     * Sets language within the widget and globally and updates the display
      *
      * @param {string} langName shortName of language to be set
+     * @param {boolean} updatePlayer If FALSE, the language is set only
+     *   inside the widget, and no changes are made to the player object.
+     *   Default: TRUE
      *
      * @see NodeGameClient.setLanguage
      */
-    LanguageSelector.prototype.setLanguage = function(langName) {
+    LanguageSelector.prototype.setLanguage = function(langName, updatePlayer) {
 
         if (this.usingButtons) {
 
@@ -46002,7 +47592,6 @@ if (!Array.prototype.indexOf) {
         this.currentLanguage = langName;
 
         if (this.usingButtons) {
-
             // Check language button and change className of label.
             this.optionsDisplay[this.currentLanguage].checked = 'checked';
             this.optionsLabel[this.currentLanguage].className =
@@ -46013,7 +47602,10 @@ if (!Array.prototype.indexOf) {
         }
 
         // Update node.player.
-        node.setLanguage(this.availableLanguages[this.currentLanguage]);
+        if (updatePlayer !== false) {
+            node.setLanguage(this.availableLanguages[this.currentLanguage],
+                             this.setUriPrefix, this.notifyServer);
+        }
     };
 
     /**
@@ -46044,15 +47636,24 @@ if (!Array.prototype.indexOf) {
      * @see LanguageSelector.updateAvalaibleLanguages
      */
     LanguageSelector.prototype.loadLanguages = function(options) {
-        if(!this.languagesLoaded) {
-            this.updateAvalaibleLanguages(options);
-        }
-        else {
-            if (options && options.callback) {
-                options.callback();
-            }
+        if (!this.languagesLoaded) this.updateAvalaibleLanguages(options);
+        else if (options && options.callback) options.callback();
+    };
 
-        }
+    /**
+     * ### LanguageSelector.listeners
+     *
+     * Implements Widget.listeners
+     */
+    LanguageSelector.prototype.listeners = function() {
+        var that;
+        that = this;
+        node.events.step.on('REALLY_DONE', function() {
+            if (that.updatePlayer === 'ondone') {
+                node.setLanguage(that.availableLanguages[that.currentLanguage],
+                                 that.setUriPrefix, that.notifyServer);
+            }
+        });
     };
 
 })(node);
@@ -46074,7 +47675,7 @@ if (!Array.prototype.indexOf) {
 
     // ## Meta-data
 
-    MoneyTalks.version = '0.3.0';
+    MoneyTalks.version = '0.4.0';
     MoneyTalks.description = 'Displays the earnings of a player.';
 
     MoneyTalks.title = 'Earnings';
@@ -46097,19 +47698,20 @@ if (!Array.prototype.indexOf) {
      * @see MoneyTalks.init
      */
     function MoneyTalks(options) {
+
         /**
          * ### MoneyTalks.spanCurrency
          *
          * The SPAN which holds information on the currency
          */
-        this.spanCurrency = document.createElement('span');
+        this.spanCurrency = null;
 
         /**
          * ### MoneyTalks.spanMoney
          *
          * The SPAN which holds information about the money earned so far
          */
-        this.spanMoney = document.createElement('span');
+        this.spanMoney = null;
 
         /**
          * ### MoneyTalks.currency
@@ -46132,7 +47734,26 @@ if (!Array.prototype.indexOf) {
          */
         this.precision = 2;
 
-        this.init(options);
+        /**
+         * ### MoneyTalks.showCurrency
+         *
+         * If TRUE, the currency is displayed after the money
+         */
+        this.showCurrency = true;
+
+        /**
+         * ### MoneyTalks.currencyClassname
+         *
+         * Class name to be attached to the currency span
+         */
+        this.classnameCurrency = 'moneytalkscurrency';
+
+        /**
+         * ### MoneyTalks.currencyClassname
+         *
+         * Class name to be attached to the money span
+         */
+        this.classnameMoney = 'moneytalksmoney';
     }
 
     // ## MoneyTalks methods
@@ -46145,30 +47766,50 @@ if (!Array.prototype.indexOf) {
      * @param {object} options Optional. Configuration options.
      *
      * The  options object can have the following attributes:
-     *   - `currency`: String describing currency to use.
-     *   - `money`: Current amount of money earned.
-     *   - `precision`: Precision of floating point output to use.
+     *
+     *   - `currency`: The name of currency.
+     *   - `money`: Initial amount of money earned.
+     *   - `precision`: How mamy floating point digits to use.
      *   - `currencyClassName`: Class name to be set for this.spanCurrency.
-     *   - `moneyClassName`: Class name to be set for this.spanMoney;
+     *   - `moneyClassName`: Class name to be set for this.spanMoney.
+     *   - `showCurrency`: Flag whether the name of currency is to be displayed.
      */
     MoneyTalks.prototype.init = function(options) {
-        this.currency = 'string' === typeof options.currency ?
-            options.currency : this.currency;
-        this.money = 'number' === typeof options.money ?
-            options.money : this.money;
-        this.precision = 'number' === typeof options.precision ?
-            options.precision : this.precision;
-
-        this.spanCurrency.className = options.currencyClassName ||
-            this.spanCurrency.className || 'moneytalkscurrency';
-        this.spanMoney.className = options.moneyClassName ||
-            this.spanMoney.className || 'moneytalksmoney';
-
-        this.spanCurrency.innerHTML = this.currency;
-        this.spanMoney.innerHTML = this.money;
+        if ('string' === typeof options.currency) {
+            this.currency = options.currency;
+        }
+        if ('undefined' !== typeof options.showCurrency) {
+            this.showCurrency = !!options.showCurrency;
+        }
+        if ('number' === typeof options.money) {
+            this.money = options.money;
+        }
+        if ('number' === typeof options.precision) {
+            this.precision = options.precision;
+        }
+        if ('string' === typeof options.MoneyClassName) {
+            this.classnameMoney = options.MoneyClassName;
+        }
+        if ('string' === typeof options.currencyClassName) {
+            this.classnameCurrency = options.currencyClassName;
+        }
     };
 
     MoneyTalks.prototype.append = function() {
+        if (!this.spanMoney) {
+            this.spanMoney = document.createElement('span');
+        }
+        if (!this.spanCurrency) {
+            this.spanCurrency = document.createElement('span');
+        }
+        if (!this.showCurrency) this.spanCurrency.style.display = 'none';
+
+        this.spanMoney.className = this.classnameMoney;
+        this.spanCurrency.className = this.classnameCurrency;
+
+        this.spanCurrency.innerHTML = this.currency;
+        this.spanMoney.innerHTML = this.money;
+
         this.bodyDiv.appendChild(this.spanMoney);
         this.bodyDiv.appendChild(this.spanCurrency);
     };
@@ -46194,7 +47835,7 @@ if (!Array.prototype.indexOf) {
      */
     MoneyTalks.prototype.update = function(amount, clear) {
         var parsedAmount;
-        parsedAmount = JSUS.isNumber(amount);
+        parsedAmount = J.isNumber(amount);
         if (parsedAmount === false) {
             node.err('MoneyTalks.update: invalid amount: ' + amount);
             return;
@@ -46234,15 +47875,17 @@ if (!Array.prototype.indexOf) {
 
     // ## Meta-data
 
-    MoodGauge.version = '0.2.0';
+    MoodGauge.version = '0.2.1';
     MoodGauge.description = 'Displays an interface to measure mood ' +
         'and emotions.';
 
     MoodGauge.title = 'Mood Gauge';
     MoodGauge.className = 'moodgauge';
 
-    // ## Dependencies
+    MoodGauge.texts.mainText = 'Thinking about yourself and how you normally' +
+                ' feel, to what extent do you generally feel: ';
 
+    // ## Dependencies
     MoodGauge.dependencies = {
         JSUS: {}
     };
@@ -46335,7 +47978,7 @@ if (!Array.prototype.indexOf) {
     };
 
     MoodGauge.prototype.append = function() {
-        node.widgets.append(this.gauge, this.bodyDiv);
+        node.widgets.append(this.gauge, this.bodyDiv, { panel: false });
     };
 
     MoodGauge.prototype.listeners = function() {};
@@ -46418,17 +48061,8 @@ if (!Array.prototype.indexOf) {
 
     // ### I_PANAS_SF
     function I_PANAS_SF(options) {
-        var items, emotions, mainText, choices, left, right;
+        var items, emotions, choices, left, right;
         var gauge, i, len;
-
-        if ('undefined' === typeof options.mainText) {
-            mainText = 'Thinking about yourself and how you normally feel, ' +
-                'to what extent do you generally feel: ';
-        }
-        else if ('string' === typeof options.mainText) {
-            mainText = options.mainText;
-        }
-        // Other types ignored.
 
         choices = options.choices ||
             [ '1', '2', '3', '4', '5' ];
@@ -46467,7 +48101,7 @@ if (!Array.prototype.indexOf) {
         gauge = node.widgets.get('ChoiceTableGroup', {
             id: 'ipnassf',
             items: items,
-            mainText: mainText,
+            mainText: this.getText('mainText'),
             title: false,
             requiredChoice: true
         });
@@ -46479,7 +48113,7 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # MsgBar
- * Copyright(c) 2016 Stefano Balietti
+ * Copyright(c) 2017 Stefano Balietti
  * MIT Licensed
  *
  * Creates a tool for sending messages to other connected clients
@@ -46490,18 +48124,19 @@ if (!Array.prototype.indexOf) {
 
     "use strict";
 
-    var JSUS = node.JSUS,
-        Table = W.Table;
+    var Table = W.Table;
 
     node.widgets.register('MsgBar', MsgBar);
 
     // ## Meta-data
 
-    MsgBar.version = '0.7.0';
+    MsgBar.version = '0.7.2';
     MsgBar.description = 'Send a nodeGame message to players';
 
     MsgBar.title = 'Send MSG';
     MsgBar.className = 'msgbar';
+
+    MsgBar.texts.advButton = 'Toggle advanced options';
 
     function MsgBar() {
         this.recipient = null;
@@ -46592,7 +48227,7 @@ if (!Array.prototype.indexOf) {
 
         // Show a button that expands the table of advanced fields.
         advButton =
-            W.addButton(this.bodyDiv, undefined, 'Toggle advanced options');
+            W.addButton(this.bodyDiv, undefined, this.getText('advButton'));
         advButton.onclick = function() {
             that.tableAdvanced.table.style.display =
                 that.tableAdvanced.table.style.display === '' ? 'none' : '';
@@ -46640,7 +48275,7 @@ if (!Array.prototype.indexOf) {
 
         if (key === 'stage' || key === 'to' || key === 'data') {
             try {
-                value = JSUS.parse(e.content.value);
+                value = J.parse(e.content.value);
             }
             catch (ex) {
                 value = e.content.value;
@@ -46653,7 +48288,7 @@ if (!Array.prototype.indexOf) {
                 value = '' + value;
             }
 
-            if ((!JSUS.isArray(value) && 'string' !== typeof value) ||
+            if ((!J.isArray(value) && 'string' !== typeof value) ||
                 ('string' === typeof value && value.trim() === '')) {
 
                 alert('Invalid "to" field');
@@ -46690,7 +48325,7 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # NDDBBrowser
- * Copyright(c) 2015 Stefano Balietti
+ * Copyright(c) 2017 Stefano Balietti
  * MIT Licensed
  *
  * Creates an interface to interact with an NDDB database
@@ -46714,7 +48349,7 @@ if (!Array.prototype.indexOf) {
 
     // ## Meta-data
 
-    NDDBBrowser.version = '0.2.0';
+    NDDBBrowser.version = '0.2.1';
     NDDBBrowser.description =
         'Provides a very simple interface to control a NDDB istance.';
 
@@ -46750,15 +48385,15 @@ if (!Array.prototype.indexOf) {
 
         function addButtons() {
             var id = this.id;
-            node.window.addEventButton(id + '_GO_TO_FIRST', '<<',
+            W.addEventButton(id + '_GO_TO_FIRST', '<<',
                 this.commandsDiv, 'go_to_first');
-            node.window.addEventButton(id + '_GO_TO_PREVIOUS', '<',
+            W.addEventButton(id + '_GO_TO_PREVIOUS', '<',
                 this.commandsDiv, 'go_to_previous');
-            node.window.addEventButton(id + '_GO_TO_NEXT', '>',
+            W.addEventButton(id + '_GO_TO_NEXT', '>',
                 this.commandsDiv, 'go_to_next');
-            node.window.addEventButton(id + '_GO_TO_LAST', '>>',
+            W.addEventButton(id + '_GO_TO_LAST', '>>',
                 this.commandsDiv, 'go_to_last');
-            node.window.addBreak(this.commandsDiv);
+            W.addBreak(this.commandsDiv);
         }
         function addInfoBar() {
             var span = this.commandsDiv.appendChild(
@@ -46865,9 +48500,12 @@ if (!Array.prototype.indexOf) {
     NextPreviousStep.className = 'nextprevious';
     NextPreviousStep.title = 'Next/Previous Step';
 
-    NextPreviousStep.version = '1.0.0';
+    NextPreviousStep.version = '1.0.1';
     NextPreviousStep.description = 'Adds two buttons to push forward or ' +
         'rewind the state of the game by one step.';
+
+    NextPreviousStep.texts.rew = '<<';
+    NextPreviousStep.texts.fwd = '>>';
 
     /**
      * ## NextPreviousStep constructor
@@ -46908,10 +48546,10 @@ if (!Array.prototype.indexOf) {
         that = this;
 
         this.rew = document.createElement('button');
-        this.rew.innerHTML = '<<';
+        this.rew.innerHTML = this.getText('rew');
 
         this.fwd = document.createElement('button');
-        this.fwd.innerHTML = '>>';
+        this.fwd.innerHTML = this.getText('fwd');
 
         this.checkbox = document.createElement('input');
         this.checkbox.type = 'checkbox';
@@ -46973,7 +48611,7 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # Requirements
- * Copyright(c) 2015 Stefano Balietti
+ * Copyright(c) 2017 Stefano Balietti <ste@nodegame.org>
  * MIT Licensed
  *
  * Checks a list of requirements and displays the results
@@ -46987,18 +48625,22 @@ if (!Array.prototype.indexOf) {
 
     "use strict";
 
-    var J = node.JSUS;
-
     node.widgets.register('Requirements', Requirements);
 
     // ## Meta-data
 
-    Requirements.version = '0.7.0';
+    Requirements.version = '0.7.1';
     Requirements.description = 'Checks a set of requirements and display the ' +
         'results';
 
     Requirements.title = 'Requirements';
     Requirements.className = 'requirements';
+
+    Requirements.texts.errStr = 'One or more function is taking too long. ' +
+                                'This is likely to be due to a compatibility' +
+                                ' issue with your browser or to bad network' +
+                                ' connectivity.';
+    Requirements.texts.testPassed = 'All tests passed.';
 
     // ## Dependencies
 
@@ -47143,6 +48785,13 @@ if (!Array.prototype.indexOf) {
         this.onFailure = null;
 
         /**
+         * ### Requirements.callbacksExecuted
+         *
+         * TRUE, the callbacks have been executed
+         */
+        this.callbacksExecuted = false;
+
+        /**
          * ### Requirements.list
          *
          * `List` to render the results
@@ -47199,12 +48848,14 @@ if (!Array.prototype.indexOf) {
      */
     Requirements.prototype.init = function(conf) {
         if ('object' !== typeof conf) {
-            throw new TypeError('Requirements.init: conf must be object.');
+            throw new TypeError('Requirements.init: conf must be object. ' +
+                                'Found: ' + conf);
         }
         if (conf.requirements) {
             if (!J.isArray(conf.requirements)) {
                 throw new TypeError('Requirements.init: conf.requirements ' +
-                                    'must be array or undefined.');
+                                    'must be array or undefined. Found: ' +
+                                    conf.requirements);
             }
             this.requirements = conf.requirements;
         }
@@ -47213,7 +48864,8 @@ if (!Array.prototype.indexOf) {
                 'function' !== typeof conf.onComplete) {
 
                 throw new TypeError('Requirements.init: conf.onComplete must ' +
-                                    'be function, null or undefined.');
+                                    'be function, null or undefined. Found: ' +
+                                    conf.onComplete);
             }
             this.onComplete = conf.onComplete;
         }
@@ -47222,7 +48874,8 @@ if (!Array.prototype.indexOf) {
                 'function' !== typeof conf.onSuccess) {
 
                 throw new TypeError('Requirements.init: conf.onSuccess must ' +
-                                    'be function, null or undefined.');
+                                    'be function, null or undefined. Found: ' +
+                                    conf.onSuccess);
             }
             this.onSuccess = conf.onSuccess;
         }
@@ -47231,7 +48884,8 @@ if (!Array.prototype.indexOf) {
                 'function' !== typeof conf.onFailure) {
 
                 throw new TypeError('Requirements.init: conf.onFailure must ' +
-                                    'be function, null or undefined.');
+                                    'be function, null or undefined. Found: ' +
+                                    conf.onFailure);
             }
             this.onFailure = conf.onFailure;
         }
@@ -47240,7 +48894,8 @@ if (!Array.prototype.indexOf) {
                 'number' !== typeof conf.maxExecTime) {
 
                 throw new TypeError('Requirements.init: conf.onMaxExecTime ' +
-                                    'must be number, null or undefined.');
+                                    'must be number, null or undefined. ' +
+                                    'Found: ' + conf.maxExecTime);
             }
             this.withTimeout = !!conf.maxExecTime;
             this.timeoutTime = conf.maxExecTime;
@@ -47272,7 +48927,8 @@ if (!Array.prototype.indexOf) {
                 'object' !== typeof arguments[i] ) {
 
                 throw new TypeError('Requirements.addRequirements: ' +
-                                    'requirements must be function or object.');
+                                    'requirements must be function or ' +
+                                    'object. Found: ' + arguments[i]);
             }
             this.requirements.push(arguments[i]);
         }
@@ -47300,7 +48956,7 @@ if (!Array.prototype.indexOf) {
         var errors, cbName, errMsg;
         if (!this.requirements.length) {
             throw new Error('Requirements.checkRequirements: no requirements ' +
-                            'to check found.');
+                            'to check.');
         }
 
         this.updateStillChecking(this.requirements.length, true);
@@ -47327,17 +48983,13 @@ if (!Array.prototype.indexOf) {
             }
         }
 
-        if (this.withTimeout) {
-            this.addTimeout();
-        }
+        if (this.withTimeout) this.addTimeout();
 
         if ('undefined' === typeof display ? true : false) {
             this.displayResults(errors);
         }
 
-        if (this.isCheckingFinished()) {
-            this.checkingFinished();
-        }
+        if (this.isCheckingFinished()) this.checkingFinished();
 
         return errors;
     };
@@ -47355,13 +49007,10 @@ if (!Array.prototype.indexOf) {
      */
     Requirements.prototype.addTimeout = function() {
         var that = this;
-        var errStr = 'One or more function is taking too long. This is ' +
-            'likely to be due to a compatibility issue with your browser ' +
-            'or to bad network connectivity.';
 
         this.timeoutId = setTimeout(function() {
             if (that.stillChecking > 0) {
-                that.displayResults([errStr]);
+                that.displayResults([this.getText('errStr')]);
             }
             that.timeoutId = null;
             that.hasFailed = true;
@@ -47422,13 +49071,16 @@ if (!Array.prototype.indexOf) {
     };
 
     /**
-     * ### Requirements.CheckingFinished
+     * ### Requirements.checkingFinished
      *
-     * Cleans up timer and dots, and executes final requirements accordingly
+     * Clears up timer and dots, and executes final callbacks accordingly
      *
      * First, executes the `onComplete` callback in any case. Then if no
      * errors have been raised executes the `onSuccess` callback, otherwise
      * the `onFailure` callback.
+     *
+     * @param {boolean} force If TRUE, the function is executed again,
+     *   regardless of whether it was already executed. Default: FALSE
      *
      * @see this.onComplete
      * @see this.onSuccess
@@ -47436,12 +49088,16 @@ if (!Array.prototype.indexOf) {
      * @see this.stillCheckings
      * @see this.requirements
      */
-    Requirements.prototype.checkingFinished = function() {
+    Requirements.prototype.checkingFinished = function(force) {
         var results;
 
-        if (this.timeoutId) {
-            clearTimeout(this.timeoutId);
-        }
+        // Sometimes, if all requirements are almost synchronous, it
+        // can happen that this function is called twice (from resultCb
+        // and at the end of all requirements checkings.
+        if (this.callbacksExecuted && !force) return;
+        this.callbacksExecuted = true;
+
+        if (this.timeoutId) clearTimeout(this.timeoutId);
 
         this.dots.stop();
 
@@ -47457,9 +49113,7 @@ if (!Array.prototype.indexOf) {
             node.say(this.sayResultsLabel, 'SERVER', results);
         }
 
-        if (this.onComplete) {
-            this.onComplete();
-        }
+        if (this.onComplete) this.onComplete();
 
         if (this.hasFailed) {
             if (this.onFailure) this.onFailure();
@@ -47498,7 +49152,7 @@ if (!Array.prototype.indexOf) {
 
         if (!J.isArray(results)) {
             throw new TypeError('Requirements.displayResults: results must ' +
-                                'be array.');
+                                'be array. Found: ' + results);
         }
 
         // No errors.
@@ -47506,7 +49160,7 @@ if (!Array.prototype.indexOf) {
             // All tests passed.
             this.list.addDT({
                 success: true,
-                text:'All tests passed.'
+                text: this.getText('testPassed')
             });
         }
         else {
@@ -47585,7 +49239,8 @@ if (!Array.prototype.indexOf) {
             if (errors) {
                 if (!J.isArray(errors)) {
                     throw new Error('Requirements.checkRequirements: ' +
-                                    'errors must be array or undefined.');
+                                    'errors must be array or undefined. ' +
+                                    'Found: ' + errors);
                 }
                 that.displayResults(errors);
             }
@@ -47597,9 +49252,7 @@ if (!Array.prototype.indexOf) {
                 data: data
             });
 
-            if (that.isCheckingFinished()) {
-                that.checkingFinished();
-            }
+            if (that.isCheckingFinished()) that.checkingFinished();
         };
 
         req = that.requirements[i];
@@ -47653,12 +49306,16 @@ if (!Array.prototype.indexOf) {
 
     // ## Meta-data
 
-    SVOGauge.version = '0.5.0';
+    SVOGauge.version = '0.5.1';
     SVOGauge.description = 'Displays an interface to measure social ' +
         'value orientation (S.V.O.).';
 
     SVOGauge.title = 'SVO Gauge';
     SVOGauge.className = 'svogauge';
+
+    SVOGauge.texts.mainText = 'Select your preferred option among those' +
+                               ' available below:';
+    SVOGauge.texts.left = 'You:<hr/>Other:';
 
     // ## Dependencies
 
@@ -47843,18 +49500,9 @@ if (!Array.prototype.indexOf) {
 
     // ### SVO_Slider
     function SVO_Slider(options) {
-        var items, sliders, mainText;
+        var items, sliders;
         var gauge, i, len;
-        var left, renderer;
-
-        if ('undefined' === typeof options.mainText) {
-            mainText =
-                'Select your preferred option among those available below:';
-        }
-        else if ('string' === typeof options.mainText) {
-            mainText = options.mainText;
-        }
-        // Other types ignored.
+        var renderer;
 
         sliders = options.sliders || [
             [
@@ -47932,13 +49580,6 @@ if (!Array.prototype.indexOf) {
             td.innerHTML = choice[0] + '<hr/>' + choice[1];
         };
 
-        if (options.left) {
-            left = options.left;
-        }
-        else {
-            left = 'You:<hr/>Other:';
-        }
-
         len = sliders.length;
         items = new Array(len);
 
@@ -47946,7 +49587,7 @@ if (!Array.prototype.indexOf) {
         for ( ; ++i < len ; ) {
             items[i] = {
                 id: (i+1),
-                left: left,
+                left: this.getText('left'),
                 choices: sliders[i]
             };
         }
@@ -47954,7 +49595,7 @@ if (!Array.prototype.indexOf) {
         gauge = node.widgets.get('ChoiceTableGroup', {
             id: 'svo_slider',
             items: items,
-            mainText: mainText,
+            mainText: this.getText('mainText'),
             title: false,
             renderer: renderer,
             requiredChoice: true
@@ -47967,7 +49608,7 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # VisualRound
- * Copyright(c) 2016 Stefano Balietti
+ * Copyright(c) 2017 Stefano Balietti
  * MIT Licensed
  *
  * Display information about rounds and/or stage in the game
@@ -47981,18 +49622,21 @@ if (!Array.prototype.indexOf) {
 
     "use strict";
 
-    var J = node.JSUS;
-
     node.widgets.register('VisualRound', VisualRound);
 
     // ## Meta-data
 
-    VisualRound.version = '0.7.0';
+    VisualRound.version = '0.8.0';
     VisualRound.description = 'Display number of current round and/or stage.' +
         'Can also display countdown and total number of rounds and/or stages.';
 
     VisualRound.title = 'Round info';
     VisualRound.className = 'visualround';
+
+    VisualRound.texts.round = 'Round';
+    VisualRound.texts.stage = 'Stage';
+    VisualRound.texts.roundLeft = 'Round Left';
+    VisualRound.texts.stageLeft = 'Stage left';
 
     // ## Dependencies
 
@@ -48098,6 +49742,24 @@ if (!Array.prototype.indexOf) {
          */
         this.oldStageId = null;
 
+        /**
+         * ### VisualRound.separator
+         *
+         * Stages and rounds are separated with this string, if needed
+         *
+         * E.g., Stage 3/5
+         */
+        this.separator = ' / ';
+
+        /**
+         * ### VisualRound.layout
+         *
+         * Display layout
+         *
+         * @see VisualRound.setLayout
+         */
+        this.layout = null;
+
     }
 
     // ## VisualRound methods
@@ -48129,8 +49791,10 @@ if (!Array.prototype.indexOf) {
      *   - `oldStageId`:
      *     When (re)starting in `flexibleMode`, sets the id of the current
      *     stage
-     *   - `displayModeNames`:
+     *   - `displayMode`:
      *     Array of strings which determines the display style of the widget
+     *   - `displayModeNames`: alias of displayMode, deprecated
+     *
      *
      * @see VisualRound.setDisplayMode
      * @see GameStager
@@ -48162,12 +49826,28 @@ if (!Array.prototype.indexOf) {
 
         this.updateInformation();
 
-        if (!this.options.displayModeNames) {
-            this.setDisplayMode(['COUNT_UP_ROUNDS_TO_TOTAL',
-                'COUNT_UP_STAGES_TO_TOTAL']);
+        if (!this.options.displayMode && this.options.displayModeNames) {
+            console.log('***VisualTimer.init: options.displayModeNames is ' +
+                        'deprecated. Use options.displayMode instead.***');
+            this.options.displayMode = this.options.displayModeNames;
+        }
+
+        if (!this.options.displayMode) {
+            this.setDisplayMode([
+                'COUNT_UP_ROUNDS_TO_TOTAL_IFNOT1',
+                'COUNT_UP_STAGES_TO_TOTAL'
+            ]);
         }
         else {
-            this.setDisplayMode(this.options.displayModeNames);
+            this.setDisplayMode(this.options.displayMode);
+        }
+
+        if ('undefined' !== typeof options.separator) {
+            this.separator = options.separator;
+        }
+
+        if ('undefined' !== typeof options.layout) {
+            this.layout = options.layout;
         }
 
         this.updateDisplay();
@@ -48186,9 +49866,7 @@ if (!Array.prototype.indexOf) {
      * @see VisualRound.displayMode
      */
     VisualRound.prototype.updateDisplay = function() {
-        if (this.displayMode) {
-            this.displayMode.updateDisplay();
-        }
+        if (this.displayMode) this.displayMode.updateDisplay();
     };
 
     /**
@@ -48209,67 +49887,69 @@ if (!Array.prototype.indexOf) {
      * - `COUNT_DOWN_STAGES`: Display number of stages left to play.
      * - `COUNT_DOWN_ROUNDS`: Display number of rounds left in this stage.
      *
-     * @param {array} displayModeNames Array of strings representing the names
+     * @param {array|string} displayMode Array of strings representing the names
      *
      * @see VisualRound.displayMode
      * @see CompoundDisplayMode
      * @see VisualRound.init
      */
-    VisualRound.prototype.setDisplayMode = function(displayModeNames) {
-        var index, compoundDisplayModeName, displayModes;
+    VisualRound.prototype.setDisplayMode = function(displayMode) {
+        var i, len, displayModes;
 
-        // Validation of input parameter.
-        if (!J.isArray(displayModeNames)) {
-            throw TypeError;
+        if ('string' === typeof displayMode) {
+            displayMode = [ displayMode ];
         }
-
-        // Build compound name.
-        compoundDisplayModeName = '';
-        for (index in displayModeNames) {
-            if (displayModeNames.hasOwnProperty(index)) {
-                compoundDisplayModeName += displayModeNames[index] + '&';
-            }
+        else if (!J.isArray(displayMode)) {
+            throw new TypeError('VisualRound.setDisplayMode: ' +
+                                'displayMode must be array or string. ' +
+                                'Found: ' + displayMode);
         }
-
-        // Remove trailing '&'.
-        compoundDisplayModeName = compoundDisplayModeName.substr(0,
-            compoundDisplayModeName, compoundDisplayModeName.length -1);
+        len = displayMode.length;
+        if (len === 0) {
+            throw new Error('VisualRound.setDisplayMode: displayMode is empty');
+        }
 
         if (this.displayMode) {
-            if (compoundDisplayModeName !== this.displayMode.name) {
-                this.deactivate(this.displayMode);
-            }
-            else {
-                return;
-            }
+            // Nothing to do if mode is already active.
+            if (displayMode.join('&') === this.displayMode.name) return;
+            this.deactivate(this.displayMode);
         }
 
         // Build `CompoundDisplayMode`.
         displayModes = [];
-        for (index in displayModeNames) {
-            if (displayModeNames.hasOwnProperty(index)) {
-                switch (displayModeNames[index]) {
-                    case 'COUNT_UP_STAGES_TO_TOTAL':
-                        displayModes.push(new CountUpStages(this,
-                            {toTotal: true}));
-                        break;
-                    case 'COUNT_UP_STAGES':
-                        displayModes.push(new CountUpStages(this));
-                        break;
-                    case 'COUNT_DOWN_STAGES':
-                        displayModes.push(new CountDownStages(this));
-                        break;
-                    case 'COUNT_UP_ROUNDS_TO_TOTAL':
-                        displayModes.push(new CountUpRounds(this,
-                            {toTotal: true}));
-                        break;
-                    case 'COUNT_UP_ROUNDS':
-                        displayModes.push(new CountUpRounds(this));
-                        break;
-                    case 'COUNT_DOWN_ROUNDS':
-                        displayModes.push(new CountDownRounds(this));
-                        break;
-                }
+        i = -1;
+        for (; ++i < len; ) {
+            switch (displayMode[i]) {
+            case 'COUNT_UP_STAGES_TO_TOTAL':
+                displayModes.push(new CountUpStages(this, { toTotal: true }));
+                break;
+            case 'COUNT_UP_STAGES':
+                displayModes.push(new CountUpStages(this));
+                break;
+            case 'COUNT_DOWN_STAGES':
+                displayModes.push(new CountDownStages(this));
+                break;
+            case 'COUNT_UP_ROUNDS_TO_TOTAL':
+                displayModes.push(new CountUpRounds(this, { toTotal: true }));
+                break;
+            case 'COUNT_UP_ROUNDS':
+                displayModes.push(new CountUpRounds(this));
+                break;
+            case 'COUNT_UP_ROUNDS_TO_TOTAL_IFNOT1':
+                displayModes.push(new CountUpRounds(this, {
+                    toTotal: true,
+                    ifNotOne: true
+                }));
+                break;
+            case 'COUNT_UP_ROUNDS_IFNOT1':
+                displayModes.push(new CountUpRounds(this, { ifNotOne: true }));
+                break;
+            case 'COUNT_DOWN_ROUNDS':
+                displayModes.push(new CountDownRounds(this));
+                break;
+            default:
+                throw new Error('VisualRound.setDisplayMode: unknown mode: ' +
+                                displayMode[i]);
             }
         }
         this.displayMode = new CompoundDisplayMode(this, displayModes);
@@ -48299,12 +49979,8 @@ if (!Array.prototype.indexOf) {
      * @see VisualRound.deactivate
      */
     VisualRound.prototype.activate = function(displayMode) {
-        if (this.bodyDiv) {
-            this.bodyDiv.appendChild(displayMode.displayDiv);
-        }
-        if (displayMode.activate) {
-            displayMode.activate();
-        }
+        if (this.bodyDiv) this.bodyDiv.appendChild(displayMode.displayDiv);
+        if (displayMode.activate) displayMode.activate();
     };
 
     /**
@@ -48320,18 +49996,15 @@ if (!Array.prototype.indexOf) {
      */
     VisualRound.prototype.deactivate = function(displayMode) {
         this.bodyDiv.removeChild(displayMode.displayDiv);
-        if (displayMode.deactivate) {
-            displayMode.deactivate();
-        }
+        if (displayMode.deactivate) displayMode.deactivate();
     };
 
     VisualRound.prototype.listeners = function() {
-        var that = this;
-
+        var that;
+        that = this;
         node.on('STEP_CALLBACK_EXECUTED', function() {
             that.updateInformation();
         });
-
         // TODO: Game over and init?
     };
 
@@ -48369,7 +50042,6 @@ if (!Array.prototype.indexOf) {
         }
         // Normal mode.
         else {
-
             this.curStage = stage.stage;
             // Stage can be indexed by id or number in the sequence.
             if ('string' === typeof this.curStage) {
@@ -48389,90 +50061,35 @@ if (!Array.prototype.indexOf) {
         this.updateDisplay();
     };
 
-   /**
-     * # EmptyDisplayMode
-     *
-     * Copyright(c) 2015 Stefano Balietti
-     * MIT Licensed
-     *
-     * Defines a displayMode for the `VisualRound` which displays nothing
-     */
-
     /**
-     * ## EmptyDisplayMode constructor
+     * ### VisualRound.setLayout
      *
-     * Display a displayMode which contains the bare minumum (nothing)
+     * Arranges the relative position of the various elements of VisualRound
      *
-     * @param {VisualRound} visualRound The `VisualRound` object to which the
-     *   displayMode belongs
-     * @param {object} options Optional. Configuration options
-     *
-     * @see VisualRound
+     * @param {string} layout. Admitted values:
+     *   - 'vertical' (alias: 'multimode_vertical')
+     *   - 'horizontal'
+     *   - 'multimode_horizontal'
+     *   - 'all_horizontal'
      */
-    function EmptyDisplayMode(visualRound, options) {
-
-        /**
-         * ### EmptyDisplayMode.name
-         *
-         * The name of the displayMode
-         */
-        this.name = 'EMPTY';
-        this.options = options || {};
-
-        /**
-         * ### EmptyDisplayMode.visualRound
-         *
-         * The `VisualRound` object to which the displayMode belongs
-         *
-         * @see VisualRound
-         */
-        this.visualRound = visualRound;
-
-        /**
-         * ### EmptyDisplayMode.displayDiv
-         *
-         * The DIV in which the information is displayed
-         */
-        this.displayDiv = null;
-
-        this.init(this.options);
-    }
-
-    // ## EmptyDisplayMode methods
-
-    /**
-     * ### EmptyDisplayMode.init
-     *
-     * Initializes the instance
-     *
-     * @param {object} options The options taken
-     *
-     * @see EmptyDisplayMode.updateDisplay
-     */
-    EmptyDisplayMode.prototype.init = function(options) {
-        this.displayDiv = node.window.getDiv();
-        this.displayDiv.className = 'rounddiv';
-
-        this.updateDisplay();
+    VisualRound.prototype.setLayout = function(layout) {
+        if ('string' !== typeof layout || layout.trim() === '') {
+            throw new TypeError('VisualRound.setLayout: layout must be ' +
+                                'a non-empty string. Found: ' + layout);
+        }
+        this.layout = layout;
+        if (this.displayMode) this.displayMode.setLayout(layout);
     };
 
-    /**
-     * ### EmptyDisplayMode.updateDisplay
-     *
-     * Does nothing
-     *
-     * @see VisualRound.updateDisplay
-     */
-    EmptyDisplayMode.prototype.updateDisplay = function() {};
+    // ## Display Modes.
 
     /**
      * # CountUpStages
      *
-     * Copyright(c) 2015 Stefano Balietti
+     * Copyright(c) 2017 Stefano Balietti
      * MIT Licensed
      *
-     * Defines a displayMode for the `VisualRound` which displays the current
-     * and, possibly, the total number of stages
+     * Display mode for `VisualRound` which with current/total number of stages
      */
 
     /**
@@ -48491,34 +50108,8 @@ if (!Array.prototype.indexOf) {
      * @see VisualRound
      */
     function CountUpStages(visualRound, options) {
-        this.options = options || {};
 
-        /**
-         * ### CountUpStages.name
-         *
-         * The name of the displayMode
-         */
-        this.name = 'COUNT_UP_STAGES';
-
-        if (this.options.toTotal) {
-            this.name += '_TO_TOTAL';
-        }
-
-        /**
-         * ### CountUpStages.visualRound
-         *
-         * The `VisualRound` object to which the displayMode belongs
-         *
-         * @see VisualRound
-         */
-        this.visualRound = visualRound;
-
-        /**
-         * ### CountUpStages.displayDiv
-         *
-         * The DIV in which the information is displayed
-         */
-        this.displayDiv = null;
+        generalConstructor(this, visualRound, 'COUNT_UP_STAGES', options);
 
         /**
          * ### CountUpStages.curStageNumber
@@ -48530,16 +50121,9 @@ if (!Array.prototype.indexOf) {
         /**
          * ### CountUpStages.totStageNumber
          *
-         * The element in which the total stage number is displayed
+         * The span in which the total stage number is displayed
          */
         this.totStageNumber = null;
-
-        /**
-         * ### CountUpStages.displayDiv
-         *
-         * The DIV in which the title is displayed
-         */
-        this.titleDiv = null;
 
         /**
          * ### CountUpStages.displayDiv
@@ -48548,7 +50132,8 @@ if (!Array.prototype.indexOf) {
          */
         this.textDiv = null;
 
-        this.init(this.options);
+        // Inits it!
+        this.init();
     }
 
     // ## CountUpStages methods
@@ -48558,39 +50143,23 @@ if (!Array.prototype.indexOf) {
      *
      * Initializes the instance
      *
-     * @param {object} options Optional. Configuration options. If
-     *   `options.toTotal == true`, then the total number of stages is displayed
-     *
      * @see CountUpStages.updateDisplay
      */
-    CountUpStages.prototype.init = function(options) {
-        this.displayDiv = node.window.getDiv();
-        this.displayDiv.className = 'stagediv';
+    CountUpStages.prototype.init = function() {
+        generalInit(this, 'stagediv', this.visualRound.getText('stage'));
 
-        this.titleDiv = node.window.addElement('div', this.displayDiv);
-        this.titleDiv.className = 'title';
-        this.titleDiv.innerHTML = 'Stage:';
-
+        this.curStageNumber = W.append('span', this.contentDiv, {
+            className: 'number'
+        });
         if (this.options.toTotal) {
-            this.curStageNumber = node.window.addElement('span',
-                this.displayDiv);
-            this.curStageNumber.className = 'number';
+            this.textDiv = W.append('span', this.contentDiv, {
+                className: 'text',
+                innerHTML: this.visualRound.separator
+            });
+            this.totStageNumber = W.append('span', this.contentDiv, {
+                className: 'number'
+            });
         }
-        else {
-            this.curStageNumber = node.window.addDiv(this.displayDiv);
-            this.curStageNumber.className = 'number';
-        }
-
-        if (this.options.toTotal) {
-            this.textDiv = node.window.addElement('span', this.displayDiv);
-            this.textDiv.className = 'text';
-            this.textDiv.innerHTML = ' of ';
-
-            this.totStageNumber = node.window.addElement('span',
-                this.displayDiv);
-            this.totStageNumber.className = 'number';
-        }
-
         this.updateDisplay();
     };
 
@@ -48613,7 +50182,7 @@ if (!Array.prototype.indexOf) {
    /**
      * # CountDownStages
      *
-     * Copyright(c) 2015 Stefano Balietti
+     * Copyright(c) 2017 Stefano Balietti
      * MIT Licensed
      *
      * Defines a displayMode for the `VisualRound` which displays the remaining
@@ -48633,29 +50202,7 @@ if (!Array.prototype.indexOf) {
      */
     function CountDownStages(visualRound, options) {
 
-        /**
-         * ### CountDownStages.name
-         *
-         * The name of the displayMode
-         */
-        this.name = 'COUNT_DOWN_STAGES';
-        this.options = options || {};
-
-        /**
-         * ### CountDownStages.visualRound
-         *
-         * The `VisualRound` object to which the displayMode belongs
-         *
-         * @see VisualRound
-         */
-        this.visualRound = visualRound;
-
-        /**
-         * ### CountDownStages.displayDiv
-         *
-         * The DIV in which the information is displayed
-         */
-        this.displayDiv = null;
+        generalConstructor(this, visualRound, 'COUNT_DOWN_STAGES', options);
 
         /**
          * ### CountDownStages.stagesLeft
@@ -48664,14 +50211,7 @@ if (!Array.prototype.indexOf) {
          */
         this.stagesLeft = null;
 
-        /**
-         * ### CountDownStages.displayDiv
-         *
-         * The DIV in which the title is displayed
-         */
-        this.titleDiv = null;
-
-        this.init(this.options);
+        this.init();
     }
 
     // ## CountDownStages methods
@@ -48681,21 +50221,13 @@ if (!Array.prototype.indexOf) {
      *
      * Initializes the instance
      *
-     * @param {object} options Optional. Configuration options
-     *
      * @see CountDownStages.updateDisplay
      */
-    CountDownStages.prototype.init = function(options) {
-        this.displayDiv = node.window.getDiv();
-        this.displayDiv.className = 'stagediv';
-
-        this.titleDiv = node.window.addDiv(this.displayDiv);
-        this.titleDiv.className = 'title';
-        this.titleDiv.innerHTML = 'Stages left: ';
-
-        this.stagesLeft = node.window.addDiv(this.displayDiv);
-        this.stagesLeft.className = 'number';
-
+    CountDownStages.prototype.init = function() {
+        generalInit(this, 'stagediv', this.visualRound.getText('stageLeft'));
+        this.stagesLeft = W.add('div', this.contentDiv, {
+            className: 'number'
+        });
         this.updateDisplay();
     };
 
@@ -48707,18 +50239,20 @@ if (!Array.prototype.indexOf) {
      * @see VisualRound.updateDisplay
      */
     CountDownStages.prototype.updateDisplay = function() {
-        if (this.visualRound.totStage === this.visualRound.curStage) {
+        var v;
+        v = this.visualRound;
+        if (v.totStage === v.curStage) {
             this.stagesLeft.innerHTML = 0;
-            return;
         }
-        this.stagesLeft.innerHTML =
-                (this.visualRound.totStage - this.visualRound.curStage) || '?';
+        else {
+            this.stagesLeft.innerHTML = (v.totStage - v.curStage) || '?';
+        }
     };
 
    /**
      * # CountUpRounds
      *
-     * Copyright(c) 2015 Stefano Balietti
+     * Copyright(c) 2017 Stefano Balietti
      * MIT Licensed
      *
      * Defines a displayMode for the `VisualRound` which displays the current
@@ -48740,34 +50274,8 @@ if (!Array.prototype.indexOf) {
      * @see VisualRound
      */
     function CountUpRounds(visualRound, options) {
-        this.options = options || {};
 
-        /**
-         * ### CountUpRounds.name
-         *
-         * The name of the displayMode
-         */
-        this.name = 'COUNT_UP_ROUNDS';
-
-        if (this.options.toTotal) {
-            this.name += '_TO_TOTAL';
-        }
-
-        /**
-         * ### CountUpRounds.visualRound
-         *
-         * The `VisualRound` object to which the displayMode belongs
-         *
-         * @see VisualRound
-         */
-        this.visualRound = visualRound;
-
-        /**
-         * ### CountUpRounds.displayDiv
-         *
-         * The DIV in which the information is displayed
-         */
-        this.displayDiv = null;
+        generalConstructor(this, visualRound, 'COUNT_UP_ROUNDS', options);
 
         /**
          * ### CountUpRounds.curRoundNumber
@@ -48783,21 +50291,7 @@ if (!Array.prototype.indexOf) {
          */
         this.totRoundNumber = null;
 
-        /**
-         * ### CountUpRounds.displayDiv
-         *
-         * The DIV in which the title is displayed
-         */
-        this.titleDiv = null;
-
-        /**
-         * ### CountUpRounds.displayDiv
-         *
-         * The span in which the text ` of ` is displayed
-         */
-        this.textDiv = null;
-
-        this.init(this.options);
+        this.init();
     }
 
     // ## CountUpRounds methods
@@ -48812,34 +50306,23 @@ if (!Array.prototype.indexOf) {
      *
      * @see CountUpRounds.updateDisplay
      */
-    CountUpRounds.prototype.init = function(options) {
-        this.displayDiv = node.window.getDiv();
-        this.displayDiv.className = 'rounddiv';
+    CountUpRounds.prototype.init = function() {
 
-        this.titleDiv = node.window.addElement('div', this.displayDiv);
-        this.titleDiv.className = 'title';
-        this.titleDiv.innerHTML = 'Round:';
+        generalInit(this, 'rounddiv', this.visualRound.getText('round'));
 
+        this.curRoundNumber = W.add('span', this.contentDiv, {
+            className: 'number'
+        });
         if (this.options.toTotal) {
-            this.curRoundNumber = node.window.addElement('span',
-                this.displayDiv);
-            this.curRoundNumber.className = 'number';
-        }
-        else {
-            this.curRoundNumber = node.window.addDiv(this.displayDiv);
-            this.curRoundNumber.className = 'number';
-        }
+            this.textDiv = W.add('span', this.contentDiv, {
+                className: 'text',
+                innerHTML: this.visualRound.separator
+            });
 
-        if (this.options.toTotal) {
-            this.textDiv = node.window.addElement('span', this.displayDiv);
-            this.textDiv.className = 'text';
-            this.textDiv.innerHTML = ' of ';
-
-            this.totRoundNumber = node.window.addElement('span',
-                this.displayDiv);
-            this.totRoundNumber.className = 'number';
+            this.totRoundNumber = W.add('span', this.contentDiv,  {
+                className: 'number'
+            });
         }
-
         this.updateDisplay();
     };
 
@@ -48853,9 +50336,16 @@ if (!Array.prototype.indexOf) {
      * @see VisualRound.updateDisplay
      */
     CountUpRounds.prototype.updateDisplay = function() {
-        this.curRoundNumber.innerHTML = this.visualRound.curRound;
-        if (this.options.toTotal) {
-            this.totRoundNumber.innerHTML = this.visualRound.totRound || '?';
+        if (this.options.ifNotOne && this.visualRound.totRound === 1) {
+            this.displayDiv.style.display = 'none';
+        }
+        else {
+            this.curRoundNumber.innerHTML = this.visualRound.curRound;
+            if (this.options.toTotal) {
+                this.totRoundNumber.innerHTML =
+                    this.visualRound.totRound || '?';
+            }
+            this.displayDiv.style.display = '';
         }
     };
 
@@ -48863,7 +50353,7 @@ if (!Array.prototype.indexOf) {
    /**
      * # CountDownRounds
      *
-     * Copyright(c) 2015 Stefano Balietti
+     * Copyright(c) 2017 Stefano Balietti
      * MIT Licensed
      *
      * Defines a displayMode for the `VisualRound` which displays the remaining
@@ -48883,29 +50373,7 @@ if (!Array.prototype.indexOf) {
      */
     function CountDownRounds(visualRound, options) {
 
-        /**
-         * ### CountDownRounds.name
-         *
-         * The name of the displayMode
-         */
-        this.name = 'COUNT_DOWN_ROUNDS';
-        this.options = options || {};
-
-        /**
-         * ### CountDownRounds.visualRound
-         *
-         * The `VisualRound` object to which the displayMode belongs
-         *
-         * @see VisualRound
-         */
-        this.visualRound = visualRound;
-
-        /**
-         * ### CountDownRounds.displayDiv
-         *
-         * The DIV in which the information is displayed
-         */
-        this.displayDiv = null;
+        generalConstructor(this, visualRound, 'COUNT_DOWN_ROUNDS', options);
 
         /**
          * ### CountDownRounds.roundsLeft
@@ -48914,14 +50382,7 @@ if (!Array.prototype.indexOf) {
          */
         this.roundsLeft = null;
 
-        /**
-         * ### CountDownRounds.displayDiv
-         *
-         * The DIV in which the title is displayed
-         */
-        this.titleDiv = null;
-
-        this.init(this.options);
+        this.init();
     }
 
     // ## CountDownRounds methods
@@ -48931,19 +50392,12 @@ if (!Array.prototype.indexOf) {
      *
      * Initializes the instance
      *
-     * @param {object} options Optional. Configuration options
-     *
      * @see CountDownRounds.updateDisplay
      */
-    CountDownRounds.prototype.init = function(options) {
-        this.displayDiv = node.window.getDiv();
-        this.displayDiv.className = 'rounddiv';
+    CountDownRounds.prototype.init = function() {
+        generalInit(this, 'rounddiv', this.visualRound.getText('roundLeft'));
 
-        this.titleDiv = node.window.addDiv(this.displayDiv);
-        this.titleDiv.className = 'title';
-        this.titleDiv.innerHTML = 'Round left: ';
-
-        this.roundsLeft = node.window.addDiv(this.displayDiv);
+        this.roundsLeft = W.add('div', this.displayDiv);
         this.roundsLeft.className = 'number';
 
         this.updateDisplay();
@@ -48957,18 +50411,20 @@ if (!Array.prototype.indexOf) {
      * @see VisualRound.updateDisplay
      */
     CountDownRounds.prototype.updateDisplay = function() {
-        if (this.visualRound.totRound === this.visualRound.curRound) {
+        var v;
+        v = this.visualRound;
+        if (v.totRound === v.curRound) {
             this.roundsLeft.innerHTML = 0;
-            return;
         }
-        this.roundsLeft.innerHTML =
-                (this.visualRound.totRound - this.visualRound.curRound) || '?';
+        else {
+            this.roundsLeft.innerHTML = (v.totRound - v.curRound) || '?';
+        }
     };
 
     /**
      * # CompoundDisplayMode
      *
-     * Copyright(c) 2015 Stefano Balietti
+     * Copyright(c) 2017 Stefano Balietti
      * MIT Licensed
      *
      * Defines a displayMode for the `VisualRound` which displays the
@@ -48989,24 +50445,6 @@ if (!Array.prototype.indexOf) {
      * @see VisualRound
      */
     function CompoundDisplayMode(visualRound, displayModes, options) {
-        var index;
-
-        /**
-         * ### CompoundDisplayMode.name
-         *
-         * The name of the displayMode
-         */
-        this.name = '';
-
-        for (index in displayModes) {
-            if (displayModes.hasOwnProperty(index)) {
-                this.name += displayModes[index].name + '&';
-            }
-        }
-
-        this.name = this.name.substr(0, this.name.length -1);
-
-        this.options = options || {};
 
         /**
          * ### CompoundDisplayMode.visualRound
@@ -49023,6 +50461,20 @@ if (!Array.prototype.indexOf) {
          * The array of displayModes to be used in combination
          */
         this.displayModes = displayModes;
+
+        /**
+         * ### CompoundDisplayMode.name
+         *
+         * The name of the displayMode
+         */
+        this.name = displayModes.join('&');
+
+        /**
+         * ### CompoundDisplayMode.options
+         *
+         * Current options
+         */
+        this.options = options || {};
 
         /**
          * ### CompoundDisplayMode.displayDiv
@@ -49046,17 +50498,13 @@ if (!Array.prototype.indexOf) {
      * @see CompoundDisplayMode.updateDisplay
      */
      CompoundDisplayMode.prototype.init = function(options) {
-        var index;
-        this.displayDiv = node.window.getDiv();
-
-        for (index in this.displayModes) {
-            if (this.displayModes.hasOwnProperty(index)) {
-                this.displayDiv.appendChild(
-                    this.displayModes[index].displayDiv);
-            }
-        }
-
-        this.updateDisplay();
+         var i, len;
+         this.displayDiv = W.get('div');
+         i = -1, len = this.displayModes.length;
+         for (; ++i < len; ) {
+             this.displayDiv.appendChild(this.displayModes[i].displayDiv);
+         }
+         this.updateDisplay();
      };
 
     /**
@@ -49067,41 +50515,178 @@ if (!Array.prototype.indexOf) {
      * @see VisualRound.updateDisplay
      */
     CompoundDisplayMode.prototype.updateDisplay = function() {
-        var index;
-        for (index in this.displayModes) {
-            if (this.displayModes.hasOwnProperty(index)) {
-                this.displayModes[index].updateDisplay();
-            }
+        var i, len;
+        i = -1, len = this.displayModes.length;
+        for (; ++i < len; ) {
+            this.displayModes[i].updateDisplay();
         }
     };
 
     CompoundDisplayMode.prototype.activate = function() {
-        var index;
-        for (index in this.displayModes) {
-            if (this.displayModes.hasOwnProperty(index)) {
-                if (this.displayModes[index].activate) {
-                    this.displayModes[index].activate();
-                }
-            }
+        var i, len, d, layout;
+        layout = this.visualRound.layout;
+        i = -1, len = this.displayModes.length;
+        for (; ++i < len; ) {
+            d = this.displayModes[i];
+            if (d.activate) this.displayModes[i].activate();
+            if (layout) setLayout(d, layout, i === (len-1));
         }
     };
 
     CompoundDisplayMode.prototype.deactivate = function() {
-        var index;
-        for (index in this.displayModes) {
-            if (this.displayModes.hasOwnProperty(index)) {
-                if (this.displayModes[index].deactivate) {
-                    this.displayMode[index].deactivate();
-                }
-            }
+        var i, len, d;
+        i = -1, len = this.displayModes.length;
+        for (; ++i < len; ) {
+            d = this.displayModes[i];
+            if (d.deactivate) d.deactivate();
         }
     };
+
+    CompoundDisplayMode.prototype.setLayout = function(layout) {
+        var i, len, d;
+        i = -1, len = this.displayModes.length;
+        for (; ++i < len; ) {
+            d = this.displayModes[i];
+            setLayout(d, layout, i === (len-1));
+        }
+    };
+
+    // ## Helper Methods.
+
+
+    function setLayout(d, layout, lastDisplay) {
+        if (layout === 'vertical' || layout === 'multimode_vertical' ||
+            layout === 'all_vertical') {
+
+            d.displayDiv.style.float = 'none';
+            d.titleDiv.style.float = 'none';
+            d.titleDiv.style['margin-right'] = '0px';
+            d.contentDiv.style.float = 'none';
+            return true;
+        }
+        if (layout === 'horizontal') {
+            d.displayDiv.style.float = 'none';
+            d.titleDiv.style.float = 'left';
+            d.titleDiv.style['margin-right'] = '6px';
+            d.contentDiv.style.float = 'right';
+            return true;
+        }
+        if (layout === 'multimode_horizontal') {
+            d.displayDiv.style.float = 'left';
+            d.titleDiv.style.float = 'none';
+            d.titleDiv.style['margin-right'] = '0px';
+            d.contentDiv.style.float = 'none';
+            if (!lastDisplay) {
+                d.displayDiv.style['margin-right'] = '10px';
+            }
+            return true;
+        }
+        if (layout === 'all_horizontal') {
+            d.displayDiv.style.float = 'left';
+            d.titleDiv.style.float = 'left';
+            d.titleDiv.style['margin-right'] = '6px';
+            d.contentDiv.style.float = 'right';
+            if (!lastDisplay) {
+                d.displayDiv.style['margin-right'] = '10px';
+            }
+            return true;
+        }
+        return false;
+    }
+
+
+    /**
+     * ### generalConstructor
+     *
+     * Sets up the basic attributes of visualization mode for VisualRound
+     *
+     * @param {object} that The visualization mode instance
+     * @param {VisualRound} visualRound The VisualRound instance
+     * @param {string} name The name of the visualization mode
+     * @param {object} options Additional options, e.g. 'toTotal'
+     */
+    function generalConstructor(that, visualRound, name, options) {
+
+        /**
+         * #### visualRound
+         *
+         * The `VisualRound` object to which the displayMode belongs
+         *
+         * @see VisualRound
+         */
+        that.visualRound = visualRound;
+
+        /**
+         * #### name
+         *
+         * The name of the displayMode
+         */
+        that.name = name;
+        if (options.toTotal) that.name += '_TO_TOTAL';
+
+        /**
+         * #### options
+         *
+         * The options for this instance
+         */
+        that.options = options || {};
+
+        /**
+         * #### displayDiv
+         *
+         * The DIV in which the information is displayed
+         */
+        that.displayDiv = null;
+
+        /**
+         * #### displayDiv
+         *
+         * The DIV in which the title is displayed
+         */
+        that.titleDiv = null;
+
+        /**
+         * #### contentDiv
+         *
+         * The DIV containing the actual information
+         */
+        that.contentDiv = null;
+
+        /**
+         * #### textDiv
+         *
+         * The span in which the text ` of ` is displayed
+         */
+        that.textDiv = null;
+
+    }
+
+    /**
+     * ### generalInit
+     *
+     * Adds three divs: a container with a nested title and content div
+     *
+     * Adds references to the instance: displayDiv, titleDiv, contentDiv.
+     *
+     * @param {object} The instance to which the references are added.
+     * @param {string} The name of the container div
+     */
+    function generalInit(that, containerName, title) {
+        that.displayDiv = W.get('div', { className: containerName });
+        that.titleDiv = W.add('div', that.displayDiv, {
+            className: 'title',
+            innerHTML: title
+        });
+        that.contentDiv = W.add('div', that.displayDiv, {
+            className: 'content'
+        });
+    }
 
 })(node);
 
 /**
  * # VisualStage
- * Copyright(c) 2015 Stefano Balietti
+ * Copyright(c) 2017 Stefano Balietti
  * MIT Licensed
  *
  * Shows current, previous and next stage.
@@ -49112,13 +50697,13 @@ if (!Array.prototype.indexOf) {
 
     "use strict";
 
-    var Table = node.window.Table;
+    var Table = W.Table;
 
     node.widgets.register('VisualStage', VisualStage);
 
     // ## Meta-data
 
-    VisualStage.version = '0.2.2';
+    VisualStage.version = '0.2.3';
     VisualStage.description =
         'Visually display current, previous and next stage of the game.';
 
@@ -49214,7 +50799,7 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # VisualTimer
- * Copyright(c) 2017 Stefano Balietti
+ * Copyright(c) 2017 Stefano Balietti <ste@nodegame.org>
  * MIT Licensed
  *
  * Display a configurable timer for the game
@@ -49227,17 +50812,15 @@ if (!Array.prototype.indexOf) {
 
     "use strict";
 
-    var J = node.JSUS;
-
     node.widgets.register('VisualTimer', VisualTimer);
 
     // ## Meta-data
 
-    VisualTimer.version = '0.9.0';
+    VisualTimer.version = '0.9.1';
     VisualTimer.description = 'Display a configurable timer for the game. ' +
         'Can trigger events. Only for countdown smaller than 1h.';
 
-    VisualTimer.title = 'Time left';
+    VisualTimer.title = 'Time Left';
     VisualTimer.className = 'visualtimer';
 
     // ## Dependencies
@@ -49355,7 +50938,7 @@ if (!Array.prototype.indexOf) {
         options = options || {};
         if ('object' !== typeof options) {
             throw new TypeError('VisualTimer.init: options must be ' +
-                                'object or undefined');
+                                'object or undefined. Found: ' + options);
         }
 
         // Important! Do not modify directly options, because it might
@@ -49832,12 +51415,11 @@ if (!Array.prototype.indexOf) {
          */
         this.timeLeft = null;
 
-        this.boxDiv = node.window.getDiv();
-        this.titleDiv = node.window.addDiv(this.boxDiv);
-        this.bodyDiv = node.window.addDiv(this.boxDiv);
+        this.boxDiv =   W.get('div');
+        this.titleDiv = W.add('div', this.boxDiv);
+        this.bodyDiv =  W.add('div', this.boxDiv);
 
         this.init(options);
-
     }
 
     TimerBox.prototype.init = function(options) {
@@ -49958,10 +51540,10 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # WaitingRoom
- * Copyright(c) 2016 Stefano Balietti
+ * Copyright(c) 2018 Stefano Balietti <ste@nodegame.org>
  * MIT Licensed
  *
- * Display the number of connected / required players to start a game
+ * Displays the number of connected/required players to start a game
  *
  * www.nodegame.org
  */
@@ -49970,10 +51552,9 @@ if (!Array.prototype.indexOf) {
     "use strict";
 
     node.widgets.register('WaitingRoom', WaitingRoom);
-
     // ## Meta-data
 
-    WaitingRoom.version = '1.1.0';
+    WaitingRoom.version = '1.2.1';
     WaitingRoom.description = 'Displays a waiting room for clients.';
 
     WaitingRoom.title = 'Waiting Room';
@@ -49984,6 +51565,86 @@ if (!Array.prototype.indexOf) {
     WaitingRoom.dependencies = {
         JSUS: {},
         VisualTimer: {}
+    };
+
+    // ## Prototype Properties.
+
+    /** ### WaitingRoom.sounds
+     *
+     * Default sounds to play on particular events
+     */
+    WaitingRoom.sounds = {
+
+        // #### dispatch
+        dispatch: '/sounds/doorbell.ogg'
+    };
+
+    /** ### WaitingRoom.texts
+     *
+     * Default texts to display
+     */
+    WaitingRoom.texts = {
+
+        // #### blinkTitle
+        blinkTitle: 'GAME STARTS!',
+
+        // #### disconnect
+        disconnect: '<span style="color: red">You have been ' +
+            '<strong>disconnected</strong>. Please try again later.' +
+            '</span><br><br>',
+
+        // #### waitedTooLong
+        waitedTooLong: 'Waiting for too long. Please look ' +
+            'for a HIT called <strong>Trouble Ticket</strong> and file' +
+            ' a new trouble ticket reporting your experience.',
+
+        // #### notEnoughPlayers
+        notEnoughPlayers: '<h3 align="center" style="color: red">' +
+            'Thank you for your patience.<br>' +
+            'Unfortunately, there are not enough participants in ' +
+            'your group to start the experiment.<br>',
+
+        // #### roomClosed
+        roomClosed: '<span style="color: red"> The ' +
+            'waiting room is <strong>CLOSED</strong>. You have been ' +
+            'disconnected. Please try again later.</span><br><br>',
+
+        // #### tooManyPlayers
+        tooManyPlayers: function(widget, data) {
+            return 'There are more players in this waiting room ' +
+                'than there are playslots in the game. Only ' +
+                data.nGames + ' players will be selected ' +
+                'to play the game.';
+        },
+
+        // #### notSelectedClosed
+        notSelectedClosed: '<h3 align="center">' +
+            '<span style="color: red">Unfortunately, you were ' +
+            '<strong>not selected</strong> to join the game this time. ' +
+            'Thank you for your participation.</span></h3><br><br>',
+
+        // #### notSelectedOpen
+        notSelectedOpen: '<h3 align="center">' +
+            '<span style="color: red">Unfortunately, you were ' +
+            '<strong>not selected</strong> to join the game this time, ' +
+            'but you may join the next one.</span><a class="hand" ' +
+            'onclick=javascript:this.parentElement.innerHTML="">' +
+            'Ok, I got it.</a></h3><br><br>' +
+            'Thank you for your participation.</span></h3><br><br>',
+
+        // #### exitCode
+        exitCode: function(widget, data) {
+            return '<br>You have been disconnected. ' +
+                ('undefined' !== typeof data.exit ?
+                 ('Please report this exit code: ' + data.exit) : '') +
+                '<br></h3>';
+        },
+
+        // #### playBot
+        playBot: 'Play With Bot/s',
+
+        // #### connectingBots
+        connectingBots: 'Connecting Bot/s, Please Wait...'
     };
 
     /**
@@ -50106,21 +51767,20 @@ if (!Array.prototype.indexOf) {
          */
         this.onTimeout = null;
 
-
-        /**
-         * ### WaitingRoom.disconnectMessage
-         *
-         * String to be put into `this.bodyDiv.innerHTML` when player
-         * is disconnected.
-         */
-        this.disconnectMessage = null;
-
         /**
          * ### WaitingRoom.disconnectIfNotSelected
          *
          * Flag that indicates whether to disconnect an not selected player
          */
         this.disconnectIfNotSelected = null;
+
+        /**
+         * ### WaitingRoom.playWithBotOption
+         *
+         * Flag that indicates whether to display button that lets player begin
+         * the game with bots
+         */
+        this.playWithBotOption = null;
     }
 
     // ## WaitingRoom methods
@@ -50136,26 +51796,34 @@ if (!Array.prototype.indexOf) {
      *   - onTimeout: function executed when timer runs out
      *   - onSuccess: function executed when all tests succeed
      *   - waitTime: max waiting time to execute all tests (in milliseconds)
+     *   - startDate: max waiting time to execute all tests (in milliseconds)
+     *   - playWithBotOption: display button to dispatch players with bots
      *
      * @param {object} conf Configuration object.
      */
     WaitingRoom.prototype.init = function(conf) {
+        var that = this;
+
         if ('object' !== typeof conf) {
-            throw new TypeError('WaitingRoom.init: conf must be object.');
+            throw new TypeError('WaitingRoom.init: conf must be object. ' +
+                                'Found: ' + conf);
         }
         if (conf.onTimeout) {
             if ('function' !== typeof conf.onTimeout) {
                 throw new TypeError('WaitingRoom.init: conf.onTimeout must ' +
-                                    'be function, null or undefined.');
+                                    'be function, null or undefined. Found: ' +
+                                    conf.onTimeout);
             }
             this.onTimeout = conf.onTimeout;
         }
+
         if (conf.waitTime) {
             if (null !== conf.waitTime &&
                 'number' !== typeof conf.waitTime) {
 
-                throw new TypeError('WaitingRoom.init: conf.onMaxExecTime ' +
-                                    'must be number, null or undefined.');
+                throw new TypeError('WaitingRoom.init: conf.waitTime ' +
+                                    'must be number, null or undefined. ' +
+                                    'Found: ' + conf.waitTime);
             }
             this.waitTime = conf.waitTime;
             this.startTimer();
@@ -50168,7 +51836,8 @@ if (!Array.prototype.indexOf) {
         if (conf.poolSize) {
             if (conf.poolSize && 'number' !== typeof conf.poolSize) {
                 throw new TypeError('WaitingRoom.init: conf.poolSize ' +
-                                    'must be number or undefined.');
+                                    'must be number or undefined. Found: ' +
+                                    conf.poolSize);
             }
             this.poolSize = conf.poolSize;
         }
@@ -50176,14 +51845,16 @@ if (!Array.prototype.indexOf) {
         if (conf.groupSize) {
             if (conf.groupSize && 'number' !== typeof conf.groupSize) {
                 throw new TypeError('WaitingRoom.init: conf.groupSize ' +
-                                    'must be number or undefined.');
+                                    'must be number or undefined. Found: ' +
+                                    conf.groupSize);
             }
             this.groupSize = conf.groupSize;
         }
         if (conf.nGames) {
             if (conf.nGames && 'number' !== typeof conf.nGames) {
                 throw new TypeError('WaitingRoom.init: conf.nGames ' +
-                                    'must be number or undefined.');
+                                    'must be number or undefined. Found: ' +
+                                    conf.nGames);
             }
             this.nGames = conf.nGames;
         }
@@ -50191,29 +51862,17 @@ if (!Array.prototype.indexOf) {
         if (conf.connected) {
             if (conf.connected && 'number' !== typeof conf.connected) {
                 throw new TypeError('WaitingRoom.init: conf.connected ' +
-                                    'must be number or undefined.');
+                                    'must be number or undefined. Found: ' +
+                                    conf.connected);
             }
             this.connected = conf.connected;
-        }
-
-        if (conf.disconnectMessage) {
-            if ('string' !== typeof conf.disconnectMessage) {
-                throw new TypeError('WaitingRoom.init: ' +
-                        'conf.disconnectMessage must be string or undefined.');
-            }
-            this.disconnectMessage = conf.disconnectMessage;
-        }
-        else {
-            this.disconnectMessage = '<span style="color: red">You have been ' +
-                '<strong>disconnected</strong>. Please try again later.' +
-                '</span><br><br>';
         }
 
         if (conf.disconnectIfNotSelected) {
             if ('boolean' !== typeof conf.disconnectIfNotSelected) {
                 throw new TypeError('WaitingRoom.init: ' +
                     'conf.disconnectIfNotSelected must be boolean or ' +
-                    'undefined.');
+                    'undefined. Found: ' + conf.disconnectIfNotSelected);
             }
             this.disconnectIfNotSelected = conf.disconnectIfNotSelected;
         }
@@ -50221,13 +51880,37 @@ if (!Array.prototype.indexOf) {
             this.disconnectIfNotSelected = false;
         }
 
+        if (conf.playWithBotOption) {
+            this.playWithBotOption = true;
+        }
+        else {
+            this.playWithBotOption = false;
+        }
+
+        if (this.playWithBotOption && !document.getElementById('bot_btn')) {
+            this.playBotBtn = document.createElement('input');
+            this.playBotBtn.className = 'btn btn-secondary btn-lg';
+            this.playBotBtn.value = this.getText('playBot');
+            this.playBotBtn.id = 'bot_btn';
+            this.playBotBtn.type = 'button';
+            this.playBotBtn.onclick = function() {
+                that.playBotBtn.value = that.getText('connectingBots');
+                that.playBotBtn.disabled = true;
+                node.say('PLAYWITHBOT');
+                setTimeout(function() {
+                    that.playBotBtn.value = that.getText('playBot');
+                    that.playBotBtn.disabled = false;
+                }, 5000);
+            };
+            this.bodyDiv.appendChild(document.createElement('br'));
+            this.bodyDiv.appendChild(this.playBotBtn);
+        }
     };
 
     /**
-     * ### WaitingRoom.addTimeout
+     * ### WaitingRoom.startTimer
      *
      * Starts a timeout for the max waiting time
-     *
      */
     WaitingRoom.prototype.startTimer = function() {
         var that = this;
@@ -50243,10 +51926,7 @@ if (!Array.prototype.indexOf) {
         this.timer = node.widgets.append('VisualTimer', this.timerDiv, {
             milliseconds: this.waitTime,
             timeup: function() {
-                that.bodyDiv.innerHTML =
-                    'Waiting for too long. Please look for a HIT called ' +
-                    '<strong>ETH Descil Trouble Ticket</strong> and file' +
-                    ' a new trouble ticket reporting your experience.';
+                that.bodyDiv.innerHTML = that.getText('waitedTooLong');
             },
             update: 1000
         });
@@ -50312,10 +51992,10 @@ if (!Array.prototype.indexOf) {
             this.playerCount.innerHTML = '<span style="color:red">' +
                 this.connected + '</span>' + ' / ' + this.poolSize;
             this.playerCountTooHigh.style.display = '';
-            this.playerCountTooHigh.innerHTML = 'There are more players in ' +
-                'this waiting room than there are playslots in the game. ' +
-                'Only ' + numberOfGameSlots + ' players will be selected to ' +
-                'play the game.';
+
+            // Update text.
+            this.playerCountTooHigh.innerHTML =
+                this.getText('tooManyPlayers', { nGames: numberOfGameSlots });
         }
         else {
             this.playerCount.innerHTML = this.connected + ' / ' + this.poolSize;
@@ -50356,7 +52036,6 @@ if (!Array.prototype.indexOf) {
         if (this.waitTime) {
             this.startTimer();
         }
-
     };
 
     WaitingRoom.prototype.listeners = function() {
@@ -50369,6 +52048,13 @@ if (!Array.prototype.indexOf) {
                 node.warn('waiting room widget: invalid setup object: ' + conf);
                 return;
             }
+
+            // Sounds.
+            that.setSounds(conf.sounds);
+
+            // Texts.
+            that.setTexts(conf.texts);
+
             // Configure all requirements.
             that.init(conf);
 
@@ -50383,63 +52069,49 @@ if (!Array.prototype.indexOf) {
         });
 
         node.on.data('DISPATCH', function(msg) {
-            var data, notSelected, reportExitCode;
+            var data, reportExitCode;
             msg = msg || {};
             data = msg.data || {};
 
-            reportExitCode = '<br>You have been disconnected. ' +
-                ('undefined' !== typeof data.exit ?
-                 ('Please report this exit code: ' + data.exit) : '') +
-                '<br></h3>';
+            if (that.dots) that.dots.stop();
 
-            if (data.action === 'AllPlayersConnected') {
+            // Alert player he/she is about to play.
+            if (data.action === 'allPlayersConnected') {
                 that.alertPlayer();
             }
+            // Not selected/no game/etc.
+            else {
+                reportExitCode = that.getText('exitCode', data);
 
-            else if (data.action === 'NotEnoughPlayers') {
-
-                that.bodyDiv.innerHTML =
-                    '<h3 align="center" style="color: red">' +
-                    'Thank you for your patience.<br>' +
-                    'Unfortunately, there are not enough participants in ' +
-                    'your group to start the experiment.<br>';
-
-                if (that.onTimeout) that.onTimeout(msg.data);
-
-                that.disconnect(that.bodyDiv.innerHTML + reportExitCode);
-            }
-
-            else if (data.action === 'NotSelected') {
-
-                notSelected = '<h3 align="center">' +
-                    '<span style="color: red">Unfortunately, you were ' +
-                    '<strong>not selected</strong> to join the game this time';
-
-                if (false === data.shouldDispatchMoreGames ||
-                    that.disconnectIfNotSelected) {
-
-                    that.bodyDiv.innerHTML = notSelected + '. Thank you ' +
-                        'for your participation.</span></h3><br><br>';
-
+                if (data.action === 'notEnoughPlayers') {
+                    that.bodyDiv.innerHTML = that.getText(data.action);
+                    if (that.onTimeout) that.onTimeout(msg.data);
                     that.disconnect(that.bodyDiv.innerHTML + reportExitCode);
                 }
-                else {
-                    that.msgDiv.innerHTML = notSelected + ', but you ' +
-                        'may join the next one.</span> ' +
-                        '<a class="hand" onclick=' +
-                        'javascript:this.parentElement.innerHTML="">' +
-                        'Ok, I got it.</a></h3><br><br>';
-                }
-            }
+                else if (data.action === 'notSelected') {
 
-            else if (data.action === 'Disconnect') {
-                that.disconnect(that.bodyDiv.innerHTML + reportExitCode);
+                    if (false === data.shouldDispatchMoreGames ||
+                        that.disconnectIfNotSelected) {
+
+                        that.bodyDiv.innerHTML =
+                            that.getText('notSelectedClosed');
+
+                        that.disconnect(that.bodyDiv.innerHTML +
+                                        reportExitCode);
+                    }
+                    else {
+                        that.msgDiv.innerHTML = that.getText('notSelectedOpen');
+                    }
+                }
+                else if (data.action === 'disconnect') {
+                    that.disconnect(that.bodyDiv.innerHTML + reportExitCode);
+                }
             }
         });
 
         node.on.data('TIME', function(msg) {
             msg = msg || {};
-            console.log('TIME IS UP!');
+            node.info('waiting room: TIME IS UP!');
             that.stopTimer();
         });
 
@@ -50460,19 +52132,16 @@ if (!Array.prototype.indexOf) {
             that.stopTimer();
 
             // Write about disconnection in page.
-            that.bodyDiv.innerHTML = that.disconnectMessage;
+            that.bodyDiv.innerHTML = that.getText('disconnect');
 
-//             // Enough to not display it in case of page refresh.
-//             setTimeout(function() {
-//                 alert('Disconnection from server detected!');
-//             }, 200);
+            // Enough to not display it in case of page refresh.
+            // setTimeout(function() {
+            //              alert('Disconnection from server detected!');
+            //             }, 200);
         });
 
         node.on.data('ROOM_CLOSED', function() {
-            that.disconnect('<span style="color: red"> The waiting ' +
-                'room is <strong>CLOSED</strong>. You have been disconnected.' +
-                ' Please try again later.' +
-                '</span><br><br>');
+            that.disconnect(that.getText('roomClosed'));
         });
     };
 
@@ -50484,31 +52153,51 @@ if (!Array.prototype.indexOf) {
 
     WaitingRoom.prototype.stopTimer = function() {
         if (this.timer) {
-            console.log('STOPPING TIMER');
+            node.info('waiting room: STOPPING TIMER');
             this.timer.destroy();
         }
     };
 
+    /**
+     * ### WaitingRoom.disconnect
+     *
+     * Disconnects the playr, stops the timer, and displays a msg
+     *
+     * @param {string|function} msg. Optional. A disconnect message. If set,
+     *    replaces the current value for future calls.
+     *
+     * @see WaitingRoom.setText
+     */
     WaitingRoom.prototype.disconnect = function(msg) {
-        if (msg) this.disconnectMessage = msg;
+        if (msg) this.setText('disconnect', msg);
         node.socket.disconnect();
         this.stopTimer();
     };
 
     WaitingRoom.prototype.alertPlayer = function() {
         var clearBlink, onFrame;
+        var blink, sound;
 
-        JSUS.playSound('/sounds/doorbell.ogg');
+        blink = this.getText('blinkTitle');
+
+        sound = this.getSound('dispatch');
+
+        // Play sound, if requested.
+        if (sound) J.playSound(sound);
+
+        // If blinkTitle is falsy, don't blink the title.
+        if (!blink) return;
+
         // If document.hasFocus() returns TRUE, then just one repeat is enough.
         if (document.hasFocus && document.hasFocus()) {
-            JSUS.blinkTitle('GAME STARTS!', { repeatFor: 1 });
+            J.blinkTitle(blink, { repeatFor: 1 });
         }
         // Otherwise we repeat blinking until an event that shows that the
         // user is active on the page happens, e.g. focus and click. However,
         // the iframe is not created yet, and even later. if the user clicks it
         // it won't be detected in the main window, so we need to handle it.
         else {
-            clearBlink = JSUS.blinkTitle('GAME STARTS!', {
+            clearBlink = J.blinkTitle(blink, {
                 stopOnFocus: true,
                 stopOnClick: window
             });
@@ -50535,19 +52224,16 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # Wall
- * Copyright(c) 2015 Stefano Balietti
+ * Copyright(c) 2017 Stefano Balietti
  * MIT Licensed
  *
- * Creates a wall where log and other information is added
- * with a number and timestamp
+ * Creates a wall where logs and other info is added with number and timestamp
  *
  * www.nodegame.org
  */
 (function(node) {
 
     "use strict";
-
-    var J = node.JSUS;
 
     node.widgets.register('Wall', Wall);
 
@@ -50572,18 +52258,8 @@ if (!Array.prototype.indexOf) {
      * `Wall` prints all LOG events into a PRE.
      *
      * @param {object} options Optional. Configuration options
-     * The options it can take are:
-     *
-     *   - id: The id of the PRE in which to write.
-     *   - name: The name of this Wall.
      */
     function Wall(options) {
-        /**
-         * ### Wall.id
-         *
-         * The id of the PRE in which to write
-         */
-        this.id = options.id || 'wall';
 
         /**
          * ### Wall.name
@@ -50611,7 +52287,7 @@ if (!Array.prototype.indexOf) {
          *
          * The PRE in which to write
          */
-        this.wall = node.window.getElement('pre', this.id);
+        this.wall = W.get('pre', this.id);
     }
 
     // ## Wall methods
@@ -50619,7 +52295,7 @@ if (!Array.prototype.indexOf) {
     /**
      * ### Wall.init
      *
-     * Initializes the instance.
+     * Initializes the instance
      *
      * If options are provided, the counter is set to `options.counter`
      * otherwise nothing happens.
@@ -50671,8 +52347,9 @@ if (!Array.prototype.indexOf) {
      * If the document is ready, the buffer content is written into this.wall
      */
     Wall.prototype.debuffer = function() {
+        var i;
         if (document.readyState === 'complete' && this.buffer.length > 0) {
-            for (var i=0; i < this.buffer.length; i++) {
+            for (i=0; i < this.buffer.length; i++) {
                 this.write(this.buffer[i]);
             }
             this.buffer = [];

@@ -32,3 +32,6 @@ log/client.log
 *.geany
 
 Session.vim
+
+.sass-cache
+*.css.map

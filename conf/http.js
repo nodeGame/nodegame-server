@@ -137,7 +137,12 @@ function configure(app, servernode) {
     });
 
     app.get(basepath + '/', function(req, res, next) {
-        var q;
+        var q, games = [];
+
+        var gamesObj;
+        var i, j;
+        var colors;
+        var name, card, color, filteredGames;
 
         if (servernode.defaultChannel) {
             next();
@@ -145,10 +150,64 @@ function configure(app, servernode) {
         }
 
         if (J.isEmpty(req.query)) {
-            res.render('index', {
-                title: 'Yay! Your nodeGame server is running.'
-            });
-            return
+            if (servernode.homePage.enabled === false) {
+                res.render('index_simple', {
+                    title: 'Yay! nodeGame server is running.'
+                });
+            }
+            else {
+                colors = servernode.homePage.colors;
+                gamesObj = servernode.info.games;
+                listOfGames = J.keys(gamesObj);
+                // Remove aliases.
+                filteredGames = listOfGames.filter(function(name) {
+                    return (!gamesObj[name].errored &&
+                            (!gamesObj[name].alias ||
+                             gamesObj[name].alias.indexOf(name) === -1));
+                });
+                if (J.isArray(servernode.homePage.cardsOrder)) {
+                    filteredGames =
+                        servernode.homePage.cardsOrder.filter(function(name) {
+                            if (filteredGames.indexOf(name) !== -1) return true;
+                            servernode.logger.error('homePage.cardsOrder ' +
+                                                    'game not found: ' + name);
+                        });
+                }
+                else {
+                    filteredGames.sort();
+                }
+                i = 0;
+                for (j = 0; j < filteredGames.length; j++) {
+                    name = filteredGames[j];
+                    if (i >= colors.length) i = 0;
+                    color = colors[i];
+                    // Mixout name and description from package.json
+                    // if not in card, or if no card is defined.
+                    card = J.mixout(gamesObj[name].info.card || {}, {
+                        name: name.charAt(0).toUpperCase() + name.slice(1),
+                        description: gamesObj[name].info.description
+                    });
+                    games.push({
+                        name: card.name,
+                        color: color,
+                        url: card.url,
+                        description: card.description,
+                        publication: card.publication,
+                        wiki: card.wiki,
+                        icon: card.icon
+                    });
+                    i++;
+                }
+                res.render('homepage', {
+                    title: servernode.homePage.title,
+                    games: games,
+                    nodeGameCard: servernode.homePage.nodeGameCard,
+                    footerContent: servernode.homePage.footerContent,
+                    logo: servernode.homePage.logo
+                });
+            }
+
+            return;
         }
 
         if (servernode.enableInfoQuery) {

@@ -1,7 +1,7 @@
 /**
  * # servernode.js
  *
- * Copyright(c) 2015 Stefano Balietti
+ * Copyright(c) 2018 Stefano Balietti
  * MIT Licensed
  *
  * Configuration file for ServerNode in nodegame-server.
@@ -30,6 +30,37 @@ function configure(servernode) {
     // The name of the server.
     servernode.name = "nodeGame server";
 
+    // Displays home page with list of games.
+    // The whole home page displayed can be changed by modifying
+    // file: views/homepage.jade
+    servernode.homePage = {
+
+        // If FALSE, a generic message is displayed instead. Default: TRUE.
+        enabled: true,
+
+        // The title to be displayed in the top bar.
+        title: "nodeGame v" + servernode.version + " Showcase",
+
+        // The name of logo file. Empty no logo. Default: "nodegame_logo.png".
+        logo: "nodegame_logo.png",
+
+        // The background colors of the cards to access the games.
+        // Colors are repeated in the same order if there are more games
+        // than colors.
+        colors: [ 'teal', 'green', 'indigo', 'blue' ],
+
+        // Default alphabetical, or customize with an array of game names.
+        // Games not listed here are excluded.
+        // cardsOrder: [ 'game1', 'game2', 'game3' ],
+
+        // Displays a nodeGame card at last. Default: TRUE.
+        nodeGameCard: true,
+
+        // Displays nodeGame info in footer. Default: TRUE.
+        footerContent: true
+
+    };
+
     // Default games directory.
     servernode.defaultGamesDir = rootDir + '/games/';
 
@@ -38,7 +69,7 @@ function configure(servernode) {
     // file will be added as a new game.
     // Important: games found in folders down in lower positions of the
     // array can override games defined before.
-    servernode.gamesDirs = [servernode.defaultGamesDir];
+    servernode.gamesDirs = [ servernode.defaultGamesDir ];
 
     if (process && process.env.PORT) {
         // If app is running on a cloud service (e.g. Heroku)

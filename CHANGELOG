@@ -1,5 +1,18 @@
 # nodegame-server change log
 
+# 4.0.0
+- Home Page.
+- Updated Css.
+- Improved `ServerChannel.connectBot` with new options.
+- Improved internal method traverseDirectory to serve info about files to monitor.
+- Nested directory in log/ folder are ignored.
+- Settings object is correctly associated with the current treatment and sent to the view's context callback. If a treatment cannot be found, it defaults to "standard" treatment (if found).
+- `noAuthCookie` option for games that needs to detect the id (e.g. for views) even when no authorization is in place.
+- GameRouter is an object of the Channel and not of the ServerNode.
+- Logger updated, slightly change in format.
+- Cleanup (removed PageManager).
+- Removed some of old make commands: sync, multibuild, clean.
+
 # 3.5.7
 - Internal cleanup.
 - Better error messages for duplicated aliases.

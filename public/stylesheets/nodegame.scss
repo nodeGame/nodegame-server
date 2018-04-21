@@ -1,0 +1,588 @@
+/* nodeGame css */
+
+$base-font: 'Source Sans Pro', -apple-system, BlinkMacSystemFont, Roboto, "Segoe UI", 'Helvetica Neue', Helvetica, Arial, sans-serif;
+$header-bg-color: white;
+$container-width: 800px;
+$max-width-header: 42em;
+$font-size-max-width: 20px;
+$vertical-header-width: 125px;
+
+/* Main Elements */
+
+noscript {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    margin-top: -9em; /*set to a negative number 1/2 of your height*/
+    margin-left: -15em; /*set to a negative number 1/2 of your width*/
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 16px;
+    color: #FF0000;
+    border: 1px dotted #A60000;
+    text-align: center;
+    background: white;
+    padding: 20px 30px;
+}
+
+html {
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  margin: 0;
+  font-size: $font-size-max-width; /* 18px; */
+  font-family: $base-font;
+
+   &::after {
+    content: "";
+    clear: both;   
+    display: table;
+  }
+}
+
+.ng-page-title {
+  text-align: center;
+  margin-top: 10px;
+  margin-bottom: 20px;
+}
+
+.h1,
+.h2,
+.h3,
+.h4,
+.h5,
+.h6,
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family: $base-font;
+}
+
+p {
+  font-family: $base-font;
+}
+
+/* Mainframe */
+
+#ng_mainframe {
+  position: absolute;
+  width: 100%;
+  /* min-height: 600px; will be changed by js resize code */
+  font-family: $base-font;
+  font-size: $font-size-max-width;
+  padding: 0;
+  display: block;
+  margin: 0 auto;
+}
+
+/* Mainframe relative to the header */
+
+.ng_mainframe-header-vertical-r {
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
+}
+
+.ng_mainframe-header-vertical-l {
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
+}
+
+.ng_mainframe-header-horizontal-t {
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+  padding-bottom: 0 !important;
+  /* padding-top added via script */
+}
+
+.ng_mainframe-header-horizontal-b {
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+  padding-top: 0 !important;
+  /* padding-bottom added via script */
+}
+
+/* Header */
+
+#ng_header {
+  position: fixed !important;
+  height: auto;
+  z-index: 1000;
+  margin: 0 auto; /* Will not center vertically and won't work in IE6/7. */
+  left: 0;
+  right: 0;
+  width: 100%;
+  padding: 10px 15px;
+  background-color: $header-bg-color;
+  box-shadow: 0 0 15px lightgrey;
+  margin: 0 auto;
+  border-radius: 0 0 5px 5px;
+  font-size: $font-size-max-width;
+  max-width: $max-width-header;
+  
+  &::after {
+    content: "";
+    clear: both;   
+    display: table;
+  }
+}
+
+/* Header positions */
+
+.ng_header_position-horizontal-t {
+  width: 100% !important;
+  height: auto !important;
+  margin: 0 auto !important;
+  top: 0 !important;
+  bottom: auto !important;
+}
+
+.ng_header_position-horizontal-b {
+  @extend .ng_header_position-horizontal-t;
+  top: auto !important;
+  bottom: 0 !important;
+}
+
+.ng_header_position-vertical-r {
+  width: $vertical-header-width !important;
+  height: 100% !important;
+  margin: 0 !important;
+  right: 0 !important;
+  left: auto !important;
+}
+
+.ng_header_position-vertical-l {
+  @extend .ng_header_position-vertical-r;
+  right: auto !important;
+  left: 0 !important;
+}
+
+
+/* Wait Screen */
+
+
+#ng_waitScreen {
+  z-index: 10000;
+  filter: alpha(opacity=70);
+  /*older IE*/
+  filter:progid:DXImageTransform.Microsoft.Alpha(opacity=70);
+  /* IE */
+  -moz-opacity: 0.70;
+  /*older Mozilla*/
+  -khtml-opacity: 0.7;
+  /*older Safari*/
+  opacity: 0.7;
+  /*supported by current Mozilla, Safari, and Opera*/
+  background-color: #000000;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  color: #FFFFFF;
+  text-align: center;
+  vertical-align: middle;
+  font-weight: bold;
+  font-size: 30px;
+  padding: 40px;
+}
+
+
+/* Handy classes */
+
+.strong {
+  font-weight: bold;
+}
+
+.underline {
+  text-decoration: underline;
+}
+
+.strike {
+  text-decoration: line-through;
+}
+
+.hand {
+  cursor: pointer;
+  cursor: hand;
+}
+
+/*
+   Stylesheet for nodeGame widgets
+   Copyright(c) 2017 Stefano Balietti
+   MIT Licensed
+
+   www.nodegame.org
+   ---
+*/
+
+/* Widgets inside the header */
+
+#ng_header {
+  
+  .ng_widget {
+    float: left;
+    margin-right: 20px;
+    margin-bottom: 0;
+    border: none;
+    box-shadow: none;
+    padding: 10px;
+
+    .panel-heading,
+    .no-panel-heading {
+      border: none;
+      background-color: $header-bg-color;
+      padding: 0;
+      font-weight: bold;
+    }
+
+    .panel-body {
+      padding: 0;
+    }
+
+    &:last-child {
+      margin-right: 0;
+    }
+  }
+
+  .donebutton {
+    float: right;
+    padding: 0;
+    margin: 0;
+
+    .panel-heading,
+    .no-panel-heading {
+      display: none;
+    }
+  }
+}
+
+.ng_header_position-horizontal-t,
+.ng_header_position-horizontal-b {
+  
+  .visualround {
+
+    margin-right: 10px;
+    
+    .rounddiv,
+    .stagediv {
+
+      float: left;
+      
+      .title {
+        float: left;
+        margin-right: 6px;
+      }
+
+      .content {
+        float: right;
+      }
+    }
+
+    .rounddiv {
+      margin-left: 8px;
+      margin-right: 8px;
+    }
+  }
+
+  .moneytalks,
+  .visualtimer {
+
+    .no-panel-heading {
+      float: left;
+      margin-right: 8px;    
+    }
+
+    .no-panel-body {
+      float: right;
+    }  
+  }
+}
+
+
+/* Visual Round */
+
+.visualround {
+  .title {
+    font-weight: bold;
+  }
+}
+  
+/* Language Selector */
+.languageselector {
+  float: center;
+  width: 160px;
+
+  .panel-heading {
+    font-size: 18px;
+  }
+}
+
+.languageselector > .panel-body > form > label {
+  font-size: 20px;
+  font-weight: normal;
+}
+
+.languageselector > .panel-body > form > label.selectedButtonLabel {
+  font-weight: bold;
+}
+
+/* Chat */
+
+.chat {
+
+  overflow-y: scroll;
+  width: 450px;
+  border: 1px solid #CCC;
+  padding: 5px;
+
+  .panel-body {
+    
+    textarea {
+      height: 100px;
+      width: 400px;
+    }
+  }
+}
+
+.chat_me {
+  font-weight: bold;
+}
+
+/* Feedback */
+.feedback {
+
+  .panel-body {
+
+    textarea {
+      padding: 5px;
+      font-size: 16px;
+      width: 98%;
+      height: 300px;
+      border: 1px solid #CCC;
+    }
+  }
+}
+
+/* Requirements */
+.requirements {
+  max-width: 42em;
+  width: 90%;
+  margin: 0 auto;  
+  font-size: 1.2em;
+}
+
+.requirements-success {
+  font-weight: bold;
+  color: green;
+  padding-top: 15px;
+  padding-bottom: 15px;
+}
+
+.requirements-fail {
+  font-weight: bold;
+  color: red;
+  padding-top: 15px;
+  padding-bottom: 15px;
+}
+
+/* Waiting Room */
+
+.waitingroom {
+  @extend .requirements;
+  
+  .panel-body {
+    text-align: center;
+
+    div#timer-div {
+      margin-top: 30px;
+    }
+
+    div#player-count-div > p#player-count {
+      font-size: 40px;
+      clear: both;
+      margin-top: 30px;
+    }
+
+    .div > .visualtimer {
+      float: none;
+      display: inline;
+      font-size: 40px;
+      margin: 0;
+    }
+
+    div > span#span_dots {
+      font-size: 40px;
+    }    
+  }
+}
+
+/** ChoiceTable **/
+
+div.choicetable,
+div.choicetable div.panel-body,
+div.choicetable div.panel-heading {
+  border: 0;
+  padding: 0;
+}
+
+span.choicetable-maintext {
+  margin: 20px 0 0 !important;
+  padding: 0;
+  display: block;
+  text-align: left;
+}
+
+textarea.choicemanager-freetext,
+textarea.choicetable-freetext {
+  margin: 20px 0 0 !important;
+  padding: 5px;
+  text-align: left;
+  float: left;
+}
+
+table.choicetable {
+  
+  td {
+    word-wrap: break-word;
+    border: 1px solid #333;
+    text-align: center;
+    padding: 5px;
+    width: 40px;
+    background: white;
+  }
+
+  td.selected {
+    background: #333 !important;
+    color: #FFF;
+    border: 1px solid #333 !important;
+  }
+
+  td.choicetable-left,
+  td.choicetable-right {
+    border: 0;
+    background: inherit;
+    padding-right: 15px;
+    text-align: right;
+  }
+  
+  td.choicetable-left:hover,
+  td.choicetable-right:hover {
+    background: inherit;
+    cursor: default;
+  }  
+}
+
+table.clickable td:hover {
+  background: #FFE;
+  cursor: pointer;
+  cursor: hand;
+}
+
+
+/* Mood */
+div.moodgauge {
+  margin: 0 auto;
+  text-align: center;
+
+  table.choicetable,
+  span.choicetable-maintext {
+    text-align: center;
+  }
+
+  span.choicetable-maintext {
+    margin-bottom: 30px;
+    font-weight: bold;
+  }
+
+
+  table.choicetable {
+    margin: 0 auto;
+    text-align: center;
+    border-spacing: 0 5px;
+    border-collapse: separate;
+  
+
+    td {
+      width: 80px !important;
+    }
+
+    td.choicetable-left {
+      min-width: 260px !important;
+    }
+
+    span.emotion {
+      font-weight: bold;
+      margin-right: 10px;
+    }
+
+    td.choicetable-right {
+      width: 100px;
+    }
+  }
+}
+
+/* SVO */
+
+div.svogauge {
+
+  table.choicetable {
+    margin: 0 auto;
+    text-align: center;
+    border-spacing: 0 30px;
+    border-collapse: separate;
+  }
+
+  table td {
+    width: 60px !important;
+  }
+
+  choicetable-maintext {
+    margin-bottom: 10px;
+    font-size: 20px;
+  }
+
+  hr {
+    margin: 10px auto;
+  }
+
+  td.choicetable-left hr {
+    border-color: black;
+  }
+}
+
+/* EmailForm and FeedbackForm */
+
+.emailform-input,
+.feedback-textarea {
+    margin-bottom: 5px;
+}
+
+.feedback {
+    .btn {
+        margin-right: 5px;
+    }
+}
+
+/* EndScreen */
+
+.endscreen {
+  
+    .emailform,
+    .feedback {
+        margin-top: 30px;
+    }
+    
+}
+.endscreen {
+    .no-panel-body {
+        margin: 5px;
+    }
+}
+
+.endscreen-copy-btn {
+  padding: 10px;
+}

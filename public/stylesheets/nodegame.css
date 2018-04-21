@@ -1,456 +1,428 @@
+/* nodeGame css */
+/* Main Elements */
+noscript {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  margin-top: -9em;
+  /*set to a negative number 1/2 of your height*/
+  margin-left: -15em;
+  /*set to a negative number 1/2 of your width*/
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 16px;
+  color: #FF0000;
+  border: 1px dotted #A60000;
+  text-align: center;
+  background: white;
+  padding: 20px 30px; }
+
+html {
+  margin: 0;
+  padding: 0; }
+
+body {
+  margin: 0;
+  font-size: 20px;
+  /* 18px; */
+  font-family: "Source Sans Pro", -apple-system, BlinkMacSystemFont, Roboto, "Segoe UI", "Helvetica Neue", Helvetica, Arial, sans-serif; }
+  body::after {
+    content: "";
+    clear: both;
+    display: table; }
+
+.ng-page-title {
+  text-align: center;
+  margin-top: 10px;
+  margin-bottom: 20px; }
+
+.h1,
+.h2,
+.h3,
+.h4,
+.h5,
+.h6,
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family: "Source Sans Pro", -apple-system, BlinkMacSystemFont, Roboto, "Segoe UI", "Helvetica Neue", Helvetica, Arial, sans-serif; }
+
+p {
+  font-family: "Source Sans Pro", -apple-system, BlinkMacSystemFont, Roboto, "Segoe UI", "Helvetica Neue", Helvetica, Arial, sans-serif; }
+
+/* Mainframe */
+#ng_mainframe {
+  position: absolute;
+  width: 100%;
+  /* min-height: 600px; will be changed by js resize code */
+  font-family: "Source Sans Pro", -apple-system, BlinkMacSystemFont, Roboto, "Segoe UI", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  font-size: 20px;
+  padding: 0;
+  display: block;
+  margin: 0 auto; }
+
+/* Mainframe relative to the header */
+.ng_mainframe-header-vertical-r {
+  padding-top: 0 !important;
+  padding-bottom: 0 !important; }
+
+.ng_mainframe-header-vertical-l {
+  padding-top: 0 !important;
+  padding-bottom: 0 !important; }
+
+.ng_mainframe-header-horizontal-t {
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+  padding-bottom: 0 !important;
+  /* padding-top added via script */ }
+
+.ng_mainframe-header-horizontal-b {
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+  padding-top: 0 !important;
+  /* padding-bottom added via script */ }
+
+/* Header */
+#ng_header {
+  position: fixed !important;
+  height: auto;
+  z-index: 1000;
+  margin: 0 auto;
+  /* Will not center vertically and won't work in IE6/7. */
+  left: 0;
+  right: 0;
+  width: 100%;
+  padding: 10px 15px;
+  background-color: white;
+  box-shadow: 0 0 15px lightgrey;
+  margin: 0 auto;
+  border-radius: 0 0 5px 5px;
+  font-size: 20px;
+  max-width: 42em; }
+  #ng_header::after {
+    content: "";
+    clear: both;
+    display: table; }
+
+/* Header positions */
+.ng_header_position-horizontal-t, .ng_header_position-horizontal-b {
+  width: 100% !important;
+  height: auto !important;
+  margin: 0 auto !important;
+  top: 0 !important;
+  bottom: auto !important; }
+
+.ng_header_position-horizontal-b {
+  top: auto !important;
+  bottom: 0 !important; }
+
+.ng_header_position-vertical-r, .ng_header_position-vertical-l {
+  width: 125px !important;
+  height: 100% !important;
+  margin: 0 !important;
+  right: 0 !important;
+  left: auto !important; }
+
+.ng_header_position-vertical-l {
+  right: auto !important;
+  left: 0 !important; }
+
+/* Wait Screen */
+#ng_waitScreen {
+  z-index: 10000;
+  filter: alpha(opacity=70);
+  /*older IE*/
+  filter: progid:DXImageTransform.Microsoft.Alpha(opacity=70);
+  /* IE */
+  -moz-opacity: 0.70;
+  /*older Mozilla*/
+  -khtml-opacity: 0.7;
+  /*older Safari*/
+  opacity: 0.7;
+  /*supported by current Mozilla, Safari, and Opera*/
+  background-color: #000000;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  color: #FFFFFF;
+  text-align: center;
+  vertical-align: middle;
+  font-weight: bold;
+  font-size: 30px;
+  padding: 40px; }
+
+/* Handy classes */
+.strong {
+  font-weight: bold; }
+
+.underline {
+  text-decoration: underline; }
+
+.strike {
+  text-decoration: line-through; }
+
+.hand {
+  cursor: pointer;
+  cursor: hand; }
+
 /*
-   Stylesheet for nodeGame window
+   Stylesheet for nodeGame widgets
    Copyright(c) 2017 Stefano Balietti
    MIT Licensed
 
    www.nodegame.org
    ---
 */
+/* Widgets inside the header */
+#ng_header .ng_widget {
+  float: left;
+  margin-right: 20px;
+  margin-bottom: 0;
+  border: none;
+  box-shadow: none;
+  padding: 10px; }
+  #ng_header .ng_widget .panel-heading,
+  #ng_header .ng_widget .no-panel-heading {
+    border: none;
+    background-color: white;
+    padding: 0;
+    font-weight: bold; }
+  #ng_header .ng_widget .panel-body {
+    padding: 0; }
+  #ng_header .ng_widget:last-child {
+    margin-right: 0; }
+#ng_header .donebutton {
+  float: right;
+  padding: 0;
+  margin: 0; }
+  #ng_header .donebutton .panel-heading,
+  #ng_header .donebutton .no-panel-heading {
+    display: none; }
 
-body {
-    margin: auto;
-    padding: 0 5px;
-    font-family: Arial, Helvetica, sans-serif;
-    font-size: 16px;
-    color: black;
-}
+.ng_header_position-horizontal-t .visualround, .ng_header_position-horizontal-b .visualround,
+.ng_header_position-horizontal-b .visualround {
+  margin-right: 10px; }
+  .ng_header_position-horizontal-t .visualround .rounddiv, .ng_header_position-horizontal-b .visualround .rounddiv,
+  .ng_header_position-horizontal-t .visualround .stagediv,
+  .ng_header_position-horizontal-b .visualround .stagediv,
+  .ng_header_position-horizontal-b .visualround .rounddiv,
+  .ng_header_position-horizontal-b .visualround .stagediv {
+    float: left; }
+    .ng_header_position-horizontal-t .visualround .rounddiv .title, .ng_header_position-horizontal-b .visualround .rounddiv .title,
+    .ng_header_position-horizontal-t .visualround .stagediv .title,
+    .ng_header_position-horizontal-b .visualround .stagediv .title,
+    .ng_header_position-horizontal-b .visualround .rounddiv .title,
+    .ng_header_position-horizontal-b .visualround .stagediv .title {
+      float: left;
+      margin-right: 6px; }
+    .ng_header_position-horizontal-t .visualround .rounddiv .content, .ng_header_position-horizontal-b .visualround .rounddiv .content,
+    .ng_header_position-horizontal-t .visualround .stagediv .content,
+    .ng_header_position-horizontal-b .visualround .stagediv .content,
+    .ng_header_position-horizontal-b .visualround .rounddiv .content,
+    .ng_header_position-horizontal-b .visualround .stagediv .content {
+      float: right; }
+  .ng_header_position-horizontal-t .visualround .rounddiv, .ng_header_position-horizontal-b .visualround .rounddiv,
+  .ng_header_position-horizontal-b .visualround .rounddiv {
+    margin-left: 8px;
+    margin-right: 8px; }
+.ng_header_position-horizontal-t .moneytalks .no-panel-heading, .ng_header_position-horizontal-b .moneytalks .no-panel-heading,
+.ng_header_position-horizontal-t .visualtimer .no-panel-heading,
+.ng_header_position-horizontal-b .visualtimer .no-panel-heading,
+.ng_header_position-horizontal-b .moneytalks .no-panel-heading,
+.ng_header_position-horizontal-b .visualtimer .no-panel-heading {
+  float: left;
+  margin-right: 8px; }
+.ng_header_position-horizontal-t .moneytalks .no-panel-body, .ng_header_position-horizontal-b .moneytalks .no-panel-body,
+.ng_header_position-horizontal-t .visualtimer .no-panel-body,
+.ng_header_position-horizontal-b .visualtimer .no-panel-body,
+.ng_header_position-horizontal-b .moneytalks .no-panel-body,
+.ng_header_position-horizontal-b .visualtimer .no-panel-body {
+  float: right; }
 
-/* mainframe */
-
-iframe#ng_mainframe {
-    border: 0;
-    padding: 10px;
-}
-
-.ng_mainframe-header-vertical-r {
-    height: 100%;
-    float: left;
-    width: 86%;
-}
-
-.ng_mainframe-header-vertical-l {
-    height: 100%;
-    float: right;
-    width: 86%;
-}
-
-.ng_mainframe-header-horizontal {
-    height: 88%;
-    width: 98%;
-    clear: both;
-}
-
-/* header */
-
-div#ng_header {
-    padding: 2px 10px;
-    color: black;
-    border: 0;
-    margin: 0;
-}
-
-.ng_header_position-horizontal-t, .ng_header_position-horizontal-b {
-    width: 98%;
-    height: 10%;
-}
-
-.ng_header_position-vertical-r {
-    float: right;
-    width: 10%;
-}
-
-.ng_header_position-vertical-l {
-    float: left;
-    width: 10%;
-}
-
-div#ng_waitScreen {
-    z-index: 10000;
-    filter: alpha(opacity=50); /*older IE*/
-    filter:progid:DXImageTransform.Microsoft.Alpha(opacity=50); /* IE */
-    -moz-opacity: .50; /*older Mozilla*/
-    -khtml-opacity: 0.5;   /*older Safari*/
-    opacity: 0.5;   /*supported by current Mozilla, Safari, and Opera*/
-    background-color:#000000;
-    position:fixed;
-    top:0px; left:0px; width:100%; height:100%;
-    color:#FFFFFF;
-    text-align:center;
-    vertical-align:middle;
-    font-weight: bold;
-    font-size: 30px;
-    padding: 20px;
-}
-
-canvas {
-    border: 1px #CCC solid;
-}
-
-label {
-    display: block;
-    float: left;
-    min-width: 200px;
-}
-input[type="range"] {
-    margin-bottom: 5px;
-    margin-left: 5px
-}
-
-/* General nodeGame */
-
-.strong {
-    font-weight: bold;
-}
-
-.underline {
-    text-decoration: underline;
-}
-
-.strike {
-    text-decoration: line-through;
-}
-
-.hand {
-    cursor: pointer;
-    cursor: hand;
-}
-
-/*
-   Stylesheet for nodeGame widgets
-   Copyright(c) 2014 Stefano Balietti
-   MIT Licensed
-
-   www.nodegame.org
-   ---
-*/
-
-/* .ng_widget {} */
+/* Visual Round */
+.visualround .title {
+  font-weight: bold; }
 
 /* Language Selector */
 .languageselector {
-    float: center;
-    width: 160px;
-
-}
+  float: center;
+  width: 160px; }
+  .languageselector .panel-heading {
+    font-size: 18px; }
 
 .languageselector > .panel-body > form > label {
-    font-size: 20px;
-    font-weight: normal;
-}
+  font-size: 20px;
+  font-weight: normal; }
 
 .languageselector > .panel-body > form > label.selectedButtonLabel {
-    font-weight: bold;
-}
-
-/* Visual Timer */
-
-.visualtimer {
-    float: right;
-    min-width: 100px;
-    width: auto;
-}
-
-.visualtimer > .panel-body > div {
-    font-size: 40px;
-    text-align: center;
-}
-
-.visualtimer > .panel-body > div > div.waitTimerTitle {
-    font-size: 15px;
-}
-
-.visualtimer > .panel-body > div > div.waitTimerBody {
-    font-size: 20px;
-    text-align: center;
-}
-
-/* Visual Round */
-
-.visualround {
-    float: right;
-    min-width: 100px;
-    width: auto;
-}
-.visualround > .panel-body > div > div.rounddiv {
-    font-size: 40px;
-    text-align: center;
-}
-
-.visualround > .panel-body > div > div.stagediv {
-    font-size: 20px;
-    text-align: center;
-}
-
-.visualround > .panel-body > div > div > .number {
-
-}
-
-.visualround > .panel-body > div > div > span.text {
-    font-size: 40%;
-    text-align: center;
-
-}
-
-.visualround > .panel-body > div > div > div.title {
-    font-size: 50%;
-    text-align: center;
-}
-
-/* Visual State */
-
-.visualstage {
-    float: right;
-    min-width: 200px;
-    width: auto;
-}
-
-/* State Display */
-
-.statedisplay {
-    float: right;
-    width: 300px;
-}
-
-.statedisplay > .panel-body > div {
-    width: auto;
-    font-size: 16px;
-}
-
-/* Money Talks */
-
-.moneytalks {
-    float: right;
-    width: auto;
-    min-width: 100px;
-}
-
-.moneytalks > .panel-body > span.moneytalksmoney {
-    font-size: 40px;
-    text-align: center;
-}
-
-.moneytalks > .panel-body > span.moneytalkscurrency {
-    font-size: 12px;
-    text-align: center;
-}
-
-/* Done Button */
-
-.donebutton {
-    float: right;
-    width: auto;
-    min-width: 100px;
-    text-align: center;
-}
-
-.donebutton > .panel-body  {
-    font-size: 20px;
-    text-align: center;
-}
+  font-weight: bold; }
 
 /* Chat */
-
-
 .chat {
-    overflow-y: scroll;
-    width: 450px;
-    border: 1px solid #CCC;
-    padding: 5px;
-}
-
-.chat > .panel-body > textarea {
+  overflow-y: scroll;
+  width: 450px;
+  border: 1px solid #CCC;
+  padding: 5px; }
+  .chat .panel-body textarea {
     height: 100px;
-    width: 400px;
-}
+    width: 400px; }
 
 .chat_me {
-    font-weight: bold;
-}
+  font-weight: bold; }
 
 /* Feedback */
-.feedback > .panel-body > textarea {
-    padding: 5px;
-    font-size: 16px;
-    width: 98%;
-    height: 300px;
-    border: 1px solid #CCC;
-}
+.feedback .panel-body textarea {
+  padding: 5px;
+  font-size: 16px;
+  width: 98%;
+  height: 300px;
+  border: 1px solid #CCC; }
 
 /* Requirements */
-
-.requirements {
-    font-size: 1.2em;
-}
+.requirements, .waitingroom {
+  max-width: 42em;
+  width: 90%;
+  margin: 0 auto;
+  font-size: 1.2em; }
 
 .requirements-success {
-    font-weight: bold;
-    color: green;
-    padding-top: 15px;
-    padding-bottom: 15px;
-}
+  font-weight: bold;
+  color: green;
+  padding-top: 15px;
+  padding-bottom: 15px; }
 
 .requirements-fail {
-    font-weight: bold;
-    color: red;
-    padding-top: 15px;
-    padding-bottom: 15px;
-}
-
-
+  font-weight: bold;
+  color: red;
+  padding-top: 15px;
+  padding-bottom: 15px; }
 
 /* Waiting Room */
-.waitingroom {
-    font-size: 1.2em;
-}
-
-.waitingroom > .panel-body {
-    text-align: center;
-}
-
-.waitingroom > .panel-body > div#timer-div {
-    margin-top: 30px;
-}
-
-.waitingroom > .panel-body > div#player-count-div > p#player-count {
+.waitingroom .panel-body {
+  text-align: center; }
+  .waitingroom .panel-body div#timer-div {
+    margin-top: 30px; }
+  .waitingroom .panel-body div#player-count-div > p#player-count {
     font-size: 40px;
     clear: both;
-    margin-top: 30px;
-}
-
-.waitingroom > .panel-body > div > .visualtimer {
+    margin-top: 30px; }
+  .waitingroom .panel-body .div > .visualtimer {
     float: none;
     display: inline;
     font-size: 40px;
-    margin: 0;
-}
-
-.waitingroom > .panel-body > div > span#span_dots {
-    font-size: 40px;
-}
-
+    margin: 0; }
+  .waitingroom .panel-body div > span#span_dots {
+    font-size: 40px; }
 
 /** ChoiceTable **/
-
-div.choicetable, div.choicetable div.panel-heading, div.choicetable div.panel-body {
-    border: 0;
-    padding: 0;
-}
+div.choicetable,
+div.choicetable div.panel-body,
+div.choicetable div.panel-heading {
+  border: 0;
+  padding: 0; }
 
 span.choicetable-maintext {
-    margin: 0;
-    margin-top: 20px !important;
-    padding: 0;
-    display: block;
-    text-align: left;
-}
+  margin: 20px 0 0 !important;
+  padding: 0;
+  display: block;
+  text-align: left; }
 
 textarea.choicemanager-freetext,
 textarea.choicetable-freetext {
-    margin: 0;
-    margin-top: 20px !important;
-    padding: 5px;
-    text-align: left;
-    float: left;
-}
+  margin: 20px 0 0 !important;
+  padding: 5px;
+  text-align: left;
+  float: left; }
 
 table.choicetable td {
-    word-wrap: break-word;
-    border: 1px solid #333;
-    text-align: center;
-    padding: 5px;
-    width: 40px;
-    background: white;
-}
-
-table.clickable td:hover {
-    background: #FFE;
-    cursor: pointer;
-    cursor: hand;
-}
-
+  word-wrap: break-word;
+  border: 1px solid #333;
+  text-align: center;
+  padding: 5px;
+  width: 40px;
+  background: white; }
 table.choicetable td.selected {
-    background: #333 !important;
-    color: #FFF;
-    border: 1px solid #333 !important;
-}
-
+  background: #333 !important;
+  color: #FFF;
+  border: 1px solid #333 !important; }
 table.choicetable td.choicetable-left,
 table.choicetable td.choicetable-right {
-    border: 0;
-    background: inherit;
-    padding-right: 15px;
-    text-align: right;
-}
-
+  border: 0;
+  background: inherit;
+  padding-right: 15px;
+  text-align: right; }
 table.choicetable td.choicetable-left:hover,
 table.choicetable td.choicetable-right:hover {
-    background: inherit;
-    cursor: default;
-}
+  background: inherit;
+  cursor: default; }
 
+table.clickable td:hover {
+  background: #FFE;
+  cursor: pointer;
+  cursor: hand; }
 
 /* Mood */
-
 div.moodgauge {
-    margin: 0 auto;
-    text-align: center;
-}
-
-div.moodgauge span.choicetable-maintext, div#quiz div.moodgauge table.choicetable {
-    text-align: center;
-}
-
-div.moodgauge span.choicetable-maintext {
+  margin: 0 auto;
+  text-align: center; }
+  div.moodgauge table.choicetable,
+  div.moodgauge span.choicetable-maintext {
+    text-align: center; }
+  div.moodgauge span.choicetable-maintext {
     margin-bottom: 30px;
-    font-weight: bold;
-}
-
-div.moodgauge table.choicetable {
+    font-weight: bold; }
+  div.moodgauge table.choicetable {
     margin: 0 auto;
     text-align: center;
     border-spacing: 0 5px;
-    border-collapse: separate;
-}
-
-div.moodgauge table.choicetable td {
-    width: 80px !important;
-}
-
-div.moodgauge table.choicetable td.choicetable-left {
-    min-width: 260px !important;
-}
-
-div.moodgauge span.emotion {
-    font-weight: bold;
-    margin-right: 10px;
-}
-
-div.moodgauge table.choicetable td.choicetable-right {
-    width: 100px;
-}
+    border-collapse: separate; }
+    div.moodgauge table.choicetable td {
+      width: 80px !important; }
+    div.moodgauge table.choicetable td.choicetable-left {
+      min-width: 260px !important; }
+    div.moodgauge table.choicetable span.emotion {
+      font-weight: bold;
+      margin-right: 10px; }
+    div.moodgauge table.choicetable td.choicetable-right {
+      width: 100px; }
 
 /* SVO */
-
 div.svogauge table.choicetable {
-    margin: 0 auto;
-    text-align: center;
-    border-spacing: 0 30px;
-    border-collapse: separate;
-}
-
+  margin: 0 auto;
+  text-align: center;
+  border-spacing: 0 30px;
+  border-collapse: separate; }
 div.svogauge table td {
-    width: 60px !important;
-}
-
-div.svogauge span.choicetable-maintext {
-    margin-bottom: 10px;
-    font-size: 20px;
-}
-
+  width: 60px !important; }
+div.svogauge choicetable-maintext {
+  margin-bottom: 10px;
+  font-size: 20px; }
 div.svogauge hr {
-    margin: 10px auto;
-}
-
+  margin: 10px auto; }
 div.svogauge td.choicetable-left hr {
-    border-color: black;
-}
+  border-color: black; }
+
+/* EmailForm and FeedbackForm */
+.emailform-input,
+.feedback-textarea {
+  margin-bottom: 5px; }
+
+.feedback .btn {
+  margin-right: 5px; }
+
+/* EndScreen */
+.endscreen .emailform,
+.endscreen .feedback {
+  margin-top: 30px; }
+
+.endscreen .no-panel-body {
+  margin: 5px; }
+
+.endscreen-copy-btn {
+  height: 2.9em !important; }
+
+/*# sourceMappingURL=nodegame.css.map */
