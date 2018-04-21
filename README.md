@@ -6,6 +6,8 @@ nodegame-server is the server for [nodeGame](http://nodegame.org).
 
 Handles multiple connections, creates requirements, waiting and game rooms.
 
+## Resources
+
 - [nodeGame documentation](https://github.com/nodeGame/nodegame/wiki)
 
 ## License
