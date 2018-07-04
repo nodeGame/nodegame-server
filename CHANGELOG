@@ -1,5 +1,8 @@
 # nodegame-server change log
 
+# 4.0.1
+- Fixed bug that was failing to send client list to monitor.
+
 # 4.0.0
 - Home Page.
 - Updated Css.
