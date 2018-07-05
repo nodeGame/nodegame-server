@@ -1,5 +1,8 @@
 # nodegame-server change log
 
+# 4.0.2
+- Last log sent from client (usually an error) is added to the registry (and sent to monitor).
+
 # 4.0.1
 - Fixed bug that was failing to send client list to monitor.
 
