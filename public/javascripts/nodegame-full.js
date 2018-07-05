@@ -10553,12 +10553,15 @@ if (!Array.prototype.indexOf) {
         var that;
         that = this;
         if (!J.isNodeJS()) {
-            window.onerror = function(msg, url, linenumber) {
-                msg = url + ' ' + linenumber + ': ' + msg;
+            window.onerror = function(msg, url, lineno, colno, error) {
+                msg = node.game.getCurrentGameStage().toString() +
+                    '@' + J.getTime() + '> ' +
+                    url + ' ' + lineno + ',' + colno + ': ' + msg;
+                if (error) msg + ' - ' + JSON.stringify(error);
                 that.lastError = msg;
                 node.err(msg);
                 return !node.debug;
-            };
+            };   
         }
     };
 
