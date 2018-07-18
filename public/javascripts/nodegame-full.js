@@ -10042,7 +10042,7 @@ if (!Array.prototype.indexOf) {
     node.support = JSUS.compatibility();
 
     // Auto-Generated.
-    node.version = '4.0.0';
+    node.version = '4.0.1';
 
 })(window);
 
@@ -10561,7 +10561,7 @@ if (!Array.prototype.indexOf) {
                 that.lastError = msg;
                 node.err(msg);
                 return !node.debug;
-            };   
+            };
         }
     };
 
@@ -29769,15 +29769,16 @@ if (!Array.prototype.indexOf) {
      * ```
 
      * @param {string} url the url of the redirection
-     * @param {string} who A player id or any other valid _to_ field
+     * @param {string|array} who A player id or any other valid _to_ field
      */
     NGC.prototype.redirect = function(url, who) {
         var msg;
         if ('string' !== typeof url) {
             throw new TypeError('node.redirect: url must be string.');
         }
-        if ('string' !== typeof who) {
-            throw new TypeError('node.redirect: who must be string.');
+        if ('string' !== typeof who && !J.isArray(who)) {
+            throw new TypeError('node.redirect: who must be string ' +
+                                'or array. Found: ' + who);
         }
         msg = this.msg.create({
             target: this.constants.target.REDIRECT,
