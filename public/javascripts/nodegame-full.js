@@ -10042,7 +10042,7 @@ if (!Array.prototype.indexOf) {
     node.support = JSUS.compatibility();
 
     // Auto-Generated.
-    node.version = '4.0.0';
+    node.version = '4.0.1';
 
 })(window);
 
@@ -10561,7 +10561,7 @@ if (!Array.prototype.indexOf) {
                 that.lastError = msg;
                 node.err(msg);
                 return !node.debug;
-            };   
+            };
         }
     };
 
@@ -12809,7 +12809,7 @@ if (!Array.prototype.indexOf) {
 /**
  * # GameMsg
  *
- * Copyright(c) 2015 Stefano Balietti
+ * Copyright(c) 2018 Stefano Balietti
  * MIT Licensed
  *
  * `nodeGame` exchangeable data format
@@ -12853,6 +12853,16 @@ if (!Array.prototype.indexOf) {
          */
         this.id = 'undefined' === typeof gm.id ?
             Math.floor(Math.random()*1000000) : gm.id;
+
+        /**
+         * ### GameMsg.sid
+         *
+         * The socket id, if provided
+         *
+         * Used by SocketIO to prevent spoofing, not used by other sockets
+         * TODO: could this be session instead?
+         */
+        this.sid = gm.sid;
 
         /**
          * ### GameMsg.session
@@ -19820,7 +19830,7 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # SocketIo
- * Copyright(c) 2016 Stefano Balietti
+ * Copyright(c) 2018 Stefano Balietti
  * MIT Licensed
  *
  * Remote communication through Socket.IO
@@ -19931,12 +19941,19 @@ if (!Array.prototype.indexOf) {
      *
      * Stringifies and send a message through the socket-io socket
      *
+     * Adds the socket id to the message before sending it.
+     *
      * @param {object} msg Object implementing a stringiy method. Usually,
      *    a game message.
      *
      * @see GameMessage
      */
     SocketIo.prototype.send = function(msg) {
+        // Add socket id to prevent spoofing.
+        // Slice because here it is SP/123, and on server it is /123.
+        // TODO: save it clean and avoid slicing.
+        debugger;
+        msg.sid = this.node.player.sid.slice(2);
         this.socket.send(msg.stringify());
     };
 
