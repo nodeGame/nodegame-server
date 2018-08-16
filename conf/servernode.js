@@ -39,7 +39,7 @@ function configure(servernode) {
         enabled: true,
 
         // The title to be displayed in the top bar.
-        title: "nodeGame v" + servernode.version + " Showcase",
+        title: "nodeGame v" + servernode.nodeGameVersion + " Showcase",
 
         // The name of logo file. Empty no logo. Default: "nodegame_logo.png".
         logo: "nodegame_logo.png",
