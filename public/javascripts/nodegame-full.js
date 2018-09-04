@@ -19952,7 +19952,6 @@ if (!Array.prototype.indexOf) {
         // Add socket id to prevent spoofing.
         // Slice because here it is SP/123, and on server it is /123.
         // TODO: save it clean and avoid slicing.
-        debugger;
         msg.sid = this.node.player.sid.slice(2);
         this.socket.send(msg.stringify());
     };
