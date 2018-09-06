@@ -19048,7 +19048,7 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # Socket
- * Copyright(c) 2017 Stefano Balietti
+ * Copyright(c) 2018 Stefano Balietti
  * MIT Licensed
  *
  * Wrapper class for the actual socket to send messages
@@ -19225,13 +19225,22 @@ if (!Array.prototype.indexOf) {
         this.type = null;
 
         /**
-         * ### Socket.type
+         * ### Socket.emitOutMsg
          *
          * If TRUE, outgoing messages will be emitted upon sending
          *
          * This allows, for example, to modify all outgoing messages.
          */
         this.emitOutMsg = false;
+
+        /**
+         * ### Socket.antiSpoofing
+         *
+         * If TRUE, sid is added to each message
+         *
+         * This setting is sent over by server.
+         */
+        this.antiSpoofing = null;
 
         // Experimental Journal.
         // TODO: check if we need it.
@@ -19634,7 +19643,7 @@ if (!Array.prototype.indexOf) {
     Socket.prototype.setMsgListener = function(msgHandler) {
         if (msgHandler && 'function' !== typeof msgHandler) {
             throw new TypeError('Socket.setMsgListener: msgHandler must be a ' +
-                                'function or undefined');
+                                'function or undefined. Found: ' + msgHandler);
         }
 
         this.onMessage = msgHandler || this.onMessageFull;
@@ -19737,6 +19746,18 @@ if (!Array.prototype.indexOf) {
         this.channelName = msg.data.channel.name;
         this.node.createPlayer(msg.data.player);
 
+        // Set anti-spoofing as requested by server.
+        if (msg.data.antiSpoofing) {
+            if (this.socket.enableAntiSpoofing) {
+                this.antiSpoofing = true;
+                this.socket.enableAntiSpoofing(true);
+            }
+            else {
+                this.node.log('Socket.startSession: server requested anti-' +
+                              'spoofing, but socket does not support it.');
+            }
+        }
+        
         // Notify GameWindow (if existing, and if not default channel).
         if (this.node.window && !msg.data.channel.isDefault) {
             this.node.window.setUriChannel(this.channelName);
@@ -19937,23 +19958,64 @@ if (!Array.prototype.indexOf) {
     };
 
     /**
-     * ### SocketIo.send
+     * ### SocketIo.sendEasy
      *
      * Stringifies and send a message through the socket-io socket
      *
-     * Adds the socket id to the message before sending it.
-     *
-     * @param {object} msg Object implementing a stringiy method. Usually,
+     * @param {object} msg Object implementing a stringify method. Usually,
      *    a game message.
      *
      * @see GameMessage
      */
-    SocketIo.prototype.send = function(msg) {
+    SocketIo.prototype.sendEasy = function(msg) {
+        this.socket.send(msg.stringify());
+    };
+
+    /**
+     * ### SocketIo.sendNoSpoof
+     *
+     * Like SocketIo.sendEasy, but it adds the sid to the message.
+     *
+     * @param {object} msg Object implementing a stringify method. Usually,
+     *    a game message.
+     *
+     * @see SocketIo.sendEasy
+     */
+    SocketIo.prototype.sendNoSpoof = function(msg) {
         // Add socket id to prevent spoofing.
         msg.sid = this.node.player.strippedSid;
         this.socket.send(msg.stringify());
     };
 
+    /**
+     * ### SocketIo.send
+     *
+     * Generic function to send a message through the socket-io socket
+     *
+     * @param {object} msg Object implementing a stringify method. Usually,
+     *    a game message.
+     *
+     * @see GameMessage
+     * @see SocketIo.sendEasy
+     * @see SocketIo.sendNoSpoof
+     */
+    SocketIo.prototype.send = SocketIo.prototype.sendEasy;
+
+    /**
+     * ### SocketIo.enableAntiSpoofing
+     *
+     * Adds/removes no-spoof signature from messages
+     *
+     * @param {boolean} value TRUE to enable, FALSE to disable
+     *
+     * @see SocketIo.sendEasy
+     * @see SocketIo.sendNoSpoof
+     */
+    SocketIo.prototype.enableAntiSpoofing = function(value) {
+        if (value) this.send = this.sendNoSpoof;
+        else this.send = this.sendEasy;
+    };
+    
     node.SocketFactory.register('SocketIo', SocketIo);
 
 })(

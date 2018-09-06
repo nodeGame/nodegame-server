@@ -7,12 +7,8 @@
  * Configuration file for ServerNode in nodegame-server.
  *
  * @see ServerNode
- *
- * http://www.nodegame.org
  */
 module.exports = configure;
-
-var path = require('path');
 
 function configure(servernode) {
 
@@ -223,7 +219,12 @@ function configure(servernode) {
         sioQuery: true,
 
         // See above, in the admin defaults.
-        enableReconnections: true
+        enableReconnections: true,
+
+        // Anti-spoofing, extra check to see if msg.from matches socket.id
+        // on SocketIo socket connections. Spoofed messages are logged
+        // normally, and an additional log entry with id and from msg is added.
+        antiSpoofing: true
     };
 
     // Defaults option for a channel.
