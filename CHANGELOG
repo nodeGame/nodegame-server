@@ -1,5 +1,10 @@
 # nodegame-server change log
 
+# 4.1.0
+- Anti-spoofing fix.
+- Updated CSS removed position:absolute attribute from ng_mainframe that was
+causing scrollbar to flicker.
+
 # 4.0.2
 - Last log sent from client (usually an error) is added to the registry (and sent to monitor).
 
