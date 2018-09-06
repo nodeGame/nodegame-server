@@ -54,7 +54,8 @@ p {
 
 /* Mainframe */
 #ng_mainframe {
-  position: absolute;
+  /* This creates problems in Chrome #7 nodegame-window */
+  /* position: absolute; */
   width: 100%;
   /* min-height: 600px; will be changed by js resize code */
   font-family: "Source Sans Pro", -apple-system, BlinkMacSystemFont, Roboto, "Segoe UI", "Helvetica Neue", Helvetica, Arial, sans-serif;

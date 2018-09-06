@@ -69,7 +69,8 @@ p {
 /* Mainframe */
 
 #ng_mainframe {
-  position: absolute;
+  /* This creates problems in Chrome #7 nodegame-window */
+  /* position: absolute; */ 
   width: 100%;
   /* min-height: 600px; will be changed by js resize code */
   font-family: $base-font;
@@ -584,5 +585,5 @@ div.svogauge {
 }
 
 .endscreen-copy-btn {
-  padding: 10px;
+  height: 2.9em !important;
 }
