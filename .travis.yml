@@ -4,6 +4,7 @@ node_js:
   - 6
   - 7
   - 8
+  - 10
 
 before_install:
 # Get installer script.
@@ -12,7 +13,8 @@ before_install:
 
 install:
   - npm install --only=dev
-  - node nodegame-installer.js @dev --install-dir node_modules --no-spinner --branch v4 --yes
+  # --branch v4
+  - node nodegame-installer.js @dev --install-dir node_modules --no-spinner --yes
 
 script:
 # Add nodegame-server tests here.
