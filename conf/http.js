@@ -1,6 +1,6 @@
 /**
  * # http.js
- * Copyright(c) 2016 Stefano Balietti
+ * Copyright(c) 2018 Stefano Balietti
  * MIT Licensed
  *
  * Configuration file for Express server in nodegame-server
@@ -10,14 +10,16 @@ module.exports = configure;
 // ## Global scope
 
 var express = require('express'),
-fs = require('fs'),
-J = require('nodegame-client').JSUS;
+    fs = require('fs'),
+    path = require('path'),
+    os = require('os'),
+    J = require('nodegame-client').JSUS;
 
 var mime = require('express').static.mime;
 
 var bodyParser = require('body-parser'),
-cookieParser = require('cookie-parser'),
-errorHandler = require('errorhandler');
+    cookieParser = require('cookie-parser'),
+    errorHandler = require('errorhandler');
 
 // var session = require('cookie-session')({ secret: 'secret' });
 
@@ -34,11 +36,11 @@ function configure(app, servernode) {
     var basepath;
 
     rootDir = servernode.rootDir;
-    publicDir = rootDir + '/public/';
+    publicDir = path.resolve(rootDir, 'public');
     basepath = servernode.basepath || '';
     resourceManager = servernode.resourceManager;
 
-    app.set('views', rootDir + '/views');
+    app.set('views', path.resolve(rootDir, 'views'));
     app.set('view engine', 'jade');
     app.set('view options', {layout: false});
 
@@ -52,7 +54,6 @@ function configure(app, servernode) {
     }
 
     app.disable('x-powered-by');
-
     app.enable("jsonp callback");
 
     app.use(cookieParser());
@@ -78,7 +79,7 @@ function configure(app, servernode) {
 
         // If it is not text, it was not cached.
         if (headers['Content-Type'].substring(0,4) !== 'text') {
-            filePath = servernode.rootDir + '/public/' + file;
+            filePath = path.resolve(publicDir, file);
             res.sendFile(filePath);
             return;
         }
