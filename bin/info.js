@@ -1,42 +1,44 @@
 // # Exports data about nodegame modules.
 
-var J = require('JSUS').JSUS;
-var path = require('path');
+const J = require('JSUS').JSUS;
+const path = require('path');
 
-var ngcDir = J.resolveModuleDir('nodegame-client', __dirname);
-var JSUSDir = J.resolveModuleDir('JSUS', __dirname);
-var NDDBDir = J.resolveModuleDir('NDDB', __dirname);
-var shelfDir = J.resolveModuleDir('shelf.js', __dirname);
-var ngwindowDir = J.resolveModuleDir('nodegame-window', __dirname);
-var ngwidgetsDir = J.resolveModuleDir('nodegame-widgets', __dirname);
+let ngcDir = J.resolveModuleDir('nodegame-client', __dirname);
+let JSUSDir = J.resolveModuleDir('JSUS', __dirname);
+let NDDBDir = J.resolveModuleDir('NDDB', __dirname);
+let shelfDir = J.resolveModuleDir('shelf.js', __dirname);
+let ngwindowDir = J.resolveModuleDir('nodegame-window', __dirname);
+let ngwidgetsDir = J.resolveModuleDir('nodegame-widgets', __dirname);
 
-var build_client = require(ngcDir + 'bin/build.js').build;
-var build_client_support = require(ngcDir + 'bin/build.js').build_support;
-var build_JSUS = require(JSUSDir + 'bin/build.js').build;
-var build_NDDB = require(NDDBDir + 'bin/build.js').build;
-var build_shelf = require(shelfDir + 'bin/build.js').build;
-var build_ngwindow = require(ngwindowDir + 'bin/build.js').build;
-var build_ngwidgets = require(ngwidgetsDir + 'bin/build.js').build;
-var buildCSS = require('./buildCSS');
+let buildClient = require(path.resolve(ngcDir, 'bin', 'build.js')).build;
+let buildClientSup =
+    require(path.resolve(ngcDir, 'bin', 'build.js')).build_support;
+let buildJSUS = require(path.resolve(JSUSDir, 'bin', 'build.js')).build;
+let buildNDDB = require(path.resolve(NDDBDir, 'bin', 'build.js')).build;
+let buildShelf = require(path.resolve(shelfDir, 'bin', 'build.js')).build;
+let buildNgWindow = require(path.resolve(ngwindowDir, 'bin', 'build.js')).build;
+let buildNgWidgets =
+    require(path.resolve(ngwidgetsDir, 'bin', 'build.js')).build;
+let buildCSS = require('./buildCSS');
 
-var rootDir = path.resolve(__dirname, '..');
-var buildDir = path.resolve(rootDir, 'public', 'javascripts') + '/';
-var cssDir = path.resolve(rootDir, 'public', 'stylesheets') + '/';
-var libDir = path.resolve(rootDir, 'lib') + '/';
-var confDir = path.resolve(rootDir, 'conf') + '/';
+let rootDir = path.resolve(__dirname, '..');
+let buildDir = path.resolve(rootDir, 'public', 'javascripts') + path.sep;
+let cssDir = path.resolve(rootDir, 'public', 'stylesheets') + path.sep;
+let libDir = path.resolve(rootDir, 'lib') + path.sep;
+let confDir = path.resolve(rootDir, 'conf') + path.sep;
 
-var { version } = require(path.resolve(rootDir, 'package.json'));
+let { version } = require(path.resolve(rootDir, 'package.json'));
 
 module.exports = {
     version: version,
     build: {
-        client: build_client,
-        clientSupport: build_client_support,
-        JSUS: build_JSUS,
-        NDDB: build_NDDB,
-        shelf: build_shelf,
-        window: build_ngwindow,
-        widgets: build_ngwidgets,
+        client: buildClient,
+        clientSupport: buildClientSup,
+        JSUS: buildJSUS,
+        NDDB: buildNDDB,
+        shelf: buildShelf,
+        window: buildNgWindow,
+        widgets: buildNgWidgets,
         css: buildCSS
     },
     serverDir: {
