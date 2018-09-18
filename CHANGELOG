@@ -1,5 +1,8 @@
 # nodegame-server change log
 
+# 4.2.0 (current, not npm)
+- Treatment selection via Waiting Room interface.
+
 # 4.1.0
 - Anti-spoofing fix.
 - Updated CSS removed position:absolute attribute from ng_mainframe that was
