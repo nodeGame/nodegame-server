@@ -51753,7 +51753,15 @@ if (!Array.prototype.indexOf) {
 
         // #### selectTreatment
         // Trailing space makes it nicer.
-        selectTreatment: 'Select Treatment '
+        selectTreatment: 'Select Treatment ',
+
+        // #### gameTreatments
+        gameTreatments: 'Game:',
+
+        // #### defaultTreatments
+        defaultTreatments: 'Defaults:'
+
+        
     };
 
     /**
@@ -52093,7 +52101,7 @@ if (!Array.prototype.indexOf) {
                     var li, a, t, liT1, liT2;
                     if (conf.availableTreatments) {
                         li = document.createElement('li');
-                        li.innerHTML = 'Game:';
+                        li.innerHTML = w.getText('gameTreatments');
                         li.className = 'dropdown-header';
                         ul.appendChild(li);
                         for (t in conf.availableTreatments) {
@@ -52115,7 +52123,7 @@ if (!Array.prototype.indexOf) {
                         li.className = 'divider';
                         ul.appendChild(li);
                         li = document.createElement('li');
-                        li.innerHTML = 'Defaults:';
+                        li.innerHTML = w.getText('defaultTreatments');
                         li.className = 'dropdown-header';
                         ul.appendChild(li);
                         ul.appendChild(liT1);
