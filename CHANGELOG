@@ -1,5 +1,9 @@
 # nodegame-server change log
 
+# 4.2.1
+- Fixed bug introduced in 4.2.0, treatments were not correctly validated when
+treatment description was missing.
+
 # 4.2.0
 - Treatment selection via Waiting Room interface.
 
