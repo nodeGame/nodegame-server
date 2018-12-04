@@ -38783,13 +38783,19 @@ if (!Array.prototype.indexOf) {
                 for (name in conf.append) {
                     if (conf.append.hasOwnProperty(name)) {
                         // Determine root.
-                        if ('string' === typeof conf.append[name].root) {
-                            root = W.getElementById(conf.append[name].root);
+                        root = conf.append[name].root;
+                        if ('function' === typeof root) {
+                            root = root();
+                        }
+                        else if ('string' === typeof root) {
+                            root = W.getElementById(root);
                         }
                         if (!root) root = W.getScreen();
+                        
                         if (!root) {
                             node.warn('setup widgets: could not find a root ' +
-                                      'for widget ' + name + '.');
+                                      'for widget ' + name + '. Requested: ' +
+                                      conf.append[name].root);
                         }
                         else {
                             that.append(name, root, conf.append[name]);
