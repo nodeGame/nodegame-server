@@ -267,7 +267,9 @@ p {
   overflow-y: scroll;
   width: 450px;
   border: 1px solid #CCC;
-  padding: 5px; }
+  padding: 5px;
+  position: absolute;
+  bottom: 2px;}
   .chat .panel-body textarea {
     height: 100px;
     width: 400px; }

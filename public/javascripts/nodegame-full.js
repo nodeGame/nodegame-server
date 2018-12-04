@@ -5229,19 +5229,21 @@ if (!Array.prototype.indexOf) {
      * @param {mixed} n The value to check
      * @param {number} lower Optional. If set, n must be greater than lower
      * @param {number} upper Optional. If set, n must be smaller than upper
+     * @param {boolean} leq Optional. If TRUE, n can also be equal to lower
+     * @param {boolean} ueq Optional. If TRUE, n can also be equal to upper
      *
      * @return {boolean|number} The parsed integer, or FALSE if none was found
      *
      * @see PARSE.isFloat
      * @see PARSE.isNumber
      */
-    PARSE.isInt = function(n, lower, upper) {
+    PARSE.isInt = function(n, lower, upper, leq, ueq) {
         var regex, i;
         regex = /^-?\d+$/;
         if (!regex.test(n)) return false;
         i = parseInt(n, 10);
         if (i !== parseFloat(n)) return false;
-        return PARSE.isNumber(i, lower, upper);
+        return PARSE.isNumber(i, lower, upper, leq, ueq);
     };
 
     /**
@@ -5254,18 +5256,20 @@ if (!Array.prototype.indexOf) {
      * @param {mixed} n The value to check
      * @param {number} lower Optional. If set, n must be greater than lower
      * @param {number} upper Optional. If set, n must be smaller than upper
+     * @param {boolean} leq Optional. If TRUE, n can also be equal to lower
+     * @param {boolean} ueq Optional. If TRUE, n can also be equal to upper
      *
      * @return {boolean|number} The parsed float, or FALSE if none was found
      *
      * @see PARSE.isInt
      * @see PARSE.isNumber
      */
-    PARSE.isFloat = function(n, lower, upper) {
+    PARSE.isFloat = function(n, lower, upper, leq, ueq) {
         var regex;
         regex = /^-?\d*(\.\d+)?$/;
         if (!regex.test(n)) return false;
         if (n.toString().indexOf('.') === -1) return false;
-        return PARSE.isNumber(n, lower, upper);
+        return PARSE.isNumber(n, lower, upper, leq, ueq);
     };
 
     /**
@@ -5278,17 +5282,23 @@ if (!Array.prototype.indexOf) {
      * @param {mixed} n The value to check
      * @param {number} lower Optional. If set, n must be greater than lower
      * @param {number} upper Optional. If set, n must be smaller than upper
+     * @param {boolean} leq Optional. If TRUE, n can also be equal to lower
+     * @param {boolean} ueq Optional. If TRUE, n can also be equal to upper
      *
      * @return {boolean|number} The parsed number, or FALSE if none was found
      *
      * @see PARSE.isInt
      * @see PARSE.isFloat
      */
-    PARSE.isNumber = function(n, lower, upper) {
+    PARSE.isNumber = function(n, lower, upper, leq, ueq) {
         if (isNaN(n) || !isFinite(n)) return false;
         n = parseFloat(n);
-        if ('number' === typeof lower && n < lower) return false;
-        if ('number' === typeof upper && n > upper) return false;
+        if ('number' === typeof lower && (leq ? n <= lower : n < lower)) {
+            return false;            
+        }
+        if ('number' === typeof upper && (ueq ? n >= upper : n > upper)) {
+            return false;
+        }
         return n;
     };
 
@@ -10042,7 +10052,7 @@ if (!Array.prototype.indexOf) {
     node.support = JSUS.compatibility();
 
     // Auto-Generated.
-    node.version = '4.1.0';
+    node.version = '4.1.1';
 
 })(window);
 
@@ -29815,7 +29825,7 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # Commands
- * Copyright(c) 2016 Stefano Balietti
+ * Copyright(c) 2018 Stefano Balietti
  * MIT Licensed
  *
  * `nodeGame` commands for admins
@@ -29847,15 +29857,17 @@ if (!Array.prototype.indexOf) {
      * ```
 
      * @param {string} url the url of the redirection
-     * @param {string} who A player id or any other valid _to_ field
+     * @param {string|array} who A player id or any other valid _to_ field
      */
     NGC.prototype.redirect = function(url, who) {
         var msg;
         if ('string' !== typeof url) {
-            throw new TypeError('node.redirect: url must be string.');
+            throw new TypeError('node.redirect: url must be string. Found: ' +
+                                url);
         }
-        if ('string' !== typeof who) {
-            throw new TypeError('node.redirect: who must be string.');
+        if ('string' !== typeof who && !J.isArray(who)) {
+            throw new TypeError('node.redirect: who must be string. Found: ' +
+                                who);
         }
         msg = this.msg.create({
             target: this.constants.target.REDIRECT,
@@ -39299,7 +39311,7 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # Chat
- * Copyright(c) 2017 Stefano Balietti
+ * Copyright(c) 2018 Stefano Balietti
  * MIT Licensed
  *
  * Creates a simple configurable chat
@@ -39314,7 +39326,7 @@ if (!Array.prototype.indexOf) {
 
     // ## Meta-data
 
-    Chat.version = '0.5.2';
+    Chat.version = '1.0.0';
     Chat.description = 'Offers a uni-/bi-directional communication interface ' +
         'between players, or between players and the experimenter.';
 
@@ -39365,14 +39377,6 @@ if (!Array.prototype.indexOf) {
          * @see Chat.modes
          */
         this.mode = null;
-
-        /**
-         * ### Chat.recipient
-         *
-         * Determines recipient of the messages
-         */
-        this.recipient = null;
-
 
         /**
          * ### Chat.textarea
@@ -39466,7 +39470,7 @@ if (!Array.prototype.indexOf) {
      *   - `displayName`: Function which displays the sender's name
      */
     Chat.prototype.init = function(options) {
-        var tmp;
+        var tmp, that;
         options = options || {};
 
         if ('undefined' === typeof options.mode) {
@@ -39482,7 +39486,20 @@ if (!Array.prototype.indexOf) {
                 tmp = 'ROOM';
                 break;
             case Chat.modes.ONE_TO_ONE:
-                tmp = 'SERVER';
+                tmp = options.recipient;
+                if ('string' !== typeof tmp) {
+                    throw new TypeError('Chat.init: mode=ONE_TO_ONE, but ' +
+                                        'recipient is not string. Found: ' +
+                                        tmp);
+                }
+                if (options.recipientName) {
+                    if ('string' !== typeof options.recipientName) {
+                        throw new TypeError('Chat.init: recipientName must ' +
+                                            'be string or undefined. Found: ' +
+                                            tmp);
+                    }
+                    this.recipient.name = options.recipientName;
+                }
                 break;
             case Chat.modes.MANY_TO_MANY:
                 break;
@@ -39506,8 +39523,14 @@ if (!Array.prototype.indexOf) {
         this.chatEvent = options.chatEvent || 'CHAT';
         this.submitText = options.submitText || 'chat';
 
+        that = this;
         this.displayName = options.displayName || function(from) {
-            return from;
+            if (that.mode = Chat.modes.ONE_TO_ONE && that.recipient.name) {
+                return that.recipient.name;
+            }
+            else {
+                return from;
+            }
         };
     };
 
@@ -39557,6 +39580,7 @@ if (!Array.prototype.indexOf) {
 
         node.on(this.chatEvent, function() {
             var msg, to, args;
+
             msg = that.readTA();
             if (!msg) return;
 
@@ -51761,7 +51785,7 @@ if (!Array.prototype.indexOf) {
         // #### defaultTreatments
         defaultTreatments: 'Defaults:'
 
-        
+
     };
 
     /**

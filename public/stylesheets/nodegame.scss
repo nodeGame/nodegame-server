@@ -339,7 +339,10 @@ p {
   width: 450px;
   border: 1px solid #CCC;
   padding: 5px;
-
+  
+  position: absolute;
+  bottom: 2px;
+ 
   .panel-body {
     
     textarea {
@@ -347,6 +350,7 @@ p {
       width: 400px;
     }
   }
+
 }
 
 .chat_me {
