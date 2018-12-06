@@ -429,3 +429,10 @@ div.svogauge td.choicetable-left hr {
   /* height: 2.9em !important; */ }
 
 /*# sourceMappingURL=nodegame.css.map */
+
+/* Also in nodegame.css */
+.panel-collapse-link {
+  display: inline-block;
+  float: right;
+  cursor: pointer;
+}

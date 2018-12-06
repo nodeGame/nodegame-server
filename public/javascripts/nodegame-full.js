@@ -37924,7 +37924,7 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # Widget
- * Copyright(c) 2017 Stefano Balietti <ste@nodegame.org>
+ * Copyright(c) 2018 Stefano Balietti <ste@nodegame.org>
  * MIT Licensed
  *
  * Prototype of a widget class
@@ -38076,6 +38076,51 @@ if (!Array.prototype.indexOf) {
      */
     Widget.prototype.isHighlighted = function() {
         return !!this.highlighted;
+    };
+
+    /**
+     * ### Widget.collapse
+     *
+     * Collapses the widget (hides the body)
+     *
+     * @see Widget.uncollapse
+     * @see Widget.isCollapsed
+     */
+    Widget.prototype.collapse = function() {
+        this.bodyDiv.style.display = 'none';
+        this.collapsed = true;
+        if (this.collapseButton) {
+            this.collapseButton.src = '/images/maximize_small2.png';
+            this.collapseButton.title = 'Maximize';
+        }
+    };
+
+    /**
+     * ### Widget.uncollapse
+     *
+     * Uncollapses the widget (shows the body)
+     *
+     * @see Widget.collapse
+     * @see Widget.isCollapsed
+     */
+    Widget.prototype.uncollapse = function() {
+        this.bodyDiv.style.display = '';
+        this.collapsed = false;
+        if (this.collapseButton) {
+            this.collapseButton.src = '/images/maximize_small.png';
+            this.collapseButton.title = 'Minimize';
+        }
+    };
+
+    /**
+     * ### Widget.isCollapsed
+     *
+     * Returns TRUE if widget is currently collapsed
+     *
+     * @return {boolean} TRUE, if widget is currently collapsed
+     */
+    Widget.prototype.isCollapsed = function() {
+        return !!this.collapsed;
     };
 
     /**
@@ -38236,6 +38281,22 @@ if (!Array.prototype.indexOf) {
                 throw new TypeError(J.funcName(this.constructor) +
                                     '.setTitle: title must be string, ' +
                                     'HTML element or falsy. Found: ' + title);
+            }
+            if (this.collapsible) {
+                // Generates a button that hides the body of the panel.
+                (function(that) {
+                    var link, img;
+                    link = document.createElement('span');
+                    link.className = 'panel-collapse-link';
+                    img = document.createElement('img');
+                    img.src = '/images/minimize_small.png';
+                    link.appendChild(img);
+                    link.onclick = function() {
+                        if (that.isCollapsed()) that.uncollapse();
+                        else that.collapse();
+                    };
+                    that.headingDiv.appendChild(link);
+                })(this);
             }
         }
     };
@@ -38714,7 +38775,7 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # Widgets
- * Copyright(c) 2017 Stefano Balietti
+ * Copyright(c) 2018 Stefano Balietti
  * MIT Licensed
  *
  * Helper class to interact with nodeGame widgets
@@ -38791,7 +38852,7 @@ if (!Array.prototype.indexOf) {
                             root = W.getElementById(root);
                         }
                         if (!root) root = W.getScreen();
-                        
+
                         if (!root) {
                             node.warn('setup widgets: could not find a root ' +
                                       'for widget ' + name + '. Requested: ' +
@@ -38869,6 +38930,9 @@ if (!Array.prototype.indexOf) {
      *   - disabled: boolean flag indicating the widget state, set to FALSE
      *   - highlighted: boolean flag indicating whether the panelDiv is
      *        highlighted, set to FALSE
+     *   - collapsible: boolean flag, TRUE if the widget can be collapsed
+     *        and a button to hide body is added to the header
+     *   - collapsed: boolan flag, TRUE if widget is collapsed (body hidden)
      *
      * Calls the `listeners` method of the widget. Any event listener
      * registered here will be automatically removed when the widget
@@ -38966,7 +39030,7 @@ if (!Array.prototype.indexOf) {
             WidgetPrototype.sounds : options.sounds;
         widget.texts = 'undefined' === typeof options.texts ?
             WidgetPrototype.texts : options.texts;
-
+        widget.collapsible = options.collapsible || false;
 
         // Fixed properties.
 
@@ -38978,6 +39042,8 @@ if (!Array.prototype.indexOf) {
         widget.disabled = null;
         // Add highlighted.
         widget.highlighted = null;
+        // Add collapsed.
+        widget.collapsed = null;
 
         // Call init.
         widget.init(options);
@@ -39392,14 +39458,6 @@ if (!Array.prototype.indexOf) {
         this.textarea = null;
 
         /**
-         * ### Chat.textareaId
-         *
-         * The id of the textarea
-         */
-        this.textareaId = null;
-
-
-        /**
          * ### Chat.chat
          *
          * The DIV wherein to display the chat
@@ -39407,26 +39465,11 @@ if (!Array.prototype.indexOf) {
         this.chat = null;
 
         /**
-         * ### Chat.chatId
-         *
-         * The id of the chat DIV
-         */
-        this.chatId = null;
-
-
-        /**
          * ### Chat.submit
          *
          * The submit button
          */
         this.submit = null;
-
-        /**
-         * ### Chat.submitId
-         *
-         * The id of the submit butten
-         */
-        this.submitId = null;
 
         /**
          * ### Chat.submitText
@@ -39468,9 +39511,6 @@ if (!Array.prototype.indexOf) {
      *
      * The  options object can have the following attributes:
      *   - `mode`: Determines to mode of communication
-     *   - `textareaId`: The id of the textarea
-     *   - `chatId`: The id of the chat DIV
-     *   - `submitId`: The id of the submit butten
      *   - `submitText`: The text on the submit button
      *   - `chatEvent`: The event to fire when sending a message
      *   - `displayName`: Function which displays the sender's name
@@ -39521,11 +39561,6 @@ if (!Array.prototype.indexOf) {
         }
 
         this.mode = options.mode;
-
-        this.textareaId = options.textareaId || 'chat_textarea';
-        this.chatId = options.chatId || 'chat_chat';
-        this.submitId = options.submitId || 'chat_submit';
-
         this.chatEvent = options.chatEvent || 'CHAT';
         this.submitText = options.submitText || 'chat';
 
@@ -39542,18 +39577,30 @@ if (!Array.prototype.indexOf) {
 
 
     Chat.prototype.append = function() {
+        var that;
 
-        this.chat = W.get('div', this.chatId);
+        this.chat = W.get('div', { className: 'chat_chat' });
         this.bodyDiv.appendChild(this.chat);
 
         if (this.mode !== Chat.modes.RECEIVER_ONLY) {
-
+            that = this;
             // Create buttons to send messages, if allowed.
-            this.submit = W.getEventButton(this.chatEvent,
-                                           this.submitText,
-                                           this.submitId);
-            this.submit.className = 'btn btn-sm btn-secondary';
-            this.textarea = W.get('textarea', this.textareaId);
+            this.submit = W.get('button', {
+                innerHTML: this.submitText,
+                className: 'btn btn-sm btn-secondary'
+            });
+
+            this.submit.onclick = function() {
+                var msg, to;
+                msg = that.readTA();
+                if (!msg) return;
+                to = that.recipient.value;
+                that.writeTA(msg, to, true);
+                node.say(that.chatEvent, to, msg);
+            };
+
+            this.textarea = W.get('textarea', { className: 'chat_textarea' });
+
             // Append them.
             W.writeln('', this.bodyDiv);
             this.bodyDiv.appendChild(this.textarea);
@@ -39572,25 +39619,12 @@ if (!Array.prototype.indexOf) {
         var txt;
         txt = this.textarea.value;
         this.textarea.value = '';
-        return txt;
+        return txt.trim();
     };
 
-    Chat.prototype.writeTA = function(string, args) {
-        J.sprintf(string, args, this.chat);
-        W.writeln('', this.chat);
-        this.chat.scrollTop = this.chat.scrollHeight;
-    };
-
-    Chat.prototype.listeners = function() {
-        var that = this;
-
-        node.on(this.chatEvent, function() {
-            var msg, to, args;
-
-            msg = that.readTA();
-            if (!msg) return;
-
-            to = that.recipient.value;
+    Chat.prototype.writeTA = function(msg, toFrom, outgoing) {
+        var string, args;
+        if (outgoing) {
             args = {
                 '%s': {
                     'class': 'chat_me'
@@ -39599,11 +39633,36 @@ if (!Array.prototype.indexOf) {
                     'class': 'chat_msg'
                 },
                 '!txt': msg,
-                '!to': to
+                '!to': toFrom
             };
-            that.writeTA('%sMe -> !to%s: %msg!txt%msg', args);
-            node.say(that.chatEvent, to, msg.trim());
-        });
+            if (this.mode === Chat.modes.ONE_TO_ONE || toFrom === 'ALL') {
+                string = '%sMe%s: %msg!txt%msg';
+            }
+            else {
+                string = '%sMe to !to%s: %msg!txt%msg';
+            }
+        }
+        else {
+            toFrom = this.displayName(toFrom);
+            args = {
+                '%s': {
+                    'class': 'chat_others'
+                },
+                '%msg': {
+                    'class': 'chat_msg'
+                },
+                '!txt': msg,
+                '!from': toFrom
+            };
+            string = '%s!from%s: %msg!txt%msg';
+        }
+        J.sprintf(string, args, this.chat);
+        W.writeln('', this.chat);
+        this.chat.scrollTop = this.chat.scrollHeight;
+    };
+
+    Chat.prototype.listeners = function() {
+        var that = this;
 
         if (this.mode === Chat.modes.MANY_TO_MANY) {
             node.on('UPDATED_PLIST', function() {
@@ -39624,19 +39683,7 @@ if (!Array.prototype.indexOf) {
                 }
             }
 
-            from = that.displayName(msg.from);
-            args = {
-                '%s': {
-                    'class': 'chat_others'
-                },
-                '%msg': {
-                    'class': 'chat_msg'
-                },
-                '!txt': msg.data,
-                '!from': from
-            };
-
-            that.writeTA('%s!from%s: %msg!txt%msg', args);
+            that.writeTA(msg.data, msg.from, false);
         });
     };
 
