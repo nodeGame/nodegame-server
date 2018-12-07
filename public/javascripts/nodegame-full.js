@@ -39481,7 +39481,7 @@ if (!Array.prototype.indexOf) {
         /**
          * ### Chat.chatEvent
          *
-         * The event to fire when sending a message
+         * The event fired a chat message is received
          */
         this.chatEvent = null;
 
@@ -39677,14 +39677,24 @@ if (!Array.prototype.indexOf) {
                 return;
             }
 
-            if (this.mode === Chat.modes.ONE_TO_ONE) {
-                if (msg.from === this.recipient.value) {
+            if (that.mode === Chat.modes.ONE_TO_ONE) {
+                if (msg.from === that.recipient.value) {
                     return;
                 }
             }
 
+            if (that.isCollapsed()) {
+                if (that.uncollapseOnMsg) {
+                    that.uncollapse();
+                }
+                else {
+                    that.setTitle('<strong>' + that.title + '</strong>');
+                }
+            }
+            
             that.writeTA(msg.data, msg.from, false);
         });
+
     };
 
 })(node);
