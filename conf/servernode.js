@@ -204,7 +204,7 @@ function configure(servernode) {
 
         // If the recipient of a _gameMsg_ is an array, it can contain at most
         // _maxMsgRecipients_ elements.
-        maxMsgRecipients: 0,
+        maxMsgRecipients: 10,
 
         // All messages exchanged between players will be forwarded to the
         // clients connected to the admin endpoint (ignores the _to_ field).
