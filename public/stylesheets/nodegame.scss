@@ -331,32 +331,6 @@ p {
   font-weight: bold;
 }
 
-/* Chat */
-
-.chat {
-
-  overflow-y: scroll;
-  width: 330px;
-  border: 1px solid #CCC;
-  padding: 5px;
-  
-  position: absolute;
-  bottom: 2px;
- 
-  .panel-body {
-    
-    textarea {
-      height: 100px;
-      width: 270px;
-    }
-  }
-
-}
-
-.chat_me {
-  font-weight: bold;
-}
-
 /* Feedback */
 .feedback {
 
@@ -594,8 +568,44 @@ div.svogauge {
 
 
 /* Also in monitor.css */
+
 .panel-collapse-link {
   display: inline-block;
   float: right;
   cursor: pointer;
+  margin-left: 8px;
+}
+
+.docked {
+  position: absolute;
+  bottom: 0px;
+  right: 10px;
+  width: 330px;
+  margin-left: 20px;
+}
+
+
+
+/* Chat */
+
+.chat {
+  /* min-width: 500px; */
+  max-width: 800px;
+}
+
+.chat_chat {
+  overflow-y: scroll;
+  height: 200px;
+  width: 100%;
+  padding: 5px;
+}
+
+.chat_textarea {
+  height: 50px;
+  width: 100%;
+  resize: none;
+}
+
+.chat_me {
+  font-weight: bold;
 }
