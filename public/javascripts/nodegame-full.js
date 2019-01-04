@@ -19841,6 +19841,7 @@ if (!Array.prototype.indexOf) {
         this.socket.send(msg);
         this.node.info('S: ' + msg);
 
+        // TODO: check this.
         // Experimental code.
         if (this.journalOn) {
             this.journal.insert(msg);
@@ -38104,7 +38105,7 @@ if (!Array.prototype.indexOf) {
      * @see Widget.uncollapse
      * @see Widget.isCollapsed
      */
-    Widget.prototype.collapse = function() {        
+    Widget.prototype.collapse = function() {
         if (!this.panelDiv) return;
         this.bodyDiv.style.display = 'none';
         this.collapsed = true;
@@ -38113,6 +38114,8 @@ if (!Array.prototype.indexOf) {
             this.collapseButton.title = 'Maximize';
         }
         if (this.footer) this.footer.style.display = 'none';
+        // Move into collapse target, if one is specified.
+        if (this.collapseTarget) this.collapseTarget.appendChild(this.panelDiv);
         this.emit('collapsed');
     };
 
@@ -38126,8 +38129,11 @@ if (!Array.prototype.indexOf) {
      * @see Widget.collapse
      * @see Widget.isCollapsed
      */
-    Widget.prototype.uncollapse = function() {        
+    Widget.prototype.uncollapse = function() {
         if (!this.panelDiv) return;
+        if (this.collapseTarget) {
+            this.originalRoot.appendChild(this.panelDiv);
+        }
         this.bodyDiv.style.display = '';
         this.collapsed = false;
         if (this.collapseButton) {
@@ -38198,7 +38204,7 @@ if (!Array.prototype.indexOf) {
     Widget.prototype.hide = function() {
         if (!this.panelDiv) return;
         this.panelDiv.style.display = 'none';
-        this.hidden = true;        
+        this.hidden = true;
     };
 
     /**
@@ -38216,7 +38222,7 @@ if (!Array.prototype.indexOf) {
      */
     Widget.prototype.show = function(display) {
         if (this.panelDiv && this.panelDiv.style.display === 'none') {
-            this.panelDiv.style.display = display || '';            
+            this.panelDiv.style.display = display || '';
             this.hidden = false;
         }
     };
@@ -38474,6 +38480,18 @@ if (!Array.prototype.indexOf) {
     Widget.prototype.removeFrame = function() {
         if (this.panelDiv) W.removeClass(this.panelDiv, 'panel-[a-z]*');
         if (this.bodyDiv) W.removeClass(this.bodyDiv, 'panel-body');
+    };
+
+
+    /**
+     * ### Widget.isAppended
+     *
+     * Returns TRUE if widget was appended to DOM (using Widget API)
+     *
+     * @return {boolean} TRUE, if node.widgets.append was called
+     */
+    Widget.prototype.isAppended = function() {
+        return this.appended;
     };
 
     /**
@@ -38932,9 +38950,16 @@ if (!Array.prototype.indexOf) {
          */
         this.lastAppended = null;
 
+        /**
+         * ### Widgets.collapseTarget
+         *
+         * Collapsed widgets are by default moved inside element
+         */
+        this.collapseTarget = null;
+
         that = this;
         node.registerSetup('widgets', function(conf) {
-            var name, root;
+            var name, root, collapseTarget;
             if (!conf) return;
 
             // Add new widgets.
@@ -38974,6 +38999,24 @@ if (!Array.prototype.indexOf) {
                             that.append(name, root, conf.append[name]);
                         }
                     }
+                }
+            }
+
+            if (conf.collapseTarget) {
+                if ('function' === typeof conf.collapseTarget) {
+                    collapseTarget = conf.collapseTarget();
+                }
+                else if ('string' === typeof conf.collapseTarget) {
+                    collapseTarget = W.getElementById(conf.collapseTarget);
+                }
+                else if (J.isElement(conf.collapseTarget)) {
+                    collapseTarget = conf.collapseTarget;
+                }
+                if (!collapseTarget) {
+                    node.warn('setup widgets: could not find collapse target.');
+                }
+                else {
+                    that.collapseTarget = collapseTarget;
                 }
             }
 
@@ -39147,6 +39190,8 @@ if (!Array.prototype.indexOf) {
             WidgetPrototype.texts : options.texts;
         widget.collapsible = options.collapsible || false;
         widget.closable = options.closable || false;
+        widget.collapseTarget =
+            options.collapseTarget || this.collapseTarget || null;
         widget.hooks = {
             hidden: [],
             shown: [],
@@ -39163,6 +39208,8 @@ if (!Array.prototype.indexOf) {
         widget.widgetName = widgetName;
         // Add random unique widget id.
         widget.wid = '' + J.randomInt(0,10000000000000000000);
+        // Add appended.
+        widget.appended = false;
         // Add enabled.
         widget.disabled = null;
         // Add highlighted.
@@ -39313,7 +39360,7 @@ if (!Array.prototype.indexOf) {
         // Dock it.
         // TODO: handle multiple dockedd widgets.
         if (options.docked) tmp.className.push('docked');
-        
+
         // Add div inside widget.
         w.panelDiv = W.get('div', tmp);
 
@@ -39343,9 +39390,13 @@ if (!Array.prototype.indexOf) {
 
         // Be hidden, if requested.
         if (options.hidden) w.hide();
-   
-        root.appendChild(w.panelDiv);        
+
+        root.appendChild(w.panelDiv);
+
+        w.originalRoot = root;
+
         w.append();
+        w.appended = true;
 
         // Store reference of last appended widget.
         this.lastAppended = w;
@@ -45631,6 +45682,319 @@ if (!Array.prototype.indexOf) {
 })(node);
 
 /**
+ * # DebugWall
+ * Copyright(c) 2018 Stefano Balietti
+ * MIT Licensed
+ *
+ * Creates a wall where all incoming and outgoing messages are printed
+ *
+ * www.nodegame.org
+ */
+(function(node) {
+
+    "use strict";
+
+    node.widgets.register('DebugWall', DebugWall);
+
+    // ## Meta-data
+
+    DebugWall.version = '1.0.0';
+    DebugWall.description = 'Intercepts incoming and outgoing messages, and ' +
+        'logs and prints them numbered and timestamped. Warning! Modifies ' +
+        'core functions, therefore its usage in production is ' +
+        'not recommended.';
+
+    DebugWall.title = 'Debug Wall';
+    DebugWall.className = 'debugwall';
+
+    // ## Dependencies
+
+    DebugWall.dependencies = {
+        JSUS: {}
+    };
+
+    /**
+     * ## DebugWall constructor
+     *
+     * Creates a new DebugWall oject
+     */
+    function DebugWall() {
+
+        /**
+         * ### DebugWall.buttonsDiv
+         *
+         * Div contains controls for the display info inside the wall.
+         */
+        this.buttonsDiv = null;
+
+        /**
+         * ### DebugWall.hidden
+         *
+         * Keep tracks of what is hidden in the wall
+         */
+        this.hiddenTypes = {};
+
+        /**
+         * ### DebugWall.counterIn
+         *
+         * Counts number of incoming message printed on wall
+         */
+        this.counterIn = 0;
+
+        /**
+         * ### DebugWall.counterOut
+         *
+         * Counts number of outgoing message printed on wall
+         */
+        this.counterOut = 0;
+
+        /**
+         * ### DebugWall.counterLog
+         *
+         * Counts number of log entries printed on wall
+         */
+        this.counterLog = 0;
+
+        /**
+         * ### DebugWall.wall
+         *
+         * The table element in which to write
+         */
+        this.wall = null;
+
+        /**
+         * ### DebugWall.wallDiv
+         *
+         * The div element containing the wall (for scrolling)
+         */
+        this.wall = null;
+
+        /**
+         * ### DebugWall.origMsgInCb
+         *
+         * The original function that receives incoming msgs
+         */
+        this.origMsgInCb = null;
+
+        /**
+         * ### DebugWall.origMsgOutCb
+         *
+         * The original function that sends msgs
+         */
+        this.origMsgOutCb = null;
+
+        /**
+         * ### DebugWall.origLogCb
+         *
+         * The original log callback
+         */
+        this.origLogCb = null;
+    }
+
+    // ## DebugWall methods
+
+    /**
+     * ### DebugWall.init
+     *
+     * Initializes the instance
+     *
+     * @param {object} options Optional. Configuration options
+     */
+    DebugWall.prototype.init = function(options) {
+        var that;
+        that = this;
+        if (options.msgIn !== false) {
+            this.origMsgInCb = node.socket.onMessage;
+            node.socket.onMessage = function(msg) {
+                that.write('in', that.makeTextIn(msg));
+                that.origMsgInCb.call(node.socket, msg);
+            };
+        }
+        if (options.msgOut !== false) {
+            this.origMsgOutCb = node.socket.send;
+            node.socket.send = function(msg) {
+                that.write('out', that.makeTextOut(msg));
+                that.origMsgOutCb.call(node.socket, msg);
+            };
+        }
+        if (options.log !== false) {
+            this.origLogCb = node.log;
+            node.log = function(txt, level, prefix) {
+                that.write(level || 'info',
+                           that.makeTextLog(txt, level, prefix));
+                that.origLogCb.call(node, txt, level, prefix);
+            };
+        }
+
+        if (options.hiddenTypes) {
+            if ('object' !== typeof hiddenTypes) {
+                throw new TypeError('DebugWall.init: hiddenTypes must be ' +
+                                    'object. Found: ' + hiddenTypes);
+            }
+            this.hiddenTypes = hiddenTypes;
+        }
+    };
+
+    DebugWall.prototype.destroy = function() {
+        if (this.origLogCb) node.log = this.origLogCb;
+        if (this.origMsgOutCb) node.socket.send = this.origMsgOutCb;
+        if (this.origMsgInCb) node.socket.onMessage = this.origMsgInCb;
+    };
+
+    DebugWall.prototype.append = function() {
+        var displayIn, displayOut, displayLog, that;
+        var btnGroup, cb, div;
+        this.buttonsDiv = W.add('div', this.bodyDiv, {
+            className: 'wallbuttonsdiv'
+        });
+
+        btnGroup = document.createElement('div');
+        btnGroup.role = 'group';
+        btnGroup['aria-label'] = 'Toggle visibility';
+        btnGroup.className = 'btn-group';
+
+        displayIn = W.add('button', btnGroup, {
+            innerHTML: 'Incoming',
+            className: 'btn btn-secondary'
+        });
+        displayOut = W.add('button', btnGroup, {
+            innerHTML: 'Outgoing',
+            className: 'btn btn-secondary'
+        });
+        displayLog = W.add('button', btnGroup, {
+            innerHTML: 'Log',
+            className: 'btn btn-secondary'
+        });
+
+        this.buttonsDiv.appendChild(btnGroup);
+
+        that = this;
+
+        cb = function(type) {
+            var items, i, vis, className;
+            className = 'wall_' + type;
+            items = that.wall.getElementsByClassName(className);
+            vis = items[0].style.display === '' ? 'none' : '';
+            for (i = 0; i < items.length; i++) {
+                items[i].style.display = vis;
+            }
+            that.hiddenTypes[type] = !!vis;
+        };
+
+        displayIn.onclick = function() { cb('in'); };
+        displayOut.onclick = function() { cb('out'); };
+        displayLog.onclick = function() { cb('log'); };
+
+        this.wallDiv = W.add('div', this.bodyDiv, { className: 'walldiv' });
+        this.wall = W.add('table', this.wallDiv);
+    };
+
+    /**
+     * ### DebugWall.write
+     *
+     * Writes argument as first entry of this.wall if document is fully loaded
+     *
+     * @param {string} type 'in', 'out', or 'log' (different levels)
+     * @param {string} text The text to write
+     */
+    DebugWall.prototype.shouldHide = function(type, text) {
+        return this.hiddenTypes[type];
+    };
+    /**
+     * ### DebugWall.write
+     *
+     * Writes argument as first entry of this.wall if document is fully loaded
+     *
+     * @param {string} type 'in', 'out', or 'log' (different levels)
+     * @param {string} text The text to write
+     */
+    DebugWall.prototype.write = function(type, text) {
+        var spanContainer, spanDots, spanExtra, counter, className;
+        var limit;
+        var TR, TDtext;
+        if (this.isAppended()) {
+
+            counter = type === 'in' ? ++this.counterIn :
+                (type === 'out' ? ++this.counterOut : ++this.counterLog);
+
+            limit = 200;
+            className = 'wall_' + type;
+            TR = W.add('tr', this.wall, { className: className });
+            if (type !== 'in' && type !== 'out') TR.className += ' wall_log';
+
+            if (this.shouldHide(type, text)) TR.style.display = 'none';
+
+            W.add('td', TR, { innerHTML: counter });
+            W.add('td', TR, { innerHTML: type });
+            W.add('td', TR, { innerHTML: J.getTimeM()});
+            TDtext = W.add('td', TR);
+
+            if (text.length > limit) {
+                spanContainer = W.add('span', TDtext, {
+                    className: className + '_click' ,
+                    innerHTML: text.substr(0, limit)
+                });
+                spanExtra = W.add('span', spanContainer, {
+                    className: className + '_extra',
+                    innerHTML: text.substr(limit, text.length),
+                    id: 'wall_' + type + '_' + counter,
+                    style: { display: 'none' }
+
+                });
+                spanDots = W.add('span', spanContainer, {
+                    className: className + '_dots',
+                    innerHTML: ' ...',
+                    id: 'wall_' + type + '_' + counter
+                });
+
+                spanContainer.onclick = function() {
+                    if (spanDots.style.display === 'none') {
+                        spanDots.style.display = '';
+                        spanExtra.style.display = 'none';
+                    }
+                    else {
+                        spanDots.style.display = 'none';
+                        spanExtra.style.display = '';
+                    }
+                };
+            }
+            else {
+                spanContainer = W.add('span', TDtext, {
+                    innerHTML: text
+                });
+            }
+            this.wallDiv.scrollTop = this.wallDiv.scrollHeight;
+        }
+        else {
+            node.warn('Wall not appended, cannot write.');
+        }
+    };
+
+    DebugWall.prototype.makeTextIn = function(msg) {
+        var text, d;
+        d = new Date(msg.created);
+        text = d.getHours() + ':' + d.getMinutes() + ':' + d.getSeconds() +
+            ':' + d.getMilliseconds();
+        text += ' | ' + msg.to + ' | ' + msg.target +
+            ' | ' + msg.action + ' | ' + msg.text + ' | ' + msg.data;
+        return text;
+    };
+
+
+    DebugWall.prototype.makeTextOut = function(msg) {
+        var text;
+        text = msg.from + ' | ' + msg.target + ' | ' + msg.action + ' | ' +
+            msg.text + ' | ' + msg.data;
+        return text;
+    };
+
+    DebugWall.prototype.makeTextLog = function(text, level, prefix) {
+        return text;
+    };
+
+})(node);
+
+/**
  * # DisconnectBox
  * Copyright(c) 2015 Stefano Balietti
  * MIT Licensed
@@ -51166,7 +51530,7 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # VisualTimer
- * Copyright(c) 2017 Stefano Balietti <ste@nodegame.org>
+ * Copyright(c) 2018 Stefano Balietti <ste@nodegame.org>
  * MIT Licensed
  *
  * Display a configurable timer for the game
@@ -51183,7 +51547,7 @@ if (!Array.prototype.indexOf) {
 
     // ## Meta-data
 
-    VisualTimer.version = '0.9.1';
+    VisualTimer.version = '0.9.2';
     VisualTimer.description = 'Display a configurable timer for the game. ' +
         'Can trigger events. Only for countdown smaller than 1h.';
 
@@ -51301,12 +51665,6 @@ if (!Array.prototype.indexOf) {
      */
     VisualTimer.prototype.init = function(options) {
         var t, gameTimerOptions;
-
-        options = options || {};
-        if ('object' !== typeof options) {
-            throw new TypeError('VisualTimer.init: options must be ' +
-                                'object or undefined. Found: ' + options);
-        }
 
         // Important! Do not modify directly options, because it might
         // modify a step-property. Will manual clone later.
@@ -52773,142 +53131,6 @@ if (!Array.prototype.indexOf) {
     WaitingRoom.prototype.destroy = function() {
         if (this.dots) this.dots.stop();
         node.deregisterSetup('waitroom');
-    };
-
-})(node);
-
-/**
- * # Wall
- * Copyright(c) 2017 Stefano Balietti
- * MIT Licensed
- *
- * Creates a wall where logs and other info is added with number and timestamp
- *
- * www.nodegame.org
- */
-(function(node) {
-
-    "use strict";
-
-    node.widgets.register('Wall', Wall);
-
-    // ## Meta-data
-
-    Wall.version = '0.3.1';
-    Wall.description = 'Intercepts all LOG events and prints them into a PRE ' +
-                       'element with an ordinal number and a timestamp.';
-
-    Wall.title = 'Wall';
-    Wall.className = 'wall';
-
-    // ## Dependencies
-
-    Wall.dependencies = {
-        JSUS: {}
-    };
-
-    /**
-     * ## Wall constructor
-     *
-     * `Wall` prints all LOG events into a PRE.
-     *
-     * @param {object} options Optional. Configuration options
-     */
-    function Wall(options) {
-
-        /**
-         * ### Wall.name
-         *
-         * The name of this Wall
-         */
-        this.name = options.name || this.name;
-
-        /**
-         * ### Wall.buffer
-         *
-         * Buffer for logs which are to be logged before the document is ready
-         */
-        this.buffer = [];
-
-        /**
-         * ### Wall.counter
-         *
-         * Counts number of entries on wall
-         */
-        this.counter = 0;
-
-        /**
-         * ### Wall.wall
-         *
-         * The PRE in which to write
-         */
-        this.wall = W.get('pre', this.id);
-    }
-
-    // ## Wall methods
-
-    /**
-     * ### Wall.init
-     *
-     * Initializes the instance
-     *
-     * If options are provided, the counter is set to `options.counter`
-     * otherwise nothing happens.
-     */
-    Wall.prototype.init = function(options) {
-        options = options || {};
-        this.counter = options.counter || this.counter;
-    };
-
-    Wall.prototype.append = function() {
-        return this.bodyDiv.appendChild(this.wall);
-    };
-
-    /**
-     * ### Wall.listeners
-     *
-     * Wall has a listener to the `LOG` event
-     */
-    Wall.prototype.listeners = function() {
-        var that = this;
-        node.on('LOG', function(msg) {
-            that.debuffer();
-            that.write(msg);
-        });
-    };
-
-
-    /**
-     *  ### Wall.write
-     *
-     * Writes argument as first entry of this.wall if document is fully loaded
-     *
-     * Writes into this.buffer if document is not ready yet.
-     */
-    Wall.prototype.write = function(text) {
-        var mark;
-        if (document.readyState !== 'complete') {
-            this.buffer.push(text);
-        }
-        else {
-            mark = this.counter++ + ') ' + J.getTime() + ' ';
-            this.wall.innerHTML = mark + text + "\n" + this.wall.innerHTML;
-        }
-    };
-
-    /**
-     * ### Wall.debuffer
-     *
-     * If the document is ready, the buffer content is written into this.wall
-     */
-    Wall.prototype.debuffer = function() {
-        var i;
-        if (document.readyState === 'complete' && this.buffer.length > 0) {
-            for (i=0; i < this.buffer.length; i++) {
-                this.write(this.buffer[i]);
-            }
-            this.buffer = [];
-        }
     };
 
 })(node);
