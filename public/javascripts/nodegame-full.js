@@ -38904,7 +38904,7 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # Widgets
- * Copyright(c) 2018 Stefano Balietti
+ * Copyright(c) 2019 Stefano Balietti
  * MIT Licensed
  *
  * Helper class to interact with nodeGame widgets
@@ -39180,8 +39180,19 @@ if (!Array.prototype.indexOf) {
             WidgetPrototype.title : options.title;
         widget.footer = 'undefined' === typeof options.footer ?
             WidgetPrototype.footer : options.footer;
-        widget.className = 'undefined' === typeof options.className ?
-            WidgetPrototype.className : options.className;
+        widget.className = WidgetPrototype.className; 
+        if (J.isArray(options.className)) {
+            widget.className += options.className.join(' ');
+        }
+        else if ('string' === typeof options.className) {
+            widget.className += options.className;
+        }
+        else if ('undefined' !== typeof options.className) {
+            throw new TypeError('widgets.append: className must be array, ' +
+                                'string, or undefined. Found: ' +
+                                options.className);
+        }
+       
         widget.context = 'undefined' === typeof options.context ?
             WidgetPrototype.context : options.context;
         widget.sounds = 'undefined' === typeof options.sounds ?
