@@ -36516,7 +36516,7 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # HTMLRenderer
- * Copyright(c) 2016 Stefano Balietti
+ * Copyright(c) 2019 Stefano Balietti
  * MIT Licensed
  *
  * Renders javascript objects into HTML following a pipeline
@@ -36629,17 +36629,43 @@ if (!Array.prototype.indexOf) {
         });
 
         this.tm.addTrigger(function(el) {
-            var div, key, str;
+            var div, spanType, spanContent, span2, key, str;
             if (!el) return;
-            if (el.content && 'object' === typeof el.content) {
+            if (el.content &&
+                ('object' === typeof el.content ||
+                 'function' === typeof el.content)) {
+
                 div = document.createElement('div');
-                for (key in el.content) {
-                    if (el.content.hasOwnProperty(key)) {
-                        str = key + ':\t' + el.content[key];
-                        div.appendChild(document.createTextNode(str));
-                        div.appendChild(document.createElement('br'));
+                spanType = W.add('span', div);
+                spanType.innerHTML = typeof el.content;
+                spanType.className = 'ng_clickable bold';
+                
+                spanContent = W.add('span', div);
+                spanContent.style.display = 'none';
+                spanContent.className = 'ng_clickable';
+
+                if ('object' === typeof el.content) {
+                    for (key in el.content) {
+                        if (el.content.hasOwnProperty(key)) {
+                            str = key + ':\t' + el.content[key];
+                            spanContent.appendChild(document.createTextNode(str));
+                            spanContent.appendChild(document.createElement('br'));
+                        }
                     }
                 }
+                else {
+                    spanContent.innerHTML = el.content.toString();
+                }
+                spanType.onclick = function() {
+                    spanContent.style.display = '';
+                    spanType.style.display = 'none';
+                };
+
+                spanContent.onclick = function() {
+                    spanContent.style.display = 'none';
+                    spanType.style.display = '';
+                };
+                
                 return div;
             }
         });
