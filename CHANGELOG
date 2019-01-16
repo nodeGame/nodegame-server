@@ -1,5 +1,8 @@
 # nodegame-server change log
 
+# 4.2.2
+- Fixed bug when spoofing mechanism is enabled.
+
 # 4.2.1
 - Fixed bug introduced in 4.2.0, treatments were not correctly validated when
 treatment description was missing.
