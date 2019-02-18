@@ -52819,7 +52819,7 @@ if (!Array.prototype.indexOf) {
                 btnGroup.className = 'btn-group';
 
                 var playBotBtn = document.createElement('input');
-                playBotBtn.className = 'btn btn-secondary btn-lg';
+                playBotBtn.className = 'btn btn-primary btn-lg';
                 playBotBtn.value = w.getText('playBot');
                 playBotBtn.id = 'bot_btn';
                 playBotBtn.type = 'button';
