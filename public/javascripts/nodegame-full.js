@@ -5037,6 +5037,35 @@ if (!Array.prototype.indexOf) {
     };
 
     /**
+     * ## PARSE.isMobileAgent
+     *
+     * Returns TRUE if a user agent is for a mobile device
+     *
+     * @param {string} agent Optional. The user agent to check. Default:
+     *   navigator.userAgent
+     *
+     * @return {boolean} TRUE if a user agent is for a mobile device
+     */
+    PARSE.isMobileAgent = function(agent) {
+        var rx;
+        if (!agent){
+            if (!navigator) {
+                throw new Error('JSUS.isMobileAgent: agent undefined and ' +
+                                'no navigator. Are you in the browser?');
+            }
+            agent = navigator.userAgent;
+        }
+        else if ('string' !== typeof agent) {
+            throw new TypeError('JSUS.isMobileAgent: agent must be undefined ' +
+                                'or string. Found: ' + agent);
+        }
+        rx = new RegExp('Android|webOS|iPhone|iPad|BlackBerry|' +
+                        'Windows Phone|Opera Mini|IEMobile|Mobile', 'i');
+
+        return rx.test(agent);
+    };
+
+    /**
      * ## PARSE.tokenize
      *
      * Splits a string in tokens that users can specified as input parameter.
@@ -5294,7 +5323,7 @@ if (!Array.prototype.indexOf) {
         if (isNaN(n) || !isFinite(n)) return false;
         n = parseFloat(n);
         if ('number' === typeof lower && (leq ? n <= lower : n < lower)) {
-            return false;            
+            return false;
         }
         if ('number' === typeof upper && (ueq ? n >= upper : n > upper)) {
             return false;
@@ -39609,7 +39638,7 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # Chat
- * Copyright(c) 2018 Stefano Balietti
+ * Copyright(c) 2019 Stefano Balietti
  * MIT Licensed
  *
  * Creates a simple configurable chat
@@ -39645,7 +39674,12 @@ if (!Array.prototype.indexOf) {
         },
         quit: function(w, data) {
             return (w.senderToNameMap[data.id] || data.id) + ' quit the chat';
-        }
+        },
+        textareaPlaceholder: function(w) {
+            return w.useSubmitButton ? 'Type something' :
+                'Type something and press enter to send';
+        },
+        submitButton: 'Send'
     };
 
     // ## Meta-data
@@ -39693,9 +39727,30 @@ if (!Array.prototype.indexOf) {
         };
 
         /**
+         * ### Chat.submitButton
+         *
+         * Button to send a text to server
+         *
+         * @see Chat.useSubmitButton
+         */
+        this.submitButton = null;
+
+        /**
+         * ### Chat.useSubmitButton
+         *
+         * If TRUE, a button is added to send messages else ENTER sends msgs
+         *
+         * By default, this is TRUE on mobile devices.
+         *
+         * @see Chat.submitButton
+         * @see Chat.receiverOnly
+         */
+        this.useSubmitButton = null;
+
+        /**
          * ### Chat.receiverOnly
          *
-         * If TRUE, users cannot send messages (no textarea)
+         * If TRUE, users cannot send messages (no textarea and submit button)
          *
          * @see Chat.textarea
          */
@@ -39824,6 +39879,10 @@ if (!Array.prototype.indexOf) {
                                 'a non-empty array. Found: ' + tmp);
         }
 
+        // Button or send on Enter?.
+        this.useSubmitButton = 'undefined' === typeof options.useSubmitButton ?
+            !J.isMobileAgent() : !!options.useSubmitButton;
+
         // Build maps.
         this.recipientsIds = new Array(tmp.length);
         this.recipientToSenderMap = {};
@@ -39855,7 +39914,7 @@ if (!Array.prototype.indexOf) {
         this.uncollapseOnMsg = options.uncollapseOnMsg || false;
 
         if (options.initialMsg) {
-            if ('object' !== typeof options.initialMsg) {                
+            if ('object' !== typeof options.initialMsg) {
                 throw new TypeError('Chat.init: initialMsg must be ' +
                                     'object or undefined. Found: ' +
                                     options.initialMsg);
@@ -39867,7 +39926,7 @@ if (!Array.prototype.indexOf) {
 
     Chat.prototype.append = function() {
         var that;
-        var inputGroup, span, ids;
+        var inputGroup;
 
         this.chatDiv = W.get('div', { className: 'chat_chat' });
         this.bodyDiv.appendChild(this.chatDiv);
@@ -39877,32 +39936,33 @@ if (!Array.prototype.indexOf) {
 
             // Input group.
             inputGroup = document.createElement('div');
+            inputGroup.className = 'chat_inputgroup';
 
             this.textarea = W.get('textarea', {
-                className: 'chat_textarea form-control'
+                className: 'chat_textarea form-control',
+                placeholder: this.getText('textareaPlaceholder')
             });
-
-            ids = this.recipientsIds;
-            this.textarea.onkeydown = function(e) {
-                var msg, to;
-                var keyCode; 
-                e = e || window.event;
-                keyCode = e.keyCode || e.which;
-                if (keyCode==13) {
-                    msg = that.readTextarea();
-                    if (msg === '') {
-                        node.warn('no text, no chat message sent.');
-                        return;
-                    }
-                    // Simplify things, if there is only one recipient.
-                    to = ids.length === 1 ? ids[0] : ids;
-                    that.writeMsg('outgoing', { msg: msg }); // to not used now.
-                    node.say(that.chatEvent, to, msg);
-                }
-            };
-        
             inputGroup.appendChild(this.textarea);
-            // inputGroup.appendChild(span);
+
+            if (this.useSubmitButton) {
+                // Make sure the button displays next to textarea.
+                // this.textarea.className += ' chat_textarea_btn';
+                this.submitButton = W.get('button', {
+                    className: 'btn-sm btn-info form-control chat_submit',
+                    innerHTML: this.getText('submitButton')
+                });
+                this.submitButton.onclick = function() {
+                    sendMsg(that);
+                };
+                inputGroup.appendChild(this.submitButton);
+            }
+            else {
+                this.textarea.onkeydown = function(e) {
+                    e = e || window.event;
+                    if ((e.keyCode || e.which) === 13) sendMsg(that);
+                };
+            }
+
             this.bodyDiv.appendChild(inputGroup);
         }
 
@@ -39983,6 +40043,29 @@ if (!Array.prototype.indexOf) {
         if (this.db) out.msgs = db.fetch();
         return out;
     };
+
+    // ## Helper functions.
+
+    // ### sendMsg
+    // Reads the textarea and delivers the msg to the server.
+    function sendMsg(that) {
+        var msg, to, ids;
+
+        msg = that.readTextarea();
+
+        // Move cursor at the beginning.
+        if (msg === '') {
+            node.warn('no text, no chat message sent.');
+            return;
+        }
+        // Simplify things, if there is only one recipient.
+        ids = that.recipientsIds;
+        to = ids.length === 1 ? ids[0] : ids;
+        that.writeMsg('outgoing', { msg: msg }); // to not used now.
+        node.say(that.chatEvent, to, msg);
+        // Make sure the cursor goes back to top.
+        setTimeout(function() { that.textarea.value = ''; });
+    }
 
 })(node);
 

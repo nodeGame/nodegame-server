@@ -578,13 +578,11 @@ div.svogauge {
 }
 
 .docked {
-  position: absolute;
+  position: fixed;
   bottom: 0px;
   right: 10px;
-  width: 330px;
   margin-left: 20px;
 }
-
 
 
 /* Chat */
@@ -602,9 +600,24 @@ div.svogauge {
 }
 
 .chat_textarea {
-  height: 50px;
-  width: 100%;
   resize: none;
+  width: 100%;  
+}
+
+.chat_textarea_btn {
+  width: 78%;
+  display: inline;
+}
+
+.chat_submit {
+  height: auto;
+  width: 20%;
+  max-width: 300px;
+}
+
+.chat_inputgroup {
+  display: inline-flex;
+  width: 100%;
 }
 
 .chat_me {
