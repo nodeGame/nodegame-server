@@ -193,6 +193,12 @@ p {
   cursor: hand;
 }
 
+.centered, .requirements, .waitingroom {
+  max-width: 42em;
+  width: 90%;
+  margin: 0 auto;
+}
+
 /*
    Stylesheet for nodeGame widgets
    Copyright(c) 2017 Stefano Balietti
@@ -309,9 +315,6 @@ p {
 
 /* Requirements */
 .requirements, .waitingroom {
-  max-width: 42em;
-  width: 90%;
-  margin: 0 auto;
   font-size: 1.2em;
   box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
 }
@@ -337,7 +340,7 @@ p {
 .waitingroom .panel-body div#timer-div {
   margin-top: 30px;
 }
-.waitingroom .panel-body div#player-count-div > p#player-count {
+.waitingroom .panel-body div#exec-mode-div > p#player-count {
   font-size: 40px;
   clear: both;
   margin-top: 30px;
@@ -500,7 +503,6 @@ div.svogauge td.choicetable-left hr {
   margin-left: 20px;
 }
 
-
 /* Chat */
 .chat {
   /* min-width: 500px; */
@@ -516,7 +518,7 @@ div.svogauge td.choicetable-left hr {
 
 .chat_textarea {
   resize: none;
-  width: 100%;  
+  width: 100%;
 }
 
 .chat_textarea_btn {
