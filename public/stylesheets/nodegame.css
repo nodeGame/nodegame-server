@@ -505,9 +505,9 @@ div.svogauge td.choicetable-left hr {
 
 /* Chat */
 .chat {
-  /* min-width: 500px; */
+  min-width: 300px;
   max-width: 800px;
-  font-size: 16px;
+  font-size: 16px; /* not in monitor.css */
 }
 
 .chat_chat {
