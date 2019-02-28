@@ -501,14 +501,18 @@ div.svogauge td.choicetable-left hr {
   bottom: 0px;
   right: 10px;
   margin-left: 20px;
+  box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
 }
 
 /* Chat */
 .chat {
-  width: 350px;
-  height: 425px;
   font-size: 16px;
   /* not in monitor.css */
+}
+
+.chat .panel-body {
+  width: 330px;
+  height: 380px;
 }
 
 .chat_chat {

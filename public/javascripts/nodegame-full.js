@@ -37995,7 +37995,7 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # Widget
- * Copyright(c) 2018 Stefano Balietti <ste@nodegame.org>
+ * Copyright(c) 2019 Stefano Balietti <ste@nodegame.org>
  * MIT Licensed
  *
  * Prototype of a widget class
@@ -38148,6 +38148,17 @@ if (!Array.prototype.indexOf) {
      */
     Widget.prototype.isHighlighted = function() {
         return !!this.highlighted;
+    };
+
+    /**
+     * ### Widget.isHighlighted
+     *
+     * Returns TRUE if widget is currently docked
+     *
+     * @return {boolean} TRUE, if widget is currently docked
+     */
+    Widget.prototype.isDocked = function() {
+        return !!this.docked;
     };
 
     /**
@@ -39006,6 +39017,13 @@ if (!Array.prototype.indexOf) {
         this.lastAppended = null;
 
         /**
+         * ### Widgets.docked
+         *
+         * List of widget currently docked
+         */
+        this.docked = [];
+        
+        /**
          * ### Widgets.collapseTarget
          *
          * Collapsed widgets are by default moved inside element
@@ -39382,7 +39400,7 @@ if (!Array.prototype.indexOf) {
      * @see Widgets.get
      */
     Widgets.prototype.append = function(w, root, options) {
-        var tmp;
+        var tmp, lastDocked, right;
 
         if ('string' !== typeof w && 'object' !== typeof w) {
             throw new TypeError('Widgets.append: w must be string or object. ' +
@@ -39426,8 +39444,20 @@ if (!Array.prototype.indexOf) {
         };
 
         // Dock it.
-        // TODO: handle multiple dockedd widgets.
-        if (options.docked) tmp.className.push('docked');
+        if (options.docked) {
+            tmp.className.push('docked');
+            w.docked = true;
+            debugger
+            right = 0;
+            if (this.docked.length) {
+                lastDocked = this.docked[(this.docked.length-1)];
+                right = lastDocked.panelDiv.style.right;
+                right = parseInt(right.substring(0, right.length - 2), 10);
+                right += lastDocked.panelDiv.offsetWidth;                
+            }
+            right += 20;
+            this.docked.push(w);
+        }
 
         // Add div inside widget.
         w.panelDiv = W.get('div', tmp);
@@ -39466,6 +39496,10 @@ if (!Array.prototype.indexOf) {
         w.append();
         w.appended = true;
 
+        if (right) {
+            w.panelDiv.style.right = (right + "px");
+        }
+        
         // Store reference of last appended widget.
         this.lastAppended = w;
 
@@ -39937,7 +39971,7 @@ if (!Array.prototype.indexOf) {
 
         this.on('uncollapsed', function() {
             // Make sure that we do not have the title highlighted any more.
-            that.setTitle(that.title);
+            that.setTitle(that.title);       
             node.say(that.chatEvent + '_COLLAPSE', that.recipientsIds, false);
         });
 
