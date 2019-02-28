@@ -39663,16 +39663,15 @@ if (!Array.prototype.indexOf) {
     // ## Texts.
 
     Chat.texts = {
-        me: 'Me',
         outgoing: function(w, data) {
+            return data.msg;
             // Id could be defined as a specific to (not used now).
-            return '<span class="chat_me">' + w.getText('me') +
-                '</span>: </span class="chat_msg">' + data.msg + '</span>';
+            return '<span class="chat_msg_me">' + data.msg + '</span>';
         },
         incoming: function(w, data) {
-            return '<span class="chat_others">' +
+            return '<span><span class="chat_id_other">' +
                 (w.senderToNameMap[data.id] || data.id) +
-                '</span>: </span class="chat_msg">' + data.msg + '</span>';
+                '</span>: ' + data.msg + '</span>';
         },
         quit: function(w, data) {
             return (w.senderToNameMap[data.id] || data.id) + ' quit the chat';
@@ -39992,8 +39991,10 @@ if (!Array.prototype.indexOf) {
     };
 
     Chat.prototype.writeMsg = function(code, data) {
-        W.add('span', this.chatDiv, { innerHTML: this.getText(code, data) });
-        W.writeln('', this.chatDiv);
+        W.add('div', this.chatDiv, {
+            innerHTML: this.getText(code, data),
+            className: 'chat_msg chat_msg_' + code
+        });
         this.chatDiv.scrollTop = this.chatDiv.scrollHeight;
     };
 

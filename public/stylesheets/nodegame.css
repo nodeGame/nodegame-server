@@ -507,7 +507,8 @@ div.svogauge td.choicetable-left hr {
 .chat {
   min-width: 300px;
   max-width: 800px;
-  font-size: 16px; /* not in monitor.css */
+  font-size: 16px;
+  /* not in monitor.css */
 }
 
 .chat_chat {
@@ -515,13 +516,11 @@ div.svogauge td.choicetable-left hr {
   height: 200px;
   width: 100%;
   padding: 5px;
-  margin: 2px; /* added test */
 }
 
 .chat_textarea {
   resize: none;
   width: 100%;
-  margin: 2px; /* added test */
 }
 
 .chat_textarea_btn {
@@ -533,7 +532,6 @@ div.svogauge td.choicetable-left hr {
   height: auto;
   width: 20%;
   max-width: 300px;
-  margin: 2px; /* added test */
 }
 
 .chat_inputgroup {
@@ -541,8 +539,20 @@ div.svogauge td.choicetable-left hr {
   width: 100%;
 }
 
-.chat_me {
-  font-weight: bold;
+.chat_msg, .chat_msg_outgoing, .chat_msg_incoming {
+  clear: both;
+  padding: 5px;
+  margin: 1px;
+}
+
+.chat_msg_incoming {
+  float: left;
+  background: #f4f4f4;
+}
+
+.chat_msg_outgoing {
+  float: right;
+  background: #f2f7ff;
 }
 
 /*# sourceMappingURL=nodegame.css.map */

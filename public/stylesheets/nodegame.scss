@@ -36,7 +36,7 @@ body {
 
    &::after {
     content: "";
-    clear: both;   
+    clear: both;
     display: table;
   }
 }
@@ -70,7 +70,7 @@ p {
 
 #ng_mainframe {
   /* This creates problems in Chrome #7 nodegame-window */
-  /* position: absolute; */ 
+  /* position: absolute; */
   width: 100%;
   /* min-height: 600px; will be changed by js resize code */
   font-family: $base-font;
@@ -123,10 +123,10 @@ p {
   border-radius: 0 0 5px 5px;
   font-size: $font-size-max-width;
   max-width: $max-width-header;
-  
+
   &::after {
     content: "";
-    clear: both;   
+    clear: both;
     display: table;
   }
 }
@@ -211,7 +211,7 @@ p {
   cursor: hand;
 }
 
-.centered {  
+.centered {
   max-width: 42em;
   width: 90%;
   margin: 0 auto;
@@ -229,7 +229,7 @@ p {
 /* Widgets inside the header */
 
 #ng_header {
-  
+
   .ng_widget {
     float: left;
     margin-right: 20px;
@@ -269,16 +269,16 @@ p {
 
 .ng_header_position-horizontal-t,
 .ng_header_position-horizontal-b {
-  
+
   .visualround {
 
     margin-right: 10px;
-    
+
     .rounddiv,
     .stagediv {
 
       float: left;
-      
+
       .title {
         float: left;
         margin-right: 6px;
@@ -300,12 +300,12 @@ p {
 
     .no-panel-heading {
       float: left;
-      margin-right: 8px;    
+      margin-right: 8px;
     }
 
     .no-panel-body {
       float: right;
-    }  
+    }
   }
 }
 
@@ -317,7 +317,7 @@ p {
     font-weight: bold;
   }
 }
-  
+
 /* Language Selector */
 .languageselector {
   float: center;
@@ -355,7 +355,7 @@ p {
 /* Requirements */
 .requirements {
   @extend .centered;
-  
+
   font-size: 1.2em;
   box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
 }
@@ -378,7 +378,7 @@ p {
 
 .waitingroom {
   @extend .requirements;
-  
+
   .panel-body {
     text-align: center;
 
@@ -401,7 +401,7 @@ p {
 
     div > span#span_dots {
       font-size: 40px;
-    }    
+    }
   }
 }
 
@@ -430,7 +430,7 @@ textarea.choicetable-freetext {
 }
 
 table.choicetable {
-  
+
   td {
     word-wrap: break-word;
     border: 1px solid #333;
@@ -453,12 +453,12 @@ table.choicetable {
     padding-right: 15px;
     text-align: right;
   }
-  
+
   td.choicetable-left:hover,
   td.choicetable-right:hover {
     background: inherit;
     cursor: default;
-  }  
+  }
 }
 
 table.clickable td:hover {
@@ -489,7 +489,7 @@ div.moodgauge {
     text-align: center;
     border-spacing: 0 5px;
     border-collapse: separate;
-  
+
 
     td {
       width: 80px !important;
@@ -555,12 +555,12 @@ div.svogauge {
 /* EndScreen */
 
 .endscreen {
-  
+
     .emailform,
     .feedback {
         margin-top: 30px;
     }
-    
+
 }
 .endscreen {
     .no-panel-body {
@@ -607,7 +607,7 @@ div.svogauge {
 
 .chat_textarea {
   resize: none;
-  width: 100%;  
+  width: 100%;
 }
 
 .chat_textarea_btn {
@@ -626,6 +626,22 @@ div.svogauge {
   width: 100%;
 }
 
-.chat_me {
-  font-weight: bold;
+.chat_msg {
+  clear: both;
+  padding: 5px;
+  margin: 1px;
+}
+
+.chat_msg_incoming {
+  @extend .chat_msg;
+
+  float: left;
+  background: #f4f4f4;
+}
+
+.chat_msg_outgoing {
+  @extend .chat_msg;
+
+  float: right;
+  background: #f2f7ff;
 }
