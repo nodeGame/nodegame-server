@@ -39019,10 +39019,24 @@ if (!Array.prototype.indexOf) {
         /**
          * ### Widgets.docked
          *
-         * List of widget currently docked
+         * List of docked widgets
          */
         this.docked = [];
-        
+
+        /**
+         * ### Widgets.dockedHidden
+         *
+         * List of hidden docked widgets (cause not enough space on page)
+         */
+        this.dockedHidden = [];
+
+        /**
+         * ### Widgets.boxSelector
+         *
+         * A box selector widget containing hidden docked widgets
+         */
+        this.boxSelector = null
+
         /**
          * ### Widgets.collapseTarget
          *
@@ -39045,9 +39059,7 @@ if (!Array.prototype.indexOf) {
             }
 
             // Destroy all existing widgets.
-            if (conf.destroyAll) {
-                that.destroyAll();
-            }
+            if (conf.destroyAll) that.destroyAll();            
 
             // Append existing widgets.
             if (conf.append) {
@@ -39223,10 +39235,11 @@ if (!Array.prototype.indexOf) {
                             'dependencies.');
         }
 
+        // NOT USED ANY MORE.
         // Add default properties to the user options.
-        if (WidgetPrototype.defaults) {
-            J.mixout(options, J.clone(WidgetPrototype.defaults));
-        }
+        // if (WidgetPrototype.defaults) {
+        //     J.mixout(options, J.clone(WidgetPrototype.defaults));
+        // }
 
         // Create widget.
         widget = new WidgetPrototype(options);
@@ -39255,10 +39268,10 @@ if (!Array.prototype.indexOf) {
             WidgetPrototype.footer : options.footer;
         widget.className = WidgetPrototype.className;
         if (J.isArray(options.className)) {
-            widget.className += options.className.join(' ');
+            widget.className += ' ' + options.className.join(' ');
         }
         else if ('string' === typeof options.className) {
-            widget.className += options.className;
+            widget.className += ' ' + options.className;
         }
         else if ('undefined' !== typeof options.className) {
             throw new TypeError('widgets.append: className must be array, ' +
@@ -39266,6 +39279,9 @@ if (!Array.prototype.indexOf) {
                                 options.className);
         }
 
+        widget.panel = 'undefined' === typeof options.panel ?
+            WidgetPrototype.panel : options.panel;
+        
         widget.context = 'undefined' === typeof options.context ?
             WidgetPrototype.context : options.context;
         widget.sounds = 'undefined' === typeof options.sounds ?
@@ -39365,6 +39381,15 @@ if (!Array.prototype.indexOf) {
                 }
             }
 
+            // Remove from lastAppended.
+            if (this.lastAppended && this.lastAppended.wid === widget.wid) {
+                node.warn('node.widgets.lastAppended destroyed.');
+                this.lastAppended = null;
+            }
+
+            // Remove from docked.
+            if (this.docked) closeDocked(widget.wid, false);
+            
             this.emit('destroyed');
         };
 
@@ -39401,6 +39426,7 @@ if (!Array.prototype.indexOf) {
      */
     Widgets.prototype.append = function(w, root, options) {
         var tmp, lastDocked, right;
+        var dockedMargin;
 
         if ('string' !== typeof w && 'object' !== typeof w) {
             throw new TypeError('Widgets.append: w must be string or object. ' +
@@ -39428,7 +39454,7 @@ if (!Array.prototype.indexOf) {
         else if (root === W.getHeader() &&
                  'undefined' === typeof options.panel) {
 
-            options.panel = false;
+            options.panel = w.panel || false;
         }
 
         // Check if it is a object (new widget).
@@ -39444,19 +39470,10 @@ if (!Array.prototype.indexOf) {
         };
 
         // Dock it.
-        if (options.docked) {
+        if (options.docked) {            
             tmp.className.push('docked');
-            w.docked = true;
-            debugger
-            right = 0;
-            if (this.docked.length) {
-                lastDocked = this.docked[(this.docked.length-1)];
-                right = lastDocked.panelDiv.style.right;
-                right = parseInt(right.substring(0, right.length - 2), 10);
-                right += lastDocked.panelDiv.offsetWidth;                
-            }
-            right += 20;
             this.docked.push(w);
+            w.docked = true;
         }
 
         // Add div inside widget.
@@ -39496,10 +39513,9 @@ if (!Array.prototype.indexOf) {
         w.append();
         w.appended = true;
 
-        if (right) {
-            w.panelDiv.style.right = (right + "px");
-        }
-        
+        // Make sure the distance from the right side is correct.
+        if (w.docked) setRightStyle(w);
+
         // Store reference of last appended widget.
         this.lastAppended = w;
 
@@ -39663,7 +39679,106 @@ if (!Array.prototype.indexOf) {
         node.err(d + ' not found. ' + name + ' cannot be loaded.');
     }
 
-    //Expose Widgets to the global object.
+    // ### closeDocked
+    //
+    // Shifts docked widgets on page and remove a widget from the docked list
+    //
+    // @param {string} wid The widget id
+    // @param {boolean} remove TRUE, if widget should be removed from
+    //    docked list. Default: FALSE.
+    //
+    // @return {boolean} TRUE if a widget with given wid was found
+    function closeDocked(wid, hide) {
+        var d, i, len, width, closed;
+        d = node.widgets.docked;
+        len = d.length;
+        for (i = 0; i < len; i++) {
+            if (width) {
+                d[i].panelDiv.style.right =
+                    (getPxNum(d[i].panelDiv.style.right) - width) + 'px';
+            }
+            else if (d[i].wid === wid) {
+                width = d[i].dockedOffsetWidth;
+                // Remove from docked list.
+                closed = node.widgets.docked.splice(i, 1)[0];
+                if (hide) {
+                    node.widgets.dockedHidden.push(closed);
+                    closed.hide();
+
+                    if (!node.widgets.boxSelector) {
+                        node.widgets.boxSelector =
+                            node.widgets.append('BoxSelector', document.body, {
+                                className: 'docked-left',
+                                getId: function(i) { return i.wid; },
+                                getText: function(i) { return i.title; },
+                                onclick: function(i, id) {
+                                    i.show();
+                                    // First add back to docked list,
+                                    // then set right style.
+                                    node.widgets.docked.push(i);
+                                    setRightStyle(i);
+                                    this.removeItem(id);
+                                    if (this.items.length === 0) {
+                                        this.destroy();
+                                        node.widgets.boxSelector = null;
+                                    }
+                                },
+                            });
+                        
+                    }
+                    node.widgets.boxSelector.addItem(closed);
+                }
+                // Decrement len and i.
+                len--;
+                i--;                
+            }
+        }
+        return !!width;
+    }
+
+    function setRightStyle(w) {
+        var dockedMargin, safeMargin;
+        var lastDocked, right, ws, tmp;
+        
+        safeMargin = 200;
+        dockedMargin = 20;
+        
+        ws = node.widgets;
+        
+        right = 0;
+        // The widget w has been already added to the docked list.
+        if (ws.docked.length > 1) {
+            lastDocked = ws.docked[(ws.docked.length - 2)];
+            right = getPxNum(lastDocked.panelDiv.style.right);
+            right += lastDocked.panelDiv.offsetWidth;
+        }
+        right += dockedMargin;
+
+        w.panelDiv.style.right = (right + "px");
+
+        // Check if there is enough space on page?
+        tmp = 0;
+        right += w.panelDiv.offsetWidth + safeMargin;
+        while (ws.docked.length > 1 &&
+               right > window.innerWidth &&
+               tmp < (ws.docked.length - 1)) {
+
+            // Make some space...
+            // right -= ws.docked[tmp].dockedOffsetWidth;
+            closeDocked(ws.docked[tmp].wid, true);
+            tmp++;
+        }
+        // Store final offsetWidth in widget, because we need it after
+        // it is destroyed.
+        w.dockedOffsetWidth = w.panelDiv.offsetWidth + dockedMargin;
+    }
+
+    // Returns the numeric value of string containg 'px' at the end, e.g. 20px.
+    function getPxNum(str) {
+        return parseInt(str.substring(0, str.length - 2), 10);
+    }
+
+    // Expose Widgets to the global object.
     node.widgets = new Widgets();
 
 })(
@@ -39671,6 +39786,264 @@ if (!Array.prototype.indexOf) {
     ('undefined' !== typeof window) ? window : module.parent.exports.window,
     ('undefined' !== typeof window) ? window.node : module.parent.exports.node
 );
+
+/**
+ * # BoxSelector
+ * Copyright(c) 2019 Stefano Balietti
+ * MIT Licensed
+ *
+ * Creates a simple box that opens a menu of items to choose from
+ *
+ * www.nodegame.org
+ */
+(function(node) {
+
+    "use strict";
+
+    var NDDB =  node.NDDB;
+
+    node.widgets.register('BoxSelector', BoxSelector);
+
+    // ## Meta-data
+
+    BoxSelector.version = '1.0.0';
+    BoxSelector.description = 'Creates a simple box that opens a menu ' +
+        'of items to choose from.';
+
+    BoxSelector.panel = false;
+    BoxSelector.title = false;
+    BoxSelector.className = 'boxselector';
+
+    // ## Dependencies
+
+    BoxSelector.dependencies = {
+        JSUS: {}
+    };
+
+    /**
+     * ## BoxSelector constructor
+     *
+     * `BoxSelector` is a simple configurable chat
+     *
+     * @see BoxSelector.init
+     */
+    function BoxSelector() {
+
+        /**
+         * ### BoxSelector.button
+         *
+         * The button that if pressed shows the items
+         *
+         * @see BoxSelector.ul
+         */
+        this.button = null;
+        
+        /**
+         * ### BoxSelector.buttonText
+         *
+         * The text on the button
+         *
+         * @see BoxSelector.button
+         */
+        this.buttonText = '';
+
+        /**
+         * ### BoxSelector.items
+         *
+         * List of items to choose from
+         */
+        this.items = [];
+
+        /**
+         * ### BoxSelector.onclick
+         *
+         * A callback to call when an item from the list is clicked
+         *
+         * Callback is executed with the BoxSelector instance as context.
+         *
+         * Optional. If not specified, items won't be clickable.
+         *
+         * @see BoxSelector.items
+         */
+        this.onclick = null;
+
+        /**
+         * ### BoxSelector.getText
+         *
+         * A callback that renders an element into a text
+         */
+        this.getText = null;
+
+        /**
+         * ### BoxSelector.getId
+         *
+         * A callback that returns the id of an item
+         *
+         * Default: returns item.id.
+         */
+        this.getId = function(item) { return item.id; };
+
+        /**
+         * ### BoxSelector.ul
+         *
+         * The HTML UL element displaying the list of items
+         *
+         * @see BoxSelector.items
+         */
+        this.ul = null;
+    }
+
+    // ## BoxSelector methods
+
+    /**
+     * ### BoxSelector.init
+     *
+     * Initializes the widget
+     *
+     * @param {object} options Configuration options.
+     */
+    BoxSelector.prototype.init = function(options) {
+        if (options.onclick) {
+            if ('function' !== typeof options.onclick) {
+                throw new Error('BoxSelector.init: options.getId must be ' +
+                                'function or undefined. Found: ' +
+                                options.getId);
+            }    
+            this.onclick = options.onclick;
+        }
+        
+        if ('function' !== typeof options.getText) {
+            throw new Error('BoxSelector.init: options.getText must be ' +
+                            'function. Found: ' + options.getText);
+        }
+        this.getText = options.getText;
+
+        if (options.getId && 'function' !== typeof options.getId) {
+            throw new Error('BoxSelector.init: options.getId must be ' +
+                            'function or undefined. Found: ' + options.getId);
+        }
+        this.getId = options.getId;
+
+    
+    };
+
+
+    BoxSelector.prototype.append = function() {
+        var that, ul, btn, btnGroup, toggled;
+        
+        btnGroup = W.add('div', this.bodyDiv);
+        btnGroup.role = 'group';
+        btnGroup['aria-label'] = 'Select Items';
+        btnGroup.className = 'btn-group dropup';
+        
+        // Here we create the Button holding the treatment.
+        btn = this.button = W.add('button', btnGroup);
+        btn.className = 'btn btn-default btn dropdown-toggle';
+        btn['data-toggle'] = 'dropdown';
+        btn['aria-haspopup'] = 'true';
+        btn['aria-expanded'] = 'false';
+        btn.innerHTML = this.buttonText + '&nbsp;';
+
+        W.add('span', btn, { className: 'caret' });
+        
+        // Here the create the UL of treatments.
+        // It will be populated later.
+        ul = this.ul = W.add('ul', btnGroup);
+        ul.className = 'dropdown-menu';
+        ul.style.display = 'none';
+
+        // Variable toggled controls if the dropdown menu
+        // is displayed (we are not using bootstrap js files)
+        // and we redo the job manually here.
+        toggled = false;
+        btn.onclick = function() {
+            if (toggled) {
+                ul.style.display = 'none';
+                toggled = false;
+            }
+            else {
+                ul.style.display = 'block';
+                toggled = true;
+            }
+        };
+        
+        if (this.onclick) {
+            that = this;
+            ul.onclick = function(eventData) {
+                var id, i, len;
+                id = eventData.target;
+                // When '' is hidden by bootstrap class.
+                ul.style.display = '';
+                toggled = false;
+                id = id.parentNode.id;
+                // Clicked on description?
+                if (!id) id = eventData.target.parentNode.parentNode.id;
+                // Nothing relevant clicked (e.g., header).
+                if (!id) return;
+                len = that.items.length;
+                // Call the onclick.
+                for ( i = 0 ; i < len ; i++) {
+                    if (that.getId(that.items[i]) === id) {
+                        that.onclick.call(that, that.items[i], id);
+                        break;
+                    }
+                }
+            };
+        }
+    };
+
+    BoxSelector.prototype.addItem = function(item) {
+        var ul, li, a, tmp;
+        ul = this.ul;
+        li = document.createElement('li');
+        // Text.
+        tmp = this.getText(item);
+        if (!tmp || 'string' !== typeof tmp) {
+            throw new Error('BoxSelector.addItem: getText did not return a ' +
+                            'string. Found: ' + tmp + '. Item: ' + item);
+        }
+        if (this.onclick) {
+            a = document.createElement('a');
+            a.href = '#';
+            a.innerHTML = tmp;        
+            li.appendChild(a);
+        }
+        else {
+            li.innerHTML = tmp;        
+        }
+        // Id.
+        tmp = this.getId(item);
+        if (!tmp || 'string' !== typeof tmp) {
+            throw new Error('BoxSelector.addItem: getId did not return a ' +
+                            'string. Found: ' + tmp + '. Item: ' + item);
+        }
+        li.id = tmp;
+        li.className = 'dropdown-header';
+        ul.appendChild(li);
+        this.items.push(item);
+    };
+
+    BoxSelector.prototype.removeItem = function(id) {
+        var i, len, elem;
+        len = this.items.length;
+        for ( i = 0 ; i < len ; i++) {
+            if (this.getId(this.items[i]) === id) {
+                elem = W.gid(id);
+                this.ul.removeChild(elem);
+                return this.items.splice(i, 1);
+            }
+        }
+        return false;
+    };
+
+    BoxSelector.prototype.getValues = function() {
+        return this.items;
+    };
+
+    // ## Helper functions.
+
+
+})(node);
 
 /**
  * # Chat
@@ -39702,9 +40075,14 @@ if (!Array.prototype.indexOf) {
             // return '<span class="chat_msg_me">' + data.msg + '</span>';
         },
         incoming: function(w, data) {
-            return '<span><span class="chat_id_other">' +
-                (w.senderToNameMap[data.id] || data.id) +
-                '</span>: ' + data.msg + '</span>';
+            var str;
+            str = '<span>';
+            if (w.recipientsIds.length > 1) {
+                str += '<span class="chat_id_other">' +
+                    (w.senderToNameMap[data.id] || data.id) + '</span>: ';
+            }
+            str += data.msg + '</span>';
+            return str;
         },
         quit: function(w, data) {
             return (w.senderToNameMap[data.id] || data.id) + ' quit the chat';
@@ -39843,13 +40221,6 @@ if (!Array.prototype.indexOf) {
         this.initialMsg = null;
 
         /**
-         * ### Chat.displayNames
-         *
-         * Array of names of the recipient/s of the message
-         */
-        this.displayNames = null;
-
-        /**
          * ### Chat.recipientsIds
          *
          * Array of ids of the recipient/s of the message
@@ -39893,7 +40264,6 @@ if (!Array.prototype.indexOf) {
      * The  options object can have the following attributes:
      *   - `receiverOnly`: If TRUE, no message can be sent
      *   - `chatEvent`: The event to fire when sending/receiving a message
-     *   - `displayName`: Function which displays the sender's name
      */
     Chat.prototype.init = function(options) {
         var tmp, i, rec, that;
@@ -39919,16 +40289,16 @@ if (!Array.prototype.indexOf) {
             if (!this.db) this.db = new NDDB();
         }
 
+        // Button or send on Enter?.
+        this.useSubmitButton = 'undefined' === typeof options.useSubmitButton ?
+            J.isMobileAgent() : !!options.useSubmitButton;
+        
         // Participants.
         tmp = options.participants;
         if (!J.isArray(tmp) || !tmp.length) {
             throw new TypeError('Chat.init: participants must be ' +
                                 'a non-empty array. Found: ' + tmp);
         }
-
-        // Button or send on Enter?.
-        this.useSubmitButton = 'undefined' === typeof options.useSubmitButton ?
-            J.isMobileAgent() : !!options.useSubmitButton;
 
         // Build maps.
         this.recipientsIds = new Array(tmp.length);
@@ -39960,6 +40330,9 @@ if (!Array.prototype.indexOf) {
         // Other.
         this.uncollapseOnMsg = options.uncollapseOnMsg || false;
 
+        this.printStartTime = options.printStartTime || false;
+        this.printNames = options.printNames || false;
+        
         if (options.initialMsg) {
             if ('object' !== typeof options.initialMsg) {
                 throw new TypeError('Chat.init: initialMsg must be ' +
@@ -39982,8 +40355,7 @@ if (!Array.prototype.indexOf) {
 
 
     Chat.prototype.append = function() {
-        var that;
-        var inputGroup;
+        var that, inputGroup, initialText;
 
         this.chatDiv = W.get('div', { className: 'chat_chat' });
         this.bodyDiv.appendChild(this.chatDiv);
@@ -40021,11 +40393,29 @@ if (!Array.prototype.indexOf) {
             this.bodyDiv.appendChild(inputGroup);
         }
 
+        if (this.printStartTime) {
+            W.add('div', this.chatDiv, {
+                innerHTML: Date(J.getDate()),
+                className: 'chat_event'
+            });
+            initialText = true;
+        }
+        
+        if (this.printNames) {
+            W.add('div', this.chatDiv, {
+                className: 'chat_event',
+                innerHTML: 'Participants: ' +
+                    J.keys(this.senderToNameMap).join(', ')
+            });
+            initialText = true;
+        }
 
-        W.add('div', this.chatDiv, {
-            innerHTML: Date(J.getDate()),
-            className: 'chat_time'
-        });
+        if (initialText) {
+            W.add('div', this.chatDiv, {
+                className: 'chat_event',
+                innerHTML: '&nbsp;'
+            });
+        }
         
         if (this.initialMsg) {
             this.writeMsg(this.initialMsg.id ? 'incoming' : 'outgoing',
@@ -40041,9 +40431,11 @@ if (!Array.prototype.indexOf) {
     };
 
     Chat.prototype.writeMsg = function(code, data) {
+        var c;
+        c = (code === 'incoming' || code === 'outgoing') ? code : 'event';
         W.add('div', this.chatDiv, {
             innerHTML: this.getText(code, data),
-            className: 'chat_msg chat_msg_' + code
+            className: 'chat_msg chat_msg_' + c 
         });
         this.chatDiv.scrollTop = this.chatDiv.scrollHeight;
     };
@@ -40104,7 +40496,6 @@ if (!Array.prototype.indexOf) {
     Chat.prototype.getValues = function() {
         var out;
         out = {
-            names: this.displayNames,
             participants: this.participants,
             totSent: this.stats.sent,
             totReceived: this.stats.received,
