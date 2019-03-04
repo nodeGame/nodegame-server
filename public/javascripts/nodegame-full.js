@@ -16231,7 +16231,7 @@ if (!Array.prototype.indexOf) {
     /**
      * #### Block.next
      *
-     * Gets the next item in a hierarchy of Blocksg
+     * Gets the next item in a hierarchy of Blocks
      *
      * If there is not next item, false is returned.
      * If the next item is another Block, next is called recursively.
@@ -16835,7 +16835,7 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # Stager stages and steps
- * Copyright(c) 2016 Stefano Balietti
+ * Copyright(c) 2019 Stefano Balietti
  * MIT Licensed
  */
 (function(exports, node) {
@@ -16860,12 +16860,12 @@ if (!Array.prototype.indexOf) {
 
     var BLOCK_DEFAULT           = blockTypes.BLOCK_DEFAULT;
     var BLOCK_STAGEBLOCK        = blockTypes.BLOCK_STAGEBLOCK;
-    var BLOCK_STAGE             = blockTypes. BLOCK_STAGE;
-    var BLOCK_STEPBLOCK         = blockTypes. BLOCK_STEPBLOCK;
+    var BLOCK_STAGE             = blockTypes.BLOCK_STAGE;
+    var BLOCK_STEPBLOCK         = blockTypes.BLOCK_STEPBLOCK;
     var BLOCK_STEP              = blockTypes.BLOCK_STEP;
 
     var BLOCK_ENCLOSING         = blockTypes.BLOCK_ENCLOSING;
-    var BLOCK_ENCLOSING_STEPS   = blockTypes. BLOCK_ENCLOSING_STEPS;
+    var BLOCK_ENCLOSING_STEPS   = blockTypes.BLOCK_ENCLOSING_STEPS;
     var BLOCK_ENCLOSING_STAGES  = blockTypes.BLOCK_ENCLOSING_STAGES;
 
     /**
@@ -16884,9 +16884,8 @@ if (!Array.prototype.indexOf) {
         checkStepValidity(step, 'addStep');
 
         if (this.steps.hasOwnProperty(step.id)) {
-            throw new Error('Stager.addStep: step id already ' +
-                            'existing: ' + step.id +
-                            '. Use extendStep to modify it.');
+            throw new Error('Stager.addStep: step "' + step.id + '" already ' +
+                            'existing, use extendStep to modify it');
         }
         this.steps[step.id] = step;
     };
@@ -16924,8 +16923,8 @@ if (!Array.prototype.indexOf) {
         id = stage.id;
 
         if (this.stages.hasOwnProperty(id)) {
-            throw new Error('Stager.addStage: stage id already existing: ' +
-                            id + '. Use extendStage to modify it.');
+            throw new Error('Stager.addStage: stage "' + id + '" already ' +
+                            'existing, use extendStage to modify it');
         }
 
         // The stage contains only 1 step inside given through the callback
@@ -16973,8 +16972,7 @@ if (!Array.prototype.indexOf) {
         }
         step = this.steps[stepId];
         if (!step) {
-            throw new Error('Stager.cloneStep: step not found: ' +
-                            stepId);
+            throw new Error('Stager.cloneStep: step not found: ' + stepId);
         }
         step = J.clone(step);
         step.id = newStepId;
@@ -16997,11 +16995,12 @@ if (!Array.prototype.indexOf) {
     Stager.prototype.cloneStage = function(stageId, newStageId) {
         var stage;
         if ('string' !== typeof stageId) {
-            throw new TypeError('Stager.cloneStage: stageId must be string.');
+            throw new TypeError('Stager.cloneStage: stageId must be string.' +
+                               'Found: ' + stageId);
         }
         if ('string' !== typeof newStageId) {
             throw new TypeError('Stager.cloneStage: newStageId must ' +
-                                'be string.');
+                                'be string. Found: ' + newStageId);
         }
         if (this.stages[newStageId]) {
             throw new Error('Stager.cloneStage: newStageId already taken: ' +
@@ -17009,8 +17008,7 @@ if (!Array.prototype.indexOf) {
         }
         stage = this.stages[stageId];
         if (!stage) {
-            throw new Error('Stager.cloneStage: stage not found: ' +
-                            stageId + '.');
+            throw new Error('Stager.cloneStage: stage not found: ' + stageId);
         }
         stage = J.clone(stage);
         stage.id = newStageId;
@@ -17038,8 +17036,8 @@ if (!Array.prototype.indexOf) {
         if (!curBlock.isType(BLOCK_ENCLOSING_STEPS) &&
             !curBlock.isType(BLOCK_STEPBLOCK)) {
 
-            throw new Error('Stager.step: step cannot be added at this ' +
-                            'point. Have you add at least one stage? ', step);
+            throw new Error('Stager.step: step "' +  step + '" cannot be ' +
+                            'added here. Have you add at least one stage?');
         }
 
         checkFinalized(this, 'step');
@@ -17115,7 +17113,7 @@ if (!Array.prototype.indexOf) {
                 nRepeats <= 0) {
 
                 throw new Error('Stager.repeat: nRepeats must be a positive ' +
-                                'number. Found: ' + nRepeats + '.');
+                                'number. Found: ' + nRepeats);
             }
 
             positions = checkPositionsParameter(positions, 'repeat');
@@ -17227,7 +17225,7 @@ if (!Array.prototype.indexOf) {
 
         if ('function' !== typeof loopFunc) {
             throw new TypeError('Stager.' + type + ': loopFunc must be ' +
-                                'function. Found: ' + loopFunc + '.');
+                                'function. Found: ' + loopFunc);
         }
 
         positions = checkPositionsParameter(positions, type);
@@ -17361,15 +17359,15 @@ if (!Array.prototype.indexOf) {
         alias = tokens.alias;
         if (id === alias) {
             throw new Error('Stager.' + method + ': id equal to alias: ' +
-                            nameAndAlias + '.');
+                            nameAndAlias);
         }
         if (alias && !that.stages[id]) {
             throw new Error('Stager.' + method + ': alias is referencing ' +
-                            'non-existing stage: ' + id + '.');
+                            'non-existing stage: ' + id);
         }
         if (alias && that.stages[alias]) {
             throw new Error('Stager.' + method + ': alias is not unique: ' +
-                            alias + '.');
+                            alias);
         }
         return tokens;
     }
@@ -17391,12 +17389,13 @@ if (!Array.prototype.indexOf) {
      * @api private
      */
     function checkStepValidity(step, method) {
-        if ('object' !== typeof step) {
-            throw new TypeError('Stager.' + method + ': step must be object.');
+        if (step === null || 'object' !== typeof step) {
+            throw new TypeError('Stager.' + method + ': step must be ' +
+                                'object. Found: ' + step);
         }
         if ('function' !== typeof step.cb) {
             throw new TypeError('Stager.' + method + ': step.cb must be ' +
-                                'function.');
+                                'function. Found: ' + step.cb);
         }
         checkStageStepId(method, 'step', step.id);
     }
@@ -17424,12 +17423,12 @@ if (!Array.prototype.indexOf) {
         }
         if ((!stage.steps && !stage.cb) || (stage.steps && stage.cb)) {
             throw new TypeError('Stager.' + method + ': stage must have ' +
-                                'either a steps or a cb property.');
+                                'either a steps or a cb property');
         }
         if (J.isArray(stage.steps)) {
             if (!stage.steps.length) {
                 throw new Error('Stager.' + method + ': stage.steps cannot ' +
-                                'be empty.');
+                                'be empty');
             }
         }
         else if (stage.steps) {
@@ -17459,7 +17458,7 @@ if (!Array.prototype.indexOf) {
             if (that.steps[id]) {
                 throw new Error('Stager.' + method + ': step is object, ' +
                                 'but a step with the same id already ' +
-                                'exists: ', id);
+                                'exists: ' + id);
             }
             // Add default callback, if missing.
             if (!step.cb) step.cb = that.getDefaultCallback();
@@ -17473,7 +17472,7 @@ if (!Array.prototype.indexOf) {
         }
         else {
             throw new TypeError('Stager.' + method + ': step must be ' +
-                                'string or object.');
+                                'string or object. Found: ' + step);
         }
 
         // A new step is created if not found (performs validation).
@@ -17509,7 +17508,7 @@ if (!Array.prototype.indexOf) {
             if (that.stages[id]) {
                 throw new Error('Stager.' + method + ': stage is object, ' +
                                 'but a stage with the same id already ' +
-                                'exists: ', id);
+                                'exists: ' + id);
             }
 
             // If both cb and steps are missing, adds steps array,
@@ -17526,7 +17525,7 @@ if (!Array.prototype.indexOf) {
                 if (that.steps[id]) {
                     throw new Error('Stager.' + method + ': stage has ' +
                                     'cb property, but a step with the same ' +
-                                    'id is already defined: ' + id + '.');
+                                    'id is already defined: ' + id);
                 }
                 that.addStep({ id: id, cb: stage.cb });
                 delete stage.cb;
@@ -17557,7 +17556,7 @@ if (!Array.prototype.indexOf) {
         }
         else {
             throw new TypeError('Stager.' + method + ': stage must be ' +
-                                'string or object.');
+                                'string or object. Found: ' + stage);
         }
 
         return alias || id;
@@ -38228,7 +38227,9 @@ if (!Array.prototype.indexOf) {
      *
      * An enabled widget allows the user to interact with it
      */
-    Widget.prototype.enable = function() {};
+    Widget.prototype.enable = function() {
+        this.disabled = false;
+    };
 
     /**
      * ### Widget.disable
@@ -38237,7 +38238,9 @@ if (!Array.prototype.indexOf) {
      *
      * A disabled widget is still visible, but user cannot interact with it
      */
-    Widget.prototype.disable = function() {};
+    Widget.prototype.disable = function() {
+        this.disabled = true;
+    };
 
     /**
      * ### Widget.isDisabled
@@ -40085,7 +40088,10 @@ if (!Array.prototype.indexOf) {
             return str;
         },
         quit: function(w, data) {
-            return (w.senderToNameMap[data.id] || data.id) + ' quit the chat';
+            return (w.senderToNameMap[data.id] || data.id) + ' left the chat';
+        },
+        noMoreParticipants: function(w, data) {
+            return 'No active participant left. Chat disabled.';
         },
         // For both collapse and uncollapse.
         collapse: function(w, data) {
@@ -40223,33 +40229,47 @@ if (!Array.prototype.indexOf) {
         /**
          * ### Chat.recipientsIds
          *
-         * Array of ids of the recipient/s of the message
+         * Array of ids of current recipients of messages
          */
         this.recipientsIds = null;
 
         /**
-         * ### Chat.recipientToNameMap
+         * ### Chat.recipientsIdsQuitted
          *
-         * Map recipients ids to names
+         * Array of ids of  recipients that have previously quitted the chat
          */
-        this.recipientToNameMap = null;
-
-        /**
-         * ### Chat.recipientToSenderMap
-         *
-         * Map recipients ids to names
-         */
-        this.recipientToSenderMap = null;
+        this.recipientsIdsQuitted = null;
 
         /**
          * ### Chat.senderToNameMap
          *
-         * Map recipients ids to sender ids
+         * Map sender id (msg.from) to display name
          *
          * Note: The 'from' field of a message can be different
          * from the 'to' field of its reply (e.g., for MONITOR)
          */
         this.senderToNameMap = null;
+
+        /**
+         * ### Chat.recipientToNameMap
+         *
+         * Map recipient id (msg.to) to display name
+         */
+        this.recipientToNameMap = null;
+
+        /**
+         * ### Chat.senderToRecipientMap
+         *
+         * Map sender id (msg.from) to recipient id (msg.to)
+         */
+        this.senderToRecipientMap = null;
+
+        /**
+         * ### Chat.recipientToSenderMap
+         *
+         * Map recipient id (msg.to) to sender id (msg.from)
+         */
+        this.recipientToSenderMap = null;
     }
 
     // ## Chat methods
@@ -40266,7 +40286,7 @@ if (!Array.prototype.indexOf) {
      *   - `chatEvent`: The event to fire when sending/receiving a message
      */
     Chat.prototype.init = function(options) {
-        var tmp, i, rec, that;
+        var tmp, i, rec, sender, that;
         options = options || {};
         that = this;
 
@@ -40292,7 +40312,7 @@ if (!Array.prototype.indexOf) {
         // Button or send on Enter?.
         this.useSubmitButton = 'undefined' === typeof options.useSubmitButton ?
             J.isMobileAgent() : !!options.useSubmitButton;
-        
+
         // Participants.
         tmp = options.participants;
         if (!J.isArray(tmp) || !tmp.length) {
@@ -40302,23 +40322,30 @@ if (!Array.prototype.indexOf) {
 
         // Build maps.
         this.recipientsIds = new Array(tmp.length);
+        this.recipientsIdsQuitted = [];
         this.recipientToSenderMap = {};
         this.recipientToNameMap = {};
         this.senderToNameMap = {};
+        this.senderToRecipientMap = {};
+
         for (i = 0; i < tmp.length; i++) {
+            // Everything i the same if string.
             if ('string' === typeof tmp[i]) {
                 this.recipientsIds[i] = tmp[i];
                 this.recipientToNameMap[tmp[i]] = tmp[i];
                 this.recipientToSenderMap[tmp[i]] = tmp[i];
+                this.senderToRecipientMap[tmp[i]] = tmp[i];
                 this.senderToNameMap[tmp[i]] = tmp[i];
             }
+            // Sender may be different from receiver if object.
             else if ('object' === typeof tmp[i]) {
                 rec = tmp[i].recipient;
+                sender = tmp[i].sender;
                 this.recipientsIds[i] = rec;
-                this.recipientToSenderMap[rec] = tmp[i].sender || rec;
+                this.recipientToSenderMap[rec] = sender || rec;
                 this.recipientToNameMap[rec] = tmp[i].name || rec;
-                this.senderToNameMap[tmp[i].sender || rec] =
-                    this.recipientToNameMap[rec];
+                this.senderToRecipientMap[sender] = rec;
+                this.senderToNameMap[sender] = this.recipientToNameMap[rec];
             }
             else {
                 throw new TypeError('Chat.init: participants array must ' +
@@ -40332,7 +40359,7 @@ if (!Array.prototype.indexOf) {
 
         this.printStartTime = options.printStartTime || false;
         this.printNames = options.printNames || false;
-        
+
         if (options.initialMsg) {
             if ('object' !== typeof options.initialMsg) {
                 throw new TypeError('Chat.init: initialMsg must be ' +
@@ -40344,12 +40371,24 @@ if (!Array.prototype.indexOf) {
 
         this.on('uncollapsed', function() {
             // Make sure that we do not have the title highlighted any more.
-            that.setTitle(that.title);       
-            node.say(that.chatEvent + '_COLLAPSE', that.recipientsIds, false);
+            that.setTitle(that.title);
+            if (that.recipientsIds.length) {
+                node.say(that.chatEvent + '_COLLAPSE',
+                         that.recipientsIds, false);
+            }
         });
 
         this.on('collapsed', function() {
-            node.say(that.chatEvent + '_COLLAPSE', that.recipientsIds, true);
+            if (that.recipientsIds.length) {
+                node.say(that.chatEvent + '_COLLAPSE',
+                         that.recipientsIds, true);
+            }
+        });
+
+        this.on('destroyed', function() {
+            if (that.recipientsIds.length) {
+                node.say(that.chatEvent + '_QUIT', that.recipientsIds);
+            }
         });
     };
 
@@ -40400,7 +40439,7 @@ if (!Array.prototype.indexOf) {
             });
             initialText = true;
         }
-        
+
         if (this.printNames) {
             W.add('div', this.chatDiv, {
                 className: 'chat_event',
@@ -40416,7 +40455,7 @@ if (!Array.prototype.indexOf) {
                 innerHTML: '&nbsp;'
             });
         }
-        
+
         if (this.initialMsg) {
             this.writeMsg(this.initialMsg.id ? 'incoming' : 'outgoing',
                           this.initialMsg);
@@ -40435,7 +40474,7 @@ if (!Array.prototype.indexOf) {
         c = (code === 'incoming' || code === 'outgoing') ? code : 'event';
         W.add('div', this.chatDiv, {
             innerHTML: this.getText(code, data),
-            className: 'chat_msg chat_msg_' + c 
+            className: 'chat_msg chat_msg_' + c
         });
         this.chatDiv.scrollTop = this.chatDiv.scrollHeight;
     };
@@ -40459,8 +40498,25 @@ if (!Array.prototype.indexOf) {
         });
 
         node.on.data(this.chatEvent + '_QUIT', function(msg) {
+            var i, len, rec;
             if (!that.handleMsg(msg)) return;
             that.writeMsg('quit', { id: msg.from });
+            len = that.recipientsIds.length;
+            for ( i = 0 ; i < len ; i++) {
+                if (that.recipientsIds[i] ===
+                    that.senderToRecipientMap[msg.from]) {
+
+                    rec = that.recipientsIds.splice(i, 1);
+                    that.recipientsIdsQuitted.push(rec);
+
+                    if (that.recipientsIds.length === 0) {
+                        that.writeMsg('noMoreParticipants');
+                        that.disable();
+                    }
+                    break;
+                }
+            }
+            node.warn('Chat: participant quitted not found: ' + msg.from);
         });
 
         node.on.data(this.chatEvent + '_COLLAPSE', function(msg) {
@@ -40468,6 +40524,7 @@ if (!Array.prototype.indexOf) {
             that.writeMsg('collapse', { id: msg.from, collapsed: msg.data});
         });
     };
+
 
     Chat.prototype.handleMsg = function(msg) {
         var from, args;
@@ -40489,8 +40546,16 @@ if (!Array.prototype.indexOf) {
         return true;
     };
 
-    Chat.prototype.destroy = function() {
-        node.say(this.chatEvent + '_QUIT', this.recipientsIds);
+    Chat.prototype.disable = function() {
+        if (this.submitButton) this.submitButton.disabled = true;
+        this.textarea.disabled = true;
+        this.disabled = true;
+    };
+
+    Chat.prototype.enable = function() {
+        if (this.submitButton) this.submitButton.disabled = false;
+        this.textarea.disabled = false;
+        this.disabled = false;
     };
 
     Chat.prototype.getValues = function() {
@@ -40513,15 +40578,22 @@ if (!Array.prototype.indexOf) {
     function sendMsg(that) {
         var msg, to, ids;
 
+        // No msg sent.
+        if (that.isDisabled()) return;
+
         msg = that.readTextarea();
 
         // Move cursor at the beginning.
         if (msg === '') {
-            node.warn('no text, no chat message sent.');
+            node.warn('Chat: message has no text, not sent.');
             return;
         }
         // Simplify things, if there is only one recipient.
         ids = that.recipientsIds;
+        if (ids.length === 0) {
+            node.warn('Chat: empty recipient list, message not sent.');
+            return;
+        }
         to = ids.length === 1 ? ids[0] : ids;
         that.writeMsg('outgoing', { msg: msg }); // to not used now.
         node.say(that.chatEvent, to, msg);
