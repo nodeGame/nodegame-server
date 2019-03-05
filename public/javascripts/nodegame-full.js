@@ -15869,15 +15869,15 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # Block
- * Copyright(c) 2015 Stefano Balietti
+ * Copyright(c) 2019 Stefano Balietti
  * MIT Licensed
  *
  * Blocks contain items that can be sorted in the sequence.
  *
- * Blocks can also contains other block as items, and in this case all
+ * Blocks can also contain other blocks as items, in this case all
  * items are sorted recursevely.
  *
- * Each item must contain a id (unique within the block), and a type parameter.
+ * Each item must contain an id (unique within the block), and a type parameter.
  * Optionally, a `positions` parameter, controlling the positions that the item
  * can take in the sequence, can be be passed along.
  *
@@ -15910,12 +15910,12 @@ if (!Array.prototype.indexOf) {
 
     var BLOCK_DEFAULT     = blockTypes.BLOCK_DEFAULT;
     var BLOCK_STAGEBLOCK  = blockTypes.BLOCK_STAGEBLOCK;
-    var BLOCK_STAGE       = blockTypes. BLOCK_STAGE;
-    var BLOCK_STEPBLOCK   = blockTypes. BLOCK_STEPBLOCK;
+    var BLOCK_STAGE       = blockTypes.BLOCK_STAGE;
+    var BLOCK_STEPBLOCK   = blockTypes.BLOCK_STEPBLOCK;
     var BLOCK_STEP        = blockTypes.BLOCK_STEP;
 
     var BLOCK_ENCLOSING          = blockTypes.BLOCK_ENCLOSING;
-    var BLOCK_ENCLOSING_STEPS    = blockTypes. BLOCK_ENCLOSING_STEPS;
+    var BLOCK_ENCLOSING_STEPS    = blockTypes.BLOCK_ENCLOSING_STEPS;
     var BLOCK_ENCLOSING_STAGES   = blockTypes.BLOCK_ENCLOSING_STAGES;
 
 
@@ -15927,7 +15927,6 @@ if (!Array.prototype.indexOf) {
      * @param {object} options Configuration object
      */
     function Block(options) {
-
         if ('object' !== typeof options) {
             throw new TypeError('Block constructor: options must be object: ' +
                                 options);
@@ -17794,15 +17793,19 @@ if (!Array.prototype.indexOf) {
      * defaultStepRule, defaultGlobals, defaultProperties, onInit,
      * onGameover, blocks.
      *
+     * // TODO: the finalize param does not do what expected
+     * @param {boolean} finalize. If TRUE, it calls finalize before
+     *   cloning the stager. Default: TRUE.
+     *
      * @return {object} Clone of the Stager's state
      *
      * @see Stager.setState
      * @see Stager.finalize
      */
-    Stager.prototype.getState = function() {
+    Stager.prototype.getState = function(finalize) {
         var out, i, len;
-
-        this.finalize();
+        finalize = 'undefined' === typeof finalize ? true : !!finalize;
+        if (finalize) this.finalize();
 
         out = J.clone({
             steps:               this.steps,
@@ -17828,6 +17831,14 @@ if (!Array.prototype.indexOf) {
         for ( ; ++i < len ; ) {
             out.blocks.push(this.blocks[i].clone());
         }
+        if (!finalize) {
+            out.unfinishedBlocks = [];
+            i = -1, len = this.unfinishedBlocks.length;
+            for ( ; ++i < len ; ) {
+                out.unfinishedBlocks.push(this.unfinishedBlocks[i].clone());
+            }
+        }
+        
         return out;
     };
 
@@ -18589,7 +18600,7 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # Stager blocks operations
- * Copyright(c) 2015 Stefano Balietti
+ * Copyright(c) 2019 Stefano Balietti
  * MIT Licensed
  */
 (function(exports, node) {
@@ -18604,12 +18615,12 @@ if (!Array.prototype.indexOf) {
 
     var BLOCK_DEFAULT     = blockTypes.BLOCK_DEFAULT;
     var BLOCK_STAGEBLOCK  = blockTypes.BLOCK_STAGEBLOCK;
-    var BLOCK_STAGE       = blockTypes. BLOCK_STAGE;
-    var BLOCK_STEPBLOCK   = blockTypes. BLOCK_STEPBLOCK;
+    var BLOCK_STAGE       = blockTypes.BLOCK_STAGE;
+    var BLOCK_STEPBLOCK   = blockTypes.BLOCK_STEPBLOCK;
     var BLOCK_STEP        = blockTypes.BLOCK_STEP;
 
     var BLOCK_ENCLOSING          = blockTypes.BLOCK_ENCLOSING;
-    var BLOCK_ENCLOSING_STEPS    = blockTypes. BLOCK_ENCLOSING_STEPS;
+    var BLOCK_ENCLOSING_STEPS    = blockTypes.BLOCK_ENCLOSING_STEPS;
     var BLOCK_ENCLOSING_STAGES   = blockTypes.BLOCK_ENCLOSING_STAGES;
 
     /**
@@ -18637,7 +18648,8 @@ if (!Array.prototype.indexOf) {
             positions = arguments[1];
 
             if ('string' !== typeof id) {
-                throw new TypeError('Stager.stepBlock: id must be string.');
+                throw new TypeError('Stager.stepBlock: id must be string. ' +
+                                    'Found: ' + id);
             }
             if (this.blocksIds[id]) {
                 throw new Error('Stager.stepBlock: non-unique id: ' + id);
@@ -18677,7 +18689,8 @@ if (!Array.prototype.indexOf) {
             positions = arguments[1];
 
             if ('string' !== typeof id) {
-                throw new TypeError('Stager.stageBlock: id must be string.');
+                throw new TypeError('Stager.stageBlock: id must be string. ' +
+                                   'Found: ' + id);
             }
             if (this.blocksIds[id]) {
                 throw new Error('Stager.stageBlock: non-unique id: ' + id);
@@ -36667,7 +36680,7 @@ if (!Array.prototype.indexOf) {
                 spanType = W.add('span', div);
                 spanType.innerHTML = typeof el.content;
                 spanType.className = 'ng_clickable bold';
-                
+
                 spanContent = W.add('span', div);
                 spanContent.style.display = 'none';
                 spanContent.className = 'ng_clickable';
@@ -36676,8 +36689,10 @@ if (!Array.prototype.indexOf) {
                     for (key in el.content) {
                         if (el.content.hasOwnProperty(key)) {
                             str = key + ':\t' + el.content[key];
-                            spanContent.appendChild(document.createTextNode(str));
-                            spanContent.appendChild(document.createElement('br'));
+                            spanContent.appendChild(
+                                    document.createTextNode(str));
+                            spanContent.appendChild(
+                                    document.createElement('br'));
                         }
                     }
                 }
@@ -36693,7 +36708,7 @@ if (!Array.prototype.indexOf) {
                     spanContent.style.display = 'none';
                     spanType.style.display = '';
                 };
-                
+
                 return div;
             }
         });
