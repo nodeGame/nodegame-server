@@ -36680,7 +36680,7 @@ if (!Array.prototype.indexOf) {
                 spanType = W.add('span', div);
                 spanType.innerHTML = typeof el.content;
                 spanType.className = 'ng_clickable bold';
-
+                
                 spanContent = W.add('span', div);
                 spanContent.style.display = 'none';
                 spanContent.className = 'ng_clickable';
@@ -36689,10 +36689,8 @@ if (!Array.prototype.indexOf) {
                     for (key in el.content) {
                         if (el.content.hasOwnProperty(key)) {
                             str = key + ':\t' + el.content[key];
-                            spanContent.appendChild(
-                                    document.createTextNode(str));
-                            spanContent.appendChild(
-                                    document.createElement('br'));
+                            spanContent.appendChild(document.createTextNode(str));
+                            spanContent.appendChild(document.createElement('br'));
                         }
                     }
                 }
@@ -36708,7 +36706,7 @@ if (!Array.prototype.indexOf) {
                     spanContent.style.display = 'none';
                     spanType.style.display = '';
                 };
-
+                
                 return div;
             }
         });
@@ -39077,7 +39075,7 @@ if (!Array.prototype.indexOf) {
             }
 
             // Destroy all existing widgets.
-            if (conf.destroyAll) that.destroyAll();            
+            if (conf.destroyAll) that.destroyAll();
 
             // Append existing widgets.
             if (conf.append) {
@@ -39204,10 +39202,11 @@ if (!Array.prototype.indexOf) {
      * A `.destroy` method is added to the widget that perform the
      * following operations:
      *
-     *   - calls original widget.destroy method, if defined,
      *   - removes the widget from DOM (if it was appended),
      *   - removes listeners defined during the creation,
-     *   - and remove the widget from Widget.instances
+     *   - and remove the widget from Widget.instances,
+     *   - invoke the event 'destroyed'.
+     *
      *
      * Finally a reference to the widget is kept in `Widgets.instances`.
      *
@@ -39223,7 +39222,7 @@ if (!Array.prototype.indexOf) {
      */
     Widgets.prototype.get = function(widgetName, options) {
         var WidgetPrototype, widget;
-        var changes, origDestroy;
+        var changes;
         var that;
         if ('string' !== typeof widgetName) {
             throw new TypeError('Widgets.get: widgetName must be string.' +
@@ -39299,7 +39298,7 @@ if (!Array.prototype.indexOf) {
 
         widget.panel = 'undefined' === typeof options.panel ?
             WidgetPrototype.panel : options.panel;
-        
+
         widget.context = 'undefined' === typeof options.context ?
             WidgetPrototype.context : options.context;
         widget.sounds = 'undefined' === typeof options.sounds ?
@@ -39352,25 +39351,23 @@ if (!Array.prototype.indexOf) {
             node.events.setRecordChanges(false);
         }
 
-        origDestroy = widget.destroy;
-
         // If any listener was added or removed, the original situation will
         // be restored when the widget is destroyed.
         // The widget is also automatically removed from parent.
         widget.destroy = function() {
             var i, len, ee, eeName;
 
-            try {
-                // Call original function.
-                if ('function' === typeof origDestroy) origDestroy.call(widget);
-                // Remove the widget's div from its parent.
-                if (widget.panelDiv && widget.panelDiv.parentNode) {
-                    widget.panelDiv.parentNode.removeChild(widget.panelDiv);
+            (function() {
+                try {
+                    // Remove the widget's div from its parent.
+                    if (widget.panelDiv && widget.panelDiv.parentNode) {
+                        widget.panelDiv.parentNode.removeChild(widget.panelDiv);
+                    }
                 }
-            }
-            catch(e) {
-                node.warn(widgetName + '.destroy: error caught. ' + e + '.');
-            }
+                catch(e) {
+                    node.warn(widgetName + '.destroy: error caught: ' + e);
+                }
+            })();
 
             if (changes) {
                 for (eeName in changes) {
@@ -39407,7 +39404,7 @@ if (!Array.prototype.indexOf) {
 
             // Remove from docked.
             if (this.docked) closeDocked(widget.wid, false);
-            
+
             this.emit('destroyed');
         };
 
@@ -39488,7 +39485,7 @@ if (!Array.prototype.indexOf) {
         };
 
         // Dock it.
-        if (options.docked) {            
+        if (options.docked) {
             tmp.className.push('docked');
             this.docked.push(w);
             w.docked = true;
@@ -39742,13 +39739,13 @@ if (!Array.prototype.indexOf) {
                                     }
                                 },
                             });
-                        
+
                     }
                     node.widgets.boxSelector.addItem(closed);
                 }
                 // Decrement len and i.
                 len--;
-                i--;                
+                i--;
             }
         }
         return !!width;
@@ -39757,12 +39754,12 @@ if (!Array.prototype.indexOf) {
     function setRightStyle(w) {
         var dockedMargin, safeMargin;
         var lastDocked, right, ws, tmp;
-        
+
         safeMargin = 200;
         dockedMargin = 20;
-        
+
         ws = node.widgets;
-        
+
         right = 0;
         // The widget w has been already added to the docked list.
         if (ws.docked.length > 1) {
@@ -46183,7 +46180,7 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # DebugInfo
- * Copyright(c) 2017 Stefano Balietti
+ * Copyright(c) 2019 Stefano Balietti
  * MIT Licensed
  *
  * Display information about the state of a player
@@ -46200,7 +46197,7 @@ if (!Array.prototype.indexOf) {
 
     // ## Meta-data
 
-    DebugInfo.version = '0.6.1';
+    DebugInfo.version = '0.6.2';
     DebugInfo.description = 'Display basic info a client\'s status.';
 
     DebugInfo.title = 'Debug Info';
@@ -46253,9 +46250,17 @@ if (!Array.prototype.indexOf) {
      * @see DebugInfo.updateAll
      */
     DebugInfo.prototype.init = function(options) {
+        var that;
         if ('number' === typeof options.intervalTime) {
             this.intervalTime = options.intervalTime;
         }
+
+        that = this;
+        this.on('destroyed', function() {
+            clearInterval(that.interval);
+            that.interval = null;
+            node.silly('DebugInfo destroyed.');
+        });
     };
 
     /**
@@ -46342,17 +46347,11 @@ if (!Array.prototype.indexOf) {
 
     };
 
-    DebugInfo.prototype.destroy = function() {
-        clearInterval(this.interval);
-        this.interval = null;
-        node.silly('DebugInfo destroyed.');
-    };
-
 })(node);
 
 /**
  * # DebugWall
- * Copyright(c) 2018 Stefano Balietti
+ * Copyright(c) 2019 Stefano Balietti
  * MIT Licensed
  *
  * Creates a wall where all incoming and outgoing messages are printed
@@ -46502,12 +46501,13 @@ if (!Array.prototype.indexOf) {
             }
             this.hiddenTypes = hiddenTypes;
         }
-    };
 
-    DebugWall.prototype.destroy = function() {
-        if (this.origLogCb) node.log = this.origLogCb;
-        if (this.origMsgOutCb) node.socket.send = this.origMsgOutCb;
-        if (this.origMsgInCb) node.socket.onMessage = this.origMsgInCb;
+        this.on('destroyed', function() {
+            if (that.origLogCb) node.log = that.origLogCb;
+            if (that.origMsgOutCb) node.socket.send = that.origMsgOutCb;
+            if (that.origMsgInCb) node.socket.onMessage = that.origMsgInCb;
+        });
+
     };
 
     DebugWall.prototype.append = function() {
@@ -46665,7 +46665,7 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # DisconnectBox
- * Copyright(c) 2015 Stefano Balietti
+ * Copyright(c) 2019 Stefano Balietti
  * MIT Licensed
  *
  * Shows a disconnect button
@@ -46680,13 +46680,16 @@ if (!Array.prototype.indexOf) {
 
     // ## Meta-data
 
-    DisconnectBox.version = '0.2.2';
+    DisconnectBox.version = '0.2.3';
     DisconnectBox.description =
         'Visually display current, previous and next stage of the game.';
 
     DisconnectBox.title = 'Disconnect';
     DisconnectBox.className = 'disconnectbox';
-    DisconnectBox.texts.leave = "Leave Experiment";
+
+    DisconnectBox.texts = {
+        leave: 'Leave Experiment'
+    };
 
     // ## Dependencies
 
@@ -46737,11 +46740,11 @@ if (!Array.prototype.indexOf) {
         this.ee.on('SOCKET_CONNECT', function DBcon() {
             console.log('DB got socket_connect');
         });
-    };
 
-    DisconnectBox.prototype.destroy = function() {
-        this.ee.off('SOCKET_DISCONNECT', 'DBdiscon');
-        this.ee.off('SOCKET_CONNECT', 'DBcon');
+        this.on('destroyed', function() {
+            that.ee.off('SOCKET_DISCONNECT', 'DBdiscon');
+            that.ee.off('SOCKET_CONNECT', 'DBcon');
+        });
     };
 
 
@@ -50614,10 +50617,10 @@ if (!Array.prototype.indexOf) {
 
             return conf;
         });
-    };
 
-    Requirements.prototype.destroy = function() {
-        node.deregisterSetup('requirements');
+        this.on('destroyed', function() {
+            node.deregisterSetup('requirements');
+        });
     };
 
     // ## Helper methods.
@@ -52199,7 +52202,7 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # VisualTimer
- * Copyright(c) 2018 Stefano Balietti <ste@nodegame.org>
+ * Copyright(c) 2019 Stefano Balietti <ste@nodegame.org>
  * MIT Licensed
  *
  * Display a configurable timer for the game
@@ -52308,7 +52311,6 @@ if (!Array.prototype.indexOf) {
          * Internal timers are destroyed when widget is destroyed or cleared
          *
          * @see VisualTimer.gameTimer
-         * @see VisualTimer.destroy
          * @see VisualTimer.clear
          */
         this.internalTimer = null;
@@ -52741,19 +52743,20 @@ if (!Array.prototype.indexOf) {
                     that.stop();
                 }
             }
-       });
-    };
+        });
 
-    VisualTimer.prototype.destroy = function() {
-        if (this.internalTimer) {
-            node.timer.destroyTimer(this.gameTimer);
-            this.internalTimer = null;
-        }
-        else {
-            this.gameTimer.removeHook('VisualTimer_' + this.wid);
-        }
-        this.bodyDiv.removeChild(this.mainBox.boxDiv);
-        this.bodyDiv.removeChild(this.waitBox.boxDiv);
+        // Handle destroy.
+        this.on('destroyed', function() {
+            if (that.internalTimer) {
+                node.timer.destroyTimer(that.gameTimer);
+                that.internalTimer = null;
+            }
+            else {
+                that.gameTimer.removeHook('VisualTimer_' + that.wid);
+            }
+            that.bodyDiv.removeChild(that.mainBox.boxDiv);
+            that.bodyDiv.removeChild(that.waitBox.boxDiv);
+        });
     };
 
    /**
@@ -53520,6 +53523,12 @@ if (!Array.prototype.indexOf) {
 
             })(this);
         }
+
+        // Handle destroy.
+        this.on('destroyed', function() {
+            if (that.dots) that.dots.stop();
+            node.deregisterSetup('waitroom');
+        });
     };
 
     /**
@@ -53839,11 +53848,6 @@ if (!Array.prototype.indexOf) {
                 frame.addEventListener('mouseover', onFrame, false);
             });
         }
-    };
-
-    WaitingRoom.prototype.destroy = function() {
-        if (this.dots) this.dots.stop();
-        node.deregisterSetup('waitroom');
     };
 
 })(node);
