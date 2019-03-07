@@ -229,13 +229,17 @@ p {
 #ng_header .ng_widget:last-child {
   margin-right: 0;
 }
-#ng_header .donebutton {
+#ng_header .donebutton,
+#ng_header .backbutton {
   float: right;
   padding: 0;
   margin: 0;
+  margin-left: 10px;
 }
 #ng_header .donebutton .panel-heading,
-#ng_header .donebutton .no-panel-heading {
+#ng_header .donebutton .no-panel-heading,
+#ng_header .backbutton .panel-heading,
+#ng_header .backbutton .no-panel-heading {
   display: none;
 }
 

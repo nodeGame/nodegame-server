@@ -257,10 +257,12 @@ p {
     }
   }
 
+  .backbutton,
   .donebutton {
     float: right;
     padding: 0;
     margin: 0;
+    margin-left: 10px;
 
     .panel-heading,
     .no-panel-heading {
