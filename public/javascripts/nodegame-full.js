@@ -10083,7 +10083,7 @@ if (!Array.prototype.indexOf) {
     node.support = JSUS.compatibility();
 
     // Auto-Generated.
-    node.version = '4.1.1';
+    node.version = '5.0.0';
 
 })(window);
 
@@ -38186,7 +38186,7 @@ if (!Array.prototype.indexOf) {
         this.collapsed = true;
         if (this.collapseButton) {
             this.collapseButton.src = '/images/maximize_small2.png';
-            this.collapseButton.title = 'Maximize';
+            this.collapseButton.title = 'Restore';
         }
         if (this.footer) this.footer.style.display = 'none';
         // Move into collapse target, if one is specified.
@@ -38239,6 +38239,7 @@ if (!Array.prototype.indexOf) {
      */
     Widget.prototype.enable = function() {
         this.disabled = false;
+        this.emit('enabled');
     };
 
     /**
@@ -38250,6 +38251,7 @@ if (!Array.prototype.indexOf) {
      */
     Widget.prototype.disable = function() {
         this.disabled = true;
+        this.emit('disabled');
     };
 
     /**
@@ -38284,6 +38286,7 @@ if (!Array.prototype.indexOf) {
         if (!this.panelDiv) return;
         this.panelDiv.style.display = 'none';
         this.hidden = true;
+        this.emit('hidden');
     };
 
     /**
@@ -38303,6 +38306,7 @@ if (!Array.prototype.indexOf) {
         if (this.panelDiv && this.panelDiv.style.display === 'none') {
             this.panelDiv.style.display = display || '';
             this.hidden = false;
+            this.emit('shown');
         }
     };
 
@@ -39181,7 +39185,6 @@ if (!Array.prototype.indexOf) {
      *   - id: user-defined id, if specified in options
      *   - wid: random unique widget id
      *   - hooks: object containing event listeners
-     *   - emit:
      *   - disabled: boolean flag indicating the widget state, set to FALSE
      *   - highlighted: boolean flag indicating whether the panelDiv is
      *        highlighted, set to FALSE
@@ -39205,7 +39208,7 @@ if (!Array.prototype.indexOf) {
      *   - invoke the event 'destroyed'.
      *
      *
-     * Finally a reference to the widget is kept in `Widgets.instances`.
+     * Finally, a reference to the widget is added in `Widgets.instances`.
      *
      * @param {string} widgetName The name of the widget to load
      * @param {object} options Optional. Configuration options, will be
@@ -39300,7 +39303,7 @@ if (!Array.prototype.indexOf) {
             collapsed: [],
             uncollapsed: [],
             disabled: [],
-            undisabled: [],
+            enabled: [],
             destroyed: []
         };
 
@@ -44528,7 +44531,7 @@ if (!Array.prototype.indexOf) {
             }
             this.selected = [];
             this.currentChoice = [];
-       
+
         }
         else {
             if (this.selected) {
@@ -47231,152 +47234,6 @@ if (!Array.prototype.indexOf) {
 })(node);
 
 /**
- * # DynamicTable
- * Copyright(c) 2017 Stefano Balietti
- * MIT Licensed
- *
- * Extends the GameTable widgets by allowing dynamic reshaping
- *
- * TODO: this widget needs refactoring.
- *
- * @experimental
- * @see GameTable widget
- * www.nodegame.org
- */
-(function(node) {
-
-    "use strict";
-
-    var GameStage = node.GameStage;
-    var Table = W.Table;
-    var HTMLRenderer = W.HTMLRenderer;
-
-    node.widgets.register('DynamicTable', DynamicTable);
-
-    DynamicTable.prototype = new Table();
-    DynamicTable.prototype.constructor = Table;
-
-
-    DynamicTable.id = 'dynamictable';
-    DynamicTable.version = '0.3.2';
-
-    DynamicTable.dependencies = {
-        Table: {},
-        JSUS: {},
-        HTMLRenderer: {}
-    };
-
-    function DynamicTable (options, data) {
-        Table.call(this, options, data);
-        this.options = options;
-
-        this.name = options.name || 'Dynamic Table';
-
-        this.root = null;
-        this.bindings = {};
-        this.init(this.options);
-    }
-
-    DynamicTable.prototype.init = function(options) {
-        this.options = options;
-        this.name = options.name || this.name;
-        this.auto_update = ('undefined' !== typeof options.auto_update) ?
-            options.auto_update : true;
-        this.replace = options.replace || false;
-        this.htmlRenderer = new HTMLRenderer({renderers: options.renderers});
-        this.c('state', GameStage.compare);
-        this.setLeft([]);
-        this.parse(true);
-    };
-
-    DynamicTable.prototype.bind = function(event, bindings) {
-        if (!event || !bindings) return;
-        var that = this;
-
-        node.on(event, function(msg) {
-
-            if (bindings.x || bindings.y) {
-                // Cell
-                var func;
-                if (that.replace) {
-                    func = function(x, y) {
-                        var found = that.get(x,y);
-                        if (found.length !== 0) {
-                            for (var ci=0; ci < found.length; ci++) {
-                                bindings.cell.call(that, msg, found[ci]);
-                            }
-                        }
-                        else {
-                            var cell = bindings.cell.call(
-                                that, msg, new Table.Cell({x: x, y: y}));
-                            that.add(cell);
-                        }
-                    };
-                }
-                else {
-                    func = function(x, y) {
-                        var cell = bindings.cell.call(
-                                that, msg, new Table.Cell({x: x, y: y}));
-                        that.add(cell, x, y);
-                    };
-                }
-
-                var x = bindings.x.call(that, msg);
-                var y = bindings.y.call(that, msg);
-
-                if (x && y) {
-
-                    x = (x instanceof Array) ? x : [x];
-                    y = (y instanceof Array) ? y : [y];
-
-                    //console.log('Bindings found:');
-                    //console.log(x);
-                    //console.log(y);
-
-                    for (var xi=0; xi < x.length; xi++) {
-                        for (var yi=0; yi < y.length; yi++) {
-                            // Replace or Add
-                            func.call(that, x[xi], y[yi]);
-                        }
-                    }
-                }
-                // End Cell
-            }
-
-            // Header
-            if (bindings.header) {
-                var h = bindings.header.call(that, msg);
-                h = (h instanceof Array) ? h : [h];
-                that.setHeader(h);
-            }
-
-            // Left
-            if (bindings.left) {
-                var l = bindings.left.call(that, msg);
-                if (!J.inArray(l, that.left)) {
-                    that.header.push(l);
-                }
-            }
-
-            // Auto Update?
-            if (that.auto_update) {
-                that.parse();
-            }
-        });
-
-    };
-
-    DynamicTable.prototype.append = function(root) {
-        this.root = root;
-        root.appendChild(this.table);
-        return root;
-    };
-
-    DynamicTable.prototype.listeners = function() {};
-
-})(node);
-
-/**
  * # EmailForm
  * Copyright(c) 2017 Stefano Balietti <ste@nodegame.org>
  * MIT Licensed
@@ -48737,158 +48594,6 @@ if (!Array.prototype.indexOf) {
 })(node);
 
 /**
- * # GameTable
- * Copyright(c) 2017 Stefano Balietti
- * MIT Licensed
- *
- * Creates a table that renders in each cell data captured by fired events
- *
- * TODO: needs refactoring
- *
- * www.nodegame.org
- */
-(function(node) {
-
-    "use strict";
-
-    var GameStage = node.GameStage,
-    PlayerList = node.PlayerList;
-
-    node.widgets.register('GameTable', GameTable);
-
-    // ## Meta-data.
-    GameTable.className = 'gametable';
-    GameTable.version = '0.3.1';
-
-    // ## Dependencies,
-
-    GameTable.dependencies = {
-        JSUS: {}
-    };
-
-    function GameTable(options) {
-        this.options = options;
-        this.name = options.name || GameTable.name;
-
-        this.root = null;
-        this.gtbl = null;
-        this.plist = null;
-    }
-
-    GameTable.prototype.init = function(options) {
-
-        if (!this.plist) this.plist = new PlayerList();
-
-        this.gtbl = new W.Table({
-            auto_update: true,
-            id: options.id || this.id,
-            render: options.render
-        }, node.game.memory.db);
-
-
-        this.gtbl.c('state', GameStage.compare);
-
-        this.gtbl.setLeft([]);
-
-        this.gtbl.parse(true);
-    };
-
-
-    GameTable.prototype.addRenderer = function(func) {
-        return this.gtbl.addRenderer(func);
-    };
-
-    GameTable.prototype.resetRender = function() {
-        return this.gtbl.resetRenderer();
-    };
-
-    GameTable.prototype.removeRenderer = function(func) {
-        return this.gtbl.removeRenderer(func);
-    };
-
-    GameTable.prototype.append = function(root) {
-        this.root = root;
-        root.appendChild(this.gtbl.table);
-        return root;
-    };
-
-    GameTable.prototype.listeners = function() {
-        var that = this;
-
-        node.on.plist(function(msg) {
-            if (!msg.data.length) return;
-
-            //var diff = J.arrayDiff(msg.data,that.plist.db);
-            var plist = new PlayerList({}, msg.data);
-            var diff = plist.diff(that.plist);
-            if (diff) {
-                //console.log('New Players found');
-                //console.log(diff);
-                diff.forEach(function(el){that.addPlayer(el);});
-            }
-
-            that.gtbl.parse(true);
-        });
-
-        node.on('in.set.DATA', function(msg) {
-
-            that.addLeft(msg.state, msg.from);
-            var x = that.player2x(msg.from);
-            var y = that.state2y(node.game.state, msg.text);
-
-            that.gtbl.add(msg.data, x, y);
-            that.gtbl.parse(true);
-        });
-    };
-
-    GameTable.prototype.addPlayer = function(player) {
-        this.plist.add(player);
-        var header = this.plist.map(function(el){return el.name;});
-        this.gtbl.setHeader(header);
-    };
-
-    GameTable.prototype.addLeft = function(state, player) {
-        if (!state) return;
-        state = new GameStage(state);
-        if (!J.inArray({content:state.toString(), type: 'left'},
-                       this.gtbl.left)) {
-
-            this.gtbl.add2Left(state.toString());
-        }
-        // Is it a new display associated to the same state?
-        else {
-            var y = this.state2y(state);
-            var x = this.player2x(player);
-            if (this.gtbl.select('y','=',y).select('x','=',x).count() > 1) {
-                this.gtbl.add2Left(state.toString());
-            }
-        }
-
-    };
-
-    GameTable.prototype.player2x = function(player) {
-        if (!player) return false;
-        return this.plist.select('id', '=', player).first().count;
-    };
-
-    GameTable.prototype.x2Player = function(x) {
-        if (!x) return false;
-        return this.plist.select('count', '=', x).first().count;
-    };
-
-    GameTable.prototype.state2y = function(state) {
-        if (!state) return false;
-        return node.game.plot.indexOf(state);
-    };
-
-    GameTable.prototype.y2State = function(y) {
-        if (!y) return false;
-        return node.game.plot.jumpTo(new GameStage(),y);
-    };
-
-})(node);
-
-/**
  * # LanguageSelector
  * Copyright(c) 2017 Stefano Balietti <ste@nodegame.org>
  * MIT Licensed
@@ -49777,504 +49482,6 @@ if (!Array.prototype.indexOf) {
         });
 
         return gauge;
-    }
-
-})(node);
-
-/**
- * # MsgBar
- * Copyright(c) 2017 Stefano Balietti
- * MIT Licensed
- *
- * Creates a tool for sending messages to other connected clients
- *
- * www.nodegame.org
- */
-(function(node) {
-
-    "use strict";
-
-    var Table = W.Table;
-
-    node.widgets.register('MsgBar', MsgBar);
-
-    // ## Meta-data
-
-    MsgBar.version = '0.7.2';
-    MsgBar.description = 'Send a nodeGame message to players';
-
-    MsgBar.title = 'Send MSG';
-    MsgBar.className = 'msgbar';
-
-    MsgBar.texts.advButton = 'Toggle advanced options';
-
-    function MsgBar() {
-        this.recipient = null;
-        this.actionSel = null;
-        this.targetSel = null;
-
-        this.table = null;
-        this.tableAdvanced = null;
-    }
-
-    MsgBar.prototype.init = function() {
-        this.id = this.id || MsgBar.className;
-    };
-
-    MsgBar.prototype.append = function() {
-        var advButton, sendButton;
-        var fields, i, field;
-        var table;
-        var that;
-
-        that = this;
-
-        this.table = new Table();
-        this.tableAdvanced = new Table();
-
-        // Create fields.
-        fields = ['to', 'action', 'target', 'text', 'data', 'from', 'priority',
-                  'reliable', 'forward', 'session', 'stage', 'created', 'id'];
-
-        for (i = 0; i < fields.length; ++i) {
-            field = fields[i];
-
-            // Put TO, ACTION, TARGET, TEXT, DATA in the first table which is
-            // always visible, the other fields in the "advanced" table which
-            // is hidden by default.
-            table = i < 5 ? this.table : this.tableAdvanced;
-
-            table.add(field, i, 0);
-            table.add(W.getTextInput(this.id + '_' + field, {tabindex: i+1}),
-                                     i, 1);
-
-            if (field === 'to') {
-                this.recipient =
-                    W.getRecipientSelector(this.id + '_recipients');
-                W.addAttributes2Elem(this.recipient,
-                        {tabindex: fields.length+1});
-                table.add(this.recipient, i, 2);
-                this.recipient.onchange = function() {
-                    W.getElementById(that.id + '_to').value =
-                        that.recipient.value;
-                };
-            }
-            else if (field === 'action') {
-                this.actionSel = W.getActionSelector(this.id + '_actions');
-                W.addAttributes2Elem(this.actionSel,
-                        {tabindex: fields.length+2});
-                table.add(this.actionSel, i, 2);
-                this.actionSel.onchange = function() {
-                    W.getElementById(that.id + '_action').value =
-                        that.actionSel.value;
-                };
-            }
-            else if (field === 'target') {
-                this.targetSel = W.getTargetSelector(this.id + '_targets');
-                W.addAttributes2Elem(this.targetSel,
-                        {tabindex: fields.length+3});
-                table.add(this.targetSel, i, 2);
-                this.targetSel.onchange = function() {
-                    W.getElementById(that.id + '_target').value =
-                        that.targetSel.value;
-                };
-            }
-        }
-
-        // Show table of basic fields.
-        this.bodyDiv.appendChild(this.table.table);
-
-        this.bodyDiv.appendChild(this.tableAdvanced.table);
-        this.tableAdvanced.table.style.display = 'none';
-
-        // Show 'Send' button.
-        sendButton = W.addButton(this.bodyDiv);
-        sendButton.onclick = function() {
-            var msg;
-            msg = that.parse();
-            if (msg) node.socket.send(msg);
-        };
-
-        // Show a button that expands the table of advanced fields.
-        advButton =
-            W.addButton(this.bodyDiv, undefined, this.getText('advButton'));
-        advButton.onclick = function() {
-            that.tableAdvanced.table.style.display =
-                that.tableAdvanced.table.style.display === '' ? 'none' : '';
-        };
-
-        this.table.parse();
-        this.tableAdvanced.parse();
-    };
-
-    MsgBar.prototype.parse = function() {
-        var msg, gameMsg;
-
-        msg = {};
-
-        this.table.forEach(validateTableMsg, msg);
-        if (msg._invalid) return null;
-        this.tableAdvanced.forEach(validateTableMsg, msg);
-        if (msg._invalid) return null;
-        delete msg._lastKey;
-        delete msg._invalid;
-        gameMsg = node.msg.create(msg);
-        node.info('MsgBar msg created. ' +  gameMsg.toSMS());
-        return gameMsg;
-    };
-
-
-    // # Helper Function.
-
-    function validateTableMsg(e, msg) {
-        var key, value;
-
-        if (msg._invalid) return;
-
-        if (e.y === 2) return;
-
-        if (e.y === 0) {
-            // Saving the value of last key.
-            msg._lastKey =  e.content;
-            return;
-        }
-
-        // Fetching the value of last key.
-        key = msg._lastKey;
-        value = e.content.value;
-
-        if (key === 'stage' || key === 'to' || key === 'data') {
-            try {
-                value = J.parse(e.content.value);
-            }
-            catch (ex) {
-                value = e.content.value;
-            }
-        }
-
-        // Validate input.
-        if (key === 'to') {
-            if ('number' === typeof value) {
-                value = '' + value;
-            }
-
-            if ((!J.isArray(value) && 'string' !== typeof value) ||
-                ('string' === typeof value && value.trim() === '')) {
-
-                alert('Invalid "to" field');
-                msg._invalid = true;
-            }
-        }
-
-        else if (key === 'action') {
-            if (value.trim() === '') {
-                alert('Missing "action" field');
-                msg._invalid = true;
-            }
-            else {
-                value = value.toLowerCase();
-            }
-
-        }
-
-        else if (key === 'target') {
-            if (value.trim() === '') {
-                alert('Missing "target" field');
-                msg._invalid = true;
-            }
-            else {
-                value = value.toUpperCase();
-            }
-        }
-
-        // Assigning the value.
-        msg[key] = value;
-    }
-
-})(node);
-
-/**
- * # NDDBBrowser
- * Copyright(c) 2017 Stefano Balietti
- * MIT Licensed
- *
- * Creates an interface to interact with an NDDB database
- *
- * www.nodegame.org
- */
-(function(node) {
-
-    "use strict";
-
-    node.widgets.register('NDDBBrowser', NDDBBrowser);
-
-    var NDDB = node.NDDB,
-    TriggerManager = node.TriggerManager;
-
-    // ## Defaults
-
-    NDDBBrowser.defaults = {};
-    NDDBBrowser.defaults.id = 'nddbbrowser';
-    NDDBBrowser.defaults.fieldset = false;
-
-    // ## Meta-data
-
-    NDDBBrowser.version = '0.2.1';
-    NDDBBrowser.description =
-        'Provides a very simple interface to control a NDDB istance.';
-
-    // ## Dependencies
-
-    NDDBBrowser.dependencies = {
-        JSUS: {},
-        NDDB: {},
-        TriggerManager: {}
-    };
-
-    function NDDBBrowser(options) {
-        this.options = options;
-        this.nddb = null;
-
-        this.commandsDiv = null;
-
-
-        this.info = null;
-    }
-
-    NDDBBrowser.prototype.init = function(options) {
-        this.tm = new TriggerManager();
-        this.tm.init(options.triggers);
-        this.nddb = options.nddb || new NDDB({
-            update: { pointer: true }
-        });
-    };
-
-    NDDBBrowser.prototype.append = function() {
-        this.commandsDiv = document.createElement('div');
-        if (this.id) this.commandsDiv.id = this.id;
-
-        function addButtons() {
-            var id = this.id;
-            W.addEventButton(id + '_GO_TO_FIRST', '<<',
-                this.commandsDiv, 'go_to_first');
-            W.addEventButton(id + '_GO_TO_PREVIOUS', '<',
-                this.commandsDiv, 'go_to_previous');
-            W.addEventButton(id + '_GO_TO_NEXT', '>',
-                this.commandsDiv, 'go_to_next');
-            W.addEventButton(id + '_GO_TO_LAST', '>>',
-                this.commandsDiv, 'go_to_last');
-            W.addBreak(this.commandsDiv);
-        }
-        function addInfoBar() {
-            var span = this.commandsDiv.appendChild(
-                document.createElement('span'));
-            return span;
-        }
-
-        addButtons.call(this);
-        this.info = addInfoBar.call(this);
-
-        this.bodyDiv.appendChild(this.commandsDiv);
-    };
-
-    NDDBBrowser.prototype.getRoot = function(root) {
-        return this.commandsDiv;
-    };
-
-    NDDBBrowser.prototype.add = function(o) {
-        return this.nddb.insert(o);
-    };
-
-    NDDBBrowser.prototype.sort = function(key) {
-        return this.nddb.sort(key);
-    };
-
-    NDDBBrowser.prototype.addTrigger = function(trigger) {
-        return this.tm.addTrigger(trigger);
-    };
-
-    NDDBBrowser.prototype.removeTrigger = function(trigger) {
-        return this.tm.removeTrigger(trigger);
-    };
-
-    NDDBBrowser.prototype.resetTriggers = function() {
-        return this.tm.resetTriggers();
-    };
-
-    NDDBBrowser.prototype.listeners = function() {
-        var that = this;
-        var id = this.id;
-
-        function notification(el, text) {
-            if (el) {
-                node.emit(id + '_GOT', el);
-                this.writeInfo((this.nddb.nddb_pointer + 1) + '/' +
-                    this.nddb.size());
-            }
-            else {
-                this.writeInfo('No element found');
-            }
-        }
-
-        node.on(id + '_GO_TO_FIRST', function() {
-            var el = that.tm.pullTriggers(that.nddb.first());
-            notification.call(that, el);
-        });
-
-        node.on(id + '_GO_TO_PREVIOUS', function() {
-            var el = that.tm.pullTriggers(that.nddb.previous());
-            notification.call(that, el);
-        });
-
-        node.on(id + '_GO_TO_NEXT', function() {
-            var el = that.tm.pullTriggers(that.nddb.next());
-            notification.call(that, el);
-        });
-
-        node.on(id + '_GO_TO_LAST', function() {
-            var el = that.tm.pullTriggers(that.nddb.last());
-            notification.call(that, el);
-
-        });
-    };
-
-    NDDBBrowser.prototype.writeInfo = function(text) {
-        var that;
-        that = this;
-        if (this.infoTimeout) clearTimeout(this.infoTimeout);
-        this.info.innerHTML = text;
-        this.infoTimeout = setTimeout(function(){
-            that.info.innerHTML = '';
-        }, 2000);
-    };
-
-})(node);
-
-/**
- * # NextPreviousStep
- * Copyright(c) 2016 Stefano Balietti
- * MIT Licensed
- *
- * Simple widget to step through the stages of the game
- *
- * www.nodegame.org
- */
-(function(node) {
-
-    "use strict";
-
-    node.widgets.register('NextPreviousStep', NextPreviousStep);
-
-    // ## Meta-data
-
-    NextPreviousStep.className = 'nextprevious';
-    NextPreviousStep.title = 'Next/Previous Step';
-
-    NextPreviousStep.version = '1.0.1';
-    NextPreviousStep.description = 'Adds two buttons to push forward or ' +
-        'rewind the state of the game by one step.';
-
-    NextPreviousStep.texts.rew = '<<';
-    NextPreviousStep.texts.fwd = '>>';
-
-    /**
-     * ## NextPreviousStep constructor
-     */
-    function NextPreviousStep() {
-
-        /**
-         * ### NextPreviousStep.rew
-         *
-         * The button to go one step back
-         */
-        this.rew = null;
-
-        /**
-         * ### NextPreviousStep.fwd
-         *
-         * The button to go one step forward
-         */
-        this.fwd = null;
-
-        /**
-         * ### NextPreviousStep.checkbox
-         *
-         * The checkbox to call `node.done` on forward
-         */
-        this.checkbox = null;
-    }
-
-    /**
-     * ### NextPreviousStep.append
-     *
-     * Appends the widget
-     *
-     * Creates two buttons and a checkbox
-     */
-    NextPreviousStep.prototype.append = function() {
-        var that, spanDone;
-        that = this;
-
-        this.rew = document.createElement('button');
-        this.rew.innerHTML = this.getText('rew');
-
-        this.fwd = document.createElement('button');
-        this.fwd.innerHTML = this.getText('fwd');
-
-        this.checkbox = document.createElement('input');
-        this.checkbox.type = 'checkbox';
-
-        this.fwd.onclick = function() {
-            if (that.checkbox.checked) node.done();
-            else node.game.step();
-            if (!hasNextStep()) {
-                that.fwd.disabled = 'disabled';
-            }
-        };
-
-        this.rew.onclick = function() {
-            var prevStep;
-            prevStep = node.game.getPreviousStep();
-            node.game.gotoStep(prevStep);
-            if (!hasPreviousStep()) {
-                that.rew.disabled = 'disabled';
-            }
-        };
-
-        if (!hasPreviousStep()) this.rew.disabled = 'disabled';
-        if (!hasNextStep()) this.fwd.disabled = 'disabled';
-
-        // Buttons.
-        this.bodyDiv.appendChild(this.rew);
-        this.bodyDiv.appendChild(this.fwd);
-
-        // Checkbox.
-        spanDone = document.createElement('span');
-        spanDone.appendChild(document.createTextNode('node.done'));
-        spanDone.appendChild(this.checkbox);
-        this.bodyDiv.appendChild(spanDone);
-    };
-
-    function hasNextStep() {
-        var nextStep;
-        nextStep = node.game.getNextStep();
-        if (!nextStep ||
-            nextStep === node.GamePlot.GAMEOVER ||
-            nextStep === node.GamePlot.END_SEQ ||
-            nextStep === node.GamePlot.NO_SEQ) {
-
-            return false;
-        }
-        return true;
-    }
-
-    function hasPreviousStep() {
-        var prevStep;
-        prevStep = node.game.getPreviousStep();
-        if (!prevStep) {
-            return false;
-        }
-        return true;
     }
 
 })(node);
