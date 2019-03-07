@@ -1,25 +1,29 @@
 # nodegame-server change log
 
-# 4.2.1
+## 5.0.0
+- Waiting room exec mode: WAIT_FOR_DISPATCH
+- Several improvements to handle updated Monitor interface
+
+## 4.2.1
 - Fixed bug introduced in 4.2.0, treatments were not correctly validated when
 treatment description was missing.
 - Added warning if treatment description is missing.
 
-# 4.2.0
+## 4.2.0
 - Treatment selection via Waiting Room interface.
 
-# 4.1.0
+## 4.1.0
 - Anti-spoofing fix.
 - Updated CSS removed position:absolute attribute from ng_mainframe that was
 causing scrollbar to flicker.
 
-# 4.0.2
+## 4.0.2
 - Last log sent from client (usually an error) is added to the registry (and sent to monitor).
 
-# 4.0.1
+## 4.0.1
 - Fixed bug that was failing to send client list to monitor.
 
-# 4.0.0
+## 4.0.0
 - Home Page.
 - Updated Css.
 - Improved `ServerChannel.connectBot` with new options.
@@ -32,235 +36,232 @@ causing scrollbar to flicker.
 - Cleanup (removed PageManager).
 - Removed some of old make commands: sync, multibuild, clean.
 
-# 3.5.7
+## 3.5.7
 - Internal cleanup.
 - Better error messages for duplicated aliases.
 - Preparing for v4 (replyClaimId).
 
-# 3.5.6
+## 3.5.6
 - Fix bug reconnect in GameRoom with stageLevel = DONE.
 - Fix log error in GameRouter.
 - Improved HI handshake client-server.
 - Garage room has no node instance.
 - Throwing an error if missing auth files.
 
-# 3.5.5
+## 3.5.5
 - Server responds to Auth View of monitor interface.
 
-# 3.5.4
+## 3.5.4
 - Server responds to updated Memory View of monitor interface.
 
-# 3.5.3
+## 3.5.3
 - Catching stringify errors (e.g. cycles) when sending game data to monitor.
 
-# 3.5.2
+## 3.5.2
 - Fixed bug introduced in 3.5 to access monitor interface.
 
-# 3.5.1
+## 3.5.1
 - Game data/ dir is automatically created if not found.
 - The return value ofe game.setup is not cloned, and shared with all client types.
 - Credentials and secret for channel are validated.
 
-# 3.5
+## 3.5
 - Removed x-powered by tag.
 - Improved methods to create bots.
 - Bots can have their ID pre-specified.
 
-# 3.2.3
+## 3.2.3
 - Improved communication with monitor.
 
-# 3.2.2
+## 3.2.2
 - WaitingRoom can accept parameter to control which treatment to run.
 - AdminServer adds the stage of the logic to the reply to ROOMS_INFO.
 
-# 3.2.1
+## 3.2.1
 - WaitingRoom dispatching algorithm improved. Settings for pinging times can be specified in conf file.
 - Added the GarageRoom to the channel. Now admins are connected to it by default. Monitors do not receive so much traffic now.
 - Logging makes sure to stringigy its content before saving it.
 - SocketDirect does not stringify/unstringify its messages any more. It just passes the plain object.
 
-# 3.1.0
+## 3.1.0
 - Implemented policy sameStepReconnectionOnly.
 - Custom messages for pausing when min/max/exact handler is fired.
 
-# 3.0.3
+## 3.0.3
 - Update to follow client's SizeManager.
 
-# 3.0.2
+## 3.0.2
 - Fixing wrong nodegame-full built.
 
-# 3.0.1
+## 3.0.1
 - More information served with RESULTS.
 - All results can be downloaded as zip file.
 - When the handler for the correct number of players is fired, it is checked that the game is paused before calling resume.
 
-# 3.0.0
+## 3.0.0
 - 02/10/2016 NodeGame Version Upgrade.
 
-# 2.14.1
+## 2.14.1
 - More WaitingRoom options (ON_DISPATCH, ON_DISPATCHED).
 
-# 2.14.0
+## 2.14.0
 - Fix bug of multiple connections during pinging in WaitingRoom dispatch.
 
-# 2.13.1
+## 2.13.1
 - Fix bug to access monitor.
 
-# 2.13.0
+## 2.13.0
 - Enabled caching of resources in public/ by default (in channel.settings.js option cacheMaxAge).
 
-# 2.12.0
+## 2.12.0
 - Serving logs list.
 - Improved WaitingRoom dispatch.
 - Supporting incoming waiting room commands.
 
-# 2.11.0
+## 2.11.0
 - WaitingRoom's dispatching optimized.
 - Added WaitingRoom ON_CLOSE and ON_OPEN callbacks.
 
-# 2.10.0
+## 2.10.0
  - Logics receive the full clients object (reference to the one in the registry).
  - WillBeDone property on reconnect is set only if stage of reconnecting client is not behind current stage.
 
-# 2.9.1
+## 2.9.1
  - Cleanup.
 
-# 2.9.0
+## 2.9.0
  - Adapted to new GameStage.compare method in updated nodegame-client.
 
-# 2.8.4
+## 2.8.4
  - Extending fix in 2.8.2.
 
-# 2.8.3
+## 2.8.3
  - Fix terminatePhantom.
 
-# 2.8.2
+## 2.8.2
  - Fixing stripping sid (introduced inm 2.7.0).
 
-# 2.8.1
+## 2.8.1
  - Hidden files are skipped from the results of the game (data/).
 
-# 2.8.0
+## 2.8.0
  - AdminServer can serve results of game (data/)..
 
-# 2.7.0
+## 2.7.0
  - Improved reconnection/disconnection handling.
  - Upgraded dependencies: express, socket.io, winston
  - Updated SocketIo socket for new version of socket.io
  - Security fix: incoming socket connections must have signed cookies when authorization is on.
 
-# 2.6.2
+## 2.6.2
  - WaitingRoom option to PING_BEFORE_DISPATCH.
 
-# 2.6.1
+## 2.6.1
  - The timestamp of claim id action is stored with client object.
 
-# 2.6.0
+## 2.6.0
  - WaitingRoom accepts custom PLAYER_SORTING and PLAYER_GROUPING parameters.
  - Better error catching in WaitingRoom and GameLoader.
 
-# 2.5.0
+## 2.5.0
  - Phantoms have default viewport 1366x768.
  - Phantoms have a polyfill for the .click() method.
  - Optimized code for the dispatching of clients in the WaitingRoom.
 
-# 2.4.0
+## 2.4.0
  - Channels can be set as "default" and they are served from "/" (aliases of the same game will continue to work, but other games might not be available).
  - Monitor interface is not available anymore from alias urls.
 
-# 2.3.1
+## 2.3.1
  - Better look-up of the phantomjs directory.
 
-# 2.3.0
+## 2.3.0
  - Fixed resolving monitor directory correctly in GameRouter.
 
-# 2.2.0
+## 2.2.0
  - Query parameters passed to onConnect method in GameServer. (retro-compatible).
 
-# 2.1.2
+## 2.1.2
  - Built.
 
-# 2.1.1
+## 2.1.1
  - Handling aliases better, general cleanup in ServerNode
 
-# 2.1.0
+## 2.1.0
  - Better support for authorization codes.
 
-# 2.0.0
+## 2.0.0
  - SSL support.
  - Default Stager callback changed: does not call node.done().
  - Added checkings if games have same name or if channel has same endpoint.
- - Logic client types have default callback where they do **not** call `#node.done()`.
+ - Logic client types have default callback where they do **not** call `##node.done()`.
  - `bin/info.js`
 
-# 1.1.0
+## 1.1.0
  - Fixed bug with loading context directories to create language index.
  - Fixed bug with channel.require nocache setting in Windows.
 
-# 1.0.0
+## 1.0.0
  - Callback to decorate client objects. The callback is loaded from the auth file.
  - Treatments are not deleted from required settints file.
 
-# 0.9.10
+## 0.9.10
  - Treatments are correctly built.
  - IP address is passed to auth function.
  - HandleReconnection method in GameServer forces disconnection of previously connected clients if a reconnection with the same client id is found. This can happen with non-WebSockets connections.
  - `enableReconnections` option for player and admin server.
 
-# 0.9.9
+## 0.9.9
  - Incorrect Build
 
-# 0.9.8
+## 0.9.8
  - Servernode.lastError
 
-# 0.9.7
+## 0.9.7
  - Added more options to control Phantom JS bots
  - Fixed disconnections on Game Over of Phantom JS bots
  - Documentation fixes
 
-# 0.9.6
+## 0.9.6
  - Added docs to index
  - ConnectBot and ConnectPhantom
  - Restored corrupted images in public
 
-# 0.9.5
+## 0.9.5
  - Full Bot connect api
  - Phantomjs connect bot
  - Client types loaded from game.settings
  - Socket Direct messaging is asynchronous
  - Load Auth Directory
 
-# 0.9.4
+## 0.9.4
  - Better integration with Jade template language
  - Support for internationalization
  - Channels files are automatically loaded from games directory
  - Server expects games to have the following folders: `public/`,`views/`, `server/`
  - LANG messages are exchanged
 
-# 0.9.3
+## 0.9.3
  - Added log directory to index. Necessary to run immediately after npm install
 
-# 0.9.2
+## 0.9.2
  - Fixed reconnection issue when client was not marked connected before trying to update it
  - Added a copy of patched static.js in bin/ for windows install
 
-# 0.9.1
+## 0.9.1
  - Refactored SocketManager to support inter-channels messages
  - Refactored SocketIo and SocketDirect
 
-# 0.9
+## 0.9
  - Change log of new version starts here.
 
-# above 0.6
-
+## above 0.6
   - Configuration directories are not loaded again if erroneously added to the index
 
 ## 0.2.7
-
   - node.redirect (for AdminServer only)
   - better make file
   - cleanup
 
 ## 0.2.0
-
   - Major refactoring
