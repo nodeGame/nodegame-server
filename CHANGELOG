@@ -4,7 +4,10 @@
 - Waiting room exec mode: WAIT_FOR_DISPATCH
 - Several improvements to handle updated Monitor interface
 
-## 4.2.1
+# 4.2.2
+- Fixed bug when spoofing mechanism is enabled.
+
+# 4.2.1
 - Fixed bug introduced in 4.2.0, treatments were not correctly validated when
 treatment description was missing.
 - Added warning if treatment description is missing.
