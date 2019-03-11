@@ -21,18 +21,18 @@
   ,   "errorhandler": "*"
   ,   "archiver": "*"
   ,   "socket.io": "2.2.0"
+  ,   "request": "2.88.0"
+  ,   "winston": "2.4.0"
+  ,   "phantomjs": ">=2.1.7"
+  ,   "jsonwebtoken": "8.1.0"
   ,   "nodegame-monitor": "*"
   ,   "nodegame-game-template": "*"
   ,   "JSUS": ">= 0.17.0"
   ,   "NDDB": ">= 1.8.0"
   ,   "shelf.js": ">= 0.3.7"
   ,   "commander": ">= 2.8.1"
-  ,   "request": "2.83.0"
   ,   "jade": "1.11.0"
   ,   "JSON": "1.0.0"
-  ,   "winston": "2.4.0"
-  ,   "phantomjs": ">=2.1.7"
-  ,   "jsonwebtoken": "8.1.0"
     }
   , "devDependencies": {
       "mocha": ">=4.0.1",
