@@ -2,6 +2,7 @@
 
 ## current
 - Setup content is not merged for levels, justed mixed in.
+- Folders in the games/ directory beginning with a dot are ignored.
 
 ## 5.0.0
 - Waiting room exec mode: WAIT_FOR_DISPATCH
