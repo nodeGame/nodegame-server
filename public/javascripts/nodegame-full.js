@@ -38133,7 +38133,7 @@ if (!Array.prototype.indexOf) {
     Widget.prototype.highlight = function(options) {
         if (this.isHighlighted()) return;
         this.highlighted = true;
-        this.emit('highlighted');
+        this.emit('highlighted', options);
     };
 
     /**
@@ -38150,10 +38150,10 @@ if (!Array.prototype.indexOf) {
      *
      * @see Widget.highlighted
      */
-    Widget.prototype.unhighlight = function() {
+    Widget.prototype.unhighlight = function(options) {
         if (!this.isHighlighted()) return;
         this.highlighted = false;
-        this.emit('unhighlighted');
+        this.emit('unhighlighted', options);
     };
 
     /**
@@ -38245,10 +38245,10 @@ if (!Array.prototype.indexOf) {
      *
      * An enabled widget allows the user to interact with it
      */
-    Widget.prototype.enable = function() {
+    Widget.prototype.enable = function(options) {
         if (!this.disabled) return;
         this.disabled = false;
-        this.emit('enabled');
+        this.emit('enabled', options);
     };
 
     /**
@@ -38258,10 +38258,10 @@ if (!Array.prototype.indexOf) {
      *
      * A disabled widget is still visible, but user cannot interact with it
      */
-    Widget.prototype.disable = function() {
+    Widget.prototype.disable = function(options) {
         if (this.disabled) return;
         this.disabled = true;
-        this.emit('disabled');
+        this.emit('disabled', options);
     };
 
     /**
@@ -38578,10 +38578,23 @@ if (!Array.prototype.indexOf) {
      *
      * Returns TRUE if widget was appended to DOM (using Widget API)
      *
+     * Checks if the panelDiv element has been created.
+     *
      * @return {boolean} TRUE, if node.widgets.append was called
      */
     Widget.prototype.isAppended = function() {
-        return this.appended;
+        return !!this.panelDiv;
+    };
+
+    /**
+     * ### Widget.isDestroyed
+     *
+     * Returns TRUE if widget has been destroyed
+     *
+     * @return {boolean} TRUE, if the widget has been destroyed
+     */
+    Widget.prototype.isDestroyed = function() {
+        return !!this.destroyed;
     };
 
     /**
@@ -39059,7 +39072,7 @@ if (!Array.prototype.indexOf) {
          *
          * A box selector widget containing hidden docked widgets
          */
-        this.boxSelector = null
+        this.boxSelector = null;
 
         /**
          * ### Widgets.collapseTarget
@@ -39130,6 +39143,23 @@ if (!Array.prototype.indexOf) {
             }
 
             return conf;
+        });
+
+        // Garbage collection.
+        node.on('FRAME_LOADED', function() {
+            var w, i, fd;
+            fd = W.getFrameDocument();
+            w = node.widgets.instances;
+            for (i = 0; i < w.length; i++) {
+                // Check if widget is not on page any more.
+                if (w[i].isAppended() &&
+                    (fd && !fd.contains(w[i].panelDiv)) &&
+                    !document.body.contains(w[i].panelDiv)) {
+
+                    w[i].destroy();
+                    i--;
+                }
+            }
         });
 
         node.info('node-widgets: loading.');
@@ -39228,9 +39258,9 @@ if (!Array.prototype.indexOf) {
      * @see Widgets.instances
      */
     Widgets.prototype.get = function(widgetName, options) {
-        var WidgetPrototype, widget;
-        var changes;
         var that;
+        var WidgetPrototype, widget, changes;
+
         if ('string' !== typeof widgetName) {
             throw new TypeError('Widgets.get: widgetName must be string.' +
                                'Found: ' + widgetName);
@@ -39239,8 +39269,16 @@ if (!Array.prototype.indexOf) {
             options = {};
         }
         else if ('object' !== typeof options) {
-            throw new TypeError('Widgets.get: options must be object or ' +
-                                'undefined. Found: ' + options);
+            throw new TypeError('Widgets.get: ' + widgetName + ' options ' +
+                                'must be object or undefined. Found: ' +
+                                options);
+        }
+        if (options.storeRef === false) {
+            if (options.docked === true) {
+                throw new TypeError('Widgets.get: '  + widgetName +
+                                    'options.storeRef cannot be false ' +
+                                    'if options.docked is true.');
+            }
         }
 
         that = this;
@@ -39290,7 +39328,7 @@ if (!Array.prototype.indexOf) {
             widget.className += ' ' + options.className;
         }
         else if ('undefined' !== typeof options.className) {
-            throw new TypeError('widgets.append: className must be array, ' +
+            throw new TypeError('Widgets.get: className must be array, ' +
                                 'string, or undefined. Found: ' +
                                 options.className);
         }
@@ -39311,7 +39349,9 @@ if (!Array.prototype.indexOf) {
             uncollapsed: [],
             disabled: [],
             enabled: [],
-            destroyed: []
+            destroyed: [],
+            highlighted: [],
+            unhighlighted: []
         };
 
         // Fixed properties.
@@ -39320,8 +39360,6 @@ if (!Array.prototype.indexOf) {
         widget.widgetName = widgetName;
         // Add random unique widget id.
         widget.wid = '' + J.randomInt(0,10000000000000000000);
-        // Add appended.
-        widget.appended = false;
         // Add enabled.
         widget.disabled = null;
         // Add highlighted.
@@ -39336,6 +39374,31 @@ if (!Array.prototype.indexOf) {
 
         // Call listeners.
         if (options.listeners !== false) {
+
+            // TODO: future versions should pass the right event listener
+            // to the listeners method. However, the problem is that it
+            // does not have `on.data` methods, those are aliases.
+
+         //  if ('undefined' === typeof options.listeners) {
+         //      ee = node.getCurrentEventEmitter();
+         //  }
+         //  else if ('string' === typeof options.listeners) {
+         //      if (options.listeners !== 'game' &&
+         //          options.listeners !== 'stage' &&
+         //          options.listeners !== 'step') {
+         //
+         //          throw new Error('Widget.get: widget ' + widgetName +
+         //                          ' has invalid value for option ' +
+         //                          'listeners: ' + options.listeners);
+         //      }
+         //      ee = node.events[options.listeners];
+         //  }
+         //  else {
+         //      throw new Error('Widget.get: widget ' + widgetName +
+         //                      ' options.listeners must be false, string ' +
+         //                      'or undefined. Found: ' + options.listeners);
+         //  }
+
             // Start recording changes.
             node.events.setRecordChanges(true);
 
@@ -39383,28 +39446,35 @@ if (!Array.prototype.indexOf) {
             }
 
             // Remove widget from current instances, if found.
-            i = -1, len = node.widgets.instances.length;
-            for ( ; ++i < len ; ) {
-                if (node.widgets.instances[i].wid === widget.wid) {
-                    node.widgets.instances.splice(i,1);
-                    break;
+            if (widget.storeRef !== false) {
+                i = -1, len = node.widgets.instances.length;
+                for ( ; ++i < len ; ) {
+                    if (node.widgets.instances[i].wid === widget.wid) {
+                        node.widgets.instances.splice(i,1);
+                        break;
+                    }
                 }
-            }
+                // Remove from lastAppended.
+                if (node.widgets.lastAppended &&
+                    node.widgets.lastAppended.wid === this.wid) {
 
-            // Remove from lastAppended.
-            if (this.lastAppended && this.lastAppended.wid === widget.wid) {
-                node.warn('node.widgets.lastAppended destroyed.');
-                this.lastAppended = null;
+                    node.warn('node.widgets.lastAppended destroyed.');
+                    node.widgets.lastAppended = null;
+                }
             }
 
             // Remove from docked.
             if (this.docked) closeDocked(widget.wid, false);
 
+            // In case the widget is stored somewhere else, set destroyed.
+            this.destroyed = true;
+
             this.emit('destroyed');
         };
 
-        // Store widget instance (e.g. used for destruction).
-        this.instances.push(widget);
+        // Store widget instance (e.g., used for destruction).
+        if (options.storeRef !== false) this.instances.push(widget);
+        else widget.storeRef = false;
 
         return widget;
     };
@@ -39509,9 +39579,6 @@ if (!Array.prototype.indexOf) {
         // Optionally set context.
         if (w.context) w.setContext(w.context);
 
-        // User listeners.
-        // attachListeners(w);
-
         // Be hidden, if requested.
         if (options.hidden) w.hide();
 
@@ -39520,13 +39587,12 @@ if (!Array.prototype.indexOf) {
         w.originalRoot = root;
 
         w.append();
-        w.appended = true;
 
         // Make sure the distance from the right side is correct.
         if (w.docked) setRightStyle(w);
 
-        // Store reference of last appended widget.
-        this.lastAppended = w;
+        // Store reference of last appended widget (.get method set storeRef).
+        if (w.storeRef !== false) this.lastAppended = w;
 
         return w;
     };
@@ -39557,7 +39623,7 @@ if (!Array.prototype.indexOf) {
         if (strict) return w instanceof node.Widget;
         return ('object' === typeof w &&
                 'function' === typeof w.append &&
-                'function' === typeof w.getValues)
+                'function' === typeof w.getValues);
     };
 
     /**
@@ -39626,32 +39692,17 @@ if (!Array.prototype.indexOf) {
         return true;
     };
 
-
     // ## Helper functions
 
-//     function createListenerFunction(w, e, l) {
-//         if (!w || !e || !l) return;
-//         w.panelDiv[e] = function() { l.call(w); };
-//     }
-//
-//     function attachListeners(w) {
-//         var events, isEvent, i;
-//         isEvent = false;
-//         events = ['onclick', 'onfocus', 'onblur', 'onchange',
-//                   'onsubmit', 'onload', 'onunload', 'onmouseover'];
-//         for (i in w.options) {
-//             if (w.options.hasOwnProperty(i)) {
-//                 isEvent = J.inArray(i, events);
-//                 if (isEvent && 'function' === typeof w.options[i]) {
-//                     createListenerFunction(w, i, w.options[i]);
-//                 }
-//             }
-//         }
-//     }
-
+    // ### checkDepErrMsg
+    //
+    // Prints out an error message for a dependency not met.
+    //
+    // @param {Widget} w The widget
+    // @param {string} d The dependency
     function checkDepErrMsg(w, d) {
-        var name = w.name || w.id; // || w.toString();
-        node.err(d + ' not found. ' + name + ' cannot be loaded.');
+        var name = w.name || w.id;
+        node.err(d + ' not found. ' + name + ' cannot be loaded');
     }
 
     // ### closeDocked
@@ -39663,6 +39714,8 @@ if (!Array.prototype.indexOf) {
     //    docked list. Default: FALSE.
     //
     // @return {boolean} TRUE if a widget with given wid was found
+    //
+    // @see BoxSelector
     function closeDocked(wid, hide) {
         var d, i, len, width, closed;
         d = node.widgets.docked;
@@ -39711,6 +39764,13 @@ if (!Array.prototype.indexOf) {
         return !!width;
     }
 
+    // ### setRightStyle
+    //
+    // Sets the right property of the panelDiv of a docked widget
+    //
+    // May close docked widgets to make space to this one.
+    //
+    // @param {Widget} w The widget
     function setRightStyle(w) {
         var dockedMargin, safeMargin;
         var lastDocked, right, ws, tmp;
@@ -39739,7 +39799,6 @@ if (!Array.prototype.indexOf) {
                tmp < (ws.docked.length - 1)) {
 
             // Make some space...
-            // right -= ws.docked[tmp].dockedOffsetWidth;
             closeDocked(ws.docked[tmp].wid, true);
             tmp++;
         }
@@ -39748,7 +39807,13 @@ if (!Array.prototype.indexOf) {
         w.dockedOffsetWidth = w.panelDiv.offsetWidth + dockedMargin;
     }
 
+    // ### getPxNum
+    //
     // Returns the numeric value of string containg 'px' at the end, e.g. 20px.
+    //
+    // @param {string} The value of a css property containing 'px' at the end
+    //
+    // @return {number} The numeric value of the css property
     function getPxNum(str) {
         return parseInt(str.substring(0, str.length - 2), 10);
     }
@@ -42552,10 +42617,10 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # ChoiceManager
- * Copyright(c) 2017 Stefano Balietti
+ * Copyright(c) 2019 Stefano Balietti
  * MIT Licensed
  *
- * Creates and manages a set of selectable choices forms (e.g. ChoiceTable).
+ * Creates and manages a set of selectable choices forms (e.g., ChoiceTable).
  *
  * www.nodegame.org
  */
@@ -42567,7 +42632,7 @@ if (!Array.prototype.indexOf) {
 
     // ## Meta-data
 
-    ChoiceManager.version = '1.0.0';
+    ChoiceManager.version = '1.1.0';
     ChoiceManager.description = 'Groups together and manages a set of ' +
         'selectable choices forms (e.g. ChoiceTable).';
 
@@ -42634,6 +42699,15 @@ if (!Array.prototype.indexOf) {
         this.shuffleForms = null;
 
         /**
+         * ### ChoiceManager.shuffleForms
+         *
+         * TRUE, each form separately stored under node.widgets.instances
+         *
+         * Default: FALSE
+         */
+        this.storeRefForms = null;
+
+        /**
          * ### ChoiceManager.group
          *
          * The name of the group where the list belongs, if any
@@ -42684,6 +42758,7 @@ if (!Array.prototype.indexOf) {
      *       if 'string', the text will be added inside the the textarea
      *   - forms: the forms to displayed, formatted as explained in
      *       `ChoiceManager.setForms`
+     *   - storeRefForms: if TRUE, forms are added under node.widgets.instances
      *
      * @param {object} options Configuration options
      *
@@ -42731,6 +42806,8 @@ if (!Array.prototype.indexOf) {
                                 'be string, undefined. Found: ' +
                                 options.mainText);
         }
+
+        this.storeRefForms = !!options.storeRefForms || false;
 
         // After all configuration options are evaluated, add forms.
 
@@ -42801,6 +42878,7 @@ if (!Array.prototype.indexOf) {
             form = parsedForms[i];
             if (!node.widgets.isWidget(form)) {
                 if ('string' === typeof form.name) {
+                    form.storeRef = !!form.storeRef || this.storeRefForms;
                     form = node.widgets.get(form.name, form);
                 }
                 if (!node.widgets.isWidget(form)) {
@@ -42912,6 +42990,8 @@ if (!Array.prototype.indexOf) {
         for ( ; ++i < len ; ) {
             this.forms[i].disable();
         }
+        this.disabled = true;
+        this.emit('disabled');
     };
 
     /**
@@ -42924,8 +43004,10 @@ if (!Array.prototype.indexOf) {
         if (!this.disabled) return;
         i = -1, len = this.forms.length;
         for ( ; ++i < len ; ) {
-            this.forms[i].disable();
+            this.forms[i].enable();
         }
+        this.disabled = false;
+        this.emit('enabled')
     };
 
     /**
@@ -43007,13 +43089,14 @@ if (!Array.prototype.indexOf) {
      * @see ChoiceManager.highlighted
      */
     ChoiceManager.prototype.highlight = function(border) {
-        if (!this.dl) return;
         if (border && 'string' !== typeof border) {
             throw new TypeError('ChoiceManager.highlight: border must be ' +
                                 'string or undefined. Found: ' + border);
         }
+        if (!this.dl || this.highlighted === true) return;
         this.dl.style.border = border || '3px solid red';
         this.highlighted = true;
+        this.emit('highlighted');
     };
 
     /**
@@ -43024,9 +43107,10 @@ if (!Array.prototype.indexOf) {
      * @see ChoiceManager.highlighted
      */
     ChoiceManager.prototype.unhighlight = function() {
-        if (!this.dl) return;
+        if (!this.dl || this.highlighted !== true) return;
         this.dl.style.border = '';
         this.highlighted = false;
+        this.emit('unhighlighted');
     };
 
     /**
@@ -44160,6 +44244,7 @@ if (!Array.prototype.indexOf) {
             J.removeClass(this.table, 'clickable');
             this.table.removeEventListener('click', this.listener);
         }
+        this.emit('disabled');
     };
 
     /**
@@ -44177,6 +44262,7 @@ if (!Array.prototype.indexOf) {
         this.disabled = false;
         J.addClass(this.table, 'clickable');
         this.table.addEventListener('click', this.listener);
+        this.emit('enabled');
     };
 
     /**
@@ -44341,13 +44427,14 @@ if (!Array.prototype.indexOf) {
      * @see ChoiceTable.highlighted
      */
     ChoiceTable.prototype.highlight = function(border) {
-        if (!this.table) return;
         if (border && 'string' !== typeof border) {
             throw new TypeError('ChoiceTable.highlight: border must be ' +
                                 'string or undefined. Found: ' + border);
         }
+        if (!this.table || this.highlighted) return;
         this.table.style.border = border || '3px solid red';
         this.highlighted = true;
+        this.emit('highlighted', border);
     };
 
     /**
@@ -44358,9 +44445,10 @@ if (!Array.prototype.indexOf) {
      * @see ChoiceTable.highlighted
      */
     ChoiceTable.prototype.unhighlight = function() {
-        if (!this.table) return;
+        if (!this.table || this.highlighted !== true) return;
         this.table.style.border = '';
         this.highlighted = false;
+        this.emit('unhighlighted');
     };
 
     /**
@@ -44643,7 +44731,7 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # ChoiceTableGroup
- * Copyright(c) 2017 Stefano Balietti
+ * Copyright(c) 2019 Stefano Balietti
  * MIT Licensed
  *
  * Creates a table that groups together several choice tables widgets
@@ -44660,7 +44748,7 @@ if (!Array.prototype.indexOf) {
 
     // ## Meta-data
 
-    ChoiceTableGroup.version = '1.3.0';
+    ChoiceTableGroup.version = '1.4.0';
     ChoiceTableGroup.description = 'Groups together and manages sets of ' +
         'ChoiceTable widgets.';
 
@@ -44793,7 +44881,7 @@ if (!Array.prototype.indexOf) {
         /**
          * ### ChoiceTableGroup.items
          *
-         * The array available items
+         * The array of available items
          */
         this.items = null;
 
@@ -45176,9 +45264,8 @@ if (!Array.prototype.indexOf) {
             options.freeText : !!options.freeText;
 
         // Add the items.
-        if ('undefined' !== typeof options.items) {
-            this.setItems(options.items);
-        }
+        if ('undefined' !== typeof options.items) this.setItems(options.items);
+
     };
 
     /**
@@ -45323,7 +45410,7 @@ if (!Array.prototype.indexOf) {
         }
 
         // Enable onclick listener.
-        this.enable();
+        this.enable(true);
     };
 
     /**
@@ -45413,13 +45500,12 @@ if (!Array.prototype.indexOf) {
      *
      * Disables clicking on the table and removes CSS 'clicklable' class
      */
-    ChoiceTableGroup.prototype.disable = function(force) {
-        if (this.disabled === true) return;
+    ChoiceTableGroup.prototype.disable = function() {
+        if (this.disabled === true || !this.table) return;
         this.disabled = true;
-        if (this.table) {
-            J.removeClass(this.table, 'clickable');
-            this.table.removeEventListener('click', this.listener);
-        }
+        J.removeClass(this.table, 'clickable');
+        this.table.removeEventListener('click', this.listener);
+        this.emit('disabled');
     };
 
     /**
@@ -45430,13 +45516,11 @@ if (!Array.prototype.indexOf) {
      * @return {function} cb The event listener function
      */
     ChoiceTableGroup.prototype.enable = function(force) {
-        if (this.disabled === false) return;
-        if (!this.table) {
-            throw new Error('ChoiceTableGroup.enable: table not defined.');
-        }
+        if (!this.table || (!force && !this.disabled)) return;
         this.disabled = false;
         J.addClass(this.table, 'clickable');
         this.table.addEventListener('click', this.listener);
+        this.emit('enabled');
     };
 
     /**
@@ -45518,13 +45602,14 @@ if (!Array.prototype.indexOf) {
      * @see ChoiceTableGroup.highlighted
      */
     ChoiceTableGroup.prototype.highlight = function(border) {
-        if (!this.table) return;
         if (border && 'string' !== typeof border) {
             throw new TypeError('ChoiceTableGroup.highlight: border must be ' +
                                 'string or undefined. Found: ' + border);
         }
+        if (!this.table || this.highlighted === true) return;
         this.table.style.border = border || '3px solid red';
         this.highlighted = true;
+        this.emit('highlighted', border);
     };
 
     /**
@@ -45535,9 +45620,10 @@ if (!Array.prototype.indexOf) {
      * @see ChoiceTableGroup.highlighted
      */
     ChoiceTableGroup.prototype.unhighlight = function() {
-        if (!this.table) return;
+        if (!this.table || this.highlighted !== true) return;
         this.table.style.border = '';
         this.highlighted = false;
+        this.emit('unhighlighted');
     };
 
     /**
@@ -45749,6 +45835,9 @@ if (!Array.prototype.indexOf) {
         if ('undefined' === typeof s.timeFrom) s.timeFrom = that.timeFrom;
 
         if ('undefined' === typeof s.left) s.left = s.id;
+
+        // No reference is stored in node.widgets.
+        s.storeRef = false;
 
         return s;
     }
@@ -47233,7 +47322,7 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # EmailForm
- * Copyright(c) 2017 Stefano Balietti <ste@nodegame.org>
+ * Copyright(c) 2019 Stefano Balietti <ste@nodegame.org>
  * MIT Licensed
  *
  * Displays a form to input email
@@ -47248,7 +47337,7 @@ if (!Array.prototype.indexOf) {
 
     // ## Meta-data
 
-    EmailForm.version = '0.9.0';
+    EmailForm.version = '0.10.0';
     EmailForm.description = 'Displays a configurable email form.';
 
     EmailForm.title = 'Email';
@@ -47551,13 +47640,14 @@ if (!Array.prototype.indexOf) {
      * @see EmailForm.highlighted
      */
     EmailForm.prototype.highlight = function(border) {
-        if (!this.inputElement) return;
         if (border && 'string' !== typeof border) {
             throw new TypeError('EmailForm.highlight: border must be ' +
                                 'string or undefined. Found: ' + border);
         }
+        if (!this.inputElement || this.highlighted === true) return;
         this.inputElement.style.border = border || '3px solid red';
         this.highlighted = true;
+        this.emit('highlighted', border);
     };
 
     /**
@@ -47568,9 +47658,10 @@ if (!Array.prototype.indexOf) {
      * @see EmailForm.highlighted
      */
     EmailForm.prototype.unhighlight = function() {
-        if (!this.inputElement) return;
+        if (!this.inputElement || this.highlighted !== true) return;
         this.inputElement.style.border = '';
         this.highlighted = false;
+        this.emit('unhighlighted');
     };
 
     /**
@@ -47606,7 +47697,7 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # EndScreen
- * Copyright(c) 2018 Stefano Balietti <ste@nodegame.org>
+ * Copyright(c) 2019 Stefano Balietti <ste@nodegame.org>
  * MIT Licensed
  *
  * Creates an interface to display final earnings, exit code, etc.
@@ -47622,7 +47713,7 @@ if (!Array.prototype.indexOf) {
 
     // ## Add Meta-data
 
-    EndScreen.version = '0.5.0';
+    EndScreen.version = '0.6.0';
     EndScreen.description = 'Game end screen. With end game message, ' +
                             'email form, and exit code.';
 
@@ -47833,12 +47924,15 @@ if (!Array.prototype.indexOf) {
         if (this.showEmailForm && !this.emailForm) {
             this.emailForm = node.widgets.get('EmailForm', J.mixin({
                 label: this.getText('contactQuestion'),
-                onsubmit: { say: true, emailOnly: true, updateUI: true }
+                onsubmit: { say: true, emailOnly: true, updateUI: true },
+                storeRef: false
             }, options.email));
         }
 
         if (this.showFeedbackForm) {
-            this.feedback = node.widgets.get('Feedback', options.feedback);
+            this.feedback = node.widgets.get('Feedback', J.mixin(
+                { storeRef: false },
+                options.feedback));
         }
     };
 
@@ -48061,7 +48155,7 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # Feedback
- * Copyright(c) 2017 Stefano Balietti
+ * Copyright(c) 2019 Stefano Balietti
  * MIT Licensed
  *
  * Sends a feedback message to the server
@@ -48076,7 +48170,7 @@ if (!Array.prototype.indexOf) {
 
     // ## Meta-data
 
-    Feedback.version = '1.0.1';
+    Feedback.version = '1.1.0';
     Feedback.description = 'Displays a configurable feedback form';
 
     Feedback.title = 'Feedback';
@@ -48536,13 +48630,14 @@ if (!Array.prototype.indexOf) {
      * @see Feedback.highlighted
      */
     Feedback.prototype.highlight = function(border) {
-        if (!this.feedbackHTML) return;
         if (border && 'string' !== typeof border) {
             throw new TypeError('Feedback.highlight: border must be ' +
                                 'string or undefined. Found: ' + border);
         }
+        if (!this.feedbackHTML || this.highlighted === true) return;
         this.feedbackHTML.style.border = border || '3px solid red';
         this.highlighted = true;
+        this.emit('highlighted', border);
     };
 
     /**
@@ -48553,9 +48648,10 @@ if (!Array.prototype.indexOf) {
      * @see Feedback.highlighted
      */
     Feedback.prototype.unhighlight = function() {
-        if (!this.feedbackHTML) return;
+        if (!this.feedbackHTML || this.highlighted !== true) return;
         this.feedbackHTML.style.border = '';
         this.highlighted = false;
+        this.emit('unhighlighted');
     };
 
     /**
@@ -49233,7 +49329,7 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # MoodGauge
- * Copyright(c) 2016 Stefano Balietti
+ * Copyright(c) 2019 Stefano Balietti
  * MIT Licensed
  *
  * Displays an interface to query users about mood, emotions and well-being
@@ -49248,7 +49344,7 @@ if (!Array.prototype.indexOf) {
 
     // ## Meta-data
 
-    MoodGauge.version = '0.2.1';
+    MoodGauge.version = '0.3.0';
     MoodGauge.description = 'Displays an interface to measure mood ' +
         'and emotions.';
 
@@ -49348,13 +49444,27 @@ if (!Array.prototype.indexOf) {
         checkGauge(this.method, gauge);
         // Approved.
         this.gauge = gauge;
+
+        this.on('enabled', function() {
+            gauge.enable();
+        });
+
+        this.on('disabled', function() {
+            gauge.disable();
+        });
+
+        this.on('highlighted', function() {
+            gauge.highlight();
+        });
+
+        this.on('unhighlighted', function() {
+            gauge.unhighlight();
+        });
     };
 
     MoodGauge.prototype.append = function() {
         node.widgets.append(this.gauge, this.bodyDiv, { panel: false });
     };
-
-    MoodGauge.prototype.listeners = function() {};
 
     /**
      * ## MoodGauge.addMethod
@@ -49386,13 +49496,6 @@ if (!Array.prototype.indexOf) {
 
     MoodGauge.prototype.setValues = function(opts) {
         return this.gauge.setValues(opts);
-    };
-
-    MoodGauge.prototype.enable = function() {
-        return this.gauge.enable();
-    };
-    MoodGauge.prototype.enable = function() {
-        return this.gauge.disable();
     };
 
     // ## Helper functions.
@@ -49476,7 +49579,8 @@ if (!Array.prototype.indexOf) {
             items: items,
             mainText: this.getText('mainText'),
             title: false,
-            requiredChoice: true
+            requiredChoice: true,
+            storeRef: false
         });
 
         return gauge;
@@ -50166,7 +50270,7 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # SVOGauge
- * Copyright(c) 2016 Stefano Balietti
+ * Copyright(c) 2019 Stefano Balietti
  * MIT Licensed
  *
  * Displays an interface to measure users' social value orientation (S.V.O.)
@@ -50181,7 +50285,7 @@ if (!Array.prototype.indexOf) {
 
     // ## Meta-data
 
-    SVOGauge.version = '0.5.1';
+    SVOGauge.version = '0.6.0';
     SVOGauge.description = 'Displays an interface to measure social ' +
         'value orientation (S.V.O.).';
 
@@ -50282,13 +50386,27 @@ if (!Array.prototype.indexOf) {
         checkGauge(this.method, gauge);
         // Approved.
         this.gauge = gauge;
+
+        this.on('enabled', function() {
+            gauge.enable();
+        });
+
+        this.on('disabled', function() {
+            gauge.disable();
+        });
+
+        this.on('highlighted', function() {
+            gauge.highlight();
+        });
+
+        this.on('unhighlighted', function() {
+            gauge.unhighlight();
+        });
     };
 
     SVOGauge.prototype.append = function() {
         node.widgets.append(this.gauge, this.bodyDiv);
     };
-
-    SVOGauge.prototype.listeners = function() {};
 
     /**
      * ## SVOGauge.addMethod
@@ -50327,13 +50445,6 @@ if (!Array.prototype.indexOf) {
 
     SVOGauge.prototype.setValues = function(opts) {
         return this.gauge.setValues(opts);
-    };
-
-    SVOGauge.prototype.enable = function() {
-        return this.gauge.enable();
-    };
-    SVOGauge.prototype.enable = function() {
-        return this.gauge.disable();
     };
 
     // ## Helper functions.
@@ -50473,7 +50584,8 @@ if (!Array.prototype.indexOf) {
             mainText: this.getText('mainText'),
             title: false,
             renderer: renderer,
-            requiredChoice: true
+            requiredChoice: true,
+            storeRef: false
         });
 
         return gauge;
@@ -51808,6 +51920,15 @@ if (!Array.prototype.indexOf) {
      */
     VisualTimer.prototype.init = function(options) {
         var t, gameTimerOptions;
+
+        // We keep the check for object, because this widget is often
+        // called by users and the restart methods does not guarantee
+        // an object.
+        options = options || {};
+        if ('object' !== typeof options) {
+            throw new TypeError('VisualTimer.init: options must be ' +
+                                'object or undefined. Found: ' + options);
+        }
 
         // Important! Do not modify directly options, because it might
         // modify a step-property. Will manual clone later.
