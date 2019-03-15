@@ -15503,7 +15503,7 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # Stager stages and steps
- * Copyright(c) 2015 Stefano Balietti
+ * Copyright(c) 2019 Stefano Balietti
  * MIT Licensed
  */
 (function(exports, node) {
@@ -15585,12 +15585,12 @@ if (!Array.prototype.indexOf) {
 
     var BLOCK_DEFAULT     = blockTypes.BLOCK_DEFAULT;
     var BLOCK_STAGEBLOCK  = blockTypes.BLOCK_STAGEBLOCK;
-    var BLOCK_STAGE       = blockTypes. BLOCK_STAGE;
-    var BLOCK_STEPBLOCK   = blockTypes. BLOCK_STEPBLOCK;
+    var BLOCK_STAGE       = blockTypes.BLOCK_STAGE;
+    var BLOCK_STEPBLOCK   = blockTypes.BLOCK_STEPBLOCK;
     var BLOCK_STEP        = blockTypes.BLOCK_STEP;
 
     var BLOCK_ENCLOSING          = blockTypes.BLOCK_ENCLOSING;
-    var BLOCK_ENCLOSING_STEPS    = blockTypes. BLOCK_ENCLOSING_STEPS;
+    var BLOCK_ENCLOSING_STEPS    = blockTypes.BLOCK_ENCLOSING_STEPS;
     var BLOCK_ENCLOSING_STAGES   = blockTypes.BLOCK_ENCLOSING_STAGES;
 
     /**
@@ -15607,7 +15607,7 @@ if (!Array.prototype.indexOf) {
         var i, len;
         i = -1, len = steps.length;
         // Missing steps are added with default callback (if string),
-        // or as they are if object.
+        // or as they are, if object.
         for ( ; ++i < len ; ) {
             if ('object' === typeof steps[i]) {
                 // Throw error if step.id is not unique.
@@ -15628,8 +15628,9 @@ if (!Array.prototype.indexOf) {
             }
             else {
                 throw new TypeError('Stager.' + method + ': stage ' +
-                                    stageId  + ': items of the steps array ' +
-                                    'must be string or object.');
+                                    stageId  + ': each item in the steps ' +
+                                    ' array must be string or object. Found: ' +
+                                    steps[i]);
             }
         }
     }
@@ -15698,7 +15699,7 @@ if (!Array.prototype.indexOf) {
     function checkFinalized(that, method) {
         if (that.finalized) {
             throw new Error('Stager.' + method + ': stager has been ' +
-                            'already finalized.');
+                            'already finalized');
         }
     }
 
@@ -15731,8 +15732,7 @@ if (!Array.prototype.indexOf) {
         if (err || 'string' !== typeof positions || positions.trim() === '') {
             throw new TypeError('Stager.' + method + ': positions must ' +
                                 'be a non-empty string, a positive finite ' +
-                                'number, or undefined. Found: ' +
-                                positions + '.');
+                                'number, or undefined. Found: ' + positions);
         }
         return positions;
     }
@@ -17610,7 +17610,7 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # Stager Setter and Getters
- * Copyright(c) 2015 Stefano Balietti
+ * Copyright(c) 2019 Stefano Balietti
  * MIT Licensed
  */
 (function(exports, node) {
@@ -17653,14 +17653,15 @@ if (!Array.prototype.indexOf) {
         var stageObj, seqObj, blockObj;
 
         if ('object' !== typeof stateObj) {
-            throw new TypeError('Stager.setState: stateObj must be object.');
+            throw new TypeError('Stager.setState: stateObj must be object. ' +
+                                'Found: ' + stageObj);
         }
 
         updateRule = updateRule || 'replace';
 
         if ('string' !== typeof updateRule) {
-            throw new TypeError('Stager.setState: updateRule must be object ' +
-                                'or undefined.');
+            throw new TypeError('Stager.setState: updateRule must be string ' +
+                                'or undefined. Found: ' + updateRule);
         }
 
         // Clear previous state:
@@ -17857,7 +17858,7 @@ if (!Array.prototype.indexOf) {
             if ('function' !== typeof stepRule) {
                 throw new TypeError('Stager.setDefaultStepRule: ' +
                                     'stepRule must be function or ' +
-                                    'undefined.');
+                                    'undefined. Found: ' + stepRule);
             }
 
             this.defaultStepRule = stepRule;
@@ -17901,8 +17902,8 @@ if (!Array.prototype.indexOf) {
             cb = Stager.defaultCallback;
         }
         else if ('function' !== typeof cb) {
-            throw new TypeError('Stager.setDefaultCallback: ' +
-                                'defaultCallback must be function or null.');
+            throw new TypeError('Stager.setDefaultCallback: defaultCallback ' +
+                                'must be function or null. Found: ' + cb);
         }
         this.defaultCallback = makeDefaultCb(cb);
 
@@ -17950,8 +17951,8 @@ if (!Array.prototype.indexOf) {
      */
     Stager.prototype.setDefaultGlobals = function(defaultGlobals, mixin) {
         if (!defaultGlobals || 'object' !== typeof defaultGlobals) {
-            throw new TypeError('Stager.setDefaultGlobals: ' +
-                                'defaultGlobals must be object.');
+            throw new TypeError('Stager.setDefaultGlobals: defaultGlobals ' +
+                                'must be object. Found: ' + defaultGlobals);
         }
         if (mixin) J.mixin(this.defaultGlobals, defaultGlobals);
         else this.defaultGlobals = defaultGlobals;
@@ -17986,7 +17987,7 @@ if (!Array.prototype.indexOf) {
     Stager.prototype.setDefaultProperty = function(name, value) {
         if ('string' !== typeof name) {
             throw new TypeError('Stager.setDefaultProperty: name ' +
-                                'must be string.');
+                                'must be string. Found: ' + name);
         }
         this.defaultProperties[name] = value;
     };
@@ -18009,7 +18010,8 @@ if (!Array.prototype.indexOf) {
         if (!defaultProperties ||
             'object' !== typeof defaultProperties) {
             throw new TypeError('Stager.setDefaultProperties: ' +
-                                'defaultProperties must be object.');
+                                'defaultProperties must be object. Found: ' +
+                                defaultProperties);
         }
         if (mixin) J.mixin(this.defaultProperties, defaultProperties);
         else this.defaultProperties = defaultProperties;
@@ -18041,8 +18043,8 @@ if (!Array.prototype.indexOf) {
      */
     Stager.prototype.setOnInit = function(func) {
         if (func && 'function' !== typeof func) {
-            throw new TypeError('Stager.setOnInit: func must be' +
-                                ' function or undefined.');
+            throw new TypeError('Stager.setOnInit: func must be ' +
+                                'function or undefined. Found: ' + func);
         }
         this.onInit = func;
     };
@@ -18118,7 +18120,7 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # Stager flexible mode
- * Copyright(c) 2015 Stefano Balietti
+ * Copyright(c) 2019 Stefano Balietti
  * MIT Licensed
  */
 (function(exports, node) {
@@ -18141,7 +18143,8 @@ if (!Array.prototype.indexOf) {
     Stager.prototype.registerGeneralNext = function(func) {
         if (func !== null && 'function' !== typeof func) {
             throw new TypeError('Stager.registerGeneralNext: ' +
-                                'func must be function or undefined.');
+                                'func must be function or undefined. Found: ' +
+                                func);
         }
         this.generalNextFunction = func;
     };
@@ -18166,12 +18169,12 @@ if (!Array.prototype.indexOf) {
     Stager.prototype.registerNext = function(id, func) {
         if ('function' !== typeof func) {
             throw new TypeError('Stager.registerNext: func must be ' +
-                'function.');
+                'function. Found: ' + func);
         }
 
         if (!this.stages[id]) {
             throw new TypeError('Stager.registerNext: non existent ' +
-                               'stage id: ' + id + '.');
+                               'stage id: ' + id);
         }
 
         this.nextFunctions[id] = func;
@@ -18184,7 +18187,7 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # Stager extend stages, modify sequence
- * Copyright(c) 2017 Stefano Balietti
+ * Copyright(c) 2019 Stefano Balietti
  * MIT Licensed
  */
 (function(exports, node) {
@@ -18223,7 +18226,7 @@ if (!Array.prototype.indexOf) {
         step = this.steps[stepId];
         if (!step) {
             throw new Error('Stager.extendStep: stepId not found: ' +
-                            stepId + '.');
+                            stepId);
         }
         if ('function' === typeof update) {
             step = update(J.clone(step));
@@ -18236,7 +18239,7 @@ if (!Array.prototype.indexOf) {
         }
         else {
             throw new TypeError('Stager.extendStep: update must be object ' +
-                                'or function. Step id: ' + stepId + '.');
+                                'or function. Step id: ' + stepId);
         }
     };
 
@@ -18265,7 +18268,7 @@ if (!Array.prototype.indexOf) {
         stage = this.stages[stageId];
         if (!stage) {
             throw new Error('Stager.extendStage: stageId not found: ' +
-                            stageId + '.');
+                            stageId);
         }
 
         if ('function' === typeof update) {
@@ -18274,7 +18277,8 @@ if (!Array.prototype.indexOf) {
                 !stage.id || !stage.steps) {
 
                 throw new TypeError('Stager.extendStage: update function ' +
-                                    'must return an object with id and steps.');
+                                    'must return an object with id and ' +
+                                    'steps. Found: ' + stage);
             }
             validateExtendedStage(this, stageId, stage, true);
             this.stages[stageId] = stage;
@@ -18285,8 +18289,9 @@ if (!Array.prototype.indexOf) {
             J.mixin(stage, update);
         }
         else {
-            throw new TypeError('Stager.extendStage: update must be object ' +
-                                'or function. Stage id: ' + stageId + '.');
+            throw new TypeError('Stager.extendStage: stage "' + stageId +
+                                '": update must be object ' +
+                                'or function. Found: ' + update);
         }
     };
 
@@ -18404,12 +18409,13 @@ if (!Array.prototype.indexOf) {
     function setSkipStageStep(that, stageId, stepId, value, method) {
         if ('string' !== typeof stageId || stageId.trim() === '') {
             throw new TypeError('Stager.' + method + ': stageId must ' +
-                                'be a non-empty string.');
+                                'be a non-empty string. Found: ' + stageId);
         }
         if (stepId) {
             if ('string' !== typeof stepId || stepId.trim() === '') {
                 throw new TypeError('Stager.' + method + ': stepId must ' +
-                                    'be a non-empty string or undefined.');
+                                    'be a non-empty string or undefined.' +
+                                    'Found: ' + stepId);
             }
             if ('undefined' !== typeof value) {
                 that.toSkip.steps[stageId + '.' + stepId] = value;
@@ -18443,59 +18449,59 @@ if (!Array.prototype.indexOf) {
 
             if (!update || 'object' !== typeof update) {
                 throw new TypeError(errBegin + 'id and cb. Found: ' + update +
-                                    '. Step id: ' +  stepId + '.');
+                                    '. Step id: ' +  stepId);
             }
             if (update.id !== stepId) {
                 throw new Error('Stager.extendStep: update function ' +
-                                'cannot alter the step id: ' + stepId + '.');
+                                'cannot alter the step id: ' + stepId);
             }
             if ('function' !== typeof update.cb) {
                 throw new TypeError(errBegin + 'a valid callback. Step id:' +
-                                    stepId + '.');
+                                    stepId);
             }
             if (update.init && 'function' !== typeof update.init) {
                 throw new TypeError(errBegin + 'invalid init property. ' +
                                     'Function or undefined expected, found: ' +
                                     typeof update.init + '. Step id:' +
-                                    stepId + '.');
+                                    stepId);
             }
             if (update.exit && 'function' !== typeof update.exit) {
                 throw new TypeError(errBegin + 'invalid exit property. ' +
                                     'Function or undefined expected, found: ' +
                                     typeof update.exit + '. Step id:' +
-                                    stepId + '.');
+                                    stepId);
             }
             if (update.done && 'function' !== typeof update.done) {
                 throw new TypeError(errBegin + 'invalid done property. ' +
                                     'Function or undefined expected, found: ' +
                                     typeof update.done + '. Step id:' +
-                                    stepId + '.');
+                                    stepId);
             }
         }
         else {
             if (update.hasOwnProperty('id')) {
                 throw new Error('Stager.extendStep: update.id cannot be set. ' +
-                                'Step id: ' + stepId + '.');
+                                'Step id: ' + stepId);
             }
             if (update.cb && 'function' !== typeof update.cb) {
                 throw new TypeError('Stager.extendStep: update.cb must be ' +
                                     'function or undefined. Step id:' +
-                                    stepId + '.');
+                                    stepId);
             }
             if (update.init && 'function' !== typeof update.init) {
                 throw new TypeError('Stager.extendStep: update.init must be ' +
                                     'function or undefined. Step id:' +
-                                    stepId + '.');
+                                    stepId);
             }
             if (update.exit && 'function' !== typeof update.exit) {
                 throw new TypeError('Stager.extendStep: update.exit must be ' +
                                     'function or undefined. Step id:' +
-                                    stepId + '.');
+                                    stepId);
             }
             if (update.done && 'function' !== typeof update.done) {
                 throw new TypeError('Stager.extendStep: update.done must be ' +
                                     'function or undefined. Step id:' +
-                                    stepId + '.');
+                                    stepId);
             }
 
         }
@@ -18522,34 +18528,37 @@ if (!Array.prototype.indexOf) {
             (!updateFunction && update.hasOwnProperty('id'))) {
 
             throw new Error('Stager.extendStage: id cannot be altered: ' +
-                            stageId + '.');
+                            stageId);
         }
         if (update.cb) {
             throw new TypeError('Stager.extendStage: update.cb cannot be ' +
-                                'specified. Stage id: ' + stageId + '.');
+                                'specified. Stage id: ' + stageId);
         }
         if (update.init && 'function' !== typeof update.init) {
             throw new TypeError('Stager.extendStage: update.init must be ' +
                                 'function or undefined. Stage id:' +
-                                stageId + '.');
+                                stageId);
         }
         if (update.exit && 'function' !== typeof update.exit) {
             throw new TypeError('Stager.extendStage: update.exit must be ' +
                                 'function or undefined. Stage id:' +
-                                stageId + '.');
+                                stageId);
         }
         if (update.done && 'function' !== typeof update.done) {
             throw new TypeError('Stager.extendStage: update.done must be ' +
                                 'function or undefined. Stage id:' +
-                                stageId + '.');
+                                stageId);
         }
         if (update.steps) {
-            if ((!J.isArray(update.steps) || !update.steps.length) ||
-                update.steps === undefined || update.steps === null) {
+            if (!J.isArray(update.steps)) {
+                throw new Error('Stager.extendStage: update.steps must be ' +
+                                'array or undefined. Stage id: ' + stageId +
+                                'Found: ' + update.steps);
+            }
 
-                throw new Error('Stager.extendStage: found update.steps, but ' +
-                                'it is not a non-empty array. Stage id: ' +
-                               stageId + '.');
+            if (!update.steps.length) {
+                throw new Error('Stager.extendStage: update.steps is an ' +
+                                'empty array. Stage id: ' + stageId);
             }
 
             // No changes to the steps array, just exit.
@@ -18829,7 +18838,7 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # Stager Extract Info
- * Copyright(c) 2015 Stefano Balietti
+ * Copyright(c) 2019 Stefano Balietti
  * MIT Licensed
  */
 (function(exports, node) {
@@ -18886,7 +18895,7 @@ if (!Array.prototype.indexOf) {
 
                     default:
                         throw new Error('Stager.getSequence: unknown' +
-                                        'sequence object type.');
+                                        'sequence object type: ' + seqObj.type);
                     }
                 }
             }
@@ -18942,7 +18951,7 @@ if (!Array.prototype.indexOf) {
 
                     default:
                         throw new Error('Stager.getSequence: unknown' +
-                                        'sequence object type.');
+                                        'sequence object type: ' + seqObj.type);
                     }
                 }
             }
@@ -18953,7 +18962,7 @@ if (!Array.prototype.indexOf) {
             break;
 
         default:
-            throw new Error('Stager.getSequence: invalid format.');
+            throw new Error('Stager.getSequence: invalid format: ' + format);
         }
 
         return result;
