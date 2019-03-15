@@ -1,6 +1,6 @@
 # nodegame-server change log
 
-## 5.0.1
+## 5.0.2
 - Setup content is not merged for levels, justed mixed in.
 - Folders in the games/ directory beginning with a dot are ignored.
 
