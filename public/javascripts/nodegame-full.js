@@ -5322,10 +5322,10 @@ if (!Array.prototype.indexOf) {
     PARSE.isNumber = function(n, lower, upper, leq, ueq) {
         if (isNaN(n) || !isFinite(n)) return false;
         n = parseFloat(n);
-        if ('number' === typeof lower && (leq ? n <= lower : n < lower)) {
+        if ('number' === typeof lower && (leq ? n < lower : n <= lower)) {
             return false;
         }
-        if ('number' === typeof upper && (ueq ? n >= upper : n > upper)) {
+        if ('number' === typeof upper && (ueq ? n > upper : n >= upper)) {
             return false;
         }
         return n;
@@ -10083,7 +10083,7 @@ if (!Array.prototype.indexOf) {
     node.support = JSUS.compatibility();
 
     // Auto-Generated.
-    node.version = '5.0.0';
+    node.version = '5.0.1';
 
 })(window);
 
@@ -38134,15 +38134,23 @@ if (!Array.prototype.indexOf) {
      *
      * Hightlights the user interface of the widget in some way
      *
-     * If widget was not appended, i.e. no `panelDiv` has been created,
-     * it should issue a war.
+     * By default, it adds a red border around the bodyDiv.
+     *
+     * If widget was not appended, i.e., no `panelDiv` has been created,
+     * nothing happens.
      *
      * @param {mixed} options Settings controlling the type of highlighting
      */
-    Widget.prototype.highlight = function(options) {
-        if (this.isHighlighted()) return;
+    Widget.prototype.highlight = function(border) {
+        if (border && 'string' !== typeof border) {
+            throw new TypeError(J.funcName(this.constructor) + '.highlight: ' +
+                                'border must be string or undefined. Found: ' +
+                                border);
+        }
+        if (!this.isAppended() || this.isHighlighted()) return;
         this.highlighted = true;
-        this.emit('highlighted', options);
+        this.bodyDiv.style.border = border  || '3px solid red';
+        this.emit('highlighted', border);
     };
 
     /**
@@ -38150,19 +38158,18 @@ if (!Array.prototype.indexOf) {
      *
      * Hightlights the user interface of the widget in some way
      *
-     * Should mark the state of widget as `highlighted`.
+     * Should mark the state of widget as not `highlighted`.
      *
-     * If widget was not appended, i.e. no `panelDiv` has been created,
-     * it should raise an error.
+     * If widget was not appended, i.e., no `panelDiv` has been created,
+     * nothing happens.
      *
-     * @param {mixed} options Settings controlling the type of highlighting
-     *
-     * @see Widget.highlighted
+     * @see Widget.highlight
      */
-    Widget.prototype.unhighlight = function(options) {
+    Widget.prototype.unhighlight = function() {
         if (!this.isHighlighted()) return;
         this.highlighted = false;
-        this.emit('unhighlighted', options);
+        this.bodyDiv.style.border = '';
+        this.emit('unhighlighted');
     };
 
     /**
@@ -39551,9 +39558,9 @@ if (!Array.prototype.indexOf) {
         if ('string' === typeof w) w = this.get(w, options);
 
         // Add panelDiv (with or without panel).
+        tmp = options.panel === false ? true : w.panel === false;
         tmp = {
-            className: options.panel === false ?
-                [ 'ng_widget',  'no-panel', w.className ] :
+            className: tmp ? [ 'ng_widget',  'no-panel', w.className ] :
                 [ 'ng_widget', 'panel', 'panel-default', w.className ]
         };
 
@@ -42641,11 +42648,11 @@ if (!Array.prototype.indexOf) {
 
     // ## Meta-data
 
-    ChoiceManager.version = '1.1.0';
+    ChoiceManager.version = '1.2.0';
     ChoiceManager.description = 'Groups together and manages a set of ' +
         'selectable choices forms (e.g. ChoiceTable).';
 
-    ChoiceManager.title = 'Complete the forms below';
+    ChoiceManager.title = false;
     ChoiceManager.className = 'choicemanager';
 
     // ## Dependencies
@@ -42708,15 +42715,6 @@ if (!Array.prototype.indexOf) {
         this.shuffleForms = null;
 
         /**
-         * ### ChoiceManager.shuffleForms
-         *
-         * TRUE, each form separately stored under node.widgets.instances
-         *
-         * Default: FALSE
-         */
-        this.storeRefForms = null;
-
-        /**
          * ### ChoiceManager.group
          *
          * The name of the group where the list belongs, if any
@@ -42729,6 +42727,20 @@ if (!Array.prototype.indexOf) {
          * The order of the list within the group
          */
         this.groupOrder = null;
+
+        /**
+         * ### ChoiceManager.formsOptions
+         *
+         * An object containing options to be added to every form
+         *
+         * Options are added only if forms are specified as object literals,
+         * and can be overriden by each individual form.
+         */
+        this.formsOptions =  {
+            title: false,
+            frame: false,
+            storeRef: false
+        };
 
         /**
          * ### ChoiceManager.freeText
@@ -42767,7 +42779,7 @@ if (!Array.prototype.indexOf) {
      *       if 'string', the text will be added inside the the textarea
      *   - forms: the forms to displayed, formatted as explained in
      *       `ChoiceManager.setForms`
-     *   - storeRefForms: if TRUE, forms are added under node.widgets.instances
+     *   - formsOptions: a set of default options to add to every form
      *
      * @param {object} options Configuration options
      *
@@ -42812,21 +42824,33 @@ if (!Array.prototype.indexOf) {
         }
         else if ('undefined' !== typeof options.mainText) {
             throw new TypeError('ChoiceManager.init: options.mainText must ' +
-                                'be string, undefined. Found: ' +
+                                'be string or undefined. Found: ' +
                                 options.mainText);
         }
 
-        this.storeRefForms = !!options.storeRefForms || false;
-
-        // After all configuration options are evaluated, add forms.
+        // formsOptions.
+        if ('undefined' !== typeof options.formsOptions) {
+            if ('object' !== typeof options.formsOptions) {
+                throw new TypeError('ChoiceManager.init: options.formsOptions' +
+                                    ' must be object or undefined. Found: ' +
+                                    options.formsOptions);
+            }
+            if (options.formsOptions.hasOwnProperty('name')) {
+                throw new Error('ChoiceManager.init: options.formsOptions ' +
+                                'cannot contain property name. Found: ' +
+                                options.formsOptions);
+            }
+            this.formsOptions = J.mixin(this.formsOptions,
+                                        options.formsOptions);
+        }
 
         this.freeText = 'string' === typeof options.freeText ?
             options.freeText : !!options.freeText;
 
-        // Add the forms.
-        if ('undefined' !== typeof options.forms) {
-            this.setForms(options.forms);
-        }
+
+        // After all configuration options are evaluated, add forms.
+
+        if ('undefined' !== typeof options.forms) this.setForms(options.forms);
     };
 
     /**
@@ -42887,7 +42911,8 @@ if (!Array.prototype.indexOf) {
             form = parsedForms[i];
             if (!node.widgets.isWidget(form)) {
                 if ('string' === typeof form.name) {
-                    form.storeRef = !!form.storeRef || this.storeRefForms;
+                    // Add defaults.
+                    J.mixout(form, this.formsOptions);
                     form = node.widgets.get(form.name, form);
                 }
                 if (!node.widgets.isWidget(form)) {
@@ -43216,7 +43241,7 @@ if (!Array.prototype.indexOf) {
 
     // ## Meta-data
 
-    ChoiceTable.version = '1.3.1';
+    ChoiceTable.version = '1.3.2';
     ChoiceTable.description = 'Creates a configurable table where ' +
         'each cell is a selectable choice.';
 
@@ -43270,6 +43295,7 @@ if (!Array.prototype.indexOf) {
          */
         this.listener = function(e) {
             var name, value, td;
+            var i, len;
             // Relative time.
             if ('string' === typeof that.timeFrom) {
                 that.timeCurrentChoice = node.timer.getTimeSince(that.timeFrom);
@@ -43302,6 +43328,20 @@ if (!Array.prototype.indexOf) {
             if (that.isChoiceCurrent(value)) {
                 that.unsetCurrentChoice(value);
                 J.removeClass(td, 'selected');
+
+                if (that.selectMultiple) {
+                    // Remove selected TD (need to keep this clean for reset).
+                    i = -1, len = that.selected.length;
+                    for ( ; ++i < len ; ) {
+                        if (that.selected[i].id === td.id) {
+                            that.selected.splice(i, 1);
+                            break;
+                        }
+                    }
+                }
+                else {
+                    that.selected = null;
+                }
             }
             // Click on a new choice.
             else {
@@ -46351,6 +46391,464 @@ if (!Array.prototype.indexOf) {
 })(node);
 
 /**
+ * # CustomInput
+ * Copyright(c) 2019 Stefano Balietti
+ * MIT Licensed
+ *
+ * Creates a configurable input form with validation
+ *
+ * www.nodegame.org
+ */
+(function(node) {
+
+    "use strict";
+
+    node.widgets.register('CustomInput', CustomInput);
+
+    // ## Meta-data
+
+    CustomInput.version = '0.1.0';
+    CustomInput.description = 'Creates a configurable input box';
+
+    CustomInput.title = false;
+    CustomInput.panel = false;
+    CustomInput.className = 'custominput';
+
+    CustomInput.types = {
+        text: true,
+        number: true,
+        'float': true
+    };
+
+    CustomInput.texts = {
+        numFloatErr: function(w, isFloat) {
+            var str, p, inc;
+            p = w.params;
+            inc = '(inclusive)';
+            str = 'Must be a ';
+            if (isFloat) str += 'floating point ';
+            str += 'number ';            
+            if (p.between) {
+                str += 'between ' + p.lower;
+                if (p.leq) str += inc;
+                str += ' and ' + p.upper;
+                if (p.ueq) str += inc;
+            }
+            else if ('undefined' !== typeof p.lower) {
+                str += 'greater than ';
+                if (p.leq) str += 'or equal to ';
+                str += p.lower;
+            }
+            else {
+                str += 'less than ';
+                if (p.leq) str += 'or equal to ';
+                str += p.upper;
+            }
+            return str;
+        },
+        textErr: function(w, len) {
+            var str, p;
+            p = w.params;
+            str = 'Must be ';
+            if ('undefined' !== typeof p.lower) str += 'at least ' + p.lower;
+            if ('undefined' !== typeof p.upper) {
+                if (str) str += ' and';
+                str += ' no more than ' + p.upper;
+            }
+            str += ' characters long. Current length: ' + len;
+            return str;
+
+        }
+    };
+
+    // ## Dependencies
+
+    CustomInput.dependencies = {
+        JSUS: {}
+    };
+
+    /**
+     * ## CustomInput constructor
+     *
+     * Creates a new instance of CustomInput
+     *
+     * @param {object} options Optional. Configuration options.
+     *   If a `table` option is specified, it sets it as the clickable
+     *   table. All other options are passed to the init method.
+     */
+    function CustomInput(options) {
+
+        /**
+         * ### CustomInput.input
+         *
+         * The HTML input element
+         */
+        this.input = null;
+
+        /**
+         * ### CustomInput.type
+         *
+         * The type of input
+         */
+        this.type = null;
+
+        /**
+         * ### CustomInput.validation
+         *
+         * The validation function for the input
+         *
+         * The function returns an error message in case of error.
+         */
+        this.validation = null;
+
+        /**
+         * ### CustomInput.postprocess
+         *
+         * The function that postprocess the input after validation
+         *
+         * The function returns the postprocessed valued
+         */
+        this.postprocess = null;
+
+        /**
+         * ### CustomInput.params
+         *
+         * Object containing extra validation params
+         *
+         * This object is populated by the init function
+         */
+        this.params = {};
+
+        /**
+         * ### CustomInput.hint
+         *
+         * A text describing how to fill in the form
+         */
+        this.hintText = null;
+
+        /**
+         * ### CustomInput.hintBox
+         *
+         * An HTML element containing the hint text
+         */
+        this.hintBox = null;
+
+        /**
+         * ### CustomInput.errorBox
+         *
+         * An HTML element displayed when a validation error occurs
+         */
+        this.errorBox = null;
+
+        /**
+         * ### CustomInput.mainText
+         *
+         * A text preceeding the date selector
+         */
+        this.mainText = null;
+    }
+
+    // ## CustomInput methods
+
+    /**
+     * ### CustomInput.init
+     *
+     * Initializes the instance
+     *
+     * Available options are:
+     *
+     *
+     * @param {object} options Configuration options
+     */
+    CustomInput.prototype.init = function(options) {
+        var tmp, that, e, isText;
+        that = this;
+        e = 'CustomInput.init: options.';
+        if (options.type) {
+            if (!CustomInput.types[options.type]) {
+                throw new Error('CustomInput.init: type not supported: ' +
+                                options.type);
+            }
+            this.type = options.type;
+        }
+        else {
+            this.type = 'text';
+        }
+
+        if (options.validation) {
+            if ('function' !== typeof options.validation) {
+                throw new TypeError(e + 'validation must be function ' +
+                                    'or undefined. Found: ' +
+                                    options.validation);
+            }
+            this.validation = options.validation;
+        }
+        else {
+            // Add default validations based on type.
+
+            if (this.type === 'number' || this.type === 'float' ||
+                this.type === 'text') {
+
+                isText = this.type === 'text';
+
+                if ('undefined' !== typeof options.min) {
+                    tmp = J.isNumber(options.min);
+                    if (false === tmp) {
+                        throw new TypeError(e + 'min must be number or ' +
+                                            'undefined. Found: ' + options.min);
+                    }
+                    if (isText && tmp < 0) {
+                        throw new TypeError(e + 'min cannot be a ' +
+                                            'negative number when type ' +
+                                            'is "text". Found: ' + options.min);
+                    }
+                    this.params.lower = options.min;
+                }
+                if ('undefined' !== typeof options.minEq) {
+                    tmp = J.isNumber(options.minEq);
+                    if (false === tmp) {
+                        throw new TypeError(e + 'minEq ' +
+                                            'must be number or undefined. ' +
+                                            'Found: ' + options.minEq);
+                    }
+                    if ('undefined' !== typeof this.params.lower) {
+                        node.warn(e + 'min is ignored if minEq is also set');
+                    }
+                    // Set the params for text and num/float.
+                    if (isText) {
+                        this.params.min--;
+                    }
+                    else {
+                        this.params.lower = options.minEq;
+                        this.params.leq = true;
+                    }
+                }
+                if ('undefined' !== typeof options.max) {
+                    tmp = J.isNumber(options.max);
+                    if (false === tmp) {
+                        throw new TypeError(e + 'max must be number or ' +
+                                            'undefined. Found: ' + options.max);
+                    }
+                    if (isText && tmp < 0) {
+                        throw new TypeError(e + 'max cannot be a ' +
+                                            'negative number when type ' +
+                                            'is "text". Found: ' + options.max);
+                    }
+                    this.params.upper = options.max;
+                    if ('undefined' !== typeof this.params.lower) {
+                        // Store this to create better error strings.
+                        this.params.between = true;
+                    }
+                }
+                if ('undefined' !== typeof options.maxEq) {
+                    tmp = J.isNumber(options.maxEq);
+                    if (false === tmp) {
+                        throw new TypeError(e + 'maxEq must be number or ' +
+                                            'undefined. Found: ' +
+                                            options.maxEq);
+                    }
+                    if ('undefined' !== typeof this.params.upper) {
+                        node.warn(e + 'max is ignored if maxEq is also set');
+                    }
+                    // Set the params for text and num/float.
+                    if (isText) {
+                        this.params.min++;
+                    }
+                    else {
+                        this.params.upper = options.max;
+                        this.params.ueq = true;
+                    }
+                }
+                if (isText) {
+                    tmp = function(value) {
+                        var len, p, out;
+                        p = that.params;
+                        len = value.length;
+                        out = { value: value };
+                        if (('undefined' !== typeof p.lower && len < p.lower) ||
+                            ('undefined' !== typeof p.upper && len > p.upper)) {
+
+                            out.err = that.getText('textErr', len);
+                        }
+                        return out;
+                    };
+                }
+                else {
+                    tmp = (function() {
+                        var cb, isFloat;
+                        cb = isFloat ? J.isFloat : J.isNumber;
+                        isFloat = that.type === 'float';
+                        return function(value) {
+                            var out, res, p;
+                            p = that.params;
+                            res = cb(value, p.lower, p.upper, p.leq, p.ueq);
+                            if (res !== false) return { value: res };
+                            return {
+                                value: value,
+                                err: that.getText('numFloatErr', isFloat)
+                            };
+                        };
+                    })();
+                }
+            }
+
+            // TODO: add other types, e.g. date.
+
+            this.validation = function(value) {
+                that.lastError = null;
+                that.lastValue = null;
+                return tmp(value);
+            };
+        }
+
+        if (options.mainText) {
+            if ('string' !== typeof options.mainText) {
+                throw new TypeError(e + 'mainText must be string or ' +
+                                    'undefined. Found: ' + options.mainText);
+            }
+            this.mainText = options.mainText;
+        }
+        if (options.hintText) {
+            if ('string' !== typeof options.hintText) {
+                throw new TypeError(e + 'hintText must be string or ' +
+                                    'undefined. Found: ' + options.hintText);
+            }
+            this.hintText = options.hintText;
+        }
+        else {
+            // TODO: generate a simple hint text based on type and params.
+        }
+    };
+
+
+    /**
+     * ### CustomInput.append
+     *
+     * Implements Widget.append
+     *
+     * Checks that id is unique.
+     *
+     * Appends (all optional):
+     *
+     *   - mainText: a question or statement introducing the choices
+     *   - table: the table containing the choices
+     *   - freeText: a textarea for comments
+     *
+     * @see Widget.append
+     */
+    CustomInput.prototype.append = function() {
+        var that, timeout;
+        that = this;
+
+        // MainText.
+        if (this.mainText) {
+            this.spanMainText = document.createElement('span');
+            this.spanMainText.className = 'maintext';
+            this.spanMainText.innerHTML = this.mainText;
+            // Append mainText.
+            this.bodyDiv.appendChild(this.spanMainText);
+        }
+
+        this.input = W.append('input', this.bodyDiv);
+
+        this.errorBox = W.append('div', this.bodyDiv, { className: 'errbox' });
+
+        this.input.oninput = function() {
+            console.log('onchange');
+            if (timeout) clearTimeout(timeout);
+            if (that.isHighlighted()) that.unhighlight();
+            timeout = setTimeout(function() {
+                var res;
+                if (that.validation) res = that.validation(that.input.value);
+                if (res.err) {
+                    that.errorBox.innerHTML = res.err;
+                    that.highlight();
+                }
+            }, 500);
+        };
+        this.input.onclick = function() {
+            if (that.isHighlighted()) that.unhighlight();
+
+        };
+    };
+
+
+    /**
+     * ### CustomInput.highlight
+     *
+     * Highlights the choice table
+     *
+     * @param {string} The style for the table's border.
+     *   Default '3px solid red'
+     *
+     * @see CustomInput.highlighted
+     */
+    CustomInput.prototype.highlight = function(border) {
+        if (border && 'string' !== typeof border) {
+            throw new TypeError('CustomInput.highlight: border must be ' +
+                                'string or undefined. Found: ' + border);
+        }
+        if (!this.input || this.highlighted) return;
+        this.input.style.border = border || '3px solid red';
+        this.highlighted = true;
+        this.emit('highlighted', border);
+    };
+
+    /**
+     * ### CustomInput.unhighlight
+     *
+     * Removes highlight from the choice table
+     *
+     * @see CustomInput.highlighted
+     */
+    CustomInput.prototype.unhighlight = function() {
+        if (!this.input || this.highlighted !== true) return;
+        this.input.style.border = '';
+        this.highlighted = false;
+        this.errorBox.innerHTML = '';
+        this.emit('unhighlighted');
+    };
+
+    /**
+     * ### CustomInput.reset
+     *
+     * Resets the widget
+     */
+    CustomInput.prototype.reset = function() {
+        if (this.input) this.input.value = '';
+        if (this.isHighilighted()) this.unhighlight();
+    };
+
+    /**
+     * ### CustomInput.getValues
+     *
+     * Returns the value currently in the input
+     *
+     * The postprocess function is called if specified
+     *
+     * @param {object} opts Optional. Configures the return value.
+     *
+     * @return {mixed} The value in the input
+     *
+     * @see CustomInput.verifyChoice
+     * @see CustomInput.reset
+     */
+    CustomInput.prototype.getValues = function(opts) {
+        var res, valid;
+        opts = opts || {};
+        res = this.input.value;
+        res = this.validation ? this.validation(res) : { value: res };
+        valid = !!res.err;
+        if (this.postprocess) res.value = this.postprocess(res.value, valid);
+        if (!valid) this.highlight(res.err);
+        else if (opts.reset) this.reset();
+        return res;
+    };
+
+
+})(node);
+
+/**
  * # D3
  * Copyright(c) 2015 Stefano Balietti
  * MIT Licensed
@@ -46556,6 +47054,212 @@ if (!Array.prototype.indexOf) {
     };
 
 })(node);
+
+// /**
+//  * # DateSelector
+//  * Copyright(c) 2019 Stefano Balietti
+//  * MIT Licensed
+//  *
+//  * Creates a configurable table where each cell is a selectable choice
+//  *
+//  * // TODO: register time for each current choice if selectMultiple is on?
+//  *
+//  * www.nodegame.org
+//  */
+// (function(node) {
+//
+//     "use strict";
+//
+//     node.widgets.register('DateSelector', DateSelector);
+//
+//     // ## Meta-data
+//
+//     DateSelector.version = '0.0.1';
+//     DateSelector.description = 'Creates a date selector.';
+//
+//     DateSelector.title = 'false';
+//     DateSelector.className = 'dateselector';
+//
+//     DateSelector.text.months = function() {
+//         return [
+//             'January',
+//             'February',
+//             'March',
+//             'April',
+//             'May',
+//             'June',
+//             'July',
+//             'August',
+//             'September',
+//             'October',
+//             'November',
+//             'December'
+//         ];
+//     };
+//
+//     // ## Dependencies
+//
+//     DateSelector.dependencies = {
+//         JSUS: {}
+//     };
+//
+//     /**
+//      * ## DateSelector constructor
+//      *
+//      * Creates a new instance of DateSelector
+//      *
+//      * @param {object} options Optional. Configuration options.
+//      *   If a `table` option is specified, it sets it as the clickable
+//      *   table. All other options are passed to the init method.
+//      */
+//     function DateSelector(options) {
+//
+//         /**
+//          * ### DateSelector.months
+//          *
+//          * The HTML element triggering the listener function when clicked
+//          */
+//         this.months = null;
+//
+//         /**
+//          * ### DateSelector.days
+//          *
+//          * The HTML element triggering the listener function when clicked
+//          */
+//         this.days = null;
+//
+//         /**
+//          * ### DateSelector.years
+//          *
+//          * The s
+//          */
+//         this.years = null;
+//
+//
+//         /**
+//          * ### DateSelector.mainText
+//          *
+//          * A text preceeding the date selector
+//          */
+//         this.mainText = null;
+//     }
+//
+//     // ## DateSelector methods
+//
+//     /**
+//      * ### DateSelector.init
+//      *
+//      * Initializes the instance
+//      *
+//      * Available options are:
+//      *
+//      *
+//      * @param {object} options Configuration options
+//      */
+//     DateSelector.prototype.init = function(options) {
+//         var tmp, that;
+//         that = this;
+//
+//     };
+//
+//
+//     /**
+//      * ### DateSelector.append
+//      *
+//      * Implements Widget.append
+//      *
+//      * Checks that id is unique.
+//      *
+//      * Appends (all optional):
+//      *
+//      *   - mainText: a question or statement introducing the choices
+//      *   - table: the table containing the choices
+//      *   - freeText: a textarea for comments
+//      *
+//      * @see Widget.append
+//      */
+//     DateSelector.prototype.append = function() {
+//
+//         // MainText.
+//         if (this.mainText) {
+//             this.spanMainText = document.createElement('span');
+//             this.spanMainText.className = this.className ?
+//                 DateSelector.className + '-maintext' : 'maintext';
+//             this.spanMainText.innerHTML = this.mainText;
+//             // Append mainText.
+//             this.bodyDiv.appendChild(this.spanMainText);
+//         }
+//
+//     };
+//
+//
+//     /**
+//      * ### DateSelector.highlight
+//      *
+//      * Highlights the choice table
+//      *
+//      * @param {string} The style for the table's border.
+//      *   Default '3px solid red'
+//      *
+//      * @see DateSelector.highlighted
+//      */
+//     DateSelector.prototype.highlight = function(border) {
+//         if (border && 'string' !== typeof border) {
+//             throw new TypeError('DateSelector.highlight: border must be ' +
+//                                 'string or undefined. Found: ' + border);
+//         }
+//         if (!this.table || this.highlighted) return;
+//         this.table.style.border = border || '3px solid red';
+//         this.highlighted = true;
+//         this.emit('highlighted', border);
+//     };
+//
+//     /**
+//      * ### DateSelector.unhighlight
+//      *
+//      * Removes highlight from the choice table
+//      *
+//      * @see DateSelector.highlighted
+//      */
+//     DateSelector.prototype.unhighlight = function() {
+//         if (!this.table || this.highlighted !== true) return;
+//         this.table.style.border = '';
+//         this.highlighted = false;
+//         this.emit('unhighlighted');
+//     };
+//
+//     /**
+//      * ### DateSelector.getValues
+//      *
+//      * Returns the values for current selection and other paradata
+//      *
+//      * Paradata that is not set or recorded will be omitted
+//      *
+//      * @param {object} opts Optional. Configures the return value.
+//      *   Available optionts:
+//      *
+//      *   - markAttempt: If TRUE, getting the value counts as an attempt
+//      *       to find the correct answer. Default: TRUE.
+//      *   - highlight:   If TRUE, if current value is not the correct
+//      *       value, widget will be highlighted. Default: FALSE.
+//      *   - reset:       If TRUTHY and a correct choice is selected (or not
+//      *       specified), then it resets the state of the widgets before
+//      *       returning it. Default: FALSE.
+//      *
+//      * @return {object} Object containing the choice and paradata
+//      *
+//      * @see DateSelector.verifyChoice
+//      * @see DateSelector.reset
+//      */
+//     DateSelector.prototype.getValues = function(opts) {
+//         var obj, resetOpts;
+//         opts = opts || {};
+//
+//         return obj;
+//     };
+//
+//
+// })(node);
 
 /**
  * # DebugInfo
@@ -50604,7 +51308,7 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # VisualRound
- * Copyright(c) 2017 Stefano Balietti
+ * Copyright(c) 2019 Stefano Balietti
  * MIT Licensed
  *
  * Display information about rounds and/or stage in the game
@@ -50626,7 +51330,7 @@ if (!Array.prototype.indexOf) {
     VisualRound.description = 'Display number of current round and/or stage.' +
         'Can also display countdown and total number of rounds and/or stages.';
 
-    VisualRound.title = 'Round info';
+    VisualRound.title = false;
     VisualRound.className = 'visualround';
 
     VisualRound.texts.round = 'Round';

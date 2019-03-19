@@ -229,17 +229,17 @@ p {
 #ng_header .ng_widget:last-child {
   margin-right: 0;
 }
-#ng_header .donebutton,
-#ng_header .backbutton {
+#ng_header .backbutton,
+#ng_header .donebutton {
   float: right;
   padding: 0;
   margin: 0;
   margin-left: 10px;
 }
-#ng_header .donebutton .panel-heading,
-#ng_header .donebutton .no-panel-heading,
 #ng_header .backbutton .panel-heading,
-#ng_header .backbutton .no-panel-heading {
+#ng_header .backbutton .no-panel-heading,
+#ng_header .donebutton .panel-heading,
+#ng_header .donebutton .no-panel-heading {
   display: none;
 }
 
@@ -574,6 +574,16 @@ div.svogauge td.choicetable-left hr {
 .chat_msg_collapse {
   font-style: oblique;
   font-size: 13px;
+}
+
+/* CustomInput */
+.customput > div > input {
+  padding: 5px;
+}
+
+.custominput .errbox {
+  font-size: 14px;
+  margin-top: 5px;
 }
 
 /*# sourceMappingURL=nodegame.css.map */
