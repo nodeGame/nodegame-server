@@ -367,7 +367,7 @@ div.choicetable div.panel-heading {
   padding: 0;
 }
 
-span.choicetable-maintext {
+.choicetable-maintext, .custominput-maintext {
   margin: 20px 0 0 !important;
   padding: 0;
   display: block;
@@ -414,16 +414,33 @@ table.clickable td:hover {
   cursor: hand;
 }
 
+/* CustomInput */
+.custominput input {
+  padding: 5px;
+  border-radius: 0;
+  border: 1px solid #333;
+}
+
+.custominput .errbox {
+  font-size: 14px;
+  margin-top: 5px;
+}
+
+.custominput .panel-body {
+  padding: 0;
+}
+
 /* Mood */
 div.moodgauge {
   margin: 0 auto;
   text-align: center;
 }
 div.moodgauge table.choicetable,
-div.moodgauge span.choicetable-maintext {
+div.moodgauge span.choicetable-maintext,
+div.moodgauge span.custominput-maintext {
   text-align: center;
 }
-div.moodgauge span.choicetable-maintext {
+div.moodgauge span.choicetable-maintext, div.moodgauge span.custominput-maintext {
   margin-bottom: 30px;
   font-weight: bold;
 }
@@ -574,20 +591,6 @@ div.svogauge td.choicetable-left hr {
 .chat_msg_collapse {
   font-style: oblique;
   font-size: 13px;
-}
-
-/* CustomInput */
-.custominput > div > input {
-  padding: 5px;
-}
-
-.custominput .errbox {
-  font-size: 14px;
-  margin-top: 5px;
-}
-
-.custominput .panel-body {
-  padding: 0;
 }
 
 /*# sourceMappingURL=nodegame.css.map */

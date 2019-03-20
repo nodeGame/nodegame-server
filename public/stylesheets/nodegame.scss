@@ -8,6 +8,7 @@ $font-size-max-width: 20px;
 $vertical-header-width: 125px;
 $max-width-chat-msg: 150px;
 $shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
+$forms_border_color: #333;
 
 /* Main Elements */
 
@@ -418,12 +419,13 @@ div.choicetable div.panel-heading {
   padding: 0;
 }
 
-span.choicetable-maintext {
+.choicetable-maintext {
   margin: 20px 0 0 !important;
   padding: 0;
   display: block;
   text-align: left;
 }
+
 
 textarea.choicemanager-freetext,
 textarea.choicetable-freetext {
@@ -437,7 +439,7 @@ table.choicetable {
 
   td {
     word-wrap: break-word;
-    border: 1px solid #333;
+    border: 1px solid $forms_border_color;
     text-align: center;
     padding: 5px;
     width: 40px;
@@ -445,9 +447,9 @@ table.choicetable {
   }
 
   td.selected {
-    background: #333 !important;
+    background: $forms_border_color !important;
     color: #FFF;
-    border: 1px solid #333 !important;
+    border: 1px solid $forms_border_color !important;
   }
 
   td.choicetable-left,
@@ -472,7 +474,30 @@ table.clickable td:hover {
 }
 
 
+/* CustomInput */
+
+.custominput input {
+  padding: 5px;
+  border-radius: 0;
+  border: 1px solid $forms_border_color;
+}
+
+.custominput .errbox {
+  font-size: 14px;
+  margin-top: 5px;
+}
+
+.custominput .panel-body {
+  padding: 0;
+}
+
+.custominput-maintext {
+  @extend .choicetable-maintext;
+}
+
+
 /* Mood */
+
 div.moodgauge {
   margin: 0 auto;
   text-align: center;
@@ -665,15 +690,4 @@ div.svogauge {
 
   font-style: oblique;
   font-size: 13px;
-}
-
-/* CustomInput */
-
-.customput > div > input {
-  padding: 5px;
-}
-
-.custominput .errbox {
-  font-size: 14px;
-  margin-top: 5px;
 }
