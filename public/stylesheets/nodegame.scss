@@ -456,6 +456,8 @@ textarea.choicetable-freetext {
 }
 
 table.choicetable {
+  
+  width: 100%;
 
   td {
     word-wrap: break-word;
@@ -527,6 +529,7 @@ div.moodgauge {
   table.choicetable,
   span.choicetable-maintext {
     text-align: center;
+    width: auto;
   }
 
   span.choicetable-maintext {
@@ -540,7 +543,7 @@ div.moodgauge {
     text-align: center;
     border-spacing: 0 5px;
     border-collapse: separate;
-
+    width: auto;
 
     td {
       width: 80px !important;
@@ -565,6 +568,12 @@ div.moodgauge {
 /*********/
 
 div.svogauge {
+
+  table.choicetable,
+  span.choicetable-maintext {
+    text-align: center;
+    width: auto;
+  }
 
   table.choicetable {
     margin: 0 auto;

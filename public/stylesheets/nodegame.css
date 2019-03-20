@@ -1,5 +1,10 @@
-/* nodeGame css */
-/* Main Elements */
+/******************/
+/** nodeGame css **/
+/******************/
+/* Shared variables */
+/********************/
+/** Main Elements **/
+/*******************/
 noscript {
   position: fixed;
   top: 50%;
@@ -59,7 +64,8 @@ p {
   font-family: "Source Sans Pro", -apple-system, BlinkMacSystemFont, Roboto, "Segoe UI", "Helvetica Neue", Helvetica, Arial, sans-serif;
 }
 
-/* Mainframe */
+/** Mainframe **/
+/**************/
 #ng_mainframe {
   /* This creates problems in Chrome #7 nodegame-window */
   /* position: absolute; */
@@ -72,7 +78,8 @@ p {
   margin: 0 auto;
 }
 
-/* Mainframe relative to the header */
+/** Mainframe relative to the header **/
+/**************************************/
 .ng_mainframe-header-vertical-r {
   padding-top: 0 !important;
   padding-bottom: 0 !important;
@@ -97,7 +104,8 @@ p {
   /* padding-bottom added via script */
 }
 
-/* Header */
+/** Header **/
+/************/
 #ng_header {
   position: fixed !important;
   height: auto;
@@ -121,7 +129,8 @@ p {
   display: table;
 }
 
-/* Header positions */
+/** Header positions **/
+/**********************/
 .ng_header_position-horizontal-t, .ng_header_position-horizontal-b {
   width: 100% !important;
   height: auto !important;
@@ -148,7 +157,8 @@ p {
   left: 0 !important;
 }
 
-/* Wait Screen */
+/** Wait Screen **/
+/*****************/
 #ng_waitScreen {
   z-index: 10000;
   filter: alpha(opacity=70);
@@ -176,6 +186,7 @@ p {
 }
 
 /* Handy classes */
+/*****************/
 .strong {
   font-weight: bold;
 }
@@ -199,15 +210,10 @@ p {
   margin: 0 auto;
 }
 
-/*
-   Stylesheet for nodeGame widgets
-   Copyright(c) 2017 Stefano Balietti
-   MIT Licensed
-
-   www.nodegame.org
-   ---
-*/
-/* Widgets inside the header */
+/** WIDGETS **/
+/*************/
+/** Widgets inside the header **/
+/*******************************/
 #ng_header .ng_widget {
   float: left;
   margin-right: 20px;
@@ -285,12 +291,16 @@ p {
   float: right;
 }
 
-/* Visual Round */
+/** Widgets outside header **/
+/****************************/
+/** Visual Round **/
+/******************/
 .visualround .title {
   font-weight: bold;
 }
 
-/* Language Selector */
+/** Language Selector **/
+/***********************/
 .languageselector {
   float: center;
   width: 160px;
@@ -308,7 +318,8 @@ p {
   font-weight: bold;
 }
 
-/* Feedback */
+/** Feedback **/
+/**************/
 .feedback .panel-body textarea {
   padding: 5px;
   font-size: 16px;
@@ -317,7 +328,8 @@ p {
   border: 1px solid #CCC;
 }
 
-/* Requirements */
+/** Requirements **/
+/******************/
 .requirements, .waitingroom {
   font-size: 1.2em;
   box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
@@ -337,7 +349,8 @@ p {
   padding-bottom: 15px;
 }
 
-/* Waiting Room */
+/** Waiting Room **/
+/*****************/
 .waitingroom .panel-body {
   text-align: center;
 }
@@ -360,6 +373,7 @@ p {
 }
 
 /** ChoiceTable **/
+/*****************/
 div.choicetable,
 div.choicetable div.panel-body,
 div.choicetable div.panel-heading {
@@ -382,6 +396,9 @@ textarea.choicetable-freetext {
   float: left;
 }
 
+table.choicetable {
+  width: 100%;
+}
 table.choicetable td {
   word-wrap: break-word;
   border: 1px solid #333;
@@ -414,7 +431,8 @@ table.clickable td:hover {
   cursor: hand;
 }
 
-/* CustomInput */
+/** CustomInput **/
+/*****************/
 .custominput input {
   padding: 5px;
   border-radius: 0;
@@ -430,7 +448,8 @@ table.clickable td:hover {
   padding: 0;
 }
 
-/* Mood */
+/** Mood **/
+/**********/
 div.moodgauge {
   margin: 0 auto;
   text-align: center;
@@ -439,6 +458,7 @@ div.moodgauge table.choicetable,
 div.moodgauge span.choicetable-maintext,
 div.moodgauge span.custominput-maintext {
   text-align: center;
+  width: auto;
 }
 div.moodgauge span.choicetable-maintext, div.moodgauge span.custominput-maintext {
   margin-bottom: 30px;
@@ -449,6 +469,7 @@ div.moodgauge table.choicetable {
   text-align: center;
   border-spacing: 0 5px;
   border-collapse: separate;
+  width: auto;
 }
 div.moodgauge table.choicetable td {
   width: 80px !important;
@@ -464,7 +485,14 @@ div.moodgauge table.choicetable td.choicetable-right {
   width: 100px;
 }
 
-/* SVO */
+/** SVO **/
+/*********/
+div.svogauge table.choicetable,
+div.svogauge span.choicetable-maintext,
+div.svogauge span.custominput-maintext {
+  text-align: center;
+  width: auto;
+}
 div.svogauge table.choicetable {
   margin: 0 auto;
   text-align: center;
@@ -485,7 +513,8 @@ div.svogauge td.choicetable-left hr {
   border-color: black;
 }
 
-/* EmailForm and FeedbackForm */
+/** EmailForm and FeedbackForm **/
+/********************************/
 .emailform-input,
 .feedback-textarea {
   margin-bottom: 5px;
@@ -495,7 +524,8 @@ div.svogauge td.choicetable-left hr {
   margin-right: 5px;
 }
 
-/* EndScreen */
+/** EndScreen **/
+/***************/
 .endscreen .emailform,
 .endscreen .feedback {
   margin-top: 30px;
@@ -525,7 +555,8 @@ div.svogauge td.choicetable-left hr {
   box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
 }
 
-/* Chat */
+/** Chat **/
+/**********/
 .chat {
   font-size: 16px;
   /* not in monitor.css */
