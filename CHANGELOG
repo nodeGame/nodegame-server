@@ -1,5 +1,10 @@
 # nodegame-server change log
 
+## current
+- CustomWidget in built (updated css)
+- Server sends a stringified object with an error to monitor, if an error
+occurs likely due to cycles.
+
 ## 5.0.2
 - Setup content is not merged for levels, justed mixed in.
 - Folders in the games/ directory beginning with a dot are ignored.
