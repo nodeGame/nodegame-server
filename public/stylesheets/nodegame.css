@@ -416,8 +416,14 @@ table.choicetable td.choicetable-left,
 table.choicetable td.choicetable-right {
   border: 0;
   background: inherit;
+}
+table.choicetable td.choicetable-left {
   padding-right: 15px;
   text-align: right;
+}
+table.choicetable td.choicetable-right {
+  padding-left: 15px;
+  text-align: left;
 }
 table.choicetable td.choicetable-left:hover,
 table.choicetable td.choicetable-right:hover {

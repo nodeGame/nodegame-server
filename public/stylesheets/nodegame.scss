@@ -478,9 +478,17 @@ table.choicetable {
   td.choicetable-right {
     border: 0;
     background: inherit;
+  }
+
+  td.choicetable-left {
     padding-right: 15px;
     text-align: right;
   }
+  
+  td.choicetable-right {
+    padding-left: 15px;
+    text-align: left;
+  }  
 
   td.choicetable-left:hover,
   td.choicetable-right:hover {
@@ -536,7 +544,6 @@ div.moodgauge {
     margin-bottom: 30px;
     font-weight: bold;
   }
-
 
   table.choicetable {
     margin: 0 auto;

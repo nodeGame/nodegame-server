@@ -24246,7 +24246,7 @@ if (!Array.prototype.indexOf) {
                 else {
                     opts = { highlight: false, markAttempt: false };
                 }
-debugger
+
                 values = this[widget.ref].getValues(opts);
 
                 // If it is not timeup, and user did not
@@ -24258,6 +24258,7 @@ debugger
                     // is impossible to check if the values are OK).
                     if (values &&
                         (values.missValues === true ||
+                         (values.missValues && values.missValues.length) ||
                          values.choice === null ||
                          values.isCorrect === false)) {
 
@@ -24314,12 +24315,16 @@ debugger
             }
         }
 
+        // TRUE means keep whatever it is. Useful to be specified in some cases.
+        if (frame === true) frame = undefined;
+            
+        
         // Handle frame loading natively, if required.
         if (frame) {
             w = this.node.window;
             if (!w) {
                 throw new Error('Game.execStep: frame option in step ' +
-                                step + ', but nodegame-window is not loaded.');
+                                step + ', but nodegame-window is not loaded');
             }
             frameOptions = {};
             if ('function' === typeof frame) frame = frame.call(node.game);
@@ -43277,6 +43282,13 @@ debugger
         this.table = null;
 
         /**
+         * ### ChoiceTable.choicesSetSize
+         *
+         * How many choices can be on the same row/column
+         */
+        this.choicesSetSize = null;
+
+        /**
          * ### ChoiceTable.tr
          *
          * Reference to TR elements of the table
@@ -43733,7 +43745,7 @@ debugger
                                 'must a positive integer. Found: ' +
                                 options.requiredChoice);
             }
-            if ('number' === typeof this.selectMultiple && 
+            if ('number' === typeof this.selectMultiple &&
                 options.requiredChoice > this.selectMultiple) {
 
                 throw new Error('ChoiceTable.init: requiredChoice cannot be ' +
@@ -43748,7 +43760,7 @@ debugger
         }
         else if ('undefined' !== typeof options.requiredChoice) {
             throw new TypeError('ChoiceTable.init: options.requiredChoice ' +
-                                'be number or boolean or undefined. Found: ' +
+                                'be number, boolean or undefined. Found: ' +
                                 options.requiredChoice);
         }
 
@@ -43914,9 +43926,20 @@ debugger
         if ('undefined' !== typeof options.correctChoice) {
             if (this.requiredChoice) {
                 throw new Error('ChoiceTable.init: cannot specify both ' +
-                                'options requiredChoice and correctChoice.');
+                                'options requiredChoice and correctChoice');
             }
             this.setCorrectChoice(options.correctChoice);
+        }
+
+        // Add the correct choices.
+        if ('undefined' !== typeof options.choicesSetSize) {
+            if (!J.isInt(options.choicesSetSize, 0)) {
+                throw new Error('ChoiceTable.init: choicesSetSize must be ' +
+                                'undefined or an integer > 0. Found: ' +
+                                options.choicesSetSize);
+            }
+
+            this.choicesSetSize = options.choicesSetSize;
         }
     };
 
@@ -43996,44 +44019,62 @@ debugger
      * @see ChoiceTable.order
      * @see ChoiceTable.renderChoice
      * @see ChoiceTable.orientation
+     * @see ChoiceTable.choicesSetSize
      */
-    ChoiceTable.prototype.buildTable = function() {
-        var i, len, tr, H;
+    ChoiceTable.prototype.buildTable = (function() {
 
-        if (!this.choicesCells) {
-            throw new Error('ChoiceTable.buildTable: choices not set, cannot ' +
-                            'build table. Id: ' + this.id);
-        }
-        len = this.choicesCells.length;
-
-        // Start adding tr/s and tds based on the orientation.
-        i = -1, H = this.orientation === 'H';
-
-        if (H) {
-            tr = createTR(this, 'main');
-            // Add horizontal choices title.
-            if (this.leftCell) tr.appendChild(this.leftCell);
-        }
-        // Main loop.
-        for ( ; ++i < len ; ) {
-            if (!H) {
-                tr = createTR(this, 'left');
-                // Add vertical choices title.
-                if (i === 0 && this.leftCell) {
-                    tr.appendChild(this.leftCell);
-                    tr = createTR(this, i);
-                }
+        function makeSet(i, len, H, doSets) {
+            var tr, counter;
+            counter = 0;
+            // Start adding tr/s and tds based on the orientation.
+            if (H) {
+                tr = createTR(this, 'main');
+                // Add horizontal choices title.
+                if (this.leftCell) tr.appendChild(this.leftCell);
             }
-            // Clickable cell.
-            tr.appendChild(this.choicesCells[i]);
+            // Main loop.
+            for ( ; ++i < len ; ) {
+                if (!H) {
+                    tr = createTR(this, 'left');
+                    // Add vertical choices title.
+                    if (i === 0 && this.leftCell) {
+                        tr.appendChild(this.leftCell);
+                        tr = createTR(this, i);
+                    }
+                }
+                // Clickable cell.
+                tr.appendChild(this.choicesCells[i]);
+                // Stop if we reached set size (still need to add the right).
+                if (doSets && ++counter >= this.choicesSetSize) break;
+            }
+            if (this.rightCell) {
+                if (!H) tr = createTR(this, 'right');
+                tr.appendChild(this.rightCell);
+            }
+
+            // Start a new set, if necessary.
+            if (i !== len) makeSet.call(this, i, len, H, doSets);
         }
-        if (this.rightCell) {
-            if (!H) tr = createTR(this, 'right');
-            tr.appendChild(this.rightCell);
-        }
-        // Enable onclick listener.
-        this.enable();
-    };
+
+        return function() {
+            var i, len, H, doSets;
+
+            if (!this.choicesCells) {
+                throw new Error('ChoiceTable.buildTable: choices not set, ' +
+                                'cannot build table. Id: ' + this.id);
+            }
+
+            H = this.orientation === 'H';
+            len = this.choicesCells.length;
+            doSets = 'number' === typeof this.choicesSetSize;
+
+            // Recursively makes sets
+            makeSet.call(this, -1, len, H, doSets);
+
+            // Enable onclick listener.
+            this.enable();
+        };
+    })();
 
     /**
      * ### ChoiceTable.buildTableAndChoices
@@ -45736,7 +45777,8 @@ debugger
         obj = {
             id: this.id,
             order: this.order,
-            items: {}
+            items: {},
+            isCorrect: true
         };
         opts = opts || {};
         // Make sure reset is done only at the end.
@@ -45748,7 +45790,10 @@ debugger
             obj.items[tbl.id] = tbl.getValues(opts);
             if (obj.items[tbl.id].choice === null) {
                 obj.missValues = true;
-                if (tbl.requiredChoice) toHighlight = true;
+                if (tbl.requiredChoice) {
+                    toHighlight = true;
+                    obj.isCorrect = false;
+                }
             }
             if (obj.items[tbl.id].isCorrect === false && opts.highlight) {
                 toHighlight = true;
@@ -48908,7 +48953,7 @@ debugger
 
     // ## Meta-data
 
-    Feedback.version = '1.1.0';
+    Feedback.version = '1.2.0';
     Feedback.description = 'Displays a configurable feedback form';
 
     Feedback.title = 'Feedback';
@@ -48994,7 +49039,7 @@ debugger
         }
         else if (J.isNumber(options.maxAttemptLength, 0) !== false) {
             this.maxAttemptLength = Math.max(this.maxLength,
-                                                     options.maxAttemptLength);
+                                             options.maxAttemptLength);
         }
         else {
             throw new TypeError('Feedback constructor: ' +
@@ -49018,6 +49063,18 @@ debugger
         else {
             this.showCharCount = !!options.showCount;
         }
+
+        /**
+         * ### Feedback.showSubmit
+         *
+         * If TRUE, the submit button is shown
+         *
+         * Default: true
+         *
+         * @see Feedback.submitButton
+         */
+        this.showSubmit = 'undefined' === typeof options.showSubmit ?
+            true : !!options.showSubmit;        
 
         /**
          * ### Feedback.onsubmit
@@ -49130,36 +49187,44 @@ debugger
         feedbackTextarea.setAttribute('rows', '3');
         feedbackForm.appendChild(feedbackTextarea);
 
-        submit = document.createElement('input');
-        submit.className = 'btn btn-lg btn-primary';
-        submit.setAttribute('type', 'submit');
-        submit.setAttribute('value', 'Submit feedback');
-        feedbackForm.appendChild(submit);
+        if (this.showSubmit) {
+            submit = document.createElement('input');
+            submit.className = 'btn btn-lg btn-primary';
+            submit.setAttribute('type', 'submit');
+            submit.setAttribute('value', 'Submit feedback');
+            feedbackForm.appendChild(submit);
+            
+            // Add listeners.
+            J.addEvent(feedbackForm, 'submit', function(event) {
+                event.preventDefault();
+                that.getValues(that.onsubmit);
+            });
+
+            // Store reference.
+            this.submitButton = submit;
+        }
 
         if (this.showCharCount) {
             charCounter = document.createElement('span');
             charCounter.className = 'feedback-char-count badge';
-            charCounter.innerHTML = this.maxLength;
-            // Until no char is inserted is hidden.
-            charCounter.style.display = 'none';
+            charCounter.innerHTML = this.maxLength;            
             feedbackForm.appendChild(charCounter);
+
+            // Store reference.
+            this.charCounter = charCounter;
         }
 
-        // Add listeners.
-        J.addEvent(feedbackForm, 'submit', function(event) {
-            event.preventDefault();
-            that.getValues(that.onsubmit);
-        });
-
         J.addEvent(feedbackForm, 'input', function(event) {
+            if (that.isHighlighted()) that.unhighlight();
             that.verifyFeedback(false, true);
         });
-
+        J.addEvent(feedbackForm, 'click', function(event) {
+            if (that.isHighlighted()) that.unhighlight();
+        });
+        
         // Store references.
-        this.submitButton = submit;
         this.feedbackHTML = feedbackHTML;
         this.textareaElement = feedbackTextarea;
-        this.charCounter = charCounter || null;
 
         // Check it once at the beginning to initialize counter.
         this.verifyFeedback(false, true);
@@ -49219,9 +49284,8 @@ debugger
         }
 
         if (updateUI) {
-            submitButton.disabled = !res;
+            if (submitButton) submitButton.disabled = !res;
             if (charCounter) {
-                charCounter.style.display = length ? '' : 'none';
                 charCounter.style.backgroundColor = updateColor;
                 charCounter.innerHTML = updateCount;
             }
@@ -49315,7 +49379,8 @@ debugger
                 timeBegin: this.timeInputBegin,
                 feedback: feedback,
                 attempts: this.attempts,
-                valid: res
+                valid: res,
+                isCorrect: res
             };
         }
 
@@ -49373,7 +49438,7 @@ debugger
                                 'string or undefined. Found: ' + border);
         }
         if (!this.feedbackHTML || this.highlighted === true) return;
-        this.feedbackHTML.style.border = border || '3px solid red';
+        this.textareaElement.style.border = border || '3px solid red';
         this.highlighted = true;
         this.emit('highlighted', border);
     };
@@ -49387,7 +49452,7 @@ debugger
      */
     Feedback.prototype.unhighlight = function() {
         if (!this.feedbackHTML || this.highlighted !== true) return;
-        this.feedbackHTML.style.border = '';
+        this.textareaElement.style.border = '';
         this.highlighted = false;
         this.emit('unhighlighted');
     };
@@ -49406,6 +49471,34 @@ debugger
         if (this.isHighlighted()) this.unhighlight();
     };
 
+    /**
+     * ### Feedback.disable
+     *
+     * Disables clicking on the table and removes CSS 'clicklable' class
+     */
+    Feedback.prototype.disable = function() {
+        if (this.disabled === true) return;
+        this.disabled = true;
+        if (this.submitElement) this.submitElement.disabled = true;
+        this.textareaElement.disabled = true;
+        this.emit('disabled');
+    };
+
+    /**
+     * ### Feedback.enable
+     *
+     * Enables clicking on the table and adds CSS 'clicklable' class
+     *
+     * @return {function} cb The event listener function
+     */
+    Feedback.prototype.enable = function() {
+        if (this.disabled === false || !this.textareaElement) return;
+        this.disabled = false;
+        if (this.submitElement) this.submitElement.disabled = false;
+        this.textareaElement.disabled = false;
+        this.emit('enabled');
+    };
+    
     // ## Helper functions.
 
     /**
