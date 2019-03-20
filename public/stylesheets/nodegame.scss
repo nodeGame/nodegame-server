@@ -1,4 +1,10 @@
-/* nodeGame css */
+/******************/
+/** nodeGame css **/
+/******************/
+
+
+/* Shared variables */
+/********************/
 
 $base-font: 'Source Sans Pro', -apple-system, BlinkMacSystemFont, Roboto, "Segoe UI", 'Helvetica Neue', Helvetica, Arial, sans-serif;
 $header-bg-color: white;
@@ -10,7 +16,8 @@ $max-width-chat-msg: 150px;
 $shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
 $forms_border_color: #333;
 
-/* Main Elements */
+/** Main Elements **/
+/*******************/
 
 noscript {
     position: fixed;
@@ -69,7 +76,8 @@ p {
   font-family: $base-font;
 }
 
-/* Mainframe */
+/** Mainframe **/
+/**************/
 
 #ng_mainframe {
   /* This creates problems in Chrome #7 nodegame-window */
@@ -83,7 +91,8 @@ p {
   margin: 0 auto;
 }
 
-/* Mainframe relative to the header */
+/** Mainframe relative to the header **/
+/**************************************/
 
 .ng_mainframe-header-vertical-r {
   padding-top: 0 !important;
@@ -109,7 +118,8 @@ p {
   /* padding-bottom added via script */
 }
 
-/* Header */
+/** Header **/
+/************/
 
 #ng_header {
   position: fixed !important;
@@ -134,7 +144,9 @@ p {
   }
 }
 
-/* Header positions */
+/** Header positions **/
+/**********************/
+
 
 .ng_header_position-horizontal-t {
   width: 100% !important;
@@ -165,8 +177,8 @@ p {
 }
 
 
-/* Wait Screen */
-
+/** Wait Screen **/
+/*****************/
 
 #ng_waitScreen {
   z-index: 10000;
@@ -196,6 +208,7 @@ p {
 
 
 /* Handy classes */
+/*****************/
 
 .strong {
   font-weight: bold;
@@ -220,16 +233,12 @@ p {
   margin: 0 auto;
 }
 
-/*
-   Stylesheet for nodeGame widgets
-   Copyright(c) 2017 Stefano Balietti
-   MIT Licensed
 
-   www.nodegame.org
-   ---
-*/
+/** WIDGETS **/
+/*************/
 
-/* Widgets inside the header */
+/** Widgets inside the header **/
+/*******************************/
 
 #ng_header {
 
@@ -314,8 +323,11 @@ p {
   }
 }
 
+/** Widgets outside header **/
+/****************************/
 
-/* Visual Round */
+/** Visual Round **/
+/******************/
 
 .visualround {
   .title {
@@ -323,7 +335,9 @@ p {
   }
 }
 
-/* Language Selector */
+/** Language Selector **/
+/***********************/
+
 .languageselector {
   float: center;
   width: 160px;
@@ -342,7 +356,9 @@ p {
   font-weight: bold;
 }
 
-/* Feedback */
+/** Feedback **/
+/**************/
+
 .feedback {
 
   .panel-body {
@@ -357,7 +373,9 @@ p {
   }
 }
 
-/* Requirements */
+/** Requirements **/
+/******************/
+
 .requirements {
   @extend .centered;
 
@@ -379,7 +397,8 @@ p {
   padding-bottom: 15px;
 }
 
-/* Waiting Room */
+/** Waiting Room **/
+/*****************/
 
 .waitingroom {
   @extend .requirements;
@@ -411,6 +430,7 @@ p {
 }
 
 /** ChoiceTable **/
+/*****************/
 
 div.choicetable,
 div.choicetable div.panel-body,
@@ -474,7 +494,8 @@ table.clickable td:hover {
 }
 
 
-/* CustomInput */
+/** CustomInput **/
+/*****************/
 
 .custominput input {
   padding: 5px;
@@ -496,7 +517,8 @@ table.clickable td:hover {
 }
 
 
-/* Mood */
+/** Mood **/
+/**********/
 
 div.moodgauge {
   margin: 0 auto;
@@ -539,7 +561,8 @@ div.moodgauge {
   }
 }
 
-/* SVO */
+/** SVO **/
+/*********/
 
 div.svogauge {
 
@@ -568,7 +591,8 @@ div.svogauge {
   }
 }
 
-/* EmailForm and FeedbackForm */
+/** EmailForm and FeedbackForm **/
+/********************************/
 
 .emailform-input,
 .feedback-textarea {
@@ -581,7 +605,8 @@ div.svogauge {
     }
 }
 
-/* EndScreen */
+/** EndScreen **/
+/***************/
 
 .endscreen {
 
@@ -620,7 +645,8 @@ div.svogauge {
 }
 
 
-/* Chat */
+/** Chat **/
+/**********/
 
 .chat {
   font-size: 16px; /* not in monitor.css */
