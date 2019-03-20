@@ -577,13 +577,17 @@ div.svogauge td.choicetable-left hr {
 }
 
 /* CustomInput */
-.customput > div > input {
+.custominput > div > input {
   padding: 5px;
 }
 
 .custominput .errbox {
   font-size: 14px;
   margin-top: 5px;
+}
+
+.custominput .panel-body {
+  padding: 0;
 }
 
 /*# sourceMappingURL=nodegame.css.map */
