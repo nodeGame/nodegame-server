@@ -5322,10 +5322,10 @@ if (!Array.prototype.indexOf) {
     PARSE.isNumber = function(n, lower, upper, leq, ueq) {
         if (isNaN(n) || !isFinite(n)) return false;
         n = parseFloat(n);
-        if ('number' === typeof lower && (leq ? n < lower : n <= lower)) {
+        if ('number' === typeof lower && (leq ? n <= lower : n < lower)) {
             return false;
         }
-        if ('number' === typeof upper && (ueq ? n > upper : n >= upper)) {
+        if ('number' === typeof upper && (ueq ? n >= upper : n > upper)) {
             return false;
         }
         return n;
@@ -10083,7 +10083,7 @@ if (!Array.prototype.indexOf) {
     node.support = JSUS.compatibility();
 
     // Auto-Generated.
-    node.version = '5.0.1';
+    node.version = '5.0.0';
 
 })(window);
 
@@ -15503,7 +15503,7 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # Stager stages and steps
- * Copyright(c) 2019 Stefano Balietti
+ * Copyright(c) 2015 Stefano Balietti
  * MIT Licensed
  */
 (function(exports, node) {
@@ -15585,12 +15585,12 @@ if (!Array.prototype.indexOf) {
 
     var BLOCK_DEFAULT     = blockTypes.BLOCK_DEFAULT;
     var BLOCK_STAGEBLOCK  = blockTypes.BLOCK_STAGEBLOCK;
-    var BLOCK_STAGE       = blockTypes.BLOCK_STAGE;
-    var BLOCK_STEPBLOCK   = blockTypes.BLOCK_STEPBLOCK;
+    var BLOCK_STAGE       = blockTypes. BLOCK_STAGE;
+    var BLOCK_STEPBLOCK   = blockTypes. BLOCK_STEPBLOCK;
     var BLOCK_STEP        = blockTypes.BLOCK_STEP;
 
     var BLOCK_ENCLOSING          = blockTypes.BLOCK_ENCLOSING;
-    var BLOCK_ENCLOSING_STEPS    = blockTypes.BLOCK_ENCLOSING_STEPS;
+    var BLOCK_ENCLOSING_STEPS    = blockTypes. BLOCK_ENCLOSING_STEPS;
     var BLOCK_ENCLOSING_STAGES   = blockTypes.BLOCK_ENCLOSING_STAGES;
 
     /**
@@ -15607,7 +15607,7 @@ if (!Array.prototype.indexOf) {
         var i, len;
         i = -1, len = steps.length;
         // Missing steps are added with default callback (if string),
-        // or as they are, if object.
+        // or as they are if object.
         for ( ; ++i < len ; ) {
             if ('object' === typeof steps[i]) {
                 // Throw error if step.id is not unique.
@@ -15628,9 +15628,8 @@ if (!Array.prototype.indexOf) {
             }
             else {
                 throw new TypeError('Stager.' + method + ': stage ' +
-                                    stageId  + ': each item in the steps ' +
-                                    ' array must be string or object. Found: ' +
-                                    steps[i]);
+                                    stageId  + ': items of the steps array ' +
+                                    'must be string or object.');
             }
         }
     }
@@ -15699,7 +15698,7 @@ if (!Array.prototype.indexOf) {
     function checkFinalized(that, method) {
         if (that.finalized) {
             throw new Error('Stager.' + method + ': stager has been ' +
-                            'already finalized');
+                            'already finalized.');
         }
     }
 
@@ -15732,7 +15731,8 @@ if (!Array.prototype.indexOf) {
         if (err || 'string' !== typeof positions || positions.trim() === '') {
             throw new TypeError('Stager.' + method + ': positions must ' +
                                 'be a non-empty string, a positive finite ' +
-                                'number, or undefined. Found: ' + positions);
+                                'number, or undefined. Found: ' +
+                                positions + '.');
         }
         return positions;
     }
@@ -17610,7 +17610,7 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # Stager Setter and Getters
- * Copyright(c) 2019 Stefano Balietti
+ * Copyright(c) 2015 Stefano Balietti
  * MIT Licensed
  */
 (function(exports, node) {
@@ -17653,15 +17653,14 @@ if (!Array.prototype.indexOf) {
         var stageObj, seqObj, blockObj;
 
         if ('object' !== typeof stateObj) {
-            throw new TypeError('Stager.setState: stateObj must be object. ' +
-                                'Found: ' + stageObj);
+            throw new TypeError('Stager.setState: stateObj must be object.');
         }
 
         updateRule = updateRule || 'replace';
 
         if ('string' !== typeof updateRule) {
-            throw new TypeError('Stager.setState: updateRule must be string ' +
-                                'or undefined. Found: ' + updateRule);
+            throw new TypeError('Stager.setState: updateRule must be object ' +
+                                'or undefined.');
         }
 
         // Clear previous state:
@@ -17858,7 +17857,7 @@ if (!Array.prototype.indexOf) {
             if ('function' !== typeof stepRule) {
                 throw new TypeError('Stager.setDefaultStepRule: ' +
                                     'stepRule must be function or ' +
-                                    'undefined. Found: ' + stepRule);
+                                    'undefined.');
             }
 
             this.defaultStepRule = stepRule;
@@ -17902,8 +17901,8 @@ if (!Array.prototype.indexOf) {
             cb = Stager.defaultCallback;
         }
         else if ('function' !== typeof cb) {
-            throw new TypeError('Stager.setDefaultCallback: defaultCallback ' +
-                                'must be function or null. Found: ' + cb);
+            throw new TypeError('Stager.setDefaultCallback: ' +
+                                'defaultCallback must be function or null.');
         }
         this.defaultCallback = makeDefaultCb(cb);
 
@@ -17951,8 +17950,8 @@ if (!Array.prototype.indexOf) {
      */
     Stager.prototype.setDefaultGlobals = function(defaultGlobals, mixin) {
         if (!defaultGlobals || 'object' !== typeof defaultGlobals) {
-            throw new TypeError('Stager.setDefaultGlobals: defaultGlobals ' +
-                                'must be object. Found: ' + defaultGlobals);
+            throw new TypeError('Stager.setDefaultGlobals: ' +
+                                'defaultGlobals must be object.');
         }
         if (mixin) J.mixin(this.defaultGlobals, defaultGlobals);
         else this.defaultGlobals = defaultGlobals;
@@ -17987,7 +17986,7 @@ if (!Array.prototype.indexOf) {
     Stager.prototype.setDefaultProperty = function(name, value) {
         if ('string' !== typeof name) {
             throw new TypeError('Stager.setDefaultProperty: name ' +
-                                'must be string. Found: ' + name);
+                                'must be string.');
         }
         this.defaultProperties[name] = value;
     };
@@ -18010,8 +18009,7 @@ if (!Array.prototype.indexOf) {
         if (!defaultProperties ||
             'object' !== typeof defaultProperties) {
             throw new TypeError('Stager.setDefaultProperties: ' +
-                                'defaultProperties must be object. Found: ' +
-                                defaultProperties);
+                                'defaultProperties must be object.');
         }
         if (mixin) J.mixin(this.defaultProperties, defaultProperties);
         else this.defaultProperties = defaultProperties;
@@ -18043,8 +18041,8 @@ if (!Array.prototype.indexOf) {
      */
     Stager.prototype.setOnInit = function(func) {
         if (func && 'function' !== typeof func) {
-            throw new TypeError('Stager.setOnInit: func must be ' +
-                                'function or undefined. Found: ' + func);
+            throw new TypeError('Stager.setOnInit: func must be' +
+                                ' function or undefined.');
         }
         this.onInit = func;
     };
@@ -18120,7 +18118,7 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # Stager flexible mode
- * Copyright(c) 2019 Stefano Balietti
+ * Copyright(c) 2015 Stefano Balietti
  * MIT Licensed
  */
 (function(exports, node) {
@@ -18143,8 +18141,7 @@ if (!Array.prototype.indexOf) {
     Stager.prototype.registerGeneralNext = function(func) {
         if (func !== null && 'function' !== typeof func) {
             throw new TypeError('Stager.registerGeneralNext: ' +
-                                'func must be function or undefined. Found: ' +
-                                func);
+                                'func must be function or undefined.');
         }
         this.generalNextFunction = func;
     };
@@ -18169,12 +18166,12 @@ if (!Array.prototype.indexOf) {
     Stager.prototype.registerNext = function(id, func) {
         if ('function' !== typeof func) {
             throw new TypeError('Stager.registerNext: func must be ' +
-                'function. Found: ' + func);
+                'function.');
         }
 
         if (!this.stages[id]) {
             throw new TypeError('Stager.registerNext: non existent ' +
-                               'stage id: ' + id);
+                               'stage id: ' + id + '.');
         }
 
         this.nextFunctions[id] = func;
@@ -18187,7 +18184,7 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # Stager extend stages, modify sequence
- * Copyright(c) 2019 Stefano Balietti
+ * Copyright(c) 2017 Stefano Balietti
  * MIT Licensed
  */
 (function(exports, node) {
@@ -18226,7 +18223,7 @@ if (!Array.prototype.indexOf) {
         step = this.steps[stepId];
         if (!step) {
             throw new Error('Stager.extendStep: stepId not found: ' +
-                            stepId);
+                            stepId + '.');
         }
         if ('function' === typeof update) {
             step = update(J.clone(step));
@@ -18239,7 +18236,7 @@ if (!Array.prototype.indexOf) {
         }
         else {
             throw new TypeError('Stager.extendStep: update must be object ' +
-                                'or function. Step id: ' + stepId);
+                                'or function. Step id: ' + stepId + '.');
         }
     };
 
@@ -18268,7 +18265,7 @@ if (!Array.prototype.indexOf) {
         stage = this.stages[stageId];
         if (!stage) {
             throw new Error('Stager.extendStage: stageId not found: ' +
-                            stageId);
+                            stageId + '.');
         }
 
         if ('function' === typeof update) {
@@ -18277,8 +18274,7 @@ if (!Array.prototype.indexOf) {
                 !stage.id || !stage.steps) {
 
                 throw new TypeError('Stager.extendStage: update function ' +
-                                    'must return an object with id and ' +
-                                    'steps. Found: ' + stage);
+                                    'must return an object with id and steps.');
             }
             validateExtendedStage(this, stageId, stage, true);
             this.stages[stageId] = stage;
@@ -18289,9 +18285,8 @@ if (!Array.prototype.indexOf) {
             J.mixin(stage, update);
         }
         else {
-            throw new TypeError('Stager.extendStage: stage "' + stageId +
-                                '": update must be object ' +
-                                'or function. Found: ' + update);
+            throw new TypeError('Stager.extendStage: update must be object ' +
+                                'or function. Stage id: ' + stageId + '.');
         }
     };
 
@@ -18409,13 +18404,12 @@ if (!Array.prototype.indexOf) {
     function setSkipStageStep(that, stageId, stepId, value, method) {
         if ('string' !== typeof stageId || stageId.trim() === '') {
             throw new TypeError('Stager.' + method + ': stageId must ' +
-                                'be a non-empty string. Found: ' + stageId);
+                                'be a non-empty string.');
         }
         if (stepId) {
             if ('string' !== typeof stepId || stepId.trim() === '') {
                 throw new TypeError('Stager.' + method + ': stepId must ' +
-                                    'be a non-empty string or undefined.' +
-                                    'Found: ' + stepId);
+                                    'be a non-empty string or undefined.');
             }
             if ('undefined' !== typeof value) {
                 that.toSkip.steps[stageId + '.' + stepId] = value;
@@ -18449,59 +18443,59 @@ if (!Array.prototype.indexOf) {
 
             if (!update || 'object' !== typeof update) {
                 throw new TypeError(errBegin + 'id and cb. Found: ' + update +
-                                    '. Step id: ' +  stepId);
+                                    '. Step id: ' +  stepId + '.');
             }
             if (update.id !== stepId) {
                 throw new Error('Stager.extendStep: update function ' +
-                                'cannot alter the step id: ' + stepId);
+                                'cannot alter the step id: ' + stepId + '.');
             }
             if ('function' !== typeof update.cb) {
                 throw new TypeError(errBegin + 'a valid callback. Step id:' +
-                                    stepId);
+                                    stepId + '.');
             }
             if (update.init && 'function' !== typeof update.init) {
                 throw new TypeError(errBegin + 'invalid init property. ' +
                                     'Function or undefined expected, found: ' +
                                     typeof update.init + '. Step id:' +
-                                    stepId);
+                                    stepId + '.');
             }
             if (update.exit && 'function' !== typeof update.exit) {
                 throw new TypeError(errBegin + 'invalid exit property. ' +
                                     'Function or undefined expected, found: ' +
                                     typeof update.exit + '. Step id:' +
-                                    stepId);
+                                    stepId + '.');
             }
             if (update.done && 'function' !== typeof update.done) {
                 throw new TypeError(errBegin + 'invalid done property. ' +
                                     'Function or undefined expected, found: ' +
                                     typeof update.done + '. Step id:' +
-                                    stepId);
+                                    stepId + '.');
             }
         }
         else {
             if (update.hasOwnProperty('id')) {
                 throw new Error('Stager.extendStep: update.id cannot be set. ' +
-                                'Step id: ' + stepId);
+                                'Step id: ' + stepId + '.');
             }
             if (update.cb && 'function' !== typeof update.cb) {
                 throw new TypeError('Stager.extendStep: update.cb must be ' +
                                     'function or undefined. Step id:' +
-                                    stepId);
+                                    stepId + '.');
             }
             if (update.init && 'function' !== typeof update.init) {
                 throw new TypeError('Stager.extendStep: update.init must be ' +
                                     'function or undefined. Step id:' +
-                                    stepId);
+                                    stepId + '.');
             }
             if (update.exit && 'function' !== typeof update.exit) {
                 throw new TypeError('Stager.extendStep: update.exit must be ' +
                                     'function or undefined. Step id:' +
-                                    stepId);
+                                    stepId + '.');
             }
             if (update.done && 'function' !== typeof update.done) {
                 throw new TypeError('Stager.extendStep: update.done must be ' +
                                     'function or undefined. Step id:' +
-                                    stepId);
+                                    stepId + '.');
             }
 
         }
@@ -18528,37 +18522,34 @@ if (!Array.prototype.indexOf) {
             (!updateFunction && update.hasOwnProperty('id'))) {
 
             throw new Error('Stager.extendStage: id cannot be altered: ' +
-                            stageId);
+                            stageId + '.');
         }
         if (update.cb) {
             throw new TypeError('Stager.extendStage: update.cb cannot be ' +
-                                'specified. Stage id: ' + stageId);
+                                'specified. Stage id: ' + stageId + '.');
         }
         if (update.init && 'function' !== typeof update.init) {
             throw new TypeError('Stager.extendStage: update.init must be ' +
                                 'function or undefined. Stage id:' +
-                                stageId);
+                                stageId + '.');
         }
         if (update.exit && 'function' !== typeof update.exit) {
             throw new TypeError('Stager.extendStage: update.exit must be ' +
                                 'function or undefined. Stage id:' +
-                                stageId);
+                                stageId + '.');
         }
         if (update.done && 'function' !== typeof update.done) {
             throw new TypeError('Stager.extendStage: update.done must be ' +
                                 'function or undefined. Stage id:' +
-                                stageId);
+                                stageId + '.');
         }
         if (update.steps) {
-            if (!J.isArray(update.steps)) {
-                throw new Error('Stager.extendStage: update.steps must be ' +
-                                'array or undefined. Stage id: ' + stageId +
-                                'Found: ' + update.steps);
-            }
+            if ((!J.isArray(update.steps) || !update.steps.length) ||
+                update.steps === undefined || update.steps === null) {
 
-            if (!update.steps.length) {
-                throw new Error('Stager.extendStage: update.steps is an ' +
-                                'empty array. Stage id: ' + stageId);
+                throw new Error('Stager.extendStage: found update.steps, but ' +
+                                'it is not a non-empty array. Stage id: ' +
+                               stageId + '.');
             }
 
             // No changes to the steps array, just exit.
@@ -18838,7 +18829,7 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # Stager Extract Info
- * Copyright(c) 2019 Stefano Balietti
+ * Copyright(c) 2015 Stefano Balietti
  * MIT Licensed
  */
 (function(exports, node) {
@@ -18895,7 +18886,7 @@ if (!Array.prototype.indexOf) {
 
                     default:
                         throw new Error('Stager.getSequence: unknown' +
-                                        'sequence object type: ' + seqObj.type);
+                                        'sequence object type.');
                     }
                 }
             }
@@ -18951,7 +18942,7 @@ if (!Array.prototype.indexOf) {
 
                     default:
                         throw new Error('Stager.getSequence: unknown' +
-                                        'sequence object type: ' + seqObj.type);
+                                        'sequence object type.');
                     }
                 }
             }
@@ -18962,7 +18953,7 @@ if (!Array.prototype.indexOf) {
             break;
 
         default:
-            throw new Error('Stager.getSequence: invalid format: ' + format);
+            throw new Error('Stager.getSequence: invalid format.');
         }
 
         return result;
@@ -46407,7 +46398,7 @@ if (!Array.prototype.indexOf) {
 
     // ## Meta-data
 
-    CustomInput.version = '0.1.0';
+    CustomInput.version = '0.3.0';
     CustomInput.description = 'Creates a configurable input box';
 
     CustomInput.title = false;
@@ -46417,17 +46408,23 @@ if (!Array.prototype.indexOf) {
     CustomInput.types = {
         text: true,
         number: true,
-        'float': true
+        'float': true,
+        'int': true,
+        date: true
     };
 
     CustomInput.texts = {
-        numFloatErr: function(w, isFloat) {
+        numericErr: function(w) {
             var str, p, inc;
             p = w.params;
+            // Weird, but valid, case.
+            if (p.exactly) return 'Must enter ' + p.lower;
+            // Others.
             inc = '(inclusive)';
-            str = 'Must be a ';
-            if (isFloat) str += 'floating point ';
-            str += 'number ';            
+            str = 'Must be a';
+            if (w.type === 'float') str += 'floating point';
+            else if (w.type === 'int') str += 'n integer';
+            str += ' number ';
             if (p.between) {
                 str += 'between ' + p.lower;
                 if (p.leq) str += inc;
@@ -46450,14 +46447,29 @@ if (!Array.prototype.indexOf) {
             var str, p;
             p = w.params;
             str = 'Must be ';
-            if ('undefined' !== typeof p.lower) str += 'at least ' + p.lower;
-            if ('undefined' !== typeof p.upper) {
-                if (str) str += ' and';
-                str += ' no more than ' + p.upper;
+            if (p.exactly) {
+                str += 'exactly ' + (p.lower + 1);
             }
-            str += ' characters long. Current length: ' + len;
+            else if (p.between) {
+                str += 'between ' + p.lower + ' and ' + p.upper;
+            }
+            else if ('undefined' !== typeof p.lower) {
+                str += ' more than ' + (p.lower -1);
+            }
+            else if ('undefined' !== typeof p.upper) {
+                str += ' less than ' + (p.upper + 1);
+            }
+            str += ' characters long';
+            if (p.between) str += ' (extremes included)';
+            str += '. Current length: ' + len;
             return str;
-
+        },
+        dateErr: function(w, invalid) {
+            return invalid ? 'Date is invalid' : 'Must follow format ' +
+                w.params.format;
+        },
+        emptyErr: function(w) {
+            return 'Cannot be empty'
         }
     };
 
@@ -46493,11 +46505,31 @@ if (!Array.prototype.indexOf) {
         this.type = null;
 
         /**
+         * ### CustomInput.preprocess
+         *
+         * The function that preprocess the input before validation
+         *
+         * The function receives the input form and must modify it directly
+         */
+        this.preprocess = null;
+
+        /**
          * ### CustomInput.validation
          *
          * The validation function for the input
          *
-         * The function returns an error message in case of error.
+         * The function is called only if input is non-empty.
+         * If the form cannot be left empty, set attribute `requiredChoice`.
+         *
+         * The function returns an object with this format:
+         *
+         * ```
+         * {
+         *     value: 'a validated value',
+         *     err: 'an error string if validation fails'
+         *     // Additional properties as fit.
+         * }
+         * ```
          */
         this.validation = null;
 
@@ -46520,20 +46552,6 @@ if (!Array.prototype.indexOf) {
         this.params = {};
 
         /**
-         * ### CustomInput.hint
-         *
-         * A text describing how to fill in the form
-         */
-        this.hintText = null;
-
-        /**
-         * ### CustomInput.hintBox
-         *
-         * An HTML element containing the hint text
-         */
-        this.hintBox = null;
-
-        /**
          * ### CustomInput.errorBox
          *
          * An HTML element displayed when a validation error occurs
@@ -46546,6 +46564,24 @@ if (!Array.prototype.indexOf) {
          * A text preceeding the date selector
          */
         this.mainText = null;
+
+        /**
+         * ### CustomInput.brAfterMainText
+         *
+         * If TRUE, a br is inserted between the main text and the input
+         *
+         * Default: TRUE
+         */
+        this.brAfterMainText = null;
+
+        /**
+         * ### CustomInput.requiredChoice
+         *
+         * If TRUE, the input form cannot be left empty
+         *
+         * Default: TRUE
+         */
+        this.requiredChoice = null;
     }
 
     // ## CustomInput methods
@@ -46555,169 +46591,287 @@ if (!Array.prototype.indexOf) {
      *
      * Initializes the instance
      *
-     * Available options are:
-     *
-     *
-     * @param {object} options Configuration options
+     * @param {object} opts Configuration options
      */
-    CustomInput.prototype.init = function(options) {
+    CustomInput.prototype.init = function(opts) {
         var tmp, that, e, isText;
         that = this;
-        e = 'CustomInput.init: options.';
-        if (options.type) {
-            if (!CustomInput.types[options.type]) {
-                throw new Error('CustomInput.init: type not supported: ' +
-                                options.type);
+        e = 'CustomInput.init: ';
+
+        // TODO: this becomes false later on. Why???
+        this.requiredChoice = !!opts.requiredChoice;
+
+        if (opts.type) {
+            if (!CustomInput.types[opts.type]) {
+                throw new Error(e + 'type not supported: ' + opts.type);
             }
-            this.type = options.type;
+            this.type = opts.type;
         }
         else {
             this.type = 'text';
         }
 
-        if (options.validation) {
-            if ('function' !== typeof options.validation) {
+        if (opts.validation) {
+            if ('function' !== typeof opts.validation) {
                 throw new TypeError(e + 'validation must be function ' +
                                     'or undefined. Found: ' +
-                                    options.validation);
+                                    opts.validation);
             }
-            this.validation = options.validation;
+            this.validation = opts.validation;
         }
         else {
             // Add default validations based on type.
 
             if (this.type === 'number' || this.type === 'float' ||
-                this.type === 'text') {
+                this.type === 'int' || this.type === 'text') {
 
                 isText = this.type === 'text';
 
-                if ('undefined' !== typeof options.min) {
-                    tmp = J.isNumber(options.min);
+                // Greater than.
+                if ('undefined' !== typeof opts.min) {
+                    tmp = J.isNumber(opts.min);
                     if (false === tmp) {
                         throw new TypeError(e + 'min must be number or ' +
-                                            'undefined. Found: ' + options.min);
+                                            'undefined. Found: ' + opts.min);
                     }
-                    if (isText && tmp < 0) {
-                        throw new TypeError(e + 'min cannot be a ' +
-                                            'negative number when type ' +
-                                            'is "text". Found: ' + options.min);
-                    }
-                    this.params.lower = options.min;
+                    this.params.lower = opts.min;
+                    this.params.leq = true;
                 }
-                if ('undefined' !== typeof options.minEq) {
-                    tmp = J.isNumber(options.minEq);
-                    if (false === tmp) {
-                        throw new TypeError(e + 'minEq ' +
-                                            'must be number or undefined. ' +
-                                            'Found: ' + options.minEq);
-                    }
-                    if ('undefined' !== typeof this.params.lower) {
-                        node.warn(e + 'min is ignored if minEq is also set');
-                    }
-                    // Set the params for text and num/float.
-                    if (isText) {
-                        this.params.min--;
-                    }
-                    else {
-                        this.params.lower = options.minEq;
-                        this.params.leq = true;
-                    }
-                }
-                if ('undefined' !== typeof options.max) {
-                    tmp = J.isNumber(options.max);
+                // Less than.
+                if ('undefined' !== typeof opts.max) {
+                    tmp = J.isNumber(opts.max);
                     if (false === tmp) {
                         throw new TypeError(e + 'max must be number or ' +
-                                            'undefined. Found: ' + options.max);
+                                            'undefined. Found: ' + opts.max);
                     }
-                    if (isText && tmp < 0) {
-                        throw new TypeError(e + 'max cannot be a ' +
-                                            'negative number when type ' +
-                                            'is "text". Found: ' + options.max);
+                    this.params.upper = opts.max;
+                    this.params.ueq = true;
+                }
+
+                if (opts.strictlyGreater) this.params.leq = false;
+                if (opts.strictlyLess) this.params.ueq = false;
+
+                // Checks on both min and max.
+                if ('undefined' !== typeof this.params.lower &&
+                    'undefined' !== typeof this.params.upper) {
+
+                    if (this.params.lower > this.params.upper) {
+                        throw new TypeError(e + 'min cannot be greater ' +
+                                            'than max. Found: ' +
+                                            opts.min + '> ' + opts.max);
                     }
-                    this.params.upper = options.max;
-                    if ('undefined' !== typeof this.params.lower) {
+                    // Exact length.
+                    if (this.params.lower === this.params.upper) {
+                        if (!this.params.leq || !this.params.ueq) {
+
+                            throw new TypeError(e + 'min cannot be equal to ' +
+                                                'max when strictlyGreater or ' +
+                                                'strictlyLess are set. ' +
+                                                'Found: ' + opts.min);
+                        }
+                        if (this.type === 'int' || this.type === 'text') {
+                            if (J.isFloat(this.params.lower)) {
+
+
+                                throw new TypeError(e + 'min cannot be a ' +
+                                                    'floating point number ' +
+                                                    'and equal to ' +
+                                                    'max, when type ' +
+                                                    'is not "float". Found: ' +
+                                                    opts.min);
+                            }
+                        }
+                        // Store this to create better error strings.
+                        this.params.exactly = true;
+                    }
+                    else {
                         // Store this to create better error strings.
                         this.params.between = true;
                     }
                 }
-                if ('undefined' !== typeof options.maxEq) {
-                    tmp = J.isNumber(options.maxEq);
-                    if (false === tmp) {
-                        throw new TypeError(e + 'maxEq must be number or ' +
-                                            'undefined. Found: ' +
-                                            options.maxEq);
+
+                // Checks for text only.
+                if (isText) {
+                    if ('undefined' !== typeof this.params.lower) {
+                        if (this.params.lower < 0) {
+                            throw new TypeError(e + 'min cannot be negative ' +
+                                                'when type is "text". Found: ' +
+                                                this.params.lower);
+                        }
+                        if (!this.params.leq) this.params.lower++;
                     }
                     if ('undefined' !== typeof this.params.upper) {
-                        node.warn(e + 'max is ignored if maxEq is also set');
+                        if (this.params.upper < 0) {
+                            throw new TypeError(e + 'max cannot be negative ' +
+                                                'when type is "text". Found: ' +
+                                                this.params.upper);
+                        }
+                        if (!this.params.ueq) this.params.upper--;
                     }
-                    // Set the params for text and num/float.
-                    if (isText) {
-                        this.params.min++;
-                    }
-                    else {
-                        this.params.upper = options.max;
-                        this.params.ueq = true;
-                    }
-                }
-                if (isText) {
+
                     tmp = function(value) {
-                        var len, p, out;
+                        var len, p, out, err;
                         p = that.params;
                         len = value.length;
                         out = { value: value };
-                        if (('undefined' !== typeof p.lower && len < p.lower) ||
-                            ('undefined' !== typeof p.upper && len > p.upper)) {
-
-                            out.err = that.getText('textErr', len);
+                        if (p.exactly) {
+                            err = len !== p.lower;
                         }
+                        else {
+                            if (('undefined' !== typeof p.lower &&
+                                 len < p.lower) ||
+                                ('undefined' !== typeof p.upper &&
+                                 len > p.upper)) {
+
+                                err = true;
+                            }
+                        }
+                        if (err) out.err = that.getText('textErr', len);
                         return out;
                     };
                 }
                 else {
                     tmp = (function() {
-                        var cb, isFloat;
-                        cb = isFloat ? J.isFloat : J.isNumber;
-                        isFloat = that.type === 'float';
+                        var cb;
+                        if (that.type === 'float') cb = J.isFloat;
+                        else if (that.type === 'int') cb = J.isInt;
+                        else cb = J.isNumber;
                         return function(value) {
-                            var out, res, p;
+                            var res, p;
                             p = that.params;
                             res = cb(value, p.lower, p.upper, p.leq, p.ueq);
                             if (res !== false) return { value: res };
                             return {
                                 value: value,
-                                err: that.getText('numFloatErr', isFloat)
+                                err: that.getText('numericErr')
                             };
                         };
                     })();
                 }
             }
+            else if (this.type === 'date') {
+                if ('undefined' !== typeof opts.format) {
+                    // TODO: use regex.
+                    if (opts.format !== 'mm-dd-yy' &&
+                        opts.format !== 'dd-mm-yy' &&
+                        opts.format !== 'mm-dd-yyyy' &&
+                        opts.format !== 'dd-mm-yyyy' &&
+                        opts.format !== 'mm.dd.yy' &&
+                        opts.format !== 'dd.mm.yy' &&
+                        opts.format !== 'mm.dd.yyyy' &&
+                        opts.format !== 'dd.mm.yyyy' &&
+                        opts.format !== 'mm/dd/yy' &&
+                        opts.format !== 'dd/mm/yy' &&
+                        opts.format !== 'mm/dd/yyyy' &&
+                        opts.format !== 'dd/mm/yyyy') {
 
-            // TODO: add other types, e.g. date.
+                        throw new Error(e + 'date format is invalid. Found: ' +
+                                        opts.format);
+                    }
+                    this.params.format = opts.format;
+                }
+                else {
+                    this.params.format = 'mm/dd/yyyy';
+                }
+                this.params.sep = this.params.format.charAt(2);
+                tmp = this.params.format.split(this.params.sep);
+                this.params.yearDigits = tmp[2].length;
+                this.params.dayPos = tmp[0].charAt(0) === 'd' ? 0 : 1;
+                this.params.monthPos =  this.params.dayPos ? 0 : 1;
+
+                tmp = function(value) {
+                    var p, tokens, tmp, err, res, dayNum, l1, l2;
+                    p = that.params;
+
+                    // Is the format valid.
+
+                    tokens = value.split(p.sep);
+                    if (tokens.length !== 3) {
+                        return { err: that.getText('dateErr') };
+                    }
+
+                    // Year.
+                    if (tokens[2].length !== p.yearDigits) {
+                        return { err: that.getText('dateErr') };
+                    }
+
+                    // Now we check if the date is valid.
+
+                    res = {};
+                    if (p.yearDigits === 2) {
+                        l1 = -1;
+                        l2 = 100;
+                    }
+                    else {
+                        l1 = -1
+                        l2 = 10000;
+                    }
+                    tmp = J.isInt(tokens[2], l1, l2);
+                    if (tmp !== false) res.year = tmp;
+                    else err = true;
+
+
+                    // Month.
+                    tmp = J.isInt(tokens[p.monthPos], 1, 12, 1, 1);
+                    if (!tmp) err = true;
+                    else res.month = tmp;
+                    // 31 or 30 days?
+                    if (tmp === 1 || tmp === 3 || tmp === 5 || tmp === 7 ||
+                        tmp === 8 || tmp === 10 || tmp === 12) {
+
+                        dayNum = 31;
+                    }
+                    else if (tmp !== 2) {
+                        dayNum = 30;
+                    }
+                    else {
+                        // Is it leap year?
+                        dayNum = (res.year % 4 === 0 && res.year % 100 !== 0) ||
+                            res.year % 400 === 0 ? 29 : 28;
+                    }
+                    res.month = tmp;
+                    // Day.
+                    tmp = J.isInt(tokens[p.dayPos], 1, dayNum, 1, 1);
+                    if (!tmp) err = true;
+                    else res.day = tmp;
+
+                    //
+                    if (err) res.err = that.getText('dateErr', true);
+                    return res;
+                };
+            }
+            // TODO: add other types: email, text-nodigits, list.
 
             this.validation = function(value) {
-                that.lastError = null;
-                that.lastValue = null;
-                return tmp(value);
+                var res;
+                if (value.trim() === '') {
+                    res = {};
+                    if (that.requiredChoice) res.err = that.getText('emptyErr');
+                    else res.value = value;
+                }
+                else {
+                    res = tmp(value);
+                }
+                return res;
             };
         }
 
-        if (options.mainText) {
-            if ('string' !== typeof options.mainText) {
+        if (opts.preprocess) {
+            if ('function' !== typeof opts.preprocess) {
+                throw new TypeError(e + 'preprocess must be function or ' +
+                                    'undefined. Found: ' + opts.preprocess);
+            }
+            this.preprocess = opts.preprocess;
+        }
+        if (opts.mainText) {
+            if ('string' !== typeof opts.mainText) {
                 throw new TypeError(e + 'mainText must be string or ' +
-                                    'undefined. Found: ' + options.mainText);
+                                    'undefined. Found: ' + opts.mainText);
             }
-            this.mainText = options.mainText;
+            this.mainText = opts.mainText;
         }
-        if (options.hintText) {
-            if ('string' !== typeof options.hintText) {
-                throw new TypeError(e + 'hintText must be string or ' +
-                                    'undefined. Found: ' + options.hintText);
-            }
-            this.hintText = options.hintText;
-        }
-        else {
-            // TODO: generate a simple hint text based on type and params.
-        }
+        this.brAfterMainText = 'undefined' === typeof opts.brAfterMainText ?
+            true : !!opts.brAfterMainText;
     };
 
 
@@ -46725,14 +46879,6 @@ if (!Array.prototype.indexOf) {
      * ### CustomInput.append
      *
      * Implements Widget.append
-     *
-     * Checks that id is unique.
-     *
-     * Appends (all optional):
-     *
-     *   - mainText: a question or statement introducing the choices
-     *   - table: the table containing the choices
-     *   - freeText: a textarea for comments
      *
      * @see Widget.append
      */
@@ -46742,11 +46888,11 @@ if (!Array.prototype.indexOf) {
 
         // MainText.
         if (this.mainText) {
-            this.spanMainText = document.createElement('span');
-            this.spanMainText.className = 'maintext';
-            this.spanMainText.innerHTML = this.mainText;
-            // Append mainText.
-            this.bodyDiv.appendChild(this.spanMainText);
+            this.spanMainText = W.append('span', this.bodyDiv, {
+                className: 'maintext',
+                innerHTML: this.mainText
+            });
+            if (this.brAfterMainText) W.append('br', this.bodyDiv);
         }
 
         this.input = W.append('input', this.bodyDiv);
@@ -46754,9 +46900,9 @@ if (!Array.prototype.indexOf) {
         this.errorBox = W.append('div', this.bodyDiv, { className: 'errbox' });
 
         this.input.oninput = function() {
-            console.log('onchange');
             if (timeout) clearTimeout(timeout);
             if (that.isHighlighted()) that.unhighlight();
+            if (that.preprocess) that.preprocess(that.input);
             timeout = setTimeout(function() {
                 var res;
                 if (that.validation) res = that.validation(that.input.value);
@@ -46838,13 +46984,13 @@ if (!Array.prototype.indexOf) {
         opts = opts || {};
         res = this.input.value;
         res = this.validation ? this.validation(res) : { value: res };
-        valid = !!res.err;
+        valid = !res.err;
         if (this.postprocess) res.value = this.postprocess(res.value, valid);
-        if (!valid) this.highlight(res.err);
+        if (!valid) this.highlight();
         else if (opts.reset) this.reset();
+        res.id = this.id;
         return res;
     };
-
 
 })(node);
 
@@ -47054,212 +47200,6 @@ if (!Array.prototype.indexOf) {
     };
 
 })(node);
-
-// /**
-//  * # DateSelector
-//  * Copyright(c) 2019 Stefano Balietti
-//  * MIT Licensed
-//  *
-//  * Creates a configurable table where each cell is a selectable choice
-//  *
-//  * // TODO: register time for each current choice if selectMultiple is on?
-//  *
-//  * www.nodegame.org
-//  */
-// (function(node) {
-//
-//     "use strict";
-//
-//     node.widgets.register('DateSelector', DateSelector);
-//
-//     // ## Meta-data
-//
-//     DateSelector.version = '0.0.1';
-//     DateSelector.description = 'Creates a date selector.';
-//
-//     DateSelector.title = 'false';
-//     DateSelector.className = 'dateselector';
-//
-//     DateSelector.text.months = function() {
-//         return [
-//             'January',
-//             'February',
-//             'March',
-//             'April',
-//             'May',
-//             'June',
-//             'July',
-//             'August',
-//             'September',
-//             'October',
-//             'November',
-//             'December'
-//         ];
-//     };
-//
-//     // ## Dependencies
-//
-//     DateSelector.dependencies = {
-//         JSUS: {}
-//     };
-//
-//     /**
-//      * ## DateSelector constructor
-//      *
-//      * Creates a new instance of DateSelector
-//      *
-//      * @param {object} options Optional. Configuration options.
-//      *   If a `table` option is specified, it sets it as the clickable
-//      *   table. All other options are passed to the init method.
-//      */
-//     function DateSelector(options) {
-//
-//         /**
-//          * ### DateSelector.months
-//          *
-//          * The HTML element triggering the listener function when clicked
-//          */
-//         this.months = null;
-//
-//         /**
-//          * ### DateSelector.days
-//          *
-//          * The HTML element triggering the listener function when clicked
-//          */
-//         this.days = null;
-//
-//         /**
-//          * ### DateSelector.years
-//          *
-//          * The s
-//          */
-//         this.years = null;
-//
-//
-//         /**
-//          * ### DateSelector.mainText
-//          *
-//          * A text preceeding the date selector
-//          */
-//         this.mainText = null;
-//     }
-//
-//     // ## DateSelector methods
-//
-//     /**
-//      * ### DateSelector.init
-//      *
-//      * Initializes the instance
-//      *
-//      * Available options are:
-//      *
-//      *
-//      * @param {object} options Configuration options
-//      */
-//     DateSelector.prototype.init = function(options) {
-//         var tmp, that;
-//         that = this;
-//
-//     };
-//
-//
-//     /**
-//      * ### DateSelector.append
-//      *
-//      * Implements Widget.append
-//      *
-//      * Checks that id is unique.
-//      *
-//      * Appends (all optional):
-//      *
-//      *   - mainText: a question or statement introducing the choices
-//      *   - table: the table containing the choices
-//      *   - freeText: a textarea for comments
-//      *
-//      * @see Widget.append
-//      */
-//     DateSelector.prototype.append = function() {
-//
-//         // MainText.
-//         if (this.mainText) {
-//             this.spanMainText = document.createElement('span');
-//             this.spanMainText.className = this.className ?
-//                 DateSelector.className + '-maintext' : 'maintext';
-//             this.spanMainText.innerHTML = this.mainText;
-//             // Append mainText.
-//             this.bodyDiv.appendChild(this.spanMainText);
-//         }
-//
-//     };
-//
-//
-//     /**
-//      * ### DateSelector.highlight
-//      *
-//      * Highlights the choice table
-//      *
-//      * @param {string} The style for the table's border.
-//      *   Default '3px solid red'
-//      *
-//      * @see DateSelector.highlighted
-//      */
-//     DateSelector.prototype.highlight = function(border) {
-//         if (border && 'string' !== typeof border) {
-//             throw new TypeError('DateSelector.highlight: border must be ' +
-//                                 'string or undefined. Found: ' + border);
-//         }
-//         if (!this.table || this.highlighted) return;
-//         this.table.style.border = border || '3px solid red';
-//         this.highlighted = true;
-//         this.emit('highlighted', border);
-//     };
-//
-//     /**
-//      * ### DateSelector.unhighlight
-//      *
-//      * Removes highlight from the choice table
-//      *
-//      * @see DateSelector.highlighted
-//      */
-//     DateSelector.prototype.unhighlight = function() {
-//         if (!this.table || this.highlighted !== true) return;
-//         this.table.style.border = '';
-//         this.highlighted = false;
-//         this.emit('unhighlighted');
-//     };
-//
-//     /**
-//      * ### DateSelector.getValues
-//      *
-//      * Returns the values for current selection and other paradata
-//      *
-//      * Paradata that is not set or recorded will be omitted
-//      *
-//      * @param {object} opts Optional. Configures the return value.
-//      *   Available optionts:
-//      *
-//      *   - markAttempt: If TRUE, getting the value counts as an attempt
-//      *       to find the correct answer. Default: TRUE.
-//      *   - highlight:   If TRUE, if current value is not the correct
-//      *       value, widget will be highlighted. Default: FALSE.
-//      *   - reset:       If TRUTHY and a correct choice is selected (or not
-//      *       specified), then it resets the state of the widgets before
-//      *       returning it. Default: FALSE.
-//      *
-//      * @return {object} Object containing the choice and paradata
-//      *
-//      * @see DateSelector.verifyChoice
-//      * @see DateSelector.reset
-//      */
-//     DateSelector.prototype.getValues = function(opts) {
-//         var obj, resetOpts;
-//         opts = opts || {};
-//
-//         return obj;
-//     };
-//
-//
-// })(node);
 
 /**
  * # DebugInfo
