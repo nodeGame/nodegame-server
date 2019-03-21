@@ -24317,11 +24317,10 @@ if (!Array.prototype.indexOf) {
 
         // TRUE means keep whatever it is. Useful to be specified in some cases.
         if (frame === true) frame = undefined;
-            
-        
+
+        w = this.node.window;
         // Handle frame loading natively, if required.
         if (frame) {
-            w = this.node.window;
             if (!w) {
                 throw new Error('Game.execStep: frame option in step ' +
                                 step + ', but nodegame-window is not loaded');
@@ -24391,10 +24390,12 @@ if (!Array.prototype.indexOf) {
             }
             else {
                 this.execCallback(cb);
+                if (w) w.adjustFrameHeight(0, 120);
             }
         }
         else {
             this.execCallback(cb);
+            if (w) w.adjustFrameHeight(0, 120);
         }
     };
 
@@ -34067,8 +34068,8 @@ if (!Array.prototype.indexOf) {
 
             func();
 
-            // Important. We need a timeout (120), because some changes might
-            // take time to be reflected in the DOM.
+            // Important. We need a timeout (2nd param), because some changes
+            // might take time to be reflected in the DOM.
             W.adjustFrameHeight(0, 120);
         };
 
@@ -36691,7 +36692,7 @@ if (!Array.prototype.indexOf) {
                 spanType = W.add('span', div);
                 spanType.innerHTML = typeof el.content;
                 spanType.className = 'ng_clickable bold';
-                
+
                 spanContent = W.add('span', div);
                 spanContent.style.display = 'none';
                 spanContent.className = 'ng_clickable';
@@ -36700,8 +36701,10 @@ if (!Array.prototype.indexOf) {
                     for (key in el.content) {
                         if (el.content.hasOwnProperty(key)) {
                             str = key + ':\t' + el.content[key];
-                            spanContent.appendChild(document.createTextNode(str));
-                            spanContent.appendChild(document.createElement('br'));
+                            spanContent.appendChild(
+                                    document.createTextNode(str));
+                            spanContent.appendChild(
+                                    document.createElement('br'));
                         }
                     }
                 }
@@ -36717,7 +36720,7 @@ if (!Array.prototype.indexOf) {
                     spanContent.style.display = 'none';
                     spanType.style.display = '';
                 };
-                
+
                 return div;
             }
         });
@@ -43186,12 +43189,13 @@ if (!Array.prototype.indexOf) {
         for ( ; ++i < len ; ) {
             form = this.forms[i];
             obj.forms[form.id] = form.getValues(opts);
-            if (obj.forms[form.id].choice === null ||
-                (form.selectMultiple && !obj.forms[form.id].choice.length)) {
+            if (obj.forms[form.id].requiredChoice &&
+                (obj.forms[form.id].choice === null ||
+                 (form.selectMultiple && !obj.forms[form.id].choice.length))) {
 
                 obj.missValues.push(form.id);
             }
-            if (opts.markAttempt && !obj.forms[form.id].isCorrect) {
+            if (opts.markAttempt && obj.forms[form.id].isCorrect === false) {
                 obj.isCorrect = false;
             }
         }
@@ -43687,7 +43691,7 @@ if (!Array.prototype.indexOf) {
         that = this;
 
         if (!this.id) {
-            throw new TypeError('ChoiceTable.init: options.id is missing.');
+            throw new TypeError('ChoiceTable.init: options.id is missing');
         }
 
         // Option orientation, default 'H'.
@@ -43756,7 +43760,7 @@ if (!Array.prototype.indexOf) {
             this.requiredChoice = options.requiredChoice;
         }
         else if ('boolean' === typeof options.requiredChoice) {
-            this.requiredChoice = options.requiredChoice ? 1 : 0;
+            this.requiredChoice = options.requiredChoice ? 1 : null;
         }
         else if ('undefined' !== typeof options.requiredChoice) {
             throw new TypeError('ChoiceTable.init: options.requiredChoice ' +
@@ -44380,7 +44384,7 @@ if (!Array.prototype.indexOf) {
     ChoiceTable.prototype.enable = function() {
         if (this.disabled === false) return;
         if (!this.table) {
-            throw new Error('ChoiceTable.enable: table not defined.');
+            throw new Error('ChoiceTable.enable: table not defined');
         }
         this.disabled = false;
         J.addClass(this.table, 'clickable');
@@ -46945,8 +46949,9 @@ if (!Array.prototype.indexOf) {
 
             this.validation = function(value) {
                 var res;
-                if (that.requiredChoice && value.trim() === '') {
-                    res = { err: that.getText('emptyErr') };
+                if (value.trim() === '') {
+                    res = that.requiredChoice ?
+                        { err: that.getText('emptyErr') } : { value: '' };
                 }
                 else {
                     res = tmp(value);
@@ -48953,14 +48958,15 @@ if (!Array.prototype.indexOf) {
 
     // ## Meta-data
 
-    Feedback.version = '1.2.0';
+    Feedback.version = '1.3.0';
     Feedback.description = 'Displays a configurable feedback form';
 
     Feedback.title = 'Feedback';
     Feedback.className = 'feedback';
 
     Feedback.texts = {
-        label: 'Any feedback about the experiment? Let us know here:',
+        submit: 'Submit feedback',
+        label: 'Any feedback? Let us know here:',
         sent: 'Sent!'
     };
 
@@ -48981,7 +48987,7 @@ if (!Array.prototype.indexOf) {
      *    - showCount: If TRUE, the character count is displayed
      *    - minLength: The minimum number of characters in textarea
      *    - maxLength: The max number of characters in textarea
-     *    - label: The text to display above the textarea
+     *    - rows: The number of rows of the textarea
      */
     function Feedback(options) {
 
@@ -48995,12 +49001,12 @@ if (!Array.prototype.indexOf) {
         if ('undefined' === typeof options.maxLength) {
             this.maxLength = 800;
         }
-        else if (J.isNumber(options.maxLength, 0) !== false) {
+        else if (J.isInt(options.maxLength, 0) !== false) {
             this.maxLength = options.maxLength;
         }
         else {
-            throw new TypeError('Feedback constructor: options.maxLength ' +
-                                'must be a number >= 0 or undefined. ' +
+            throw new TypeError('Feedback constructor: maxLength ' +
+                                'must be an integer >= 0 or undefined. ' +
                                 'Found: ' + options.maxLength);
         }
 
@@ -49015,13 +49021,32 @@ if (!Array.prototype.indexOf) {
         if ('undefined' === typeof options.minLength) {
             this.minLength = 1;
         }
-        else if (J.isNumber(options.minLength, 0) !== false) {
+        else if (J.isInt(options.minLength, 0) !== false) {
             this.minLength = options.minLength;
         }
         else {
-            throw new TypeError('Feedback constructor: options.minLength ' +
-                                'must be a number >= 0 or undefined. ' +
+            throw new TypeError('Feedback constructor: minLength ' +
+                                'must be an integer >= 0 or undefined. ' +
                                 'Found: ' + options.minLength);
+        }
+
+        /**
+         * ### Feedback.rows
+         *
+         * The number of initial rows of the texarea
+         *
+         * Default: 3
+         */
+        if ('undefined' === typeof options.rows) {
+            this.rows = 3;
+        }
+        else if (J.isInt(options.rows, 0) !== false) {
+            this.rows = options.rows;
+        }
+        else {
+            throw new TypeError('Feedback constructor: rows ' +
+                                'must be an integer > 0 or undefined. ' +
+                                'Found: ' + options.rows);
         }
 
         /**
@@ -49074,7 +49099,7 @@ if (!Array.prototype.indexOf) {
          * @see Feedback.submitButton
          */
         this.showSubmit = 'undefined' === typeof options.showSubmit ?
-            true : !!options.showSubmit;        
+            true : !!options.showSubmit;
 
         /**
          * ### Feedback.onsubmit
@@ -49090,7 +49115,7 @@ if (!Array.prototype.indexOf) {
             this.onsubmit = options.onsubmit;
         }
         else {
-            throw new TypeError('Feedback constructor: options.onsubmit ' +
+            throw new TypeError('Feedback constructor: onsubmit ' +
                                 'must be string or object. Found: ' +
                                 options.onsubmit);
         }
@@ -49101,8 +49126,6 @@ if (!Array.prototype.indexOf) {
          * Internal storage of the value of the feedback
          *
          * This value is used when the form has not been created yet
-         *
-         * @see Feedback.createForm
          */
         this._feedback = options.feedback || null;
 
@@ -49114,18 +49137,18 @@ if (!Array.prototype.indexOf) {
         this.attempts = [];
 
         /**
-         * ### Feedback.timeBegin
+         * ### Feedback.timeInputBegin
          *
          * Time when feedback was inserted (first character, last attempt)
          */
-        this.timeBegin = null;
+        this.timeInputBegin = null;
 
         /**
-         * ### Feedback.feedbackHTML
+         * ### Feedback.feedbackForm
          *
-         * The HTML element containing the form elements
+         * The HTML form element containing the textarea
          */
-        this.feedbackHTML = null;
+        this.feedbackForm = null;
 
         /**
          * ### Feedback.textareaElement
@@ -49151,86 +49174,6 @@ if (!Array.prototype.indexOf) {
     }
 
     // ## Feedback methods
-
-    /**
-     * ### Feedback.createForm
-     *
-     * Builds the HTML forms
-     */
-    Feedback.prototype.createForm = function() {
-
-        var that;
-        var feedbackHTML;
-        var feedbackForm;
-        var feedbackLabel;
-        var feedbackTextarea;
-        var submit;
-        var charCounter;
-
-        that = this;
-
-        feedbackHTML = document.createElement('div');
-        feedbackHTML.className = 'feedback';
-
-        feedbackForm = document.createElement('form');
-        feedbackForm.className = 'feedback-form';
-        feedbackHTML.appendChild(feedbackForm);
-
-        feedbackLabel = document.createElement('label');
-        feedbackLabel.setAttribute('for', 'feedback-input');
-        feedbackLabel.innerHTML = this.getText('label');
-        feedbackForm.appendChild(feedbackLabel);
-
-        feedbackTextarea = document.createElement('textarea');
-        feedbackTextarea.className = 'feedback-textarea form-control';
-        feedbackTextarea.setAttribute('type', 'text');
-        feedbackTextarea.setAttribute('rows', '3');
-        feedbackForm.appendChild(feedbackTextarea);
-
-        if (this.showSubmit) {
-            submit = document.createElement('input');
-            submit.className = 'btn btn-lg btn-primary';
-            submit.setAttribute('type', 'submit');
-            submit.setAttribute('value', 'Submit feedback');
-            feedbackForm.appendChild(submit);
-            
-            // Add listeners.
-            J.addEvent(feedbackForm, 'submit', function(event) {
-                event.preventDefault();
-                that.getValues(that.onsubmit);
-            });
-
-            // Store reference.
-            this.submitButton = submit;
-        }
-
-        if (this.showCharCount) {
-            charCounter = document.createElement('span');
-            charCounter.className = 'feedback-char-count badge';
-            charCounter.innerHTML = this.maxLength;            
-            feedbackForm.appendChild(charCounter);
-
-            // Store reference.
-            this.charCounter = charCounter;
-        }
-
-        J.addEvent(feedbackForm, 'input', function(event) {
-            if (that.isHighlighted()) that.unhighlight();
-            that.verifyFeedback(false, true);
-        });
-        J.addEvent(feedbackForm, 'click', function(event) {
-            if (that.isHighlighted()) that.unhighlight();
-        });
-        
-        // Store references.
-        this.feedbackHTML = feedbackHTML;
-        this.textareaElement = feedbackTextarea;
-
-        // Check it once at the beginning to initialize counter.
-        this.verifyFeedback(false, true);
-
-        return feedbackHTML;
-    };
 
     /**
      * ### Feedback.verifyFeedback
@@ -49306,8 +49249,55 @@ if (!Array.prototype.indexOf) {
      * Appends widget to this.bodyDiv
      */
     Feedback.prototype.append = function() {
-        this.createForm();
-        this.bodyDiv.appendChild(this.feedbackHTML);
+        var that, label;
+        that = this;
+
+        // this.feedbackForm = W.get('div', { className: 'feedback' });
+
+        this.feedbackForm = W.append('form', this.bodyDiv, {
+            className: 'feedback-form'
+        });
+
+        label = this.getText('label');
+        if (label !== false) {
+            W.append('label', this.feedbackForm, {
+                'for': 'feedback-input',
+                innerHTML: label
+            });
+        }
+
+        this.textareaElement = W.append('textarea', this.feedbackForm, {
+            className: 'feedback-textarea form-control',
+            type: 'text',
+            rows: this.rows
+        });
+
+        if (this.showSubmit) {
+            this.submit = W.append('input', this.feedbackForm, {
+                className: 'btn btn-lg btn-primary',
+                type: 'submit',
+                value: this.getText('submit')
+            });
+
+            // Add listeners.
+            J.addEvent(this.feedbackForm, 'submit', function(event) {
+                event.preventDefault();
+                that.getValues(that.onsubmit);
+            });
+        }
+
+        if (this.showCharCount) this.showCount();
+
+        J.addEvent(this.feedbackForm, 'input', function(event) {
+            if (that.isHighlighted()) that.unhighlight();
+            that.verifyFeedback(false, true);
+        });
+        J.addEvent(this.feedbackForm, 'click', function(event) {
+            if (that.isHighlighted()) that.unhighlight();
+        });
+
+        // Check it once at the beginning to initialize counter.
+        this.verifyFeedback(false, true);
     };
 
     /**
@@ -49326,8 +49316,8 @@ if (!Array.prototype.indexOf) {
             feedback = options.feedback;
         }
 
-        if (!this.feedbackHTML) this._feedback = feedback;
-        else this.feedbackHTML.value = feedback;
+        if (!this.textareaElement) this._feedback = feedback;
+        else this.textareaElement.value = feedback;
 
         this.timeInputBegin = J.now();
     };
@@ -49341,6 +49331,8 @@ if (!Array.prototype.indexOf) {
      *   Available optionts:
      *
      *   - feedbackOnly:If TRUE, returns just the feedback (default: FALSE),
+     *   - keepBreaks:  If TRUE, returns a value where all line breaks are
+     *                  substituted with HTML <br /> tags (default: FALSE)
      *   - verify:      If TRUE, check if the feedback is valid (default: TRUE),
      *   - reset:       If TRUTHY and the feedback is valid, then it resets
      *       the feedback value before returning (default: FALSE),
@@ -49362,16 +49354,19 @@ if (!Array.prototype.indexOf) {
      * @see getFeedback
      */
     Feedback.prototype.getValues = function(opts) {
-        var feedback, res;
+        var feedback, feedbackBr, res;
 
         opts = opts || {};
 
         feedback = getFeedback.call(this);
 
+        if (opts.keepBreaks) feedback = feedback.replace(/\n\r?/g, '<br />');
+        
         if (opts.verify !== false) res = this.verifyFeedback(opts.markAttempt,
                                                              opts.updateUI);
 
-        if (res === false && opts.updateUI || opts.highlight) this.highlight();
+        if (res === false &&
+            (opts.updateUI || opts.highlight)) this.highlight();
 
         // Only value.
         if (!opts.feedbackOnly) {
@@ -49437,7 +49432,7 @@ if (!Array.prototype.indexOf) {
             throw new TypeError('Feedback.highlight: border must be ' +
                                 'string or undefined. Found: ' + border);
         }
-        if (!this.feedbackHTML || this.highlighted === true) return;
+        if (!this.isAppended() || this.highlighted === true) return;
         this.textareaElement.style.border = border || '3px solid red';
         this.highlighted = true;
         this.emit('highlighted', border);
@@ -49451,7 +49446,7 @@ if (!Array.prototype.indexOf) {
      * @see Feedback.highlighted
      */
     Feedback.prototype.unhighlight = function() {
-        if (!this.feedbackHTML || this.highlighted !== true) return;
+        if (!this.isAppended() || this.highlighted !== true) return;
         this.textareaElement.style.border = '';
         this.highlighted = false;
         this.emit('unhighlighted');
@@ -49467,17 +49462,19 @@ if (!Array.prototype.indexOf) {
         this.timeInputBegin = null;
         this._feedback = null;
 
-        if (this.feedbackHTML) this.feedbackHTML.value = '';
+        if (this.textareaElement) this.textareaElement.value = '';
         if (this.isHighlighted()) this.unhighlight();
     };
 
     /**
      * ### Feedback.disable
      *
-     * Disables clicking on the table and removes CSS 'clicklable' class
+     * Disables texarea and submit button (if present)
      */
     Feedback.prototype.disable = function() {
-        if (this.disabled === true) return;
+        // TODO: This gets off when WaitScreen locks all inputs.
+        // if (this.disabled === true) return;
+        if (!this.textareaElement || this.textareaElement.disabled) return;
         this.disabled = true;
         if (this.submitElement) this.submitElement.disabled = true;
         this.textareaElement.disabled = true;
@@ -49487,16 +49484,48 @@ if (!Array.prototype.indexOf) {
     /**
      * ### Feedback.enable
      *
-     * Enables clicking on the table and adds CSS 'clicklable' class
+     * Enables texarea and submit button (if present)
      *
-     * @return {function} cb The event listener function
      */
     Feedback.prototype.enable = function() {
-        if (this.disabled === false || !this.textareaElement) return;
+        // TODO: This gets off when WaitScreen locks all inputs.
+        // if (this.disabled === false || !this.textareaElement) return;
+        if (!this.textareaElement || !this.textareaElement.disabled) return;
         this.disabled = false;
         if (this.submitElement) this.submitElement.disabled = false;
         this.textareaElement.disabled = false;
         this.emit('enabled');
+    };
+
+    /**
+     * ### Feedback.showCount
+     *
+     * Shows the character counter
+     *
+     * If not existing before, it creates it.
+     *
+     * @see Feedback.charCounter
+     */
+    Feedback.prototype.showCount = function() {
+        if (!this.charCounter) {
+            this.charCounter = W.append('span', this.feedbackForm, {
+                className: 'feedback-char-count badge',
+                innerHTML: this.maxLength
+            });
+        }
+        else {
+            this.charCounter.style.display = '';
+        }
+    };
+
+    /**
+     * ### Feedback.hideCount
+     *
+     * Hides the character counter
+     */
+    Feedback.prototype.hideCount = function() {
+        if (!this.charCounter) return;
+        this.charCounter.style.display = 'none';
     };
     
     // ## Helper functions.
@@ -49512,7 +49541,7 @@ if (!Array.prototype.indexOf) {
      */
     function getFeedback() {
         var out;
-        out = this.feedbackHTML ? this.textareaElement.value : this._feedback;
+        out = this.textareaElement ? this.textareaElement.value : this._feedback;
         return out ? out.trim() : out;
     }
 
