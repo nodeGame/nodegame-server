@@ -31928,7 +31928,7 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # GameWindow
- * Copyright(c) 2019 Stefano Balietti <ste@nodegame.org>
+ * Copyright(c) 2017 Stefano Balietti <ste@nodegame.org>
  * MIT Licensed
  *
  * API to interface nodeGame with the browser window
@@ -31952,9 +31952,9 @@ if (!Array.prototype.indexOf) {
     var constants, windowLevels, screenLevels;
     var CB_EXECUTED, WIN_LOADING, lockedUpdate;
 
-    if (!J) throw new Error('GameWindow: JSUS not found');
+    if (!J) throw new Error('GameWindow: JSUS not found. Aborting.');
     DOM = J.require('DOM');
-    if (!DOM) throw new Error('GameWindow: J.require("DOM") failed');
+    if (!DOM) throw new Error('GameWindow: J.require("DOM") failed.');
 
     constants = node.constants;
     windowLevels = constants.windowLevels;
@@ -32479,23 +32479,31 @@ if (!Array.prototype.indexOf) {
      */
     GameWindow.prototype.reset = function() {
         // Unlock screen, if currently locked.
-        if (this.isScreenLocked()) this.unlockScreen();
+        if (this.isScreenLocked()) {
+            this.unlockScreen();
+        }
 
-        // Remove widgets, if widgets exists.
-        if (node.widgets) node.widgets.destroyAll();
+        // Remove widgets, if Widgets exists.
+        if (node.widgets) {
+            node.widgets.destroyAll();
+        }
 
         // Remove loaded frame, if one is found.
-        if (this.getFrame()) this.destroyFrame();
+        if (this.getFrame()) {
+            this.destroyFrame();
+        }
 
         // Remove header, if one is found.
-        if (this.getHeader()) this.destroyHeader();
+        if (this.getHeader()) {
+            this.destroyHeader();
+        }
 
         this.areLoading = 0;
 
         // Clear all caches.
         this.clearCache();
 
-        node.silly('node-window: reseted');
+        node.silly('node-window: reseted.');
     };
 
     /**
@@ -32882,9 +32890,6 @@ if (!Array.prototype.indexOf) {
         this.frameWindow = null;
         this.frameDocument = null;
         this.frameRoot = null;
-
-        // Destroy lost widgets.
-        node.widgets.garbageCollection();
     };
 
     /**
@@ -32896,7 +32901,7 @@ if (!Array.prototype.indexOf) {
         var iframe, frameName, frameDocument;
         iframe = this.getFrame();
         if (!iframe) {
-            throw new Error('GameWindow.clearFrame: frame not found');
+            throw new Error('GameWindow.clearFrame: cannot detect frame.');
         }
 
         frameName = iframe.name || iframe.id;
@@ -32932,9 +32937,6 @@ if (!Array.prototype.indexOf) {
         this.frameElement = iframe;
         this.frameWindow = window.frames[frameName];
         this.frameDocument = W.getIFrameDocument(iframe);
-
-        // Destroy lost widgets.
-        node.widgets.garbageCollection();
     };
 
     /**
@@ -33169,12 +33171,9 @@ if (!Array.prototype.indexOf) {
         var header;
         header = this.getHeader();
         if (!header) {
-            throw new Error('GameWindow.clearHeader: cannot detect header');
+            throw new Error('GameWindow.clearHeader: cannot detect header.');
         }
         this.headerElement.innerHTML = '';
-
-        // Destroy lost widgets.
-        node.widgets.garbageCollection();
     };
 
     /**
