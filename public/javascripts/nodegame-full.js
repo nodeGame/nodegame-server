@@ -13243,7 +13243,10 @@ if (!Array.prototype.indexOf) {
             var tmpCache, handler;
             tmpCache = {};
             handler = function(prop, value) {
-                if ('string' === typeof prop) {
+                if ('undefined' === typeof prop) {
+                    return tmpCache;
+                }
+                else if ('string' === typeof prop) {
                     if (arguments.length === 1) return tmpCache[prop];
                     tmpCache[prop] = value;
                     return value;
@@ -23904,7 +23907,7 @@ if (!Array.prototype.indexOf) {
         var node;
 
         // Steps references.
-        var curStep, curStepObj, curStageObj, nextStepObj, nextStageObj;
+        var curStep, curStageObj, nextStepObj, nextStageObj;
 
         // Flags that we need to execute the stage init function.
         var stageInit;
@@ -23919,18 +23922,21 @@ if (!Array.prototype.indexOf) {
         // Sent to every client (if syncStepping and if necessary).
         var remoteOptions;
 
+        // Value of exit cb for a step.
+        var curStepExitCb;
+
         if (!this.isSteppable()) {
-            throw new Error('Game.gotoStep: game cannot be stepped.');
+            throw new Error('Game.gotoStep: game cannot be stepped');
         }
 
         if ('string' !== typeof nextStep && 'object' !== typeof nextStep) {
             throw new TypeError('Game.gotoStep: nextStep must be ' +
-                                'an object or a string.');
+                                'an object or a string. Found: ' + nextStep);
         }
 
         if (options && 'object' !== typeof options) {
             throw new TypeError('Game.gotoStep: options must be object or ' +
-                                'undefined.');
+                                'undefined. Found: ' + options);
         }
 
         node = this.node;
@@ -23946,12 +23952,13 @@ if (!Array.prototype.indexOf) {
         // Clear push-timer.
         this.pushManager.clearTimer();
 
-        // Clear the cache of temporary changes to steps.
-        this.plot.tmpCache.clear();
-
         curStep = this.getCurrentGameStage();
         curStageObj = this.plot.getStage(curStep);
-        curStepObj = this.plot.getStep(curStep);
+        // We need to call getProperty because getStep does not mixin tmpCache.
+        curStepExitCb = this.plot.getProperty(curStep, 'exit');
+
+        // Clear the cache of temporary changes to steps.
+        this.plot.tmpCache.clear();
 
         // Sends start / step command to connected clients if option is on.
         if (this.plot.getProperty(nextStep, 'syncStepping')) {
@@ -24001,11 +24008,11 @@ if (!Array.prototype.indexOf) {
         }
 
         // Calling exit function of the step.
-        if (curStepObj && curStepObj.exit) {
+        if (curStepExitCb) {
             this.setStateLevel(constants.stateLevels.STEP_EXIT);
             this.setStageLevel(constants.stageLevels.EXITING);
 
-            curStepObj.exit.call(this);
+            curStepExitCb.call(this);
         }
 
         // Listeners from previous step are cleared (must be done after exit).
@@ -31921,7 +31928,7 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # GameWindow
- * Copyright(c) 2017 Stefano Balietti <ste@nodegame.org>
+ * Copyright(c) 2019 Stefano Balietti <ste@nodegame.org>
  * MIT Licensed
  *
  * API to interface nodeGame with the browser window
@@ -31945,9 +31952,9 @@ if (!Array.prototype.indexOf) {
     var constants, windowLevels, screenLevels;
     var CB_EXECUTED, WIN_LOADING, lockedUpdate;
 
-    if (!J) throw new Error('GameWindow: JSUS not found. Aborting.');
+    if (!J) throw new Error('GameWindow: JSUS not found');
     DOM = J.require('DOM');
-    if (!DOM) throw new Error('GameWindow: J.require("DOM") failed.');
+    if (!DOM) throw new Error('GameWindow: J.require("DOM") failed');
 
     constants = node.constants;
     windowLevels = constants.windowLevels;
@@ -32472,31 +32479,23 @@ if (!Array.prototype.indexOf) {
      */
     GameWindow.prototype.reset = function() {
         // Unlock screen, if currently locked.
-        if (this.isScreenLocked()) {
-            this.unlockScreen();
-        }
+        if (this.isScreenLocked()) this.unlockScreen();
 
-        // Remove widgets, if Widgets exists.
-        if (node.widgets) {
-            node.widgets.destroyAll();
-        }
+        // Remove widgets, if widgets exists.
+        if (node.widgets) node.widgets.destroyAll();
 
         // Remove loaded frame, if one is found.
-        if (this.getFrame()) {
-            this.destroyFrame();
-        }
+        if (this.getFrame()) this.destroyFrame();
 
         // Remove header, if one is found.
-        if (this.getHeader()) {
-            this.destroyHeader();
-        }
+        if (this.getHeader()) this.destroyHeader();
 
         this.areLoading = 0;
 
         // Clear all caches.
         this.clearCache();
 
-        node.silly('node-window: reseted.');
+        node.silly('node-window: reseted');
     };
 
     /**
@@ -32883,6 +32882,9 @@ if (!Array.prototype.indexOf) {
         this.frameWindow = null;
         this.frameDocument = null;
         this.frameRoot = null;
+
+        // Destroy lost widgets.
+        node.widgets.garbageCollection();
     };
 
     /**
@@ -32894,7 +32896,7 @@ if (!Array.prototype.indexOf) {
         var iframe, frameName, frameDocument;
         iframe = this.getFrame();
         if (!iframe) {
-            throw new Error('GameWindow.clearFrame: cannot detect frame.');
+            throw new Error('GameWindow.clearFrame: frame not found');
         }
 
         frameName = iframe.name || iframe.id;
@@ -32930,6 +32932,9 @@ if (!Array.prototype.indexOf) {
         this.frameElement = iframe;
         this.frameWindow = window.frames[frameName];
         this.frameDocument = W.getIFrameDocument(iframe);
+
+        // Destroy lost widgets.
+        node.widgets.garbageCollection();
     };
 
     /**
@@ -33164,9 +33169,12 @@ if (!Array.prototype.indexOf) {
         var header;
         header = this.getHeader();
         if (!header) {
-            throw new Error('GameWindow.clearHeader: cannot detect header.');
+            throw new Error('GameWindow.clearHeader: cannot detect header');
         }
         this.headerElement.innerHTML = '';
+
+        // Destroy lost widgets.
+        node.widgets.garbageCollection();
     };
 
     /**
@@ -39171,22 +39179,10 @@ if (!Array.prototype.indexOf) {
 
         // Garbage collection.
         node.on('FRAME_LOADED', function() {
-            var w, i, fd;
-            fd = W.getFrameDocument();
-            w = node.widgets.instances;
-            for (i = 0; i < w.length; i++) {
-                // Check if widget is not on page any more.
-                if (w[i].isAppended() &&
-                    (fd && !fd.contains(w[i].panelDiv)) &&
-                    !document.body.contains(w[i].panelDiv)) {
-
-                    w[i].destroy();
-                    i--;
-                }
-            }
+            node.widgets.garbageCollection();
         });
 
-        node.info('node-widgets: loading.');
+        node.info('node-widgets: loading');
     }
 
     // ## Widgets methods
@@ -39487,8 +39483,9 @@ if (!Array.prototype.indexOf) {
                 }
             }
 
-            // Remove from docked.
+            // Remove from docked or adjust frame height.
             if (this.docked) closeDocked(widget.wid, false);
+            else if (node.window) node.window.adjustFrameHeight(undefined, 120);
 
             // In case the widget is stored somewhere else, set destroyed.
             this.destroyed = true;
@@ -39714,6 +39711,32 @@ if (!Array.prototype.indexOf) {
             }
         }
         return true;
+    };
+
+    /**
+     * ### Widgets.garbageCollection
+     *
+     * Destroys previously appended widgets nowehere to be found on page
+     *
+     * @return {array} res List of destroyed widgets
+     */
+    Widgets.prototype.garbageCollection = function() {
+        var w, i, fd, res;
+        res = [];
+        fd = W.getFrameDocument();
+        w = node.widgets.instances;
+        for (i = 0; i < w.length; i++) {
+            // Check if widget is not on page any more.
+            if (w[i].isAppended() &&
+                (fd && !fd.contains(w[i].panelDiv)) &&
+                !document.body.contains(w[i].panelDiv)) {
+
+                res.push(w[i]);
+                w[i].destroy();
+                i--;
+            }
+        }
+        return res;
     };
 
     // ## Helper functions
@@ -49361,7 +49384,7 @@ if (!Array.prototype.indexOf) {
         feedback = getFeedback.call(this);
 
         if (opts.keepBreaks) feedback = feedback.replace(/\n\r?/g, '<br />');
-        
+
         if (opts.verify !== false) res = this.verifyFeedback(opts.markAttempt,
                                                              opts.updateUI);
 
@@ -49527,7 +49550,7 @@ if (!Array.prototype.indexOf) {
         if (!this.charCounter) return;
         this.charCounter.style.display = 'none';
     };
-    
+
     // ## Helper functions.
 
     /**
@@ -49541,7 +49564,8 @@ if (!Array.prototype.indexOf) {
      */
     function getFeedback() {
         var out;
-        out = this.textareaElement ? this.textareaElement.value : this._feedback;
+        out = this.textareaElement ?
+            this.textareaElement.value : this._feedback;
         return out ? out.trim() : out;
     }
 
