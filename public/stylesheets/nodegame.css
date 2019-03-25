@@ -328,6 +328,10 @@ p {
   border: 1px solid #CCC;
 }
 
+.feedback-maintext .feedback-hint {
+  @extends .choicetable-hint;
+}
+
 /** Requirements **/
 /******************/
 .requirements, .waitingroom {
@@ -381,10 +385,21 @@ div.choicetable div.panel-heading {
   padding: 0;
 }
 
-.choicetable-maintext, .custominput-maintext {
+.choicetable-maintext, .custominput-maintext, .feedback-maintext {
   margin: 20px 0 0 !important;
   padding: 0;
   display: block;
+  text-align: left;
+}
+.choicetable-maintext .choicetable-hint, .choicetable-maintext .custominput-hint, .custominput-maintext .choicetable-hint, .custominput-maintext .custominput-hint, .feedback-maintext .choicetable-hint, .feedback-maintext .custominput-hint, .choicetable-maintext .feedback-hint, .custominput-maintext .feedback-hint, .feedback-maintext .feedback-hint {
+  margin-left: 10px;
+}
+
+.choicetable-hint, .custominput-hint, .feedback-hint {
+  font-color: gray;
+  font-size: 14px;
+  font-weight: normal;
+  padding: 0;
   text-align: left;
 }
 
@@ -462,11 +477,12 @@ div.moodgauge {
 }
 div.moodgauge table.choicetable,
 div.moodgauge span.choicetable-maintext,
+div.moodgauge span.feedback-maintext,
 div.moodgauge span.custominput-maintext {
   text-align: center;
   width: auto;
 }
-div.moodgauge span.choicetable-maintext, div.moodgauge span.custominput-maintext {
+div.moodgauge span.choicetable-maintext, div.moodgauge span.feedback-maintext, div.moodgauge span.custominput-maintext {
   margin-bottom: 30px;
   font-weight: bold;
 }
@@ -495,6 +511,7 @@ div.moodgauge table.choicetable td.choicetable-right {
 /*********/
 div.svogauge table.choicetable,
 div.svogauge span.choicetable-maintext,
+div.svogauge span.feedback-maintext,
 div.svogauge span.custominput-maintext {
   text-align: center;
   width: auto;

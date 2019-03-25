@@ -373,6 +373,19 @@ p {
   }
 }
 
+
+.feedback-maintext {
+  @extend .choicetable-maintext;
+
+  .feedback-hint {
+    @extends .choicetable-hint;
+  }
+}
+
+.feedback-hint {  
+  @extend .choicetable-hint;
+}
+
 /** Requirements **/
 /******************/
 
@@ -443,6 +456,18 @@ div.choicetable div.panel-heading {
   margin: 20px 0 0 !important;
   padding: 0;
   display: block;
+  text-align: left;
+
+  .choicetable-hint {
+    margin-left: 10px;
+  }
+}
+
+.choicetable-hint {
+  font-color: gray;
+  font-size: 14px;
+  font-weight: normal;
+  padding: 0;
   text-align: left;
 }
 
@@ -524,6 +549,10 @@ table.clickable td:hover {
 
 .custominput-maintext {
   @extend .choicetable-maintext;
+}
+
+.custominput-hint {
+  @extend .choicetable-hint;
 }
 
 
