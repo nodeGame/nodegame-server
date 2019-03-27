@@ -24269,6 +24269,7 @@ if (!Array.prototype.indexOf) {
                          values.choice === null ||
                          values.isCorrect === false)) {
 
+                        debugger
                         return false;
                     }
                 }
@@ -24328,10 +24329,6 @@ if (!Array.prototype.indexOf) {
         w = this.node.window;
         // Handle frame loading natively, if required.
         if (frame) {
-            if (!w) {
-                throw new Error('Game.execStep: frame option in step ' +
-                                step + ', but nodegame-window is not loaded');
-            }
             frameOptions = {};
             if ('function' === typeof frame) frame = frame.call(node.game);
             if ('string' === typeof frame) {
@@ -35878,7 +35875,7 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # extra
- * Copyright(c) 2017 Stefano Balietti
+ * Copyright(c) 2019 Stefano Balietti
  * MIT Licensed
  *
  * GameWindow extras
@@ -35937,7 +35934,7 @@ if (!Array.prototype.indexOf) {
 
         if (!root) {
             throw new
-                Error('GameWindow.write: could not determine where to write.');
+                Error('GameWindow.write: could not determine where to write');
         }
         return DOM.write(root, text);
     };
@@ -35963,7 +35960,7 @@ if (!Array.prototype.indexOf) {
 
         if (!root) {
             throw new Error('GameWindow.writeln: ' +
-                            'could not determine where to write.');
+                            'could not determine where to write');
         }
         return DOM.writeln(root, text, br);
     };
@@ -36023,18 +36020,18 @@ if (!Array.prototype.indexOf) {
         var container;
         if (!document.getElementsByTagName) {
             node.err(
-                'GameWindow.toggleInputs: getElementsByTagName not found.');
+                'GameWindow.toggleInputs: getElementsByTagName not found');
             return false;
         }
         if (id && 'string' === typeof id) {
             throw new Error('GameWindow.toggleInputs: id must be string or ' +
-                            'undefined.');
+                            'undefined. Found: ' + id);
         }
         if (id) {
             container = this.getElementById(id);
             if (!container) {
                 throw new Error('GameWindow.toggleInputs: no elements found ' +
-                                'with id ' + id + '.');
+                                'with id ' + id);
             }
             toggleInputs(disabled, container);
         }
@@ -36335,7 +36332,8 @@ if (!Array.prototype.indexOf) {
      *
      * Gets and hides an HTML element
      *
-     * Sets the style of the display to 'none'
+     * Sets the style of the display to 'none' and adjust the frame
+     * height as necessary.
      *
      * @param {string|HTMLElement} idOrObj The id of or the HTML element itself
      *
@@ -36346,7 +36344,10 @@ if (!Array.prototype.indexOf) {
     GameWindow.prototype.hide = function(idOrObj) {
         var el;
         el = getElement(idOrObj, 'GameWindow.hide');
-        if (el) el.style.display = 'none';
+        if (el) {
+            el.style.display = 'none';
+            W.adjustFrameHeight(0, 0);
+        }
         return el;
     };
 
@@ -36355,7 +36356,8 @@ if (!Array.prototype.indexOf) {
      *
      * Gets and shows (makes visible) an HTML element
      *
-     * Sets the style of the display to ''.
+     * Sets the style of the display to '' and adjust the frame height
+     * as necessary.
      *
      * @param {string|HTMLElement} idOrObj The id of or the HTML element itself
      * @param {string} display Optional. The value of the display attribute.
@@ -36370,10 +36372,13 @@ if (!Array.prototype.indexOf) {
         display = display || '';
         if ('string' !== typeof display) {
             throw new TypeError('GameWindow.show: display must be ' +
-                                'string or undefined');
+                                'string or undefined. Found: ' + display);
         }
         el = getElement(idOrObj, 'GameWindow.show');
-        if (el) el.style.display = display;
+        if (el) {
+            el.style.display = display;
+            W.adjustFrameHeight(0, 0);
+        }
         return el;
     };
 
@@ -36382,7 +36387,8 @@ if (!Array.prototype.indexOf) {
      *
      * Gets and toggles the visibility of an HTML element
      *
-     * Sets the style of the display to ''.
+     * Sets the style of the display to '' or 'none'  and adjust 
+     * the frame height as necessary.
      *
      * @param {string|HTMLElement} idOrObj The id of or the HTML element itself
      * @param {string} display Optional. The value of the display attribute
@@ -36394,19 +36400,16 @@ if (!Array.prototype.indexOf) {
      */
     GameWindow.prototype.toggle = function(idOrObj, display) {
         var el;
+        display = display || '';
+        if ('string' !== typeof display) {
+            throw new TypeError('GameWindow.toggle: display must ' +
+                                'be string or undefined. Found: ' + display);
+        }
         el = getElement(idOrObj, 'GameWindow.toggle');
         if (el) {
-            if (el.style.display === 'none') {
-                display = display || '';
-                if ('string' !== typeof display) {
-                    throw new TypeError('GameWindow.toggle: display must ' +
-                                        'be string or undefined');
-                }
-                el.style.display = display;
-            }
-            else {
-                el.style.display = 'none';
-            }
+            if (el.style.display === 'none') el.style.display = display;
+            else el.style.display = 'none';
+            W.adjustFrameHeight(0, 0);
         }
         return el;
     };
@@ -39381,14 +39384,22 @@ if (!Array.prototype.indexOf) {
         widget.widgetName = widgetName;
         // Add random unique widget id.
         widget.wid = '' + J.randomInt(0,10000000000000000000);
-        // Add enabled.
+
+        // UI properties.
+
         widget.disabled = null;
-        // Add highlighted.
         widget.highlighted = null;
-        // Add collapsed.
         widget.collapsed = null;
-        // Add hidden.
         widget.hidden = null;
+        widget.docked = null
+
+        // Properties that will modify the UI of the widget once appended.
+
+        if (options.disabled) widget._disabled = true;
+        if (options.highlighted) widget._highlighted = true;
+        if (options.collapsed) widget._collapsed = true;
+        if (options.hidden) widget._hidden = true;
+        if (options.docked) widget._docked = true;
 
         // Call init.
         widget.init(options);
@@ -39571,7 +39582,7 @@ if (!Array.prototype.indexOf) {
         };
 
         // Dock it.
-        if (options.docked) {
+        if (options.docked || w._docked) {
             tmp.className.push('docked');
             this.docked.push(w);
             w.docked = true;
@@ -39601,13 +39612,15 @@ if (!Array.prototype.indexOf) {
         // Optionally set context.
         if (w.context) w.setContext(w.context);
 
-        // Be hidden, if requested.
-        if (options.hidden) w.hide();
+        // Adapt UI, if requested.
+        if (options.hidden || w._hidden) w.hide();
+        if (options.collapsed || w._collapsed) w.collapse();
+        if (options.disabled || w._disabled) w.disable();
+        if (options.highlighted || w._highlighted) w.highlight();
 
+        // Append.
         root.appendChild(w.panelDiv);
-
         w.originalRoot = root;
-
         w.append();
 
         // Make sure the distance from the right side is correct.
@@ -42729,8 +42742,21 @@ if (!Array.prototype.indexOf) {
          * ### ChoiceManager.forms
          *
          * The array available forms
+         *
+         * @see ChoiceManager.formsById
          */
         this.forms = null;
+
+        /**
+         * ### ChoiceManager.forms
+         *
+         * A map form id to form
+         *
+         * Note: if a form does not have an id, it will not be added here.
+         *
+         * @see ChoiceManager.forms
+         */
+        this.formsById = null;
 
         /**
          * ### ChoiceManager.order
@@ -42914,7 +42940,7 @@ if (!Array.prototype.indexOf) {
      * @see ChoiceManager.buildTableAndForms
      */
     ChoiceManager.prototype.setForms = function(forms) {
-        var form, i, len, parsedForms;
+        var form, formsById, i, len, parsedForms;
         if ('function' === typeof forms) {
             parsedForms = forms.call(node.game);
             if (!J.isArray(parsedForms)) {
@@ -42937,6 +42963,7 @@ if (!Array.prototype.indexOf) {
         }
 
         // Manual clone forms.
+        formsById = {};
         forms = new Array(len);
         i = -1;
         for ( ; ++i < len ; ) {
@@ -42948,15 +42975,23 @@ if (!Array.prototype.indexOf) {
                     form = node.widgets.get(form.name, form);
                 }
                 if (!node.widgets.isWidget(form)) {
-                    throw new Error('ChoiceManager.buildDl: one of the forms ' +
-                                    'is not a widget-like element: ' +
-                                    parsedForms[i]);
+                    throw new Error('ChoiceManager.setForms: one of the ' +
+                                    'forms is not a widget-like element: ' +
+                                    form);
                 }
             }
             forms[i] = form;
+            if (form.id) {
+                if (formsById[form.id]) {
+                    throw new Error('ChoiceManager.setForms: duplicated ' +
+                                    'form id: ' + form.id);
+                }
+                formsById[form.id] = forms[i];
+            }
         }
         // Assigned verified forms.
         this.forms = forms;
+        this.formsById = formsById;
 
         // Save the order in which the choices will be added.
         this.order = J.seq(0, len-1);
@@ -43274,7 +43309,7 @@ if (!Array.prototype.indexOf) {
 
     // ## Meta-data
 
-    ChoiceTable.version = '1.5.0';
+    ChoiceTable.version = '1.5.1';
     ChoiceTable.description = 'Creates a configurable table where ' +
         'each cell is a selectable choice.';
 
@@ -43345,7 +43380,7 @@ if (!Array.prototype.indexOf) {
          */
         this.listener = function(e) {
             var name, value, td;
-            var i, len;
+            var i, len, removed;
 
             e = e || window.event;
             td = e.target || e.srcElement;
@@ -43394,6 +43429,7 @@ if (!Array.prototype.indexOf) {
                 else {
                     that.selected = null;
                 }
+                removed = true;
             }
             // Click on a new choice.
             else {
@@ -43417,6 +43453,9 @@ if (!Array.prototype.indexOf) {
 
             // Remove any warning/errors on click.
             if (that.isHighlighted()) that.unhighlight();
+
+            // Call onclick, if any.
+            if (that.onclick) that.onclick.call(that, value, td, removed);
         };
 
         /**
@@ -43552,6 +43591,9 @@ if (!Array.prototype.indexOf) {
          * ### ChoiceTable.originalOrder
          *
          * The initial order of display of choices
+         *
+         * TODO: Do we need this? originalOrder is always 0,1,2,3...
+         * ChoiceManager does not have it.
          *
          * @see ChoiceTable.order
          */
@@ -43712,7 +43754,9 @@ if (!Array.prototype.indexOf) {
      *   - orientation: orientation of the table: vertical (v) or horizontal (h)
      *   - group: the name of the group (number or string), if any
      *   - groupOrder: the order of the table in the group, if any
-     *   - onclick: a custom onclick listener function. Context is
+     *   - listener: a function executed at every click. Context is
+     *       `this` instance
+     *   - onclick: a function executed after the listener function. Context is
      *       `this` instance
      *   - mainText: a text to be displayed above the table
      *   - hint: a text with extra info to be displayed after mainText
@@ -43836,11 +43880,21 @@ if (!Array.prototype.indexOf) {
                                 options.groupOrder);
         }
 
-        // Set the onclick listener, if any.
-        if ('function' === typeof options.onclick) {
+        // Set the main onclick listener, if any.
+        if ('function' === typeof options.listener) {
             this.listener = function(e) {
-                options.onclick.call(this, e);
+                options.listener.call(this, e);
             };
+        }
+        else if ('undefined' !== typeof options.listener) {
+            throw new TypeError('ChoiceTable.init: options.listener must ' +
+                                'be function or undefined. Found: ' +
+                                options.listener);
+        }
+
+        // Set an additional onclick onclick, if any.
+        if ('function' === typeof options.onclick) {
+            this.onclick = options.onclick;
         }
         else if ('undefined' !== typeof options.onclick) {
             throw new TypeError('ChoiceTable.init: options.onclick must ' +
@@ -44037,8 +44091,10 @@ if (!Array.prototype.indexOf) {
 
         // Save the order in which the choices will be added.
         this.order = J.seq(0, len-1);
-        if (this.shuffleChoices) this.order = J.shuffle(this.order);
-        this.originalOrder = this.order;
+        if (this.shuffleChoices) {
+            this.originalOrder = this.order;
+            this.order = J.shuffle(this.order);
+        }
 
         // Build the table and choices at once (faster).
         if (this.table) this.buildTableAndChoices();
@@ -46589,7 +46645,7 @@ if (!Array.prototype.indexOf) {
 
     // ## Meta-data
 
-    CustomInput.version = '0.5.0';
+    CustomInput.version = '0.7.0';
     CustomInput.description = 'Creates a configurable input form';
 
     CustomInput.title = false;
@@ -46601,13 +46657,28 @@ if (!Array.prototype.indexOf) {
         number: true,
         'float': true,
         'int': true,
-        date: true
+        date: true,
+        list: true
+    };
+
+    var sepNames = {
+        ',': 'comma',
+        ' ': 'space',
+        '.': 'dot'
     };
 
     CustomInput.texts = {
+        listErr: function(w) {
+            return 'Check that there are no empty items; do not end with ' +
+                'the separator';
+        },
         autoHint: function(w) {
-            if (w.requiredChoice) return '*';
-            else return false;
+            var res, sep;
+            if (w.type === 'list') {
+                sep = sepNames[w.params.listSep] || w.params.listSep;
+                res = '(if more than one, separate with ' + sep + ')';
+            }
+            return w.requiredChoice ? (res + '*') : (res || false);
         },
         numericErr: function(w) {
             var str, p, inc;
@@ -46678,12 +46749,8 @@ if (!Array.prototype.indexOf) {
      * ## CustomInput constructor
      *
      * Creates a new instance of CustomInput
-     *
-     * @param {object} options Optional. Configuration options.
-     *   If a `table` option is specified, it sets it as the clickable
-     *   table. All other options are passed to the init method.
      */
-    function CustomInput(options) {
+    function CustomInput() {
 
         /**
          * ### CustomInput.input
@@ -46731,9 +46798,25 @@ if (!Array.prototype.indexOf) {
          *
          * The validation function for the input
          *
-         * The function returns an error message in case of error.
+         * The function returns an object like:
+         *
+         * ```javascript
+         *  {
+         *    value: 'validvalue',
+         *    err:   'This error occurred' // If invalid.
+         *  }
+         * ```
          */
         this.validation = null;
+
+        /**
+         * ### CustomInput.validationSpeed
+         *
+         * How often (in milliseconds) the validation function is called
+         *
+         * Default: 500
+         */
+        this.validationSpeed = 500;
 
         /**
          * ### CustomInput.postprocess
@@ -46786,6 +46869,20 @@ if (!Array.prototype.indexOf) {
          * Default: TRUE
          */
         this.requiredChoice = null;
+
+        /**
+         * ### CustomInput.timeBegin
+         *
+         * When the first character was inserted
+         */
+        this.timeBegin = null;
+
+        /**
+         * ### CustomInput.timeEnd
+         *
+         * When the last character was inserted
+         */
+        this.timeEnd = null;
     }
 
     // ## CustomInput methods
@@ -46821,7 +46918,7 @@ if (!Array.prototype.indexOf) {
                                     'or undefined. Found: ' +
                                     opts.validation);
             }
-            this.validation = opts.validation;
+            tmp = opts.validation;
         }
         else {
             // Add default validations based on type.
@@ -46990,6 +47087,7 @@ if (!Array.prototype.indexOf) {
                 this.params.yearDigits = tmp[2].length;
                 this.params.dayPos = tmp[0].charAt(0) === 'd' ? 0 : 1;
                 this.params.monthPos =  this.params.dayPos ? 0 : 1;
+                this.params.dateLen = tmp[2].length + 6;
 
 
                 // Preset inputWidth.
@@ -47060,20 +47158,71 @@ if (!Array.prototype.indexOf) {
                     return res;
                 };
             }
-            // TODO: add other types, e.g. date, int and email.
+            // List.
 
-            this.validation = function(value) {
-                var res;
-                if (value.trim() === '') {
-                    res = that.requiredChoice ?
-                        { err: that.getText('emptyErr') } : { value: '' };
+            else if (this.type === 'list') {
+                if (opts.listSeparator) {
+                    if ('string' !== typeof opts.listSeparator) {
+                        throw new TypeError(e + 'listSeparator must be ' +
+                                            'string or undefined. Found: ' +
+                                            opts.listSeperator);
+                    }
+                    this.params.listSep = opts.listSeparator;
                 }
                 else {
-                    res = tmp(value);
+                    this.params.listSep = ',';
                 }
-                return res;
-            };
+
+                tmp = function(value) {
+                    var i, len, v;
+                    value = value.split(that.params.listSep);
+                    len = value.length;
+                    if (!len) return value;
+                    i = 0;
+                    v = value[0].trim();
+                    if (!v) return { err: that.getText('listErr') };
+                    value[i++] = v;
+                    if (len > 1) {
+                        v = value[1].trim();
+                        if (!v) return { err: that.getText('listErr') };
+                        value[i++] = v;
+                    }
+                    if (len > 2) {
+                        v = value[2].trim();
+                        if (!v) return { err: that.getText('listErr') };
+                        value[i++] = v;
+                    }
+                    if (len > 3) {
+                        for ( ; i < len ; ) {
+                            v = value[i].trim();
+                            if (!v) return { err: that.getText('listErr') };
+                            value[i++] = v;
+                        }
+                    }
+                    return { value: value };
+                }
+            }
+            // TODO: add other types, e.g.int and email.
         }
+
+        // Variable tmp contains a validation function, either from
+        // defaults, or from user option.
+
+        this.validation = function(value) {
+            var res;
+            res = { value: value };
+            if (value.trim() === '') {
+                if (that.requiredChoice) res.err = that.getText('emptyErr');
+            }
+            else if (tmp) {
+                res = tmp(value);
+            }
+            return res;
+        };
+
+
+
+        // Preprocess
 
         if (opts.preprocess) {
             if ('function' !== typeof opts.preprocess) {
@@ -47082,6 +47231,90 @@ if (!Array.prototype.indexOf) {
             }
             this.preprocess = opts.preprocess;
         }
+        else if (opts.preprocess !== false) {
+
+            if (this.type === 'date') {
+                this.preprocess = function(input) {
+                    var sep, len;
+                    len = input.value.length;
+                    sep = that.params.sep;
+                    if (len === 2) {
+                        if (input.selectionStart === 2) {
+                            if (input.value.charAt(1) !== sep) {
+                                input.value += sep;
+                            }
+                        }
+                    }
+                    else if (len === 5) {
+                        if (input.selectionStart === 5) {
+                            if (input.value.charAt(4) !== sep &&
+                                (input.value.split(sep).length - 1) === 1) {
+
+                                input.value += sep;
+                            }
+                        }
+                    }
+                    else if (len > this.params.dateLen) {
+                        input.value =
+                            input.value.substring(0, this.params.dateLen);
+                    }
+                };
+            }
+            else if (this.type === 'list') {
+                // Add a space after separator, if separator is not space.
+                if (this.params.listSep.trim() !== '') {
+                    this.preprocess = function(input) {
+                        var sep, len;
+                        len = input.value.length;
+                        sep = that.params.listSep;
+                        if (len > 1 &&
+                            len === input.selectionStart &&
+                            input.value.charAt(len-1) === sep &&
+                            input.value.charAt(len-2) !== sep) {
+
+                            input.value += ' ';
+                        }
+                    };
+                }
+            }
+        }
+
+        // Postprocess.
+
+        if (opts.postprocess) {
+            if ('function' !== typeof opts.postprocess) {
+                throw new TypeError(e + 'postprocess must be function or ' +
+                                    'undefined. Found: ' + opts.postprocess);
+            }
+            this.postprocess = opts.postprocess;
+        }
+        else {
+            if (this.type === 'date') {
+                this.postprocess = function(value, valid) {
+                    if (!valid || !value) return value;
+                    return {
+                        value: value,
+                        day: value.substring(0,2),
+                        month: value.substring(3,5),
+                        year: value.subtring(6, value.length)
+                    };
+                };
+            }
+        }
+
+        // Validation Speed
+        if ('undefined' !== typeof opts.validationSpeed) {
+            tmp = J.isInt(opts.valiadtionSpeed, 0, undefined, true);
+            if (tmp === false) {
+                throw new TypeError(e + 'validationSpeed must a non-negative ' +
+                                    'number or undefined. Found: ' +
+                                    opts.validationSpeed);
+            }
+            this.validationSpeed = tmp;
+        }
+
+        // MainText, Hint, and other visuals.
+
         if (opts.mainText) {
             if ('string' !== typeof opts.mainText) {
                 throw new TypeError(e + 'mainText must be string or ' +
@@ -47149,6 +47382,12 @@ if (!Array.prototype.indexOf) {
         this.errorBox = W.append('div', this.bodyDiv, { className: 'errbox' });
 
         this.input.oninput = function() {
+            if (!that.timeBegin) {
+                that.timeEnd = that.timeBegin = node.timer.getTimeSince('step');
+            }
+            else {
+                that.timeEnd = node.timer.getTimeSince('step');
+            }
             if (timeout) clearTimeout(timeout);
             if (that.isHighlighted()) that.unhighlight();
             if (that.preprocess) that.preprocess(that.input);
@@ -47158,11 +47397,10 @@ if (!Array.prototype.indexOf) {
                     res = that.validation(that.input.value);
                     if (res.err) that.setError(res.err);
                 }
-            }, 500);
+            }, that.validationSpeed);
         };
         this.input.onclick = function() {
             if (that.isHighlighted()) that.unhighlight();
-
         };
     };
 
@@ -47224,7 +47462,8 @@ if (!Array.prototype.indexOf) {
      */
     CustomInput.prototype.reset = function() {
         if (this.input) this.input.value = '';
-        if (this.isHighilighted()) this.unhighlight();
+        if (this.isHighlighted()) this.unhighlight();
+        this.timeBegin = this.timeEnd = null;
     };
 
     /**
@@ -47247,6 +47486,8 @@ if (!Array.prototype.indexOf) {
         res = this.input.value;
         res = this.validation ? this.validation(res) : { value: res };
         res.isCorrect = valid = !res.err;
+        res.timeBegin = this.timeBegin;
+        res.timeEnd = this.timeEnd;
         if (this.postprocess) res.value = this.postprocess(res.value, valid);
         if (!valid) {
             this.setError(res.err);
@@ -49111,7 +49352,7 @@ if (!Array.prototype.indexOf) {
                 res = 'at least ' + w.minChars + ' character';
                 if (w.minChars > 1) res += 's';
             }
-            else {
+            else if (w.maxChars) {
                 res = 'at most ' +  w.maxChars + ' character';
                 if (w.maxChars > 1) res += 's';
             }
@@ -49123,10 +49364,10 @@ if (!Array.prototype.indexOf) {
                 res2 = 'at least ' + w.minWords + ' word';
                 if (w.minWords > 1) res += 's';
             }
-            else {
+            else if (w.maxWords) {
                 res2 = 'at most ' +  w.maxWords + ' word';
                 if (w.maxWords > 1) res += 's';
-            }            
+            }
             if (res) {
                 res = '(' + res;;
                 if (res2) res +=  ', and ' + res2;
