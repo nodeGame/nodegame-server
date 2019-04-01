@@ -1,7 +1,7 @@
 # nodegame-server change log
 
-## current
-- CustomWidget in built (updated css)
+## 5.1.0
+- Several CSS improvements, new CustomInput widget.
 - Server sends a stringified object with an error to monitor, if an error
 occurs likely due to cycles.
 
