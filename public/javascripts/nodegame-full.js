@@ -36406,7 +36406,7 @@ if (!Array.prototype.indexOf) {
      *
      * Gets and toggles the visibility of an HTML element
      *
-     * Sets the style of the display to '' or 'none'  and adjust 
+     * Sets the style of the display to '' or 'none'  and adjust
      * the frame height as necessary.
      *
      * @param {string|HTMLElement} idOrObj The id of or the HTML element itself
