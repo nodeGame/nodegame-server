@@ -2986,7 +2986,7 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # OBJ
- * Copyright(c) 2017 Stefano Balietti <ste@nodegame.org>
+ * Copyright(c) 2019 Stefano Balietti <ste@nodegame.org>
  * MIT Licensed
  *
  * Collection of static functions to manipulate JavaScript objects
@@ -4206,14 +4206,13 @@ if (!Array.prototype.indexOf) {
     /**
      * ## OBJ.melt
      *
-     * Creates a new object with the specified combination of
-     * properties - values
+     * Creates a new object with specific combination of properties - values
      *
      * The values are assigned cyclically to the properties, so that
      * they do not need to have the same length. E.g.
      *
      * ```javascript
-     *  J.createObj(['a','b','c'], [1,2]); // { a: 1, b: 2, c: 1 }
+     *  J.melt(['a','b','c'], [1,2]); // { a: 1, b: 2, c: 1 }
      * ```
      * @param {array} keys The names of the keys to add to the object
      * @param {array} values The values to associate to the keys
@@ -4404,6 +4403,27 @@ if (!Array.prototype.indexOf) {
             }
         }
         return out;
+    };
+
+    /**
+     * ## OBJ.reverseObj
+     *
+     * Returns a new object where they keys and values are switched
+     *
+     * @param {object} obj The object to reverse
+     *
+     * @return {object} The reversed object
+     */
+    OBJ.reverseObj = function(o) {
+        var k, res;
+        res = {};
+        if (!o) return res;
+        for (k in o) {
+            if (o.hasOwnProperty(k)) {
+                res[o[k]] = k;
+            }
+        }
+        return res;
     };
 
     JSUS.extend(OBJ);
@@ -24269,7 +24289,6 @@ if (!Array.prototype.indexOf) {
                          values.choice === null ||
                          values.isCorrect === false)) {
 
-                        debugger
                         return false;
                     }
                 }
@@ -29449,7 +29468,7 @@ if (!Array.prototype.indexOf) {
  *
  * Implementation of node.[say|set|get|done].
  *
- * Copyright(c) 2015 Stefano Balietti
+ * Copyright(c) 2019 Stefano Balietti
  * MIT Licensed
  */
 (function(exports, parent) {
@@ -29480,8 +29499,8 @@ if (!Array.prototype.indexOf) {
                                 label);
         }
         if (to && 'string' !== typeof to && (!J.isArray(to) || !to.length)) {
-            throw new TypeError('node.say: to must be array, string or ' +
-                                'undefined. Found: ' + to);
+            throw new TypeError('node.say: to must be a non-empty array, ' +
+                                'string or undefined. Found: ' + to);
         }
         msg = this.msg.create({
             target: this.constants.target.DATA,
@@ -29497,7 +29516,7 @@ if (!Array.prototype.indexOf) {
      *
      * Stores an object in the server's memory
      *
-     * @param {object|string} The value to set
+     * @param {object|string} o The value to set
      * @param {string} to Optional. The recipient. Default `SERVER`
      * @param {string} text Optional. The text property of the message.
      *   If set, it allows one to define on.data listeners on receiver.
@@ -29511,7 +29530,8 @@ if (!Array.prototype.indexOf) {
             tmp = o, o = {}, o[tmp] = true;
         }
         else if ('object' !== typeof o) {
-            throw new TypeError('node.set: o must be object or string.');
+            throw new TypeError('node.set: o must be object or string. ' +
+                                'Found: ' + o);
         }
         msg = this.msg.create({
             action: this.constants.action.SET,
@@ -29584,7 +29604,7 @@ if (!Array.prototype.indexOf) {
         var data, timeout, timeoutCb, executeOnce, target;
 
         if ('string' !== typeof key) {
-            throw new TypeError('node.get: key must be string.');
+            throw new TypeError('node.get: key must be string. Found: ' + key);
         }
 
         if (key === '') {
@@ -29593,11 +29613,11 @@ if (!Array.prototype.indexOf) {
 
         if (key.split('.') > 1) {
             throw new TypeError(
-                'node.get: key cannot contain the dot "." character.');
+                'node.get: key cannot contain the dot "." character: ' + key);
         }
 
         if ('function' !== typeof cb) {
-            throw new TypeError('node.get: cb must be function.');
+            throw new TypeError('node.get: cb must be function. Found: ' + cb);
         }
 
         if ('undefined' === typeof to) {
@@ -29605,13 +29625,14 @@ if (!Array.prototype.indexOf) {
         }
 
         if ('string' !== typeof to) {
-            throw new TypeError('node.get: to must be string or undefined.');
+            throw new TypeError('node.get: to must be string or ' +
+                                'undefined. Found: ' + to);
         }
 
         if (options) {
             if ('object' !== typeof options) {
                 throw new TypeError('node.get: options must be object ' +
-                                    'or undefined.');
+                                    'or undefined. Found: ' + options);
             }
 
             timeout = options.timeout;
@@ -29623,24 +29644,27 @@ if (!Array.prototype.indexOf) {
             if ('undefined' !== typeof timeout) {
                 if ('number' !== typeof timeout) {
                     throw new TypeError('node.get: options.timeout must be ' +
-                                        'number.');
+                                        'number. Found: ' + timeout);
                 }
                 if (timeout < 0 && timeout !== -1 ) {
                     throw new TypeError('node.get: options.timeout must be ' +
-                                        'positive, 0, or -1.');
+                                        'positive, 0, or -1. Found: ' +
+                                        timeout);
                 }
             }
 
             if (timeoutCb && 'function' !== typeof timeoutCb) {
                 throw new TypeError('node.get: options.timeoutCb must be ' +
-                                    'function or undefined.');
+                                    'function or undefined. Found: ' +
+                                    timeoutCb);
             }
 
             if (target &&
                 ('string' !== typeof target || target.trim() === '')) {
 
                 throw new TypeError('node.get: options.target must be ' +
-                                    'a non-empty string or undefined.');
+                                    'a non-empty string or undefined. Found: ' +
+                                    target);
             }
 
         }
@@ -29690,11 +29714,6 @@ if (!Array.prototype.indexOf) {
                 timer = this.timer.createTimer({
                     milliseconds: timeout,
                     timeup: function() {
-                        // 10.19.2016 Was:
-//                         // `ee.once` already removes it on execution.
-//                         if (!executeOnce) {
-//                             ee.remove('in.say.DATA', g);
-//                         }
                         ee.remove('in.say.DATA', g);
                         if ('undefined' !== typeof timer) {
                             that.timer.destroyTimer(timer);
@@ -43319,10 +43338,25 @@ if (!Array.prototype.indexOf) {
     ChoiceTable.texts.autoHint = function(w) {
         var res;
         if (!w.requiredChoice && !w.selectMultiple) return false;
-        if (!w.selectMultiple) return '*'
-        res = '(pick ';
-        res += !w.requiredChoice ? 'up to ' + w.selectMultiple :
-            'between ' + w.requiredChoice + ' and ' + w.selectMultiple;
+        if (!w.selectMultiple) return '*';
+        res = '(';
+        if (!w.requiredChoice) {
+            if ('number' === typeof w.selectMultiple) {
+                res += 'select up to ' + w.selectMultiple;
+            }
+            else {
+                res += 'multiple selection allowed';
+            }
+        }
+        else {
+            if ('number' === typeof w.selectMultiple) {
+                res += 'select between ' + w.requiredChoice + ' and ' +
+                    w.selectMultiple;
+            }
+            else {
+                res += 'select at least ' + w.requiredChoice;
+            }
+        }
         return res + ')';
     };
 
@@ -43581,23 +43615,9 @@ if (!Array.prototype.indexOf) {
          *
          * The current order of display of choices
          *
-         * May differ from `originalOrder` if shuffled.
-         *
          * @see ChoiceTable.originalOrder
          */
         this.order = null;
-
-        /**
-         * ### ChoiceTable.originalOrder
-         *
-         * The initial order of display of choices
-         *
-         * TODO: Do we need this? originalOrder is always 0,1,2,3...
-         * ChoiceManager does not have it.
-         *
-         * @see ChoiceTable.order
-         */
-        this.originalOrder = null;
 
         /**
          * ### ChoiceTable.correctChoice
@@ -44091,10 +44111,7 @@ if (!Array.prototype.indexOf) {
 
         // Save the order in which the choices will be added.
         this.order = J.seq(0, len-1);
-        if (this.shuffleChoices) {
-            this.originalOrder = this.order;
-            this.order = J.shuffle(this.order);
-        }
+        if (this.shuffleChoices) this.order = J.shuffle(this.order);
 
         // Build the table and choices at once (faster).
         if (this.table) this.buildTableAndChoices();
@@ -44700,6 +44717,24 @@ if (!Array.prototype.indexOf) {
     };
 
     /**
+     * ### ChoiceTable.getChoiceAtPosition
+     *
+     * Returns a choice displayed at a given position
+     *
+     * @param {string|number} i The numeric position of a choice in display
+     *
+     * @return {string|undefined} The value associated the numeric position.
+     *   If no value is found, returns undefined
+     *
+     * @see ChoiceTable.order
+     * @see ChoiceTable.choices
+     */
+    ChoiceTable.prototype.getChoiceAtPosition = function(i) {
+        if (!this.choices || !this.order) return;
+        return this.choices[this.order[parseInt(i, 10)]];
+    };
+
+    /**
      * ### ChoiceTable.getValues
      *
      * Returns the values for current selection and other paradata
@@ -44723,7 +44758,7 @@ if (!Array.prototype.indexOf) {
      * @see ChoiceTable.reset
      */
     ChoiceTable.prototype.getValues = function(opts) {
-        var obj, resetOpts;
+        var obj, resetOpts, i, len;
         opts = opts || {};
         obj = {
             id: this.id,
@@ -44735,10 +44770,27 @@ if (!Array.prototype.indexOf) {
         if (opts.processChoice) {
             obj.choice = opts.processChoice.call(this, obj.choice);
         }
-        if (this.shuffleChoices) {
-            obj.originalOrder = this.originalOrder;
-            obj.order = this.order;
+        if (this.shuffleChoices) obj.order = this.order;
+
+        if (opts.getValue !== false) {
+            if (!this.selectMultiple) {
+                obj.value = this.choices[obj.choice];
+            }
+            else {
+                len = obj.choice.length;
+                obj.value = new Array(len);
+                if (len === 1) {
+                    obj.value[0] = this.choices[obj.choice[0]];
+                }
+                else {
+                    i = -1;
+                    for ( ; ++i < len ; ) {
+                        obj.value[i] = this.choices[obj.choice[i]];
+                    }
+                }
+            }
         }
+
         if (this.group === 0 || this.group) {
             obj.group = this.group;
         }
@@ -46645,7 +46697,7 @@ if (!Array.prototype.indexOf) {
 
     // ## Meta-data
 
-    CustomInput.version = '0.7.0';
+    CustomInput.version = '0.8.0';
     CustomInput.description = 'Creates a configurable input form';
 
     CustomInput.title = false;
@@ -46658,7 +46710,8 @@ if (!Array.prototype.indexOf) {
         'float': true,
         'int': true,
         date: true,
-        list: true
+        list: true,
+        us_city_state_zip: true
     };
 
     var sepNames = {
@@ -46667,45 +46720,152 @@ if (!Array.prototype.indexOf) {
         '.': 'dot'
     };
 
+    var usStates = {
+        Alabama: 'AL',
+        Alaska: 'AK',
+        Arizona: 'AZ',
+        Arkansas: 'AR',
+        California: 'CA',
+        Colorado: 'CO',
+        Connecticut: 'CT',
+        Delaware: 'DE',
+        Florida: 'FL',
+        Georgia: 'GA',
+        Hawaii: 'HI',
+        Idaho: 'ID',
+        Illinois: 'IL',
+        Indiana: 'IN',
+        Iowa: 'IA',
+        Kansas: 'KS',
+        Kentucky: 'KY',
+        Louisiana: 'LA',
+        Maine: 'ME',
+        Maryland: 'MD',
+        Massachusetts: 'MA',
+        Michigan: 'MI',
+        Minnesota: 'MN',
+        Mississippi: 'MS',
+        Missouri: 'MO',
+        Montana: 'MT',
+        Nebraska: 'NE',
+        Nevada: 'NV',
+        'New Hampshire': 'NH',
+        'New Jersey': 'NJ',
+        'New Mexico': 'NM',
+        'New York': 'NY',
+        'North Carolina': 'NC',
+        'North Dakota': 'ND',
+        Ohio: 'OH',
+        Oklahoma: 'OK',
+        Oregon: 'OR',
+        Pennsylvania: 'PA',
+        'Rhode Island': 'RI',
+        'South Carolina': 'SC',
+        'South Dakota': 'SD',
+        Tennessee: 'TN',
+        Texas: 'TX',
+        Utah: 'UT',
+        Vermont: 'VT',
+        Virginia: 'VA',
+        Washington: 'WA',
+        'West Virginia': 'WV',
+        Wisconsin: 'WI',
+        Wyoming: 'WY',
+    };
+
+    var usTerr = {
+        'American Samoa': 'AS',
+        'District of Columbia': 'DC',
+        'Federated States of Micronesia': 'FM',
+        Guam: 'GU',
+        'Marshall Islands': 'MH',
+        'Northern Mariana Islands': 'MP',
+        Palau: 'PW',
+        'Puerto Rico': 'PR',
+        'Virgin Islands': 'VI'
+    };
+
+    // To be filled if requested.
+    var usTerrByAbbr;
+    var usStatesByAbbr;
+    var usStatesTerr;
+    var usStatesTerrByAbbr;
+
     CustomInput.texts = {
-        listErr: function(w) {
-            return 'Check that there are no empty items; do not end with ' +
-                'the separator';
+        listErr: 'Check that there are no empty items; do not end with ' +
+            'the separator',
+        listSizeErr: function(w, param) {
+            if (w.params.fixedSize) {
+                return w.params.minItems + ' items required';
+            }
+            if (param === 'min') {
+                return 'Too few items. Min: ' + w.params.minItems;
+            }
+            return 'Too many items. Max: ' + w.params.maxItems;
+
         },
+        usStateErr: 'Not valid state abbreviation (must be 2 characters)',
+        usZipErr: 'Not valid ZIP code (must be 5-digits)',
         autoHint: function(w) {
             var res, sep;
             if (w.type === 'list') {
                 sep = sepNames[w.params.listSep] || w.params.listSep;
                 res = '(if more than one, separate with ' + sep + ')';
             }
-            return w.requiredChoice ? (res + '*') : (res || false);
+            else if (w.type === 'us_city_state_zip') {
+                sep = w.params.listSep;
+                res = '(Format: Town' + sep + ' State' + sep + ' ZIP code)';
+            }
+            else if (w.type === 'date') {
+                if (w.params.minDate && w.params.maxDate) {
+                    res = '(Must be between ' + w.params.minDate.str + ' and ' +
+                        w.params.maxDate.str + ')';
+                }
+                else if (w.params.minDate) {
+                    res = '(Must be after ' + w.params.minDate.str + ')';
+                }
+                else if (w.params.maxDate) {
+                    res = '(Must be before ' + w.params.maxDate.str + ')';
+                }
+                else {
+                    res = '(Format: ' + w.params.format + ')';
+                }
+            }
+            else if (w.type === 'number' || w.type === 'int' ||
+                     w.type === 'float') {
+
+                if (w.params.min && w.params.max) {
+                    res = '(Must be between ' + w.params.min + ' and ' +
+                        w.params.max + ')';
+                }
+                else if (w.params.min) {
+                    res = '(Must be after ' + w.params.min + ')';
+                }
+                else if (w.params.max) {
+                    res = '(Must be before ' + w.params.max + ')';
+                }
+            }
+            return w.requiredChoice ? ((res || '') + '*') : (res || false);
         },
         numericErr: function(w) {
-            var str, p, inc;
+            var str, p;
             p = w.params;
             // Weird, but valid, case.
             if (p.exactly) return 'Must enter ' + p.lower;
             // Others.
-            inc = '(inclusive)';
-            str = 'Must be a';
-            if (w.type === 'float') str += 'floating point';
-            else if (w.type === 'int') str += 'n integer';
-            str += ' number ';
+            str = 'Must be ';
+            if (w.type === 'float') str += 'a floating point number ';
+            else if (w.type === 'int') str += 'an integer ';
             if (p.between) {
-                str += 'between ' + p.lower;
-                if (p.leq) str += inc;
-                str += ' and ' + p.upper;
-                if (p.ueq) str += inc;
+                str += (p.leq ? '&ge; ' : '<' ) + p.lower;
+                str += ' and ';
+                str += (p.ueq ? '&le; ' : '> ') + p.upper;
             }
             else if ('undefined' !== typeof p.lower) {
-                str += 'greater than ';
-                if (p.leq) str += 'or equal to ';
-                str += p.lower;
+                str += (p.leq ? '&ge; ' : '< ') + p.lower;
             }
             else {
-                str += 'less than ';
-                if (p.leq) str += 'or equal to ';
-                str += p.upper;
+                str += (p.ueq ? '&le; ' : '> ') + p.upper;
             }
             return str;
         },
@@ -46730,9 +46890,15 @@ if (!Array.prototype.indexOf) {
             str += '. Current length: ' + len;
             return str;
         },
-        dateErr: function(w, invalid) {
-            return invalid ? 'Date is invalid' : 'Must follow format ' +
-                w.params.format;
+        dateErr: function(w, param) {
+            if (param === 'invalid') return 'Date is invalid';
+            if (param === 'min') {
+                return 'Date must be after ' + w.params.minDate.str;
+            }
+            if (param === 'max') {
+                return 'Date must be before ' + w.params.maxDate.str;
+            }
+            return 'Must follow format ' + w.params.format;
         },
         emptyErr: function(w) {
             return 'Cannot be empty'
@@ -47088,7 +47254,29 @@ if (!Array.prototype.indexOf) {
                 this.params.dayPos = tmp[0].charAt(0) === 'd' ? 0 : 1;
                 this.params.monthPos =  this.params.dayPos ? 0 : 1;
                 this.params.dateLen = tmp[2].length + 6;
+                if (opts.minDate) {
+                    tmp = getParsedDate(opts.minDate, this.params);
+                    if (!tmp) {
+                        throw new Error(e + 'minDate must be a Date object. ' +
+                                        'Found: ' + opts.minDate);
+                    }
+                    this.params.minDate = tmp;
+                }
+                if (opts.maxDate) {
+                    tmp = getParsedDate(opts.maxDate, this.params);
+                    if (!tmp) {
+                        throw new Error(e + 'maxDate must be a Date object. ' +
+                                        'Found: ' + opts.maxDate);
+                    }
+                    if (this.params.minDate &&
+                        this.params.minDate.obj > tmp.obj) {
 
+                        throw new Error(e + 'maxDate cannot be prior to ' +
+                                        'minDate. Found: ' + tmp.str +
+                                        ' < ' + this.params.minDate.str);
+                    }
+                    this.params.maxDate = tmp;
+                }
 
                 // Preset inputWidth.
                 if (this.params.yearDigits === 2) this.inputWidth = '100px';
@@ -47098,7 +47286,7 @@ if (!Array.prototype.indexOf) {
                 this.placeholder = this.params.format;
 
                 tmp = function(value) {
-                    var p, tokens, tmp, err, res, dayNum, l1, l2;
+                    var p, tokens, tmp, res, dayNum, l1, l2;
                     p = that.params;
 
                     // Is the format valid.
@@ -47121,17 +47309,16 @@ if (!Array.prototype.indexOf) {
                         l2 = 100;
                     }
                     else {
-                        l1 = -1
+                        l1 = -1;
                         l2 = 10000;
                     }
                     tmp = J.isInt(tokens[2], l1, l2);
                     if (tmp !== false) res.year = tmp;
-                    else err = true;
-
+                    else res.err = true;
 
                     // Month.
                     tmp = J.isInt(tokens[p.monthPos], 1, 12, 1, 1);
-                    if (!tmp) err = true;
+                    if (!tmp) res.err = true;
                     else res.month = tmp;
                     // 31 or 30 days?
                     if (tmp === 1 || tmp === 3 || tmp === 5 || tmp === 7 ||
@@ -47150,17 +47337,33 @@ if (!Array.prototype.indexOf) {
                     res.month = tmp;
                     // Day.
                     tmp = J.isInt(tokens[p.dayPos], 1, dayNum, 1, 1);
-                    if (!tmp) err = true;
+                    if (!tmp) res.err = true;
                     else res.day = tmp;
 
-                    //
-                    if (err) res.err = that.getText('dateErr', true);
+                    if (res.err) {
+                        res.err = that.getText('dateErr', 'invalid');
+                    }
+                    else if (p.minDate || p.maxDate) {
+                        tmp = new Date(value);
+                        if (p.minDate.obj && p.minDate.obj > tmp) {
+                            res.err = that.getText('dateErr', 'min');
+                        }
+                        else if (p.maxDate.obj && p.maxDate.obj < tmp) {
+                            res.err = that.getText('dateErr', 'max');
+                        }
+                    }
+                    if (!res.err) {
+                        res.value = value;
+                        res = { value: res };
+                    }
                     return res;
                 };
             }
-            // List.
+            // Lists.
 
-            else if (this.type === 'list') {
+            else if (this.type === 'list' ||
+                     this.type === 'us_city_state_zip') {
+
                 if (opts.listSeparator) {
                     if ('string' !== typeof opts.listSeparator) {
                         throw new TypeError(e + 'listSeparator must be ' +
@@ -47173,35 +47376,115 @@ if (!Array.prototype.indexOf) {
                     this.params.listSep = ',';
                 }
 
+                if (this.type === 'us_city_state_zip') {
+                    // Create validation abbr.
+                    if (!usStatesTerrByAbbr) {
+                        usStatesTerr = J.mixin(usStates, usTerr);
+                        usStatesTerrByAbbr = J.reverseObj(usStatesTerr);
+                    }
+                    this.params.minItems = this.params.maxItems = 3;
+                    this.params.fixedSize = true;
+                    this.params.itemValidation = function(item, idx) {
+                        if (idx === 2) {
+                            if (!usStatesTerrByAbbr[item.toUpperCase()]) {
+                                return { err: that.getText('usStateErr') };
+                            }
+                        }
+                        else if (idx === 3) {
+                            if (item.length !== 5 || !J.isInt(item, 0)) {
+                                return { err: that.getText('usZipErr') };
+                            }
+                        }
+                    };
+
+                    this.placeholder = 'Town' + this.params.listSep +
+                        ' State' + this.params.listSep + ' ZIP';
+                }
+                else {
+                    if ('undefined' !== typeof opts.minItems) {
+                        tmp = J.isInt(opts.minItems, 0);
+                        if (tmp === false) {
+                            throw new TypeError(e + 'minItems must be ' +
+                                                'a positive integer. Found: ' +
+                                                opts.minItems);
+                        }
+                        this.params.minItems = tmp;
+                    }
+                    if ('undefined' !== typeof opts.maxItems) {
+                        tmp = J.isInt(opts.maxItems, 0);
+                        if (tmp === false) {
+                            throw new TypeError(e + 'maxItems must be ' +
+                                                'a positive integer. Found: ' +
+                                                opts.maxItems);
+                        }
+                        if (this.params.minItems &&
+                            this.params.minItems > tmp) {
+
+                            throw new TypeError(e + 'maxItems must be larger ' +
+                                                'than minItems. Found: ' +
+                                                tmp + ' < ' +
+                                                this.params.minItems);
+                        }
+                        this.params.maxItems = tmp;
+                    }
+                }
+
                 tmp = function(value) {
-                    var i, len, v;
+                    var i, len, v, iVal, err;
                     value = value.split(that.params.listSep);
                     len = value.length;
                     if (!len) return value;
+                    iVal = that.params.itemValidation;
                     i = 0;
                     v = value[0].trim();
                     if (!v) return { err: that.getText('listErr') };
+                    if (iVal) {
+                        err = iVal(v, 1);
+                        if (err) return err;
+                    }
                     value[i++] = v;
                     if (len > 1) {
                         v = value[1].trim();
                         if (!v) return { err: that.getText('listErr') };
+                        if (iVal) {
+                            err = iVal(v, (i+1));
+                            if (err) return err;
+                        }
                         value[i++] = v;
                     }
                     if (len > 2) {
                         v = value[2].trim();
                         if (!v) return { err: that.getText('listErr') };
+                        if (iVal) {
+                            err = iVal(v, (i+1));
+                            if (err) return err;
+                        }
                         value[i++] = v;
                     }
                     if (len > 3) {
                         for ( ; i < len ; ) {
                             v = value[i].trim();
                             if (!v) return { err: that.getText('listErr') };
+                            if (iVal) {
+                                err = iVal(v, (i+1));
+                                if (err) return err;
+                            }
                             value[i++] = v;
                         }
+                    }
+                    // Need to do it here, because some elements might be empty.
+                    if (that.params.minItems && i < that.params.minItems) {
+                        return { err: that.getText('listSizeErr', 'min') };
+                    }
+                    if (that.params.maxItems && i > that.params.maxItems) {
+                        return { err: that.getText('listSizeErr', 'max') };
                     }
                     return { value: value };
                 }
             }
+
+            // US_Town,State, Zip Code
+
             // TODO: add other types, e.g.int and email.
         }
 
@@ -47260,7 +47543,9 @@ if (!Array.prototype.indexOf) {
                     }
                 };
             }
-            else if (this.type === 'list') {
+            else if (this.type === 'list' ||
+                     this.type === 'us_city_state_zip') {
+
                 // Add a space after separator, if separator is not space.
                 if (this.params.listSep.trim() !== '') {
                     this.preprocess = function(input) {
@@ -47289,17 +47574,7 @@ if (!Array.prototype.indexOf) {
             this.postprocess = opts.postprocess;
         }
         else {
-            if (this.type === 'date') {
-                this.postprocess = function(value, valid) {
-                    if (!valid || !value) return value;
-                    return {
-                        value: value,
-                        day: value.substring(0,2),
-                        month: value.substring(3,5),
-                        year: value.subtring(6, value.length)
-                    };
-                };
-            }
+            // Add postprocess as needed.
         }
 
         // Validation Speed
@@ -47499,6 +47774,56 @@ if (!Array.prototype.indexOf) {
         res.id = this.id;
         return res;
     };
+
+    /**
+     * ### CustomInput.setValues
+     *
+     * Set the value of the input form
+     *
+     * @param {string} The error msg (can contain HTML)
+     *
+     * @experimental
+     */
+    CustomInput.prototype.setValues = function(value) {        
+        this.input.value = value;
+    };
+
+    // ## Helper functions.
+
+    // ### getParsedDate
+    //
+    // Tries to parse a date object, catches exceptions
+    //
+    // @param {string|Date} d The date object
+    // @param {object} p The configuration object for date format
+    //
+    // @return {object|boolean} An object with the parsed date or false
+    //   if an error occurred
+    //
+    function getParsedDate(d, p) {
+        var res, day;
+        if ('string' === typeof d) {
+            d = d === 'today' ? new Date() : new Date(d);
+            // If invalid  date it return NaN.
+            day = d.getDate();
+            if (!day) return false;
+        }
+        try {
+            res = {
+                day: day || d.getDate(),
+                month: d.getMonth() + 1,
+                year: d.getFullYear(),
+                obj: d
+            };
+        }
+        catch(e) {
+            return false;
+        }
+        res.str = (p.dayPos ? res.day + p.sep + res.month :
+                   res.month + p.sep + res.day) + p.sep;
+        res.str += p.yearDigits === 2 ? res.year.substring(3,4) : res.year;
+        return res;
+    }
 
 })(node);
 
