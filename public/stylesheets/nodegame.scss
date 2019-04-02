@@ -359,18 +359,11 @@ p {
 /** Feedback **/
 /**************/
 
-.feedback {
-
-  .panel-body {
-
-    textarea {
-      padding: 5px;
-      font-size: 16px;
-      width: 98%;
-      height: 300px;
-      border: 1px solid #CCC;
-    }
-  }
+.feedback-textarea {
+  padding: 5px;
+  font-size: 16px;
+  /* width: 98%;
+  border: 1px solid #CCC; */
 }
 
 

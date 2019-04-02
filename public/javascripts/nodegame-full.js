@@ -10103,7 +10103,7 @@ if (!Array.prototype.indexOf) {
     node.support = JSUS.compatibility();
 
     // Auto-Generated.
-    node.version = '5.0.1';
+    node.version = '5.1.0';
 
 })(window);
 
@@ -36406,7 +36406,7 @@ if (!Array.prototype.indexOf) {
      *
      * Gets and toggles the visibility of an HTML element
      *
-     * Sets the style of the display to '' or 'none'  and adjust 
+     * Sets the style of the display to '' or 'none'  and adjust
      * the frame height as necessary.
      *
      * @param {string|HTMLElement} idOrObj The id of or the HTML element itself
@@ -47065,7 +47065,6 @@ if (!Array.prototype.indexOf) {
         that = this;
         e = 'CustomInput.init: ';
 
-        // TODO: this becomes false later on. Why???
         this.requiredChoice = !!opts.requiredChoice;
 
         if (opts.type) {
@@ -47645,7 +47644,7 @@ if (!Array.prototype.indexOf) {
         // Hint.
         if (this.hint) {
             W.append('span', this.spanMainText || this.bodyDiv, {
-                className: 'choicetable-hint',
+                className: 'custominput-hint',
                 innerHTML: this.hint
             });
         }
@@ -47784,7 +47783,7 @@ if (!Array.prototype.indexOf) {
      *
      * @experimental
      */
-    CustomInput.prototype.setValues = function(value) {        
+    CustomInput.prototype.setValues = function(value) {
         this.input.value = value;
     };
 
@@ -48823,7 +48822,7 @@ if (!Array.prototype.indexOf) {
 
     // ## Meta-data
 
-    EmailForm.version = '0.10.0';
+    EmailForm.version = '0.11.0';
     EmailForm.description = 'Displays a configurable email form.';
 
     EmailForm.title = 'Email';
@@ -48831,7 +48830,7 @@ if (!Array.prototype.indexOf) {
 
     EmailForm.texts.label = 'Enter your email:';
     EmailForm.texts.errString = 'Not a valid email address, ' +
-                                'please correct it and submit it again.';
+        'please correct it and submit it again.';
 
     // ## Dependencies
 
@@ -48854,7 +48853,11 @@ if (!Array.prototype.indexOf) {
          * @see Feedback.getValues
          */
         if (!options.onsubmit) {
-            this.onsubmit = { emailOnly: true, say: true, updateUI: true };
+            this.onsubmit = {
+                emailOnly: true,
+                send: true,
+                updateUI: true
+            };
         }
         else if ('object' === typeof options.onsubmit) {
             this.onsubmit = options.onsubmit;
@@ -48910,6 +48913,15 @@ if (!Array.prototype.indexOf) {
          * The email's HTML submit button
          */
         this.buttonElement = null;
+
+        /**
+         * ### EmailForm.setMsg
+         *
+         * If TRUE, a set message is sent instead of a data msg
+         *
+         * Default: FALSE
+         */
+        this.setMsg = !!options.setMsg || false;
     }
 
     // ## EmailForm methods
@@ -49046,10 +49058,12 @@ if (!Array.prototype.indexOf) {
      *                  Default: FALSE.
      *   - highlight:   If TRUE, if email is not the valid, widget is
      *                  is highlighted. Default: (updateUI || FALSE).
-     *   - say:         If TRUE, and the email is valid, then it sends
-     *                  a data msg. Default: FALSE.
-     *   - sayAnyway:   If TRUE, it sends a data msg regardless of the
-     *                  validity of the email. Default: FALSE.
+     *   - send:        If TRUE, and the email is valid, then it sends
+     *                  a data or set msg. Default: FALSE.
+     *   - sendAnyway:  If TRUE, it sends a data or set msg regardless of
+     *                  the validity of the email. Default: FALSE.
+     *   - say:         same as send, but deprecated.
+     *   - sayAnyway:   same as sendAnyway, but deprecated
      *
      * @return {string|object} The email, and optional paradata
      *
@@ -49060,6 +49074,17 @@ if (!Array.prototype.indexOf) {
     EmailForm.prototype.getValues = function(opts) {
         var email, res;
         opts = opts || {};
+
+        if ('undefined' !== typeof opts.say) {
+            console.log('***EmailForm.getValues: option say is deprecated, ' +
+                        ' use send.***');
+            opts.send = opts.say;
+        }
+        if ('undefined' !== typeof opts.sayAnyway) {
+            console.log('***EmailForm.getValues: option sayAnyway is ' +
+                        'deprecated, use sendAnyway.***');
+            opts.sendAnyway = opts.sayAnyway;
+        }
 
         email = getEmail.call(this);
 
@@ -49083,7 +49108,7 @@ if (!Array.prototype.indexOf) {
         }
 
         // Send the message.
-        if ((opts.say && res) || opts.sayAnyway) {
+        if ((opts.send && res) || opts.sendAnyway) {
             this.sendValues({ values: email });
         }
 
@@ -49112,7 +49137,13 @@ if (!Array.prototype.indexOf) {
         var values;
         opts = opts || { emailOnly: true };
         values = opts.values || this.getValues(opts);
-        node.say('email', opts.to || 'SERVER', values);
+        if (this.setMsg) {
+            if ('string' === typeof values) values = { email: values };
+            node.set(values, opts.to || 'SERVER');
+        }
+        else {
+            node.say('email', opts.to || 'SERVER', values);
+        }
         return values;
     };
 
@@ -49404,6 +49435,15 @@ if (!Array.prototype.indexOf) {
          * null initially, element added on append()
          */
         this.endScreenHTML = null;
+
+        /**
+         * ### EndScreen.askServer
+         *
+         * If TRUE, after being appended it sends a 'WIN' message to server
+         *
+         * Default: FALSE
+         */
+        this.askServer = options.askServer || false;
     }
 
     EndScreen.prototype.init = function(options) {
@@ -49426,6 +49466,7 @@ if (!Array.prototype.indexOf) {
     EndScreen.prototype.append = function() {
         this.endScreenHTML = this.makeEndScreen();
         this.bodyDiv.appendChild(this.endScreenHTML);
+        if (this.askServer) setTimeout(function() { node.say('WIN'); });
     };
 
     /**
@@ -50015,6 +50056,15 @@ if (!Array.prototype.indexOf) {
          */
         this.submitButton = null;
 
+        /**
+         * ### Feedback.setMsg
+         *
+         * If TRUE, a set message is sent instead of a data msg
+         *
+         * Default: FALSE
+         */
+        this.setMsg = !!options.setMsg || false;
+
     }
 
     // ## Feedback methods
@@ -50199,7 +50249,7 @@ if (!Array.prototype.indexOf) {
         }
 
         this.textareaElement = W.append('textarea', this.feedbackForm, {
-            className: 'feedback-textarea form-control',
+            className: 'form-control feedback-textarea',
             type: 'text',
             rows: this.rows
         });
@@ -50274,10 +50324,12 @@ if (!Array.prototype.indexOf) {
      *                  Default: FALSE.
      *   - highlight:   If TRUE, if feedback is not the valid, widget is
      *                  is highlighted. Default: (updateUI || FALSE).
-     *   - say:         If TRUE, and the feedback is valid, then it sends
-     *                  a data msg. Default: FALSE.
-     *   - sayAnyway:   If TRUE, it sends a data msg regardless of the
-     *                  validity of the feedback. Default: FALSE.
+     *   - send:        If TRUE, and the email is valid, then it sends
+     *                  a data or set msg. Default: FALSE.
+     *   - sendAnyway:  If TRUE, it sends a data or set msg regardless of
+     *                  the validity of the email. Default: FALSE.
+     *   - say:         same as send, but deprecated.
+     *   - sayAnyway:   same as sendAnyway, but deprecated
      *
      * @return {string|object} The feedback, and optional paradata
      *
@@ -50289,6 +50341,17 @@ if (!Array.prototype.indexOf) {
         var feedback, feedbackBr, res;
 
         opts = opts || {};
+
+        if ('undefined' !== typeof opts.say) {
+            console.log('***EmailForm.getValues: option say is deprecated, ' +
+                        ' use send.***');
+            opts.send = opts.say;
+        }
+        if ('undefined' !== typeof opts.sayAnyway) {
+            console.log('***EmailForm.getValues: option sayAnyway is ' +
+                        'deprecated, use sendAnyway.***');
+            opts.sendAnyway = opts.sayAnyway;
+        }
 
         feedback = getFeedback.call(this);
 
@@ -50312,7 +50375,7 @@ if (!Array.prototype.indexOf) {
         }
 
         // Send the message.
-        if ((opts.say && res) || opts.sayAnyway) {
+        if ((opts.send && res) || opts.sendAnyway) {
             this.sendValues({ values: feedback });
             if (opts.updateUI) {
                 this.submitButton.setAttribute('value', this.getText('sent'));
@@ -50346,7 +50409,13 @@ if (!Array.prototype.indexOf) {
         var values;
         opts = opts || { feedbackOnly: true };
         values = opts.values || this.getValues(opts);
-        node.say('feedback', opts.to || 'SERVER', values);
+        if (this.setMsg) {
+            if ('string' === typeof values) values = { feedback: values };
+            node.set(values, opts.to || 'SERVER');
+        }
+        else {
+            node.say('feedback', opts.to || 'SERVER', values);
+        }
         return values;
     };
 
