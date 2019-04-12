@@ -1,9 +1,14 @@
 # nodegame-server change log
 
-## current
+## 5.1.0
 - CustomWidget in built (updated css)
 - Server sends a stringified object with an error to monitor, if an error
 occurs likely due to cycles.
+- Creates log/ folder inside game root folder.
+- Log all connections/disconnections from requirements, waitroom, and each
+game room.
+- Experimental: levels can have no waitroom.
+- Experimental: AdminServer listener to modify live game parameters.
 
 ## 5.0.2
 - Setup content is not merged for levels, justed mixed in.
