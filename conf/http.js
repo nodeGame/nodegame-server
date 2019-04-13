@@ -151,7 +151,9 @@ function configure(app, servernode) {
         }
 
         if (J.isEmpty(req.query)) {
-            if (servernode.homePage.enabled === false) {
+            if (servernode.homePage === false ||
+                servernode.homePage.enabled === false) {
+
                 res.render('index_simple', {
                     title: 'Yay! nodeGame server is running.'
                 });
