@@ -468,6 +468,12 @@ table.clickable td:hover {
   padding: 0;
 }
 
+.custominput-checkbox-text {
+  font-weight: normal;
+  margin-left: 8px;
+  font-size: 14px;
+}
+
 /** Mood **/
 /**********/
 div.moodgauge {

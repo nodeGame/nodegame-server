@@ -15,6 +15,7 @@ $vertical-header-width: 125px;
 $max-width-chat-msg: 150px;
 $shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
 $forms_border_color: #333;
+$forms_small_font_size: 14px;
 
 /** Main Elements **/
 /*******************/
@@ -548,6 +549,11 @@ table.clickable td:hover {
   @extend .choicetable-hint;
 }
 
+.custominput-checkbox-text {
+  font-weight: normal;
+  margin-left: 8px;
+  font-size: $forms_small_font_size;
+}
 
 /** Mood **/
 /**********/

@@ -40201,7 +40201,9 @@ if (!Array.prototype.indexOf) {
      * @return {GameStage|Boolean} The previous step or FALSE if none is found
      */
     function getPreviousStep(that) {
-        var prevStage;
+        var curStage,  prevStage;
+        curStage = node.game.getCurrentGameStage();
+        if (curStage.stage === 0) return;
         prevStage = node.game.getPreviousStep();
         if (prevStage.stage === 0) return;
         if ((curStage.stage > prevStage.stage) && !that.acrossStages) {
@@ -43334,7 +43336,7 @@ if (!Array.prototype.indexOf) {
      *   - markAttempt: If TRUE, getting the value counts as an attempt
      *      to find the correct answer. Default: TRUE.
      *   - highlight:   If TRUE, forms that do not have a correct value
-     *      will be highlighted. Default: FALSE.
+     *      will be highlighted. Default: TRUE.
      *
      * @return {object} Object containing the choice and paradata
      *
@@ -43350,6 +43352,7 @@ if (!Array.prototype.indexOf) {
         };
         opts = opts || {};
         if ('undefined' === typeof opts.markAttempt) opts.markAttempt = true;
+        if ('undefined' === typeof opts.highlight) opts.highlight = true;
         if (opts.markAttempt) obj.isCorrect = true;
         i = -1, len = this.forms.length;
         for ( ; ++i < len ; ) {
@@ -43417,7 +43420,7 @@ if (!Array.prototype.indexOf) {
 
     // ## Meta-data
 
-    ChoiceTable.version = '1.5.1';
+    ChoiceTable.version = '1.6.0';
     ChoiceTable.description = 'Creates a configurable table where ' +
         'each cell is a selectable choice.';
 
@@ -43511,7 +43514,6 @@ if (!Array.prototype.indexOf) {
             // Not a clickable choice.
             if ('undefined' === typeof that.choicesIds[td.id]) return;
 
-
             // Relative time.
             if ('string' === typeof that.timeFrom) {
                 that.timeCurrentChoice = node.timer.getTimeSince(that.timeFrom);
@@ -43578,7 +43580,12 @@ if (!Array.prototype.indexOf) {
             if (that.isHighlighted()) that.unhighlight();
 
             // Call onclick, if any.
-            if (that.onclick) that.onclick.call(that, value, td, removed);
+            if (that.onclick) {
+                // TODO: Should we parseInt it anyway when we store
+                // the current choice?
+                value = parseInt(value, 10);
+                that.onclick.call(that, value, td, removed, that);
+            }
         };
 
         /**
@@ -44836,7 +44843,7 @@ if (!Array.prototype.indexOf) {
      *   - markAttempt: If TRUE, getting the value counts as an attempt
      *       to find the correct answer. Default: TRUE.
      *   - highlight:   If TRUE, if current value is not the correct
-     *       value, widget will be highlighted. Default: FALSE.
+     *       value, widget will be highlighted. Default: TRUE.
      *   - reset:       If TRUTHY and a correct choice is selected (or not
      *       specified), then it resets the state of the widgets before
      *       returning it. Default: FALSE.
@@ -44856,6 +44863,7 @@ if (!Array.prototype.indexOf) {
             time: this.timeCurrentChoice,
             nClicks: this.numberOfClicks
         };
+        if ('undefined' === typeof opts.highlight) opts.highlight = true;
         if (opts.processChoice) {
             obj.choice = opts.processChoice.call(this, obj.choice);
         }
@@ -45170,7 +45178,7 @@ if (!Array.prototype.indexOf) {
 
     // ## Meta-data
 
-    ChoiceTableGroup.version = '1.5.0';
+    ChoiceTableGroup.version = '1.6.0';
     ChoiceTableGroup.description = 'Groups together and manages sets of ' +
         'ChoiceTable widgets.';
 
@@ -46096,7 +46104,7 @@ if (!Array.prototype.indexOf) {
      *   - markAttempt: If TRUE, getting the value counts as an attempt
      *      to find the correct answer. Default: TRUE.
      *   - highlight:   If TRUE, if current value is not the correct
-     *      value, widget will be highlighted. Default: FALSE.
+     *      value, widget will be highlighted. Default: TRUE.
      *   - reset:    If TRUTHY and no item raises an error,
      *       then it resets the state of all items before
      *       returning it. Default: FALSE.
@@ -46115,6 +46123,7 @@ if (!Array.prototype.indexOf) {
             isCorrect: true
         };
         opts = opts || {};
+        if ('undefined' === typeof opts.highlight) opts.highlight = true;
         // Make sure reset is done only at the end.
         toReset = opts.reset;
         opts.reset = false;
@@ -46133,9 +46142,9 @@ if (!Array.prototype.indexOf) {
                 toHighlight = true;
             }
         }
-
-        if (toHighlight) this.highlight();
+        if (opts.highlight && toHighlight) this.highlight();
         else if (toReset) this.reset(toReset);
+        opts.reset = toReset;
         if (this.textarea) obj.freetext = this.textarea.value;
         return obj;
     };
@@ -46819,7 +46828,7 @@ if (!Array.prototype.indexOf) {
 
     // ## Meta-data
 
-    CustomInput.version = '0.8.0';
+    CustomInput.version = '0.9.0';
     CustomInput.description = 'Creates a configurable input form';
 
     CustomInput.title = false;
@@ -46833,7 +46842,9 @@ if (!Array.prototype.indexOf) {
         'int': true,
         date: true,
         list: true,
-        us_city_state_zip: true
+        us_city_state_zip: true,
+        us_state: true,
+        us_zip: true
     };
 
     var sepNames = {
@@ -46926,13 +46937,21 @@ if (!Array.prototype.indexOf) {
             return 'Too many items. Max: ' + w.params.maxItems;
 
         },
-        usStateErr: 'Not valid state abbreviation (must be 2 characters)',
-        usZipErr: 'Not valid ZIP code (must be 5-digits)',
+        usStateAbbrErr: 'Not a valid state abbreviation (must be 2 characters)',
+        usStateErr: 'Not a valid state (full name required)',
+        usZipErr: 'Not a valid ZIP code (must be 5 digits)',
         autoHint: function(w) {
             var res, sep;
             if (w.type === 'list') {
                 sep = sepNames[w.params.listSep] || w.params.listSep;
                 res = '(if more than one, separate with ' + sep + ')';
+            }
+            else if (w.type === 'us_state') {
+                res = w.params.abbr ? '(Use 2-letter abbreviation)' :
+                    '(Type the full name of state)';
+            }
+            else if (w.type === 'us_zip') {
+                res = '(Use 5-digit ZIP code)';
             }
             else if (w.type === 'us_city_state_zip') {
                 sep = w.params.listSep;
@@ -47023,7 +47042,7 @@ if (!Array.prototype.indexOf) {
             return 'Must follow format ' + w.params.format;
         },
         emptyErr: function(w) {
-            return 'Cannot be empty'
+            return 'Cannot be empty';
         }
     };
 
@@ -47171,6 +47190,27 @@ if (!Array.prototype.indexOf) {
          * When the last character was inserted
          */
         this.timeEnd = null;
+
+        /**
+         * ### CustomInput.checkbox
+         *
+         * A checkbox element for an additional action
+         */
+        this.checkbox = null;
+
+        /**
+         * ### CustomInput.checkboxText
+         *
+         * The text next to the checkbox
+         */
+        this.checkboxText = null;
+
+        /**
+         * ### CustomInput.checkboxCb
+         *
+         * The callback executed when the checkbox is clicked
+         */
+        this.checkboxCb = null;
     }
 
     // ## CustomInput methods
@@ -47480,6 +47520,53 @@ if (!Array.prototype.indexOf) {
                     return res;
                 };
             }
+            else if (this.type === 'us_state') {
+                if (opts.abbreviation) {
+                    this.params.abbr = true;
+                    this.inputWidth = '100px';
+                }
+                else {
+                    this.inputWidth = '200px';
+                }
+                if (opts.territories !== false) {
+                    this.terr = true;
+                    if (this.params.abbr) {
+                        tmp = getUsStatesList('usStatesTerrByAbbr');
+                    }
+                    else {
+                        tmp = getUsStatesList('usStatesTerr');
+                    }
+                }
+                else {
+                    if (this.params.abbr) {
+                        tmp = getUsStatesList('usStatesByAbbr');
+                    }
+                    else {
+                        tmp = getUsStatesList('usStates');
+                    }
+                }
+                this.params.usStateVal = tmp;
+
+                tmp = function(value) {
+                    var res;
+                    res = { value: value };
+                    if (!that.params.usStateVal[value]) {
+                        res.err = that.getText('usStateErr');
+                    }
+                    return res;
+                };
+            }
+            else if (this.type === 'us_zip') {
+                tmp = function(value) {
+                    var res;
+                    res = { value: value };
+                    if (!isValidUSZip(value)) {
+                        res.err = that.getText('usZipErr');
+                    }
+                    return res;
+                };
+            }
+
             // Lists.
 
             else if (this.type === 'list' ||
@@ -47498,21 +47585,18 @@ if (!Array.prototype.indexOf) {
                 }
 
                 if (this.type === 'us_city_state_zip') {
-                    // Create validation abbr.
-                    if (!usStatesTerrByAbbr) {
-                        usStatesTerr = J.mixin(usStates, usTerr);
-                        usStatesTerrByAbbr = J.reverseObj(usStatesTerr);
-                    }
+
+                    createStateList(true, true, true);
                     this.params.minItems = this.params.maxItems = 3;
                     this.params.fixedSize = true;
                     this.params.itemValidation = function(item, idx) {
                         if (idx === 2) {
                             if (!usStatesTerrByAbbr[item.toUpperCase()]) {
-                                return { err: that.getText('usStateErr') };
+                                return { err: that.getText('usStateAbbrErr') };
                             }
                         }
                         else if (idx === 3) {
-                            if (item.length !== 5 || !J.isInt(item, 0)) {
+                            if (!isValidUSZip(item)) {
                                 return { err: that.getText('usZipErr') };
                             }
                         }
@@ -47601,7 +47685,7 @@ if (!Array.prototype.indexOf) {
                         return { err: that.getText('listSizeErr', 'max') };
                     }
                     return { value: value };
-                }
+                };
             }
 
             // US_Town,State, Zip Code
@@ -47742,6 +47826,26 @@ if (!Array.prototype.indexOf) {
             }
             this.inputWidth = opts.width;
         }
+
+        if (opts.checkboxText) {
+            if ('string' !== typeof opts.checkboxText) {
+                throw new TypeError(e + 'checkboxText must be string or ' +
+                                    'undefined. Found: ' + opts.checkboxText);
+            }
+            this.checkboxText = opts.checkboxText;
+        }
+
+        if (opts.checkboxCb) {
+            if (!this.checkboxText) {
+                throw new TypeError(e + 'checkboxCb cannot be defined ' +
+                                    'if checkboxText is not defined');
+            }
+            if ('function' !== typeof opts.checkboxCb) {
+                throw new TypeError(e + 'checkboxCb must be function or ' +
+                                    'undefined. Found: ' + opts.checkboxCb);
+            }
+            this.checkboxCb = opts.checkboxCb;
+        }
     };
 
 
@@ -47798,6 +47902,25 @@ if (!Array.prototype.indexOf) {
         this.input.onclick = function() {
             if (that.isHighlighted()) that.unhighlight();
         };
+
+
+        // Checkbox.
+        if (this.checkboxText) {
+            this.checkbox = W.append('input', this.bodyDiv, {
+                type: 'checkbox',
+                className: 'custominput-checkbox'
+            });
+            W.append('span', this.bodyDiv, {
+                className: 'custominput-checkbox-text',
+                innerHTML: this.checkboxText
+            });
+
+            if (this.checkboxCb) {
+                J.addEvent(this.checkbox, 'change', function() {
+                    that.checkboxCb(that.checkbox.checked, that);
+                });
+            }
+        }
     };
 
     /**
@@ -47852,6 +47975,42 @@ if (!Array.prototype.indexOf) {
     };
 
     /**
+     * ### CustomInput.disable
+     *
+     * Disables the widget
+     *
+     * @see CustomInput.disabled
+     */
+    CustomInput.prototype.disable = function(opts) {
+        if (this.disabled) return;
+        if (!this.isAppended()) return;
+        this.disabled = true;
+        this.input.disabled = true;
+        if (this.checkbox && (!opts || opts.checkbox !== false)) {
+            this.checkbox.disable = true;
+        }
+        this.emit('disabled');
+    };
+
+    /**
+     * ### CustomInput.enable
+     *
+     * Enables the widget
+     *
+     * @see CustomInput.disabled
+     */
+    CustomInput.prototype.enable = function(opts) {
+        if (this.disabled !== true) return;
+        if (!this.isAppended()) return;
+        this.disabled = false;
+        this.input.disabled = false;
+        if (this.checkbox && (!opts || opts.checkbox !== false)) {
+            this.checkbox.disable = false;
+        }
+        this.emit('enabled');
+    };
+
+    /**
      * ### CustomInput.reset
      *
      * Resets the widget
@@ -47870,6 +48029,15 @@ if (!Array.prototype.indexOf) {
      * The postprocess function is called if specified
      *
      * @param {object} opts Optional. Configures the return value.
+     *   Available options:
+     *
+     *   - markAttempt: If TRUE, getting the value counts as an attempt
+     *       to find the correct answer. Default: TRUE.
+     *   - highlight:   If TRUE, if current value is not the correct
+     *       value, widget will be highlighted. Default: TRUE.
+     *   - reset:       If TRUTHY and a correct choice is selected (or not
+     *       specified), then it resets the state of the widgets before
+     *       returning it. Default: FALSE.
      *
      * @return {mixed} The value in the input
      *
@@ -47879,19 +48047,23 @@ if (!Array.prototype.indexOf) {
     CustomInput.prototype.getValues = function(opts) {
         var res, valid;
         opts = opts || {};
+        if ('undefined' === typeof opts.markAttempt) opts.markAttempt = true;
+        if ('undefined' === typeof opts.highlight) opts.highlight = true;
         res = this.input.value;
         res = this.validation ? this.validation(res) : { value: res };
-        res.isCorrect = valid = !res.err;
+        valid = !res.err;
         res.timeBegin = this.timeBegin;
         res.timeEnd = this.timeEnd;
         if (this.postprocess) res.value = this.postprocess(res.value, valid);
         if (!valid) {
-            this.setError(res.err);
-            res.isCorrect = false;
+            if (opts.highlight) this.setError(res.err);
+            if (opts.markAttempt) res.isCorrect = false;
         }
-        else if (opts.reset) {
-            this.reset();
+        else {
+            if (opts.markAttempt) res.isCorrect = true;
+            if (opts.reset) this.reset();
         }
+        if (this.checkbox) res.checked = this.checkbox.checked;
         res.id = this.id;
         return res;
     };
@@ -47946,6 +48118,52 @@ if (!Array.prototype.indexOf) {
         return res;
     }
 
+    // ### getUsStatesList
+    //
+    // Sets the value of a global variable and returns it.
+    //
+    // @param {string} s A string specifying the type of list
+    //
+    // @return {object} The requested list
+    //
+    function getUsStatesList(s) {
+        switch(s) {
+        case 'usStatesTerrByAbbr':
+            if (!usStatesTerrByAbbr) {
+                createStateList('usStatesTerr');
+                usStatesTerrByAbbr = J.reverseObj(usStatesTerr);
+            }
+            return usStatesTerrByAbbr;
+        case 'usTerrByAbbr':
+            if (!usTerrByAbbr) usTerrByAbbr = J.reverseObj(usTerr);
+            return usTerrByAbbr;
+        case 'usStatesByAbbr':
+            if (!usStatesByAbbr) usStatesByAbbr = J.reverseObj(usStates);
+            return usStatesByAbbr;
+        case 'usStatesTerr':
+            if (!usStatesTerr) usStatesTerr = J.mixin(usStates, usTerr);
+            return usStatesTerr;
+        case 'usStates':
+            return usStates;
+        case 'usTerr':
+            return usTerr;
+        default:
+            throw new Error('getUsStatesList: unknown request: ' + s);
+        }
+    }
+
+    // ### isValidUSZip
+    //
+    // Trivial validation of a US ZIP code
+    //
+    // @param {string} z
+    //
+    // @return {boolean} TRUE if valid
+    //
+    function isValidUSZip(z) {
+        return z.length === 5 && J.isInt(z, 0);
+    }
+    
 })(node);
 
 /**
@@ -48944,7 +49162,7 @@ if (!Array.prototype.indexOf) {
 
     // ## Meta-data
 
-    EmailForm.version = '0.11.0';
+    EmailForm.version = '0.12.0';
     EmailForm.description = 'Displays a configurable email form.';
 
     EmailForm.title = 'Email';
@@ -49208,6 +49426,9 @@ if (!Array.prototype.indexOf) {
             opts.sendAnyway = opts.sayAnyway;
         }
 
+        if ('undefined' === typeof opts.markAttempt) opts.markAttempt = true;
+        if ('undefined' === typeof opts.highlight) opts.highlight = true;
+
         email = getEmail.call(this);
 
         if (opts.verify !== false) {
@@ -49220,8 +49441,8 @@ if (!Array.prototype.indexOf) {
                 time: this.timeInput,
                 email: email,
                 attempts: this.attempts,
-                valid: res
             };
+            if (opts.markAttempt) email.isCorrect = res;
         }
 
         if (res === false) {
@@ -49823,7 +50044,7 @@ if (!Array.prototype.indexOf) {
 
     // ## Meta-data
 
-    Feedback.version = '1.4.0';
+    Feedback.version = '1.6.0';
     Feedback.description = 'Displays a configurable feedback form';
 
     Feedback.title = 'Feedback';
@@ -49875,7 +50096,7 @@ if (!Array.prototype.indexOf) {
             if (param.len !== 1) res += 's';
             if (param.needed) res += ' needed';
             else if (param.over) res += ' over';
-            else res += ' remaining';
+            else if (!param.justcount) res += ' remaining';
             return res;
         }
     };
@@ -49945,15 +50166,15 @@ if (!Array.prototype.indexOf) {
          *
          * The maximum character length for feedback to be submitted
          *
-         * Default: 800
+         * Default: 0
          */
         if ('undefined' === typeof options.maxChars) {
-            this.maxChars = 800;
+            this.maxChars = 0;
         }
         else {
             tmp = J.isInt(options.maxChars, 0);
             if (tmp !== false) {
-                this.maxChars = options.maxChars;
+                this.maxChars = tmp;
             }
             else {
                 throw new TypeError('Feedback constructor: maxChars ' +
@@ -49969,15 +50190,21 @@ if (!Array.prototype.indexOf) {
          *
          * If minChars = 0, then there is no minimum length checked.
          *
-         * Default: 1
+         * Default: 0
          */
         if ('undefined' === typeof options.minChars) {
-            this.minChars = 1;
+            this.minChars = 0;
         }
         else {
             tmp = J.isInt(options.minChars, 0, undefined, true);
             if (tmp !== false) {
-                this.minChars = options.minChars;
+                if (this.maxChars && tmp > this.maxChars) {
+                    throw new TypeError('Feedback constructor: minChars ' +
+                                        'cannot be greater than maxChars. ' +
+                                        'Found: ' + tmp + ' > ' +
+                                        this.maxChars);
+                }
+                this.minChars = tmp;
             }
             else {
                 throw new TypeError('Feedback constructor: minChars ' +
@@ -50015,7 +50242,7 @@ if (!Array.prototype.indexOf) {
          *
          * The minimum number of words for feedback to be submitted
          *
-         * If minChars = 0, then there is no minimum checked.
+         * If minWords = 0, then there is no minimum checked.
          *
          * Default: 0
          */
@@ -50046,6 +50273,22 @@ if (!Array.prototype.indexOf) {
             }
         }
 
+        // Extra checks.
+        if (this.maxWords) {
+            if (this.maxChars && this.maxChars < this.maxWords) {
+                throw new TypeError('Feedback constructor: maxChars ' +
+                                    'cannot be smaller than maxWords. ' +
+                                    'Found: ' + this.maxChars + ' > ' +
+                                    this.maxWords);
+            }
+            if (this.minChars > this.maxWords) {
+                throw new TypeError('Feedback constructor: minChars ' +
+                                    'cannot be greater than maxWords. ' +
+                                    'Found: ' + this.minChars + ' > ' +
+                                    this.maxWords);
+            }
+        }
+
         /**
          * ### Feedback.rows
          *
@@ -50070,23 +50313,27 @@ if (!Array.prototype.indexOf) {
          *
          * The maximum character length for an attempt to submit feedback
          *
-         * Attempts are stored in the attempts array. This allows to store
-         * longer texts than accepts feedbacks
+         * Attempts are stored in the attempts array. You can store attempts
+         * longer than valid feedbacks.
          *
-         * Default: Max(2000, maxChars)
+         * Set to 0 for no limit.
+         *
+         * Default: 0
          */
         if ('undefined' === typeof options.maxAttemptLength) {
-            this.maxAttemptLength = 2000;
-        }
-        else if (J.isNumber(options.maxAttemptLength, 0) !== false) {
-            this.maxAttemptLength = Math.max(this.maxChars,
-                                             options.maxAttemptLength);
+            this.maxAttemptLength = 0;
         }
         else {
-            throw new TypeError('Feedback constructor: ' +
+            tmp = J.isNumber(options.maxAttemptLength, 0);
+            if (tmp !== false) {
+                this.maxAttemptLength = tmp;
+            }
+            else {
+                throw new TypeError('Feedback constructor: ' +
                                 'options.maxAttemptLength must be a number ' +
-                                '>= 0 or undefined. Found: ' +
+                                '> 0 or undefined. Found: ' +
                                 options.maxAttemptLength);
+            }
         }
 
         /**
@@ -50235,6 +50482,7 @@ if (!Array.prototype.indexOf) {
      * @return {boolean} TRUE, if the feedback is valid
      *
      * @see Feedback.getValues
+     * @see Feedback.maxAttemptLength
      * @see getFeedback
      */
     Feedback.prototype.verifyFeedback = function(markAttempt, updateUI) {
@@ -50272,10 +50520,11 @@ if (!Array.prototype.indexOf) {
             updateCharColor = colOver;
         }
         else {
-            tmp = this.maxChars - length;
+            tmp = this.maxChars ? this.maxChars - length : length;
             updateCharCount = tmp + this.getText('counter', {
                 chars: true,
-                len: tmp
+                len: tmp,
+                justcount: !this.maxChars
             });
             updateCharColor = colRemain;
         }
@@ -50311,11 +50560,12 @@ if (!Array.prototype.indexOf) {
                 updateWordColor = colOver;
             }
             else {
-                  tmp = this.maxWords - length;
-                  updateWordCount = tmp + this.getText('counter', {
-                      len: tmp
-                  });
-                  updateWordColor = colRemain;
+                tmp = this.maxWords ? this.maxWords - length : length;
+                updateWordCount = tmp + this.getText('counter', {
+                    len: tmp,
+                    justcount: !this.maxWords
+                });
+                updateWordColor = colRemain;
             }
         }
 
@@ -50332,7 +50582,7 @@ if (!Array.prototype.indexOf) {
         }
 
         if (!res && ('undefined' === typeof markAttempt || markAttempt)) {
-            if (length > this.maxAttemptLength) {
+            if (this.maxAttemptLength && length > this.maxAttemptLength) {
                 feedback = feedback.substr(0, this.maxAttemptLength);
             }
             this.attempts.push(feedback);
@@ -50475,6 +50725,9 @@ if (!Array.prototype.indexOf) {
             opts.sendAnyway = opts.sayAnyway;
         }
 
+        if ('undefined' === typeof opts.markAttempt) opts.markAttempt = true;
+        if ('undefined' === typeof opts.highlight) opts.highlight = true;
+
         feedback = getFeedback.call(this);
 
         if (opts.keepBreaks) feedback = feedback.replace(/\n\r?/g, '<br />');
@@ -50491,9 +50744,9 @@ if (!Array.prototype.indexOf) {
                 timeBegin: this.timeInputBegin,
                 feedback: feedback,
                 attempts: this.attempts,
-                valid: res,
-                isCorrect: res
+                valid: res
             };
+            if (opts.markAttempt) feedback.isCorrect = res;
         }
 
         // Send the message.
