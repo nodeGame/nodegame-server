@@ -20,11 +20,11 @@ function configure(loggers, logDir) {
     // ServerNode.
     loggers.add('servernode', {
         console: {
-            level: logLevel || 'error',
+            level: logLevel,
             colorize: true
         },
         file: {
-            level: logLevel || 'error',
+            level: logLevel,
             timestamp: true,
             filename: logDir + 'servernode.log',
             maxsize: 1000000,
@@ -35,11 +35,11 @@ function configure(loggers, logDir) {
     // Channel.
     loggers.add('channel', {
         console: {
-            level: logLevel || 'error',
+            level: logLevel,
             colorize: true,
         },
         file: {
-            level: logLevel || 'error',
+            level: logLevel,
             timestamp: true,
             filename: logDir + 'channels.log',
             maxsize: 1000000,
@@ -82,7 +82,7 @@ function configure(loggers, logDir) {
     // Clients.
     loggers.add('clients', {
         console: {
-            level: logLevel || 'error',
+            level: logLevel,
             colorize: true,
         },
         file: {
