@@ -14,15 +14,17 @@ var winston = require('winston');
 // Variable loggers is winston.loggers.
 function configure(loggers, logDir) {
     var msgLogger;
+    var logLevel;
+    logLevel = winston.level;
 
     // ServerNode.
     loggers.add('servernode', {
         console: {
-            level: 'error',
+            level: logLevel || 'error',
             colorize: true
         },
         file: {
-            level: 'error',
+            level: logLevel || 'error',
             timestamp: true,
             filename: logDir + 'servernode.log',
             maxsize: 1000000,
@@ -33,11 +35,11 @@ function configure(loggers, logDir) {
     // Channel.
     loggers.add('channel', {
         console: {
-            level: 'error',
+            level: logLevel || 'error',
             colorize: true,
         },
         file: {
-            level: 'error',
+            level: logLevel || 'error',
             timestamp: true,
             filename: logDir + 'channels.log',
             maxsize: 1000000,
@@ -80,7 +82,7 @@ function configure(loggers, logDir) {
     // Clients.
     loggers.add('clients', {
         console: {
-            level: 'error',
+            level: logLevel || 'error',
             colorize: true,
         },
         file: {
