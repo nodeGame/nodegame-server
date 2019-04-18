@@ -10,6 +10,8 @@
  */
 module.exports = configure;
 
+var path = require('path');
+
 function configure(servernode) {
 
     var rootDir;
