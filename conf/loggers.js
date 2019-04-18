@@ -1,6 +1,6 @@
 /**
  * # loggers.js
- * Copyright(c) 2017 Stefano Balietti
+ * Copyright(c) 2019 Stefano Balietti
  * MIT Licensed
  *
  * Configuration file for Winston.js in nodegame-server
@@ -26,7 +26,7 @@ function configure(loggers, logDir) {
         file: {
             level: logLevel,
             timestamp: true,
-            filename: logDir + 'servernode.log',
+            filename: path.join(logDir, 'servernode.log'),
             maxsize: 1000000,
             maxFiles: 10
         }
@@ -41,7 +41,7 @@ function configure(loggers, logDir) {
         file: {
             level: logLevel,
             timestamp: true,
-            filename: logDir + 'channels.log',
+            filename: path.join(logDir, 'channels.log'),
             maxsize: 1000000,
             maxFiles: 10
         }
@@ -54,7 +54,7 @@ function configure(loggers, logDir) {
     msgLogger.add(winston.transports.File, {
         timestamp: true,
         maxsize: 1000000,
-        filename: logDir + 'messages.log'
+        filename: path.join(logDir, 'messages.log')
     });
 
     // Do not change, or logging might be affected.
@@ -88,7 +88,7 @@ function configure(loggers, logDir) {
         file: {
             level: 'silly',
             timestamp: true,
-            filename: logDir + 'clients.log'
+            filename: path.join(logDir, 'clients.log')
         }
     });
 

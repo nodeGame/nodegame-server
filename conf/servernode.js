@@ -1,7 +1,7 @@
 /**
  * # servernode.js
  *
- * Copyright(c) 2018 Stefano Balietti
+ * Copyright(c) 2019 Stefano Balietti
  * MIT Licensed
  *
  * Configuration file for ServerNode in nodegame-server.
@@ -17,7 +17,7 @@ function configure(servernode) {
 
     rootDir = servernode.rootDir;
     if (!rootDir) {
-        servernode.logger.error('configure servernode: rootDir not found.');
+        servernode.logger.error('configure servernode: rootDir not found');
         return false;
     }
 
@@ -58,7 +58,7 @@ function configure(servernode) {
     };
 
     // Default games directory.
-    servernode.defaultGamesDir = rootDir + '/games/';
+    servernode.defaultGamesDir = path.join(rootDir, 'games');
 
     // Array of games directories. They will be scanned sequentially
     // at loading time, and every subfolder containing a package.json
