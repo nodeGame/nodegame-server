@@ -4411,16 +4411,29 @@ if (!Array.prototype.indexOf) {
      * Returns a new object where they keys and values are switched
      *
      * @param {object} obj The object to reverse
+     * @param {function} cb Optional. A callback processing a key-value pair.
+     *   Takes as inputs current key and value and must return an array with
+     *   updated key and value: [ newKey, newValue ].
      *
      * @return {object} The reversed object
      */
-    OBJ.reverseObj = function(o) {
+    OBJ.reverseObj = function(o, cb) {
         var k, res;
+        if (cb && 'function' !== typeof cb) {
+            throw new TypeError('OBJ.reverseObj: cb must be function or ' +
+                                'undefined. Found: ' + cb);
+        }
         res = {};
         if (!o) return res;
         for (k in o) {
             if (o.hasOwnProperty(k)) {
-                res[o[k]] = k;
+                if (cb) {
+                    k = cb(k, o[k]);
+                    res[k[1]] = res[k[0]];
+                }
+                else {
+                    res[o[k]] = k;
+                }
             }
         }
         return res;
@@ -10103,7 +10116,7 @@ if (!Array.prototype.indexOf) {
     node.support = JSUS.compatibility();
 
     // Auto-Generated.
-    node.version = '5.2.0';
+    node.version = '5.1.0';
 
 })(window);
 
@@ -24969,42 +24982,20 @@ if (!Array.prototype.indexOf) {
      * Returns the game-stage played delta steps ago
      *
      * @param {number} delta Optional. The number of past steps. Default 1
-     * @param {bolean} execLoops Optional. If true, loop and doLoop
-     *   conditional function will be executed to determine the previous stage.
-     *   If false, null will be returned when a loop or doLoop is found
-     *   and more evaluations are still required. Note! This parameter is
-     *   evaluated only if no stage is found in the cache of stepped steps.
-     *   Default: true.
      *
      * @return {GameStage|null} The game-stage played delta steps ago,
-     *   null if an error occurred (e.g., a loop stage), or stage 0.0.0 for
-     *   all deltas > steppable steps (i.e., previous of 0.0.0 is 0.0.0).
-     *
-     * @see Game._steppedSteps
-     * @see GamePlot.jump
+     *   or null if none is found
      */
-    Game.prototype.getPreviousStep = function(delta, execLoops) {
+    Game.prototype.getPreviousStep = function(delta) {
         var len;
         delta = delta || 1;
         if ('number' !== typeof delta || delta < 1) {
             throw new TypeError('Game.getPreviousStep: delta must be a ' +
-                                'positive number or undefined. Found: ' +
-                                delta);
+                                'positive number or undefined: ', delta);
         }
         len = this._steppedSteps.length - delta - 1;
-        // In position 0 there is 0.0.0, which is added also in case
-        // of a reconnection.
-        if (len > 0) return this._steppedSteps[len];
-
-        // It is possible that it is a reconnection, so we are missing
-        // stepped steps. Let's do a deeper lookup.
-        return this.plot.jump(this.getCurrentGameStage(), -delta);
-        // For future reference, why is this complicated:
-        // - Server could store all stepped steps and send them back
-        //     upon reconnection, but it would miss steps stepped while client
-        //     was disconnected.
-        // - Server could send all steps stepped by logic, but it would not
-        //     work if syncStepping is disabled.
+        if (len < 0) return null;
+        return this._steppedSteps[len];
     };
 
     /**
@@ -32380,7 +32371,7 @@ if (!Array.prototype.indexOf) {
          * @see GameWindow.cssRule
          */
         this.styleElement = null;
-
+ 
         /**
          * ### GameWindow.isIE
          *
@@ -34111,7 +34102,7 @@ if (!Array.prototype.indexOf) {
 
         // Remove on-the-fly style element reference.
         that.styleElement = null;
-
+        
         // (Re-)Inject libraries and reload scripts:
         removeLibraries(iframe);
         afterScripts = function() {
@@ -35966,24 +35957,24 @@ if (!Array.prototype.indexOf) {
     };
 
     /**
-     * ### GameWindow.cssRule
+     * ### GameWindow.getScreen
      *
      * Add a css rule to the page
      *
      * @param {string} rule The css rule
      * @param {boolean} clear Optional. TRUE to clear all previous rules
      *   added with this method to the page
-     *
+     * 
      * @return {Element} The HTML style element where the rules were added
      *
      * @see handleFrameLoad
      */
     GameWindow.prototype.cssRule = function(rule, clear) {
-        var root;
+        var root;        
         if ('string' !== typeof rule) {
             throw new TypeError('Game.execStep: style property must be ' +
                                 'string. Found: ' + rule);
-        }
+        }       
         if (!this.styleElement) {
             root = W.getFrameDocument() || window.document;
             this.styleElement = W.append('style', root.head, {
@@ -43449,7 +43440,9 @@ if (!Array.prototype.indexOf) {
                 res += 'select at least ' + w.requiredChoice;
             }
         }
-        return res + ')';
+        res += ')';
+        if (w.requiredChoice) res += ' *';
+        return res;
     };
 
     ChoiceTable.separator = '::';
@@ -44031,6 +44024,7 @@ if (!Array.prototype.indexOf) {
         // Set the hint, if any.
         if ('string' === typeof options.hint || false === options.hint) {
             this.hint = options.hint;
+            if (this.requiredChoice) this.hint += ' *';
         }
         else if ('undefined' !== typeof options.hint) {
             throw new TypeError('ChoiceTable.init: options.hint must ' +
@@ -46923,6 +46917,14 @@ if (!Array.prototype.indexOf) {
     var usStatesByAbbr;
     var usStatesTerr;
     var usStatesTerrByAbbr;
+    // Lower case keys.
+    var usStatesLow;
+    var usTerrLow;
+    var usStatesTerrLow;
+    var usTerrByAbbrLow;
+    var usStatesByAbbrLow;
+    var usStatesTerrLow;
+    var usStatesTerrByAbbrLow;
 
     CustomInput.texts = {
         listErr: 'Check that there are no empty items; do not end with ' +
@@ -46948,7 +46950,7 @@ if (!Array.prototype.indexOf) {
             }
             else if (w.type === 'us_state') {
                 res = w.params.abbr ? '(Use 2-letter abbreviation)' :
-                    '(Type the full name of state)';
+                    '(Type the full name of the state)';
             }
             else if (w.type === 'us_zip') {
                 res = '(Use 5-digit ZIP code)';
@@ -46986,7 +46988,7 @@ if (!Array.prototype.indexOf) {
                     res = '(Must be before ' + w.params.max + ')';
                 }
             }
-            return w.requiredChoice ? ((res || '') + '*') : (res || false);
+            return w.requiredChoice ? ((res || '') + ' *') : (res || false);
         },
         numericErr: function(w) {
             var str, p;
@@ -47531,18 +47533,18 @@ if (!Array.prototype.indexOf) {
                 if (opts.territories !== false) {
                     this.terr = true;
                     if (this.params.abbr) {
-                        tmp = getUsStatesList('usStatesTerrByAbbr');
+                        tmp = getUsStatesList('usStatesTerrByAbbrLow');
                     }
                     else {
-                        tmp = getUsStatesList('usStatesTerr');
+                        tmp = getUsStatesList('usStatesTerrLow');
                     }
                 }
                 else {
                     if (this.params.abbr) {
-                        tmp = getUsStatesList('usStatesByAbbr');
+                        tmp = getUsStatesList('usStatesByAbbrLow');
                     }
                     else {
-                        tmp = getUsStatesList('usStates');
+                        tmp = getUsStatesList('usStatesLow');
                     }
                 }
                 this.params.usStateVal = tmp;
@@ -47550,7 +47552,7 @@ if (!Array.prototype.indexOf) {
                 tmp = function(value) {
                     var res;
                     res = { value: value };
-                    if (!that.params.usStateVal[value]) {
+                    if (!that.params.usStateVal[value.toLowerCase()]) {
                         res.err = that.getText('usStateErr');
                     }
                     return res;
@@ -47808,6 +47810,7 @@ if (!Array.prototype.indexOf) {
                                     'undefined. Found: ' + opts.hint);
             }
             this.hint = opts.hint;
+            if (this.requiredChoice) this.hint += ' *';
         }
         else {
             this.hint = this.getText('autoHint');
@@ -47941,7 +47944,7 @@ if (!Array.prototype.indexOf) {
     /**
      * ### CustomInput.highlight
      *
-     * Highlights the choice table
+     * Highlights the input
      *
      * @param {string} The style for the table's border.
      *   Default '3px solid red'
@@ -47962,7 +47965,7 @@ if (!Array.prototype.indexOf) {
     /**
      * ### CustomInput.unhighlight
      *
-     * Removes highlight from the choice table
+     * Removes highlight from the input
      *
      * @see CustomInput.highlighted
      */
@@ -48118,6 +48121,8 @@ if (!Array.prototype.indexOf) {
         return res;
     }
 
+
+
     // ### getUsStatesList
     //
     // Sets the value of a global variable and returns it.
@@ -48127,29 +48132,81 @@ if (!Array.prototype.indexOf) {
     // @return {object} The requested list
     //
     function getUsStatesList(s) {
+        var p;
         switch(s) {
+
+        case 'usStatesTerrByAbbrLow':
+            if (!usStatesTerrByAbbrLow) {
+                createStateList('usStatesTerrLow');
+                usStatesTerrByAbbrLow = J.reverseObj(usStatesTerr, toLK);
+            }
+            return usStatesTerrByAbbrLow;
         case 'usStatesTerrByAbbr':
             if (!usStatesTerrByAbbr) {
                 createStateList('usStatesTerr');
                 usStatesTerrByAbbr = J.reverseObj(usStatesTerr);
             }
             return usStatesTerrByAbbr;
+
+        case 'usTerrByAbbrLow':
+            if (!usTerrByAbbrLow) usTerrByAbbrLow = J.reverseObj(usTerr, toLK);
+            return usTerrByAbbrLow;
         case 'usTerrByAbbr':
             if (!usTerrByAbbr) usTerrByAbbr = J.reverseObj(usTerr);
             return usTerrByAbbr;
+
+        case 'usStatesByAbbrLow':
+            if (!usStatesByAbbrLow) {
+                usStatesByAbbrLow = J.reverseObj(usStates, toLK);
+            }
+            return usStatesByAbbrLow;
         case 'usStatesByAbbr':
             if (!usStatesByAbbr) usStatesByAbbr = J.reverseObj(usStates);
             return usStatesByAbbr;
+
+        case 'usStatesTerrLow':
+            if (!usStatesTerrLow) {
+                if (!usStatesLow) usStatesLow = objToLK(usStates);
+                if (!usTerrLow) usTerrLow = objToLK(usTerr);
+                usStatesTerrLow = J.merge(usStatesLow, usTerrLow);
+            }
+            return usStatesTerrLow;
         case 'usStatesTerr':
-            if (!usStatesTerr) usStatesTerr = J.mixin(usStates, usTerr);
+            if (!usStatesTerr) usStatesTerr = J.merge(usStates, usTerr);
             return usStatesTerr;
+
+        case 'usStatesLow':
+            if (!usStatesLow) usStatesLow = objToLow(usStates, toLK);
+            return usStatesLow;
         case 'usStates':
             return usStates;
+
+        case 'usTerrLow':
+            if (!usTerrLow) usTerrLow = objToLow(usTerr, toLK);
+            return usTerrLow;
         case 'usTerr':
             return usTerr;
+
         default:
             throw new Error('getUsStatesList: unknown request: ' + s);
         }
+    }
+
+    // Helper function for getUsStatesList
+    // @see OBJ.reverseObj
+    function toLK(key, value) {
+        return [ key.toLowerCase(), value ];
+    }
+    // Helper function for getUsStatesList
+    function objToLK(obj) {
+        var p, objLow;
+        objLow = {};
+        for (p in obj) {
+            if (obj.hasOwnProperty(p)) {
+                objLow[p.toLowerCase()] = obj[p];
+            }
+        }
+        return objLow;
     }
 
     // ### isValidUSZip
@@ -48163,7 +48220,7 @@ if (!Array.prototype.indexOf) {
     function isValidUSZip(z) {
         return z.length === 5 && J.isInt(z, 0);
     }
-    
+
 })(node);
 
 /**

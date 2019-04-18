@@ -1,6 +1,6 @@
 /**
  * # http.js
- * Copyright(c) 2018 Stefano Balietti
+ * Copyright(c) 2019 Stefano Balietti
  * MIT Licensed
  *
  * Configuration file for Express server in nodegame-server
@@ -36,7 +36,7 @@ function configure(app, servernode) {
     var basepath;
 
     rootDir = servernode.rootDir;
-    publicDir = path.resolve(rootDir, 'public');
+    publicDir = path.join(rootDir, 'public');
     basepath = servernode.basepath || '';
     resourceManager = servernode.resourceManager;
 
@@ -67,7 +67,7 @@ function configure(app, servernode) {
         if (!file) return;
 
         // Build path in `public/`.
-        file = type + '/' + file;
+        file = path.join(type, file);
 
         // Build headers.
         if (!headers) {
