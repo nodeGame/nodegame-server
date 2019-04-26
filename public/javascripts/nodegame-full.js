@@ -10116,7 +10116,7 @@ if (!Array.prototype.indexOf) {
     node.support = JSUS.compatibility();
 
     // Auto-Generated.
-    node.version = '5.1.0';
+    node.version = '5.2.0';
 
 })(window);
 
@@ -24982,20 +24982,42 @@ if (!Array.prototype.indexOf) {
      * Returns the game-stage played delta steps ago
      *
      * @param {number} delta Optional. The number of past steps. Default 1
+     * @param {bolean} execLoops Optional. If true, loop and doLoop
+     *   conditional function will be executed to determine the previous stage.
+     *   If false, null will be returned when a loop or doLoop is found
+     *   and more evaluations are still required. Note! This parameter is
+     *   evaluated only if no stage is found in the cache of stepped steps.
+     *   Default: true.
      *
      * @return {GameStage|null} The game-stage played delta steps ago,
-     *   or null if none is found
+     *   null if an error occurred (e.g., a loop stage), or stage 0.0.0 for
+     *   all deltas > steppable steps (i.e., previous of 0.0.0 is 0.0.0).
+     *
+     * @see Game._steppedSteps
+     * @see GamePlot.jump
      */
-    Game.prototype.getPreviousStep = function(delta) {
+    Game.prototype.getPreviousStep = function(delta, execLoops) {
         var len;
         delta = delta || 1;
         if ('number' !== typeof delta || delta < 1) {
             throw new TypeError('Game.getPreviousStep: delta must be a ' +
-                                'positive number or undefined: ', delta);
+                                'positive number or undefined. Found: ' +
+                                delta);
         }
         len = this._steppedSteps.length - delta - 1;
-        if (len < 0) return null;
-        return this._steppedSteps[len];
+        // In position 0 there is 0.0.0, which is added also in case
+        // of a reconnection.
+        if (len > 0) return this._steppedSteps[len];
+
+        // It is possible that it is a reconnection, so we are missing
+        // stepped steps. Let's do a deeper lookup.
+        return this.plot.jump(this.getCurrentGameStage(), -delta);
+        // For future reference, why is this complicated:
+        // - Server could store all stepped steps and send them back
+        //     upon reconnection, but it would miss steps stepped while client
+        //     was disconnected.
+        // - Server could send all steps stepped by logic, but it would not
+        //     work if syncStepping is disabled.
     };
 
     /**
@@ -43348,7 +43370,7 @@ if (!Array.prototype.indexOf) {
         i = -1, len = this.forms.length;
         for ( ; ++i < len ; ) {
             form = this.forms[i];
-            // If it is hidden or disabled we do not do validation.            
+            // If it is hidden or disabled we do not do validation.
             if (form.isHidden() || form.isDisabled()) {
                 obj.forms[form.id] = form.getValues({
                     markAttempt: false,
@@ -50123,7 +50145,7 @@ if (!Array.prototype.indexOf) {
         autoHint: function(w) {
             var res, res2;
             if (w.minChars && w.maxChars) {
-                res = 'beetween ' + w.minChars + ' and ' + w.maxChars +
+                res = 'between ' + w.minChars + ' and ' + w.maxChars +
                     ' characters';
             }
             else if (w.minChars) {
@@ -50696,7 +50718,7 @@ if (!Array.prototype.indexOf) {
         });
 
         if (this.showSubmit) {
-            this.submit = W.append('input', this.feedbackForm, {
+            this.submitButton = W.append('input', this.feedbackForm, {
                 className: 'btn btn-lg btn-primary',
                 type: 'submit',
                 value: this.getText('submit')
@@ -50819,7 +50841,7 @@ if (!Array.prototype.indexOf) {
         }
 
         // Send the message.
-        if ((opts.send && res) || opts.sendAnyway) {
+        if (feedback !== '' && ((opts.send && res) || opts.sendAnyway)) {
             this.sendValues({ values: feedback });
             if (opts.updateUI) {
                 this.submitButton.setAttribute('value', this.getText('sent'));

@@ -59,6 +59,13 @@ function configure(servernode) {
 
     };
 
+    // Immediately disabling homePage if ServerNode was launched
+    // with option --default.
+    if (servernode.defaultChannel) {
+        servernode.logger.verbose('homePage disabled by option --default');
+        servernode.homePage = false;
+    }
+
     // Default games directory.
     servernode.defaultGamesDir = path.join(rootDir, 'games');
 
