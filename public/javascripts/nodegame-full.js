@@ -4269,6 +4269,25 @@ if (!Array.prototype.indexOf) {
     };
 
     /**
+     * ## OBJ.randomKey
+     *
+     * Returns a random key from an existing object
+     *
+     * @param {object} obj The object from which the key will be extracted
+     *
+     * @return {string} The random key 
+     */
+    OBJ.randomKey = function(obj) {
+        var keys;
+        if ('object' !== typeof obj) {
+            throw new TypeError('OBJ.randomKey: obj must be object. ' +
+                                'Found: ' + obj);
+        }
+        keys = Object.keys(obj);
+        return keys[ keys.length * Math.random() << 0];
+    };
+    
+    /**
      * ## OBJ.augment
      *
      * Pushes the values of the properties of an object into another one
@@ -4391,7 +4410,8 @@ if (!Array.prototype.indexOf) {
     OBJ.getKeyByValue = function(obj, value, allKeys) {
         var key, out;
         if ('object' !== typeof obj) {
-            throw new TypeError('OBJ.getKeyByValue: obj must be object.');
+            throw new TypeError('OBJ.getKeyByValue: obj must be object. ' +
+                                'Found: ' + obj);
         }
         if (allKeys) out = [];
         for (key in obj) {
@@ -4512,6 +4532,43 @@ if (!Array.prototype.indexOf) {
         if (a === b) return a;
         return Math.floor(RANDOM.random(a, b) + 1);
     };
+
+    /**
+     * ## RANDOM.randomDate
+     *
+     * Generates a pseudo-random date between 
+     *
+     * @param {Date} startDate The lower date
+     * @param {Date} endDate Optional. The upper date. Default: today.
+     *
+     * @return {number} A random date in the chosen interval
+     *
+     * @see RANDOM.randomDate
+     */
+    RANDOM.randomDate = (function() {
+        function isValidDate(date) {
+            return date &&
+                Object.prototype.toString.call(date) === "[object Date]" &&
+                !isNaN(date);
+        }
+        return function(startDate, endDate) {
+            if (!isValidDate(startDate)) {
+                throw new TypeError('randomDate: startDate must be a valid ' +
+                                    'date. Found: ' + startDate);
+            }
+            if (endDate) {
+                if (!isValidDate(endDate)) {
+                    throw new TypeError('randomDate: endDate must be a valid ' +
+                                        'date or undefined. Found: ' + endDate);
+                }
+            }
+            else {
+                endDate = new Date();
+            }
+            return new Date(startDate.getTime() + Math.random() *
+                            (endDate.getTime() - startDate.getTime()));
+        };
+    })();
 
     /**
      * ## RANDOM.sample
@@ -10116,7 +10173,7 @@ if (!Array.prototype.indexOf) {
     node.support = JSUS.compatibility();
 
     // Auto-Generated.
-    node.version = '5.1.0';
+    node.version = '5.2.0';
 
 })(window);
 
@@ -24286,7 +24343,8 @@ if (!Array.prototype.indexOf) {
                 else {
                     opts = { highlight: false, markAttempt: false };
                 }
-
+                // Under some special conditions (e.g., very fast DONE
+                // clicking this can be null. TODO: check why.
                 values = this[widget.ref].getValues(opts);
 
                 // If it is not timeup, and user did not
@@ -24982,20 +25040,42 @@ if (!Array.prototype.indexOf) {
      * Returns the game-stage played delta steps ago
      *
      * @param {number} delta Optional. The number of past steps. Default 1
+     * @param {bolean} execLoops Optional. If true, loop and doLoop
+     *   conditional function will be executed to determine the previous stage.
+     *   If false, null will be returned when a loop or doLoop is found
+     *   and more evaluations are still required. Note! This parameter is
+     *   evaluated only if no stage is found in the cache of stepped steps.
+     *   Default: true.
      *
      * @return {GameStage|null} The game-stage played delta steps ago,
-     *   or null if none is found
+     *   null if an error occurred (e.g., a loop stage), or stage 0.0.0 for
+     *   all deltas > steppable steps (i.e., previous of 0.0.0 is 0.0.0).
+     *
+     * @see Game._steppedSteps
+     * @see GamePlot.jump
      */
-    Game.prototype.getPreviousStep = function(delta) {
+    Game.prototype.getPreviousStep = function(delta, execLoops) {
         var len;
         delta = delta || 1;
         if ('number' !== typeof delta || delta < 1) {
             throw new TypeError('Game.getPreviousStep: delta must be a ' +
-                                'positive number or undefined: ', delta);
+                                'positive number or undefined. Found: ' +
+                                delta);
         }
         len = this._steppedSteps.length - delta - 1;
-        if (len < 0) return null;
-        return this._steppedSteps[len];
+        // In position 0 there is 0.0.0, which is added also in case
+        // of a reconnection.
+        if (len > 0) return this._steppedSteps[len];
+
+        // It is possible that it is a reconnection, so we are missing
+        // stepped steps. Let's do a deeper lookup.
+        return this.plot.jump(this.getCurrentGameStage(), -delta);
+        // For future reference, why is this complicated:
+        // - Server could store all stepped steps and send them back
+        //     upon reconnection, but it would miss steps stepped while client
+        //     was disconnected.
+        // - Server could send all steps stepped by logic, but it would not
+        //     work if syncStepping is disabled.
     };
 
     /**
@@ -32371,7 +32451,7 @@ if (!Array.prototype.indexOf) {
          * @see GameWindow.cssRule
          */
         this.styleElement = null;
- 
+
         /**
          * ### GameWindow.isIE
          *
@@ -33897,7 +33977,7 @@ if (!Array.prototype.indexOf) {
      */
     GameWindow.prototype.adjustFrameHeight = (function() {
         var nextTimeout, adjustIt;
-
+        
         adjustIt = function(userMinHeight) {
             var iframe, minHeight, contentHeight;
 
@@ -33906,7 +33986,11 @@ if (!Array.prototype.indexOf) {
             iframe = W.getFrame();
             // Iframe might have been destroyed already, e.g. in a test.
             if (!iframe || !iframe.contentWindow) return;
-
+            // Frame might be loading slowly, let's try again later.
+            if (!iframe.contentWindow.document.body) {
+                W.adjustFrameHeight(userMinHeight, 120);
+                return;
+            }
             // Try to find out how tall the frame should be.
             minHeight = window.innerHeight || window.clientHeight;
 
@@ -34102,7 +34186,7 @@ if (!Array.prototype.indexOf) {
 
         // Remove on-the-fly style element reference.
         that.styleElement = null;
-        
+
         // (Re-)Inject libraries and reload scripts:
         removeLibraries(iframe);
         afterScripts = function() {
@@ -35957,24 +36041,24 @@ if (!Array.prototype.indexOf) {
     };
 
     /**
-     * ### GameWindow.getScreen
+     * ### GameWindow.cssRule
      *
      * Add a css rule to the page
      *
      * @param {string} rule The css rule
      * @param {boolean} clear Optional. TRUE to clear all previous rules
      *   added with this method to the page
-     * 
+     *
      * @return {Element} The HTML style element where the rules were added
      *
      * @see handleFrameLoad
      */
     GameWindow.prototype.cssRule = function(rule, clear) {
-        var root;        
+        var root;
         if ('string' !== typeof rule) {
             throw new TypeError('Game.execStep: style property must be ' +
                                 'string. Found: ' + rule);
-        }       
+        }
         if (!this.styleElement) {
             root = W.getFrameDocument() || window.document;
             this.styleElement = W.append('style', root.head, {
@@ -43348,7 +43432,7 @@ if (!Array.prototype.indexOf) {
         i = -1, len = this.forms.length;
         for ( ; ++i < len ; ) {
             form = this.forms[i];
-            // If it is hidden or disabled we do not do validation.            
+            // If it is hidden or disabled we do not do validation.
             if (form.isHidden() || form.isDisabled()) {
                 obj.forms[form.id] = form.getValues({
                     markAttempt: false,
@@ -46932,7 +47016,6 @@ if (!Array.prototype.indexOf) {
     // Lower case keys.
     var usStatesLow;
     var usTerrLow;
-    var usStatesTerrLow;
     var usTerrByAbbrLow;
     var usStatesByAbbrLow;
     var usStatesTerrLow;
@@ -47237,7 +47320,7 @@ if (!Array.prototype.indexOf) {
      * @param {object} opts Configuration options
      */
     CustomInput.prototype.init = function(opts) {
-        var tmp, that, e, isText;
+        var tmp, that, e, isText, setValues;
         that = this;
         e = 'CustomInput.init: ';
 
@@ -47371,6 +47454,15 @@ if (!Array.prototype.indexOf) {
                         if (err) out.err = that.getText('textErr', len);
                         return out;
                     };
+
+                    setValues = function(opts) {
+                        var a, b;
+                        a = 'undefined' !== typeof that.params.lower ?
+                            (that.params.lower + 1) : 5;
+                        b = 'undefined' !== typeof that.params.upper ?
+                            that.params.upper : (a + 5);
+                        return J.randomString(J.randomInt(a, b));
+                    };
                 }
                 else {
                     tmp = (function() {
@@ -47389,6 +47481,21 @@ if (!Array.prototype.indexOf) {
                             };
                         };
                     })();
+
+                    setValues = function(opts) {
+                        var p, a, b;
+                        p = that.params;
+                        if (that.type === 'float') return J.random();
+                        a = 0;
+                        b = 10;
+                        if ('undefined' !== typeof p.lower) {
+                            a = p.leq ? (p.lower - 1) : p.lower;
+                        }
+                        if ('undefined' !== typeof p.upper) {
+                            b = p.ueq ? p.upper : (p.upper - 1);
+                        }
+                        return J.randomInt(a, b);
+                    };
                 }
 
                 // Preset inputWidth.
@@ -47533,6 +47640,22 @@ if (!Array.prototype.indexOf) {
                     }
                     return res;
                 };
+
+                setValues = function(opts) {
+                    var p, minD, maxD, d, day, month, year;
+                    p = that.params;
+                    minD = p.minDate ? p.minDate.obj : new Date('01/01/1900');
+                    maxD = p.maxDate ? p.maxDate.obj : undefined;
+                    d = J.randomDate(minD, maxD);
+                    day = d.getDate();
+                    month = (d.getMonth() + 1);
+                    year = d.getFullYear();
+                    if (p.yearDigits === 2) year = ('' + year).substr(2);
+                    if (p.monthPos === 0) d = month + p.sep + day;
+                    else d = day + p.sep + month;
+                    d += p.sep + year;
+                    return d;
+                };
             }
             else if (this.type === 'us_state') {
                 if (opts.abbreviation) {
@@ -47569,6 +47692,11 @@ if (!Array.prototype.indexOf) {
                     }
                     return res;
                 };
+
+                setValues = function(opts) {
+                    return J.randomKey(that.params.usStateVal);
+                };
+
             }
             else if (this.type === 'us_zip') {
                 tmp = function(value) {
@@ -47578,6 +47706,10 @@ if (!Array.prototype.indexOf) {
                         res.err = that.getText('usZipErr');
                     }
                     return res;
+                };
+
+                setValues = function(opts) {
+                    return Math.floor(Math.random()*90000) + 10000;
                 };
             }
 
@@ -47600,7 +47732,7 @@ if (!Array.prototype.indexOf) {
 
                 if (this.type === 'us_city_state_zip') {
 
-                    createStateList(true, true, true);
+                    getUsStatesList('usStatesTerrByAbbr');
                     this.params.minItems = this.params.maxItems = 3;
                     this.params.fixedSize = true;
                     this.params.itemValidation = function(item, idx) {
@@ -47700,6 +47832,42 @@ if (!Array.prototype.indexOf) {
                     }
                     return { value: value };
                 };
+
+                if (this.type === 'us_city_state_zip') {
+                    setValues = function(opts) {
+                        var sep;
+                        sep = that.params.listSep + ' ';
+                        return J.randomString(8) + sep +
+                            J.randomKey(usStatesTerrByAbbr) + sep +
+                            (Math.floor(Math.random()*90000) + 10000);
+                    };
+                }
+                else {
+                    setValues = function(opts) {
+                        var p, minItems, nItems, i, str, sample;
+                        p = that.params;
+                        minItems = p.minItems || 0;
+                        if (opts.availableValues) {
+                            nItems = J.randomInt(minItems,
+                                                 opts.availableValues.length); 
+                            nItems--;
+                            sample = J.sample(0, (nItems-1));
+                        }
+                        else {
+                            nItems = J.randomInt(minItems,
+                                                 p.maxItems || (minItems + 5));
+                            nItems--;
+                        }
+                        str = '';
+                        for (i = 0; i < nItems; i++) {
+                            if (i !== 0) str += p.listSep + ' ';
+                            if (sample) str += opts.availableValues[sample[i]];
+                            else str += J.randomString(J.randomInt(3,10));
+                        }
+                        return str;
+                    };
+                }
+
             }
 
             // US_Town,State, Zip Code
@@ -47722,7 +47890,7 @@ if (!Array.prototype.indexOf) {
             return res;
         };
 
-
+        this._setValues = setValues;
 
         // Preprocess
 
@@ -48088,12 +48256,40 @@ if (!Array.prototype.indexOf) {
      *
      * Set the value of the input form
      *
-     * @param {string} The error msg (can contain HTML)
+     * @param {object} opts An object containing values or info about how
+     *   how to set values.
      *
      * @experimental
      */
-    CustomInput.prototype.setValues = function(value) {
+    CustomInput.prototype.setValues = function(opts) {
+        var value, tmp;
+        if (opts && 'undefined' !== typeof opts.value) {
+            value = opts.value;
+        }
+        else if (opts.availableValues) {
+            tmp = opts.availableValues;
+            if (!J.isArray(tmp) || !tmp.length) {
+                throw new TypeError('CustomInput.setValues: availableValues ' +
+                                    'must be a non-empty array or undefined. ' +
+                                    'Found: ' + tmp);
+            }
+            if (this.type === 'list') {
+                if (tmp.length < this.params.minItems) {
+                    throw new Error('CustomInput.setValues: availableValues ' +
+                                    'must be a non-empty array or undefined. ' +
+                                    'Found: ' + tmp);
+                }
+                value = this._setValues(opts);
+            }
+            else {
+                value = tmp[J.randomInt(0, tmp.length) -1];
+            }
+        }
+        else {
+            value = this._setValues(opts);
+        }
         this.input.value = value;
+        if (this.preprocess) this.preprocess(this.input);
     };
 
     // ## Helper functions.
@@ -48144,18 +48340,17 @@ if (!Array.prototype.indexOf) {
     // @return {object} The requested list
     //
     function getUsStatesList(s) {
-        var p;
         switch(s) {
 
         case 'usStatesTerrByAbbrLow':
             if (!usStatesTerrByAbbrLow) {
-                createStateList('usStatesTerrLow');
+                getUsStatesList('usStatesTerrLow');
                 usStatesTerrByAbbrLow = J.reverseObj(usStatesTerr, toLK);
             }
             return usStatesTerrByAbbrLow;
         case 'usStatesTerrByAbbr':
             if (!usStatesTerrByAbbr) {
-                createStateList('usStatesTerr');
+                getUsStatesList('usStatesTerr');
                 usStatesTerrByAbbr = J.reverseObj(usStatesTerr);
             }
             return usStatesTerrByAbbr;
@@ -50123,7 +50318,7 @@ if (!Array.prototype.indexOf) {
         autoHint: function(w) {
             var res, res2;
             if (w.minChars && w.maxChars) {
-                res = 'beetween ' + w.minChars + ' and ' + w.maxChars +
+                res = 'between ' + w.minChars + ' and ' + w.maxChars +
                     ' characters';
             }
             else if (w.minChars) {
@@ -50696,7 +50891,7 @@ if (!Array.prototype.indexOf) {
         });
 
         if (this.showSubmit) {
-            this.submit = W.append('input', this.feedbackForm, {
+            this.submitButton = W.append('input', this.feedbackForm, {
                 className: 'btn btn-lg btn-primary',
                 type: 'submit',
                 value: this.getText('submit')
@@ -50729,11 +50924,16 @@ if (!Array.prototype.indexOf) {
      * Set the value of the feedback
      */
     Feedback.prototype.setValues = function(options) {
-        var feedback;
+        var feedback, maxChars;
         options = options || {};
         if (!options.feedback) {
-            feedback = J.randomString(J.randomInt(0, this.maxChars),
-                                      'aA_1');
+            if (this.maxChars) {
+                maxChars = this.maxChars;
+            }
+            else if (this.maxWords) {
+                maxChars = this.maxWords * 4;
+            }
+            feedback = J.randomString(J.randomInt(0, maxChars), 'aA_1');
         }
         else {
             feedback = options.feedback;
@@ -50819,7 +51019,7 @@ if (!Array.prototype.indexOf) {
         }
 
         // Send the message.
-        if ((opts.send && res) || opts.sendAnyway) {
+        if (feedback !== '' && ((opts.send && res) || opts.sendAnyway)) {
             this.sendValues({ values: feedback });
             if (opts.updateUI) {
                 this.submitButton.setAttribute('value', this.getText('sent'));
