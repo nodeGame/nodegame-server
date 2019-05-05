@@ -1,5 +1,9 @@
 # nodegame-server change log
 
+## 5.3.0
+- Improved error messages.
+- Option homePage is automatically disabled when --default is set.
+
 ## 5.2.0
 - Server sends a stringified object with an error to monitor, if an error
 occurs likely due to cycles.
