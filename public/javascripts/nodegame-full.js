@@ -4275,7 +4275,7 @@ if (!Array.prototype.indexOf) {
      *
      * @param {object} obj The object from which the key will be extracted
      *
-     * @return {string} The random key 
+     * @return {string} The random key
      */
     OBJ.randomKey = function(obj) {
         var keys;
@@ -4286,7 +4286,7 @@ if (!Array.prototype.indexOf) {
         keys = Object.keys(obj);
         return keys[ keys.length * Math.random() << 0];
     };
-    
+
     /**
      * ## OBJ.augment
      *
@@ -4501,7 +4501,7 @@ if (!Array.prototype.indexOf) {
             }
             else {
                 b = a;
-                a = 0;                
+                a = 0;
             }
         }
         if (a === b) return a;
@@ -4536,7 +4536,7 @@ if (!Array.prototype.indexOf) {
     /**
      * ## RANDOM.randomDate
      *
-     * Generates a pseudo-random date between 
+     * Generates a pseudo-random date between
      *
      * @param {Date} startDate The lower date
      * @param {Date} endDate Optional. The upper date. Default: today.
@@ -10173,7 +10173,7 @@ if (!Array.prototype.indexOf) {
     node.support = JSUS.compatibility();
 
     // Auto-Generated.
-    node.version = '5.2.0';
+    node.version = '5.3.0';
 
 })(window);
 
@@ -39498,8 +39498,13 @@ if (!Array.prototype.indexOf) {
         }
 
         // Set prototype values or options values.
-        widget.title = 'undefined' === typeof options.title ?
-            WidgetPrototype.title : options.title;
+        if ('undefined' !== typeof options.title) {
+            widget.title = options.title;
+        }
+        else {
+            widget.title = WidgetPrototype.title === false ?
+                WidgetPrototype.title : '&nbsp;';
+        }
         widget.panel = 'undefined' === typeof options.panel ?
             WidgetPrototype.panel : options.panel;
         widget.footer = 'undefined' === typeof options.footer ?
@@ -47849,7 +47854,7 @@ if (!Array.prototype.indexOf) {
                         minItems = p.minItems || 0;
                         if (opts.availableValues) {
                             nItems = J.randomInt(minItems,
-                                                 opts.availableValues.length); 
+                                                 opts.availableValues.length);
                             nItems--;
                             sample = J.sample(0, (nItems-1));
                         }
@@ -48263,8 +48268,13 @@ if (!Array.prototype.indexOf) {
      */
     CustomInput.prototype.setValues = function(opts) {
         var value, tmp;
-        if (opts && 'undefined' !== typeof opts.value) {
+        opts = opts || {};
+        if ('undefined' !== typeof opts.value) {
             value = opts.value;
+        }
+        // Alias.
+        else if ('undefined' !== typeof opts.values) {
+            value = opts.values;
         }
         else if (opts.availableValues) {
             tmp = opts.availableValues;
