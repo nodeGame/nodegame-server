@@ -1,5 +1,8 @@
 # nodegame-server change log
 
+## 5.3.1
+- Removed unnecessary warning with default channel --default.
+
 ## 5.3.0
 - Improved error messages.
 - Option homePage is automatically disabled when --default is set.
