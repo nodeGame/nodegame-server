@@ -61,7 +61,7 @@ function configure(servernode) {
 
     // Immediately disabling homePage if ServerNode was launched
     // with option --default.
-    if (servernode.defaultChannel) {
+    if (servernode._defaultChannel) {
         servernode.logger.verbose('homePage disabled by option --default');
         servernode.homePage = false;
     }
