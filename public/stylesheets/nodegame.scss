@@ -311,7 +311,8 @@ p {
   }
 
   .moneytalks,
-  .visualtimer {
+  .visualtimer,
+  .visualstage {
 
     .no-panel-heading {
       float: left;
@@ -326,6 +327,21 @@ p {
 
 /** Widgets outside header **/
 /****************************/
+
+/** Visual Stage **/
+
+.visualstage-prev,
+.visualstage-next {
+
+  margin: 0 15px;
+  font-size: 13px;
+}
+
+.visualstage-curr {
+
+  margin: 0 15px;
+  font-weight: bold;
+}
 
 /** Visual Round **/
 /******************/
@@ -376,7 +392,7 @@ p {
   }
 }
 
-.feedback-hint {  
+.feedback-hint {
   @extend .choicetable-hint;
 }
 
@@ -475,7 +491,7 @@ textarea.choicetable-freetext {
 }
 
 table.choicetable {
-  
+
   width: 100%;
 
   td {
@@ -503,11 +519,11 @@ table.choicetable {
     padding-right: 15px;
     text-align: right;
   }
-  
+
   td.choicetable-right {
     padding-left: 15px;
     text-align: left;
-  }  
+  }
 
   td.choicetable-left:hover,
   td.choicetable-right:hover {

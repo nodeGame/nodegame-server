@@ -279,20 +279,39 @@ p {
 }
 .ng_header_position-horizontal-t .moneytalks .no-panel-heading,
 .ng_header_position-horizontal-t .visualtimer .no-panel-heading,
+.ng_header_position-horizontal-t .visualstage .no-panel-heading,
 .ng_header_position-horizontal-b .moneytalks .no-panel-heading,
-.ng_header_position-horizontal-b .visualtimer .no-panel-heading {
+.ng_header_position-horizontal-b .visualtimer .no-panel-heading,
+.ng_header_position-horizontal-b .visualstage .no-panel-heading {
   float: left;
   margin-right: 8px;
 }
 .ng_header_position-horizontal-t .moneytalks .no-panel-body,
 .ng_header_position-horizontal-t .visualtimer .no-panel-body,
+.ng_header_position-horizontal-t .visualstage .no-panel-body,
 .ng_header_position-horizontal-b .moneytalks .no-panel-body,
-.ng_header_position-horizontal-b .visualtimer .no-panel-body {
+.ng_header_position-horizontal-b .visualtimer .no-panel-body,
+.ng_header_position-horizontal-b .visualstage .no-panel-body {
   float: right;
 }
 
 /** Widgets outside header **/
 /****************************/
+/** Visual Stage **/
+/******************/
+.visualstage-curr  {
+
+  margin: 0 15px;
+  font-weight: bold;
+}
+
+.visualstage-prev,
+.visualstage-next  {
+
+  margin: 0 15px;
+  font-size: 13px;
+}
+
 /** Visual Round **/
 /******************/
 .visualround .title {

@@ -1,5 +1,9 @@
 # nodegame-server change log
 
+## 5.4.0
+- Fixed homePage bug.
+- VisualStage classes.
+
 ## 5.3.1
 - Removed unnecessary warning with default channel --default.
 
