@@ -16,6 +16,7 @@ $max-width-chat-msg: 150px;
 $shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
 $forms_border_color: #333;
 $forms_small_font_size: 14px;
+$widget_padding: 10px;
 
 /** Main Elements **/
 /*******************/
@@ -249,7 +250,7 @@ p {
     margin-bottom: 0;
     border: none;
     box-shadow: none;
-    padding: 10px;
+    padding: $widget_padding;
 
     .panel-heading,
     .no-panel-heading {
@@ -330,14 +331,14 @@ p {
 
 /** Visual Stage **/
 
-.visualstage-prev,
+.visualstage-previous,
 .visualstage-next {
 
   margin: 0 15px;
   font-size: 13px;
 }
 
-.visualstage-curr {
+.visualstage-current {
 
   margin: 0 15px;
   font-weight: bold;

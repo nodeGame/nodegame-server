@@ -299,13 +299,17 @@ p {
 /****************************/
 /** Visual Stage **/
 /******************/
-.visualstage-curr  {
+.visualstage {
+  padding: 0 10px;
+}
+
+.visualstage-current  {
 
   margin: 0 15px;
   font-weight: bold;
 }
 
-.visualstage-prev,
+.visualstage-previous,
 .visualstage-next  {
 
   margin: 0 15px;
