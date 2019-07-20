@@ -616,10 +616,28 @@ div.moodgauge {
   }
 }
 
-/** SVO **/
-/*********/
 
-div.svogauge {
+div.riskgauge {
+
+  table.choicetable,
+  span.choicetable-maintext {
+    text-align: center;
+    width: auto;
+  }
+
+  table.choicetable {
+    margin: 0 auto;
+    text-align: center;
+    border-spacing: 0 30px;
+    border-collapse: separate;
+  }
+}
+
+/** SVO and Risk **/
+/******************/
+
+div.svogauge,
+div.riskgauge {
 
   table.choicetable,
   span.choicetable-maintext {
@@ -651,6 +669,42 @@ div.svogauge {
     border-color: black;
   }
 }
+
+/** SVO only **/
+/**************/
+
+div.svogauge {
+
+  table td {
+    width: 60px !important;
+  }
+
+  hr {
+    margin: 10px auto;
+  }
+
+  td.choicetable-left hr {
+    border-color: black;
+  }
+}
+/** Risk only **/
+/**************/
+
+div.riskgauge {
+    
+    table td {
+        width: 350px !important;
+    }
+    td.choicetable-left {
+        width: 50px !important;
+    }
+    .sep {
+        margin: 0px auto;
+        font-size: 13px;
+        display: block;
+    }
+}
+
 
 /** EmailForm and FeedbackForm **/
 /********************************/

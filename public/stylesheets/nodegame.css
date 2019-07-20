@@ -474,6 +474,10 @@ table.clickable td:hover {
   cursor: hand;
 }
 
+table.clickable td:focus {
+  background: #FFE;
+}
+
 /** CustomInput **/
 /*****************/
 .custominput input {
@@ -535,8 +539,33 @@ div.moodgauge table.choicetable td.choicetable-right {
   width: 100px;
 }
 
-/** SVO **/
+/** RiskGauge **/
 /*********/
+div.riskgauge table.choicetable,
+div.riskgauge span.choicetable-maintext,
+div.riskgauge span.feedback-maintext,
+div.riskgauge span.custominput-maintext {
+  text-align: center;
+  width: auto;
+}
+div.riskgauge table.choicetable {
+  margin: 0 auto;
+  text-align: center;
+  border-spacing: 0 30px;
+  border-collapse: separate;
+}
+
+div.riskgauge choicetable-maintext {
+  margin-bottom: 10px;
+  font-size: 20px;
+}
+
+/** SVO and Risk **/
+/******************/
+div.riskgauge table.choicetable,
+div.riskgauge span.choicetable-maintext,
+div.riskgauge span.feedback-maintext,
+div.riskgauge span.custominput-maintext,
 div.svogauge table.choicetable,
 div.svogauge span.choicetable-maintext,
 div.svogauge span.feedback-maintext,
@@ -544,24 +573,45 @@ div.svogauge span.custominput-maintext {
   text-align: center;
   width: auto;
 }
+div.riskgauge table.choicetable,
 div.svogauge table.choicetable {
   margin: 0 auto;
   text-align: center;
   border-spacing: 0 30px;
   border-collapse: separate;
 }
-div.svogauge table td {
-  width: 60px !important;
-}
 div.svogauge choicetable-maintext {
   margin-bottom: 10px;
   font-size: 20px;
 }
+
+/** SVO only **/
+/**************/
+
+div.svogauge table td {
+  width: 60px !important;
+}
+
 div.svogauge hr {
   margin: 10px auto;
 }
 div.svogauge td.choicetable-left hr {
   border-color: black;
+}
+
+/** Risk only **/
+/***************/
+
+div.riskgauge table td {
+  width: 350px !important;
+}
+div.riskgauge td.choicetable-left {
+  width: 50px !important;
+}
+div.riskgauge .sep {
+  margin: 0px auto;
+  font-size: 13px;
+  display: block;
 }
 
 /** EmailForm and FeedbackForm **/
