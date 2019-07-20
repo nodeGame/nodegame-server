@@ -1,5 +1,8 @@
 # nodegame-server change log
 
+## 5.5.0 current
+- Updated CSS and built for new widget RiskGauge.
+
 ## 5.4.0
 - Fixed homePage bug.
 - VisualStage classes.
