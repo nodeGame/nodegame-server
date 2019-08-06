@@ -350,10 +350,6 @@ p {
   border: 1px solid #CCC; */
 }
 
-.feedback-maintext .feedback-hint {
-  @extends .choicetable-hint;
-}
-
 /** Requirements **/
 /******************/
 .requirements, .waitingroom {
@@ -413,11 +409,11 @@ div.choicetable div.panel-heading {
   display: block;
   text-align: left;
 }
-.choicetable-maintext .choicetable-hint, .choicetable-maintext .custominput-hint, .custominput-maintext .choicetable-hint, .custominput-maintext .custominput-hint, .feedback-maintext .choicetable-hint, .feedback-maintext .custominput-hint, .choicetable-maintext .feedback-hint, .custominput-maintext .feedback-hint, .feedback-maintext .feedback-hint {
+.choicetable-maintext .choicetable-hint, .choicetable-maintext .custominput-hint, .custominput-maintext .choicetable-hint, .custominput-maintext .custominput-hint, .feedback-maintext .choicetable-hint, .feedback-maintext .custominput-hint, .choicetable-maintext .feedback-hint, .custominput-maintext .feedback-hint, .feedback-maintext .feedback-hint, .custominputgroup-maintext .custominputgroup-hint {
   margin-left: 10px;
 }
 
-.choicetable-hint, .custominput-hint, .feedback-hint {
+.choicetable-hint, .custominput-hint, .feedback-hint, .custominputgroup-hint {
   font-color: gray;
   font-size: 14px;
   font-weight: normal;
@@ -486,11 +482,6 @@ table.clickable td:focus {
   border: 1px solid #333;
 }
 
-.custominput .errbox {
-  font-size: 14px;
-  margin-top: 5px;
-}
-
 .custominput .panel-body {
   padding: 0;
 }
@@ -499,6 +490,12 @@ table.clickable td:focus {
   font-weight: normal;
   margin-left: 8px;
   font-size: 14px;
+}
+
+.custominput .errbox,
+.custominputgroup .errbox {
+  font-size: 14px;
+  margin-top: 5px;
 }
 
 /** Mood **/

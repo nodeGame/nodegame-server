@@ -389,12 +389,31 @@ p {
   @extend .choicetable-maintext;
 
   .feedback-hint {
-    @extends .choicetable-hint;
+    @extend .choicetable-hint;
   }
 }
 
 .feedback-hint {
   @extend .choicetable-hint;
+}
+
+/** Custom Input Group **/
+/************************/
+
+.custominputgroup-maintext {
+  @extend .choicetable-maintext;
+
+  .custominputgroup-hint {
+    @extend .choicetable-hint;
+  }
+}
+
+.custominputgroup-hint {
+  @extend .choicetable-hint;
+}
+
+.custominputgroup .errbox {
+  @extend .custominput .errbox;
 }
 
 /** Requirements **/
