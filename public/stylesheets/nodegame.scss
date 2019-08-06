@@ -416,6 +416,10 @@ p {
   @extend .custominput .errbox;
 }
 
+.custominputgroup td {
+    vertical-align: top;
+}
+    
 /** Requirements **/
 /******************/
 

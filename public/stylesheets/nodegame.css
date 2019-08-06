@@ -350,6 +350,13 @@ p {
   border: 1px solid #CCC; */
 }
 
+/** Custom Input Group **/
+/************************/
+
+.custominputgroup td {
+    vertical-align: top;
+}
+
 /** Requirements **/
 /******************/
 .requirements, .waitingroom {

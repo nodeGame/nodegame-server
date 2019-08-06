@@ -39853,16 +39853,19 @@ if (!Array.prototype.indexOf) {
         // Optionally set context.
         if (w.context) w.setContext(w.context);
 
-        // Adapt UI, if requested.
+        // Adapt UI 1: visibility.
         if (options.hidden || w._hidden) w.hide();
         if (options.collapsed || w._collapsed) w.collapse();
-        if (options.disabled || w._disabled) w.disable();
-        if (options.highlighted || w._highlighted) w.highlight();
 
         // Append.
         root.appendChild(w.panelDiv);
         w.originalRoot = root;
         w.append();
+
+        // Adapt UI 2: changes to elements. Needs to be after append, because
+        // some elements needs to be created by append and then disabled.
+        if (options.highlighted || w._highlighted) w.highlight();
+        if (options.disabled || w._disabled) w.disable();
 
         // Make sure the distance from the right side is correct.
         if (w.docked) setRightStyle(w);
@@ -47358,11 +47361,11 @@ if (!Array.prototype.indexOf) {
          * The function returns the postprocessed valued
          */
         this.postprocess = null;
-        
+
         /**
          * ### CustomInput.oninput
          *
-         * A function that is executed after any input 
+         * A function that is executed after any input
          *
          * It is executed after validation and receives a result object
          * and a reference to this widget.
@@ -48145,7 +48148,7 @@ if (!Array.prototype.indexOf) {
             }
             this.oninput = opts.oninput;
         }
-        
+
         // Validation Speed
         if ('undefined' !== typeof opts.validationSpeed) {
             tmp = J.isInt(opts.valiadtionSpeed, 0, undefined, true);
@@ -48646,6 +48649,8 @@ if (!Array.prototype.indexOf) {
     CustomInputGroup.title = false;
     CustomInputGroup.className = 'custominputgroup';
 
+    CustomInputGroup.separator = '::';
+    
     CustomInputGroup.texts.autoHint = function(w) {
         if (w.requiredChoice) return '*';
         else return false;
@@ -48902,7 +48907,7 @@ if (!Array.prototype.indexOf) {
          * An HTML element displayed when a validation error occurs
          */
         this.errorBox = null;
-        
+
         /**
          * ### CustomInputGroup.validation
          *
@@ -48918,7 +48923,7 @@ if (!Array.prototype.indexOf) {
          *
          * Return value:
          *
-         * - res: the result object as it is on success, or with with an err 
+         * - res: the result object as it is on success, or with with an err
          *        property containing the error message on failure. Any change
          *        to the result object is carried over.
          *
@@ -48934,7 +48939,7 @@ if (!Array.prototype.indexOf) {
          * @api private
          */
         this._validation = null;
-        
+
         /**
          * ### CustomInputGroup.oninput
          *
@@ -49070,8 +49075,8 @@ if (!Array.prototype.indexOf) {
         // Set the validation function.
         if ('function' === typeof opts.validation) {
             this._validation = opts.validation;
-            
-            this.validation = function(values, res) {
+
+            this.validation = function(res, values) {
                 if (!values) values = that.getValues({ valuesOnly: true });
                 return that._validation(res || {}, values, that)
             };
@@ -49085,12 +49090,12 @@ if (!Array.prototype.indexOf) {
         // Set the validation function.
         if ('function' === typeof opts.oninput) {
             this._oninput = opts.oninput;
-            
+
             this.oninput = function(res, input) {
                 that._oninput(res, input, that);
             };
         }
-        else if ('undefined' !== typeof opts.validation) {
+        else if ('undefined' !== typeof opts.oninput) {
             throw new TypeError('CustomInputGroup.init: oninput must ' +
                                 'be function or undefined. Found: ' +
                                 opts.oninput);
@@ -49108,7 +49113,8 @@ if (!Array.prototype.indexOf) {
 
         // Set the hint, if any.
         if ('string' === typeof opts.hint) {
-            this.hint = opts.hint;
+            this.hint = opts.hint;            
+            if (this.requiredChoice) this.hint += ' *';
         }
         else if ('undefined' !== typeof opts.hint) {
             throw new TypeError('CustomInputGroup.init: hint must ' +
@@ -49274,7 +49280,7 @@ if (!Array.prototype.indexOf) {
             // Remove any warning/error from form on click.
             if (that.isHighlighted()) that.unhighlight();
         };
-        
+
         this.enable(true);
     };
 
@@ -49422,7 +49428,7 @@ if (!Array.prototype.indexOf) {
     CustomInputGroup.prototype.unhighlight = function() {
         if (!this.table || this.highlighted !== true) return;
         this.table.style.border = '';
-        this.highlighted = false;        
+        this.highlighted = false;
         this.errorBox.innerHTML = '';
         this.emit('unhighlighted');
     };
@@ -49474,12 +49480,13 @@ if (!Array.prototype.indexOf) {
         // Make sure reset is done only at the end.
         toReset = opts.reset;
         opts.reset = false;
+
         if (this.validation) values = {};
         for ( ; ++i < len ; ) {
             input = this.items[i];
             res.items[input.id] = input.getValues(opts);
             // TODO is null or empty?
-            if (res.items[input.id].value === null) {
+            if (res.items[input.id].value === "") {
                 res.missValues = true;
                 if (input.requiredChoice) {
                     res.err = true;
@@ -49491,11 +49498,12 @@ if (!Array.prototype.indexOf) {
             }
             if (values) values[input.id] = res.items[input.id].value;
         }
-        if (res.err) res.err = this.getText('inputErr');
-        else if (values) this.validation(res, values);
-        res.timeBegin = this.timeBegin;
-        res.timeEnd = this.timeEnd;        
-        if (opts.highlight && res.err) this.setError(res.err);
+        if (!res.err && values) {
+            // res.err = this.getText('inputErr');
+            this.validation(res, values);
+            if (opts.highlight && res.err) this.setError(res.err);
+
+        }
         else if (toReset) this.reset(toReset);
         opts.reset = toReset;
         if (this.textarea) res.freetext = this.textarea.value;
@@ -49719,6 +49727,8 @@ if (!Array.prototype.indexOf) {
             storeRef: false,
             title: false,
             panel: false,
+            className: 'custominputgroup-summary',
+            disabled: true
         }, that.sharedOptions);
         s = J.mixin(s, that.summaryInput);
         td = document.createElement('td');
