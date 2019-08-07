@@ -505,13 +505,14 @@ div.choicetable div.panel-heading {
   text-align: left;
 }
 
-
 textarea.choicemanager-freetext,
+textarea.choicetablegroup-freetext
 textarea.choicetable-freetext {
   margin: 20px 0 0 !important;
   padding: 5px;
   text-align: left;
   float: left;
+  width: 100%;
 }
 
 table.choicetable {
