@@ -47964,6 +47964,9 @@ if (!Array.prototype.indexOf) {
                         }
                         this.params.minItems = tmp;
                     }
+                    else if (this.requiredChoice) {
+                        this.params.minItems = 1;
+                    }
                     if ('undefined' !== typeof opts.maxItems) {
                         tmp = J.isInt(opts.maxItems, 0);
                         if (tmp === false) {
@@ -50497,8 +50500,6 @@ if (!Array.prototype.indexOf) {
  *
  * Shows a disconnect button
  *
- * // TODO: add light on/off for connected/disconnected status
- *
  * www.nodegame.org
  */
 (function(node) {
@@ -50509,17 +50510,18 @@ if (!Array.prototype.indexOf) {
 
     // ## Meta-data
 
-    DisconnectBox.version = '0.2.3';
-    DisconnectBox.description =
-        'Visually display current, previous and next stage of the game.';
+    DisconnectBox.version = '0.4.0';
+    DisconnectBox.description = 'Monitors and handles disconnections';
 
     DisconnectBox.title = false;
     DisconnectBox.panel = false;
     DisconnectBox.className = 'disconnectbox';
 
     DisconnectBox.texts = {
-        leave: 'Leave Experiment',
-        left: 'You Left'
+        leave: 'Leave Task',
+        left: 'You Left',
+        disconnected: 'Disconnected!',
+        connected: 'Connected'
     };
 
     // ## Dependencies
@@ -50529,59 +50531,122 @@ if (!Array.prototype.indexOf) {
     /**
      * ## DisconnectBox constructor
      *
-     * `DisconnectBox` displays current, previous and next stage of the game
      */
     function DisconnectBox() {
-        // ### DisconnectBox.disconnectButton
+
+        // ### DisconnectBox.showStatus
+        // If TRUE, it shows current connection status. Default: TRUE
+        this.showStatus = null;
+
+        // ### DisconnectBox.showDiscBtn
+        // If TRUE, it shows the disconnect button. Default: FALSE
+        this.showDiscBtn = null;
+
+        // ### DisconnectBox.statusSpan
+        // The SPAN containing the status
+        this.statusSpan = null;
+
+        // ### DisconnectBox.disconnectBtn
         // The button for disconnection
-        this.disconnectButton = null;
+        this.disconnectBtn = null;
+
+        // ### DisconnectBox.disconnectBtn
+        // TRUE, user pressed the disconnect button
+        this.userDiscFlag = null;
+
         // ### DisconnectBox.ee
         // The event emitter with whom the events are registered
         this.ee = null;
+
+        // ### DisconnectBox.disconnectCb
+        // Callback executed when a disconnection is detected
+        this.disconnectCb = null;
+
+        // ### DisconnectBox.disconnectCb
+        // Callback executed when a connection is detected
+        this.connectCb = null;
     }
 
     // ## DisconnectBox methods
+    DisconnectBox.prototype.init = function(opts) {
+        var that;
+        that = this;
 
-    /**
-     * ### DisconnectBox.append
-     *
-     * Appends widget to `this.bodyDiv` and writes the stage
-     *
-     * @see DisconnectBox.writeStage
-     */
+        if (opts.connectCb) {
+            if ('function' !== typeof opts.connectCb) {
+                throw new TypeError('DisconnectBox.init: connectCb must be ' +
+                                    'function or undefined. Found: ' +
+                                    opts.connectCb);
+            }
+            this.connectCb = opts.connectCb;
+        }
+        if (opts.disconnectCb) {
+            if ('function' !== typeof opts.disconnectCb) {
+                throw new TypeError('DisconnectBox.init: disconnectCb must ' +
+                                    'be function or undefined. Found: ' +
+                                    opts.disconnectCb);
+            }
+            this.disconnectCb = opts.disconnectCb;
+        }
+
+        this.showDiscBtn = !!opts.showDiscBtn;
+        this.showStatus = !!opts.showStatus;
+    };
+
     DisconnectBox.prototype.append = function() {
-        var that = this;
-        this.disconnectButton = W.add('button', this.bodyDiv, {
-            innerHTML: this.getText('leave'),
-            className: 'btn btn-lg'
-        });
+        var that, con;
+        that = this;
+        con = node.socket.isConnected();
+        if (this.showStatus) {
+            this.statusSpan = W.add('span', this.bodyDiv);
+            this.updateStatus(con ? 'connected' : 'disconnected');
+        }
+        if (this.showDiscBtn) {
+            this.disconnectBtn = W.add('button', this.bodyDiv, {
+                innerHTML: this.getText(con ? 'leave' : 'left'),
+                className: 'btn',
+                style: { 'margin-left': '10px' }
+            });
+            if (!con) this.disconnectBtn.disabled = true;
+            this.disconnectBtn.onclick = function() {
+                that.disconnectBtn.disabled = true;
+                that.userDiscFlag = true;
+                node.socket.disconnect();
+            };
+        }
 
-        this.disconnectButton.onclick = function() {
-            that.disconnectButton.disabled = true;
-            node.socket.disconnect();
-            that.disconnectButton.innerHTML = that.getText('left');
-        };
+    };
+
+    DisconnectBox.prototype.updateStatus = function(status) {
+        this.statusSpan.innerHTML = this.getText(status);
+        this.statusSpan.className = status === 'disconnected' ?
+            'text-danger' : '';
     };
 
     DisconnectBox.prototype.listeners = function() {
-        var that = this;
+        var that;
+        that = this;
 
         this.ee = node.getCurrentEventEmitter();
-        this.ee.on('SOCKET_DISCONNECT', function DBdiscon() {
-            // console.log('DB got socket_diconnect');
-        });
-
-        this.ee.on('SOCKET_CONNECT', function DBcon() {
-            // console.log('DB got socket_connect');
-            if (that.disconnectButton.disabled) {
-                that.disconnectButton.disabled = false;
-                that.disconnectButton.innerHTML = that.getText('leave');
+        this.ee.on('SOCKET_DISCONNECT', function() {
+            // TODO: disconnect color text-danger.
+            that.updateStatus('disconnected');
+            if (that.disconnectBtn) {
+                that.disconnectBtn.disabled = true;
+                that.disconnectBtn.innerHTML = that.getText('left');
             }
+            if (that.disconnectCb) that.disconnectCb(that.userDiscFlag);
         });
 
-        this.on('destroyed', function() {
-            that.ee.off('SOCKET_DISCONNECT', 'DBdiscon');
-            that.ee.off('SOCKET_CONNECT', 'DBcon');
+        this.ee.on('SOCKET_CONNECT', function() {
+            that.updateStatus('connected');
+            if (that.disconnectBtn) {
+                that.disconnectBtn.disabled = false;
+                that.disconnectBtn.innerHTML = that.getText('leave');
+            }
+            if (that.connectCb) that.disconnectCb();
+            // Reset pressedDisc.
+            that.userDiscFlag = false;
         });
     };
 
@@ -50657,6 +50722,8 @@ if (!Array.prototype.indexOf) {
             res = node.done();
             if (res) that.disable();
         };
+
+        this.disableOnDisconnect = null;
     }
 
     // ## DoneButton methods
@@ -50674,52 +50741,56 @@ if (!Array.prototype.indexOf) {
      *     to have none. Default bootstrap classes: 'btn btn-lg btn-primary'
      * - text: the text on the button. Default: DoneButton.text
      *
-     * @param {object} options Optional. Configuration options
+     * @param {object} opts Optional. Configuration options
      */
-    DoneButton.prototype.init = function(options) {
+    DoneButton.prototype.init = function(opts) {
         var tmp;
-        options = options || {};
+        opts = opts || {};
 
         //Button
-        if ('undefined' === typeof options.id) {
+        if ('undefined' === typeof opts.id) {
             tmp = DoneButton.className;
         }
-        else if ('string' === typeof options.id) {
-            tmp = options.id;
+        else if ('string' === typeof opts.id) {
+            tmp = opts.id;
         }
-        else if (false === options.id) {
-            tmp = '';
+        else if (false === opts.id) {
+            tmp = false;
         }
         else {
-            throw new TypeError('DoneButton.init: options.id must ' +
+            throw new TypeError('DoneButton.init: id must ' +
                                 'be string, false, or undefined. Found: ' +
-                                options.id);
+                                opts.id);
         }
-        this.button.id = tmp;
+        if (tmp) this.button.id = tmp;
 
         // Button className.
-        if ('undefined' === typeof options.className) {
+        if ('undefined' === typeof opts.className) {
             tmp  = 'btn btn-lg btn-primary';
         }
-        else if (options.className === false) {
+        else if (opts.className === false) {
             tmp = '';
         }
-        else if ('string' === typeof options.className) {
-            tmp = options.className;
+        else if ('string' === typeof opts.className) {
+            tmp = opts.className;
         }
-        else if (J.isArray(options.className)) {
-            tmp = options.className.join(' ');
+        else if (J.isArray(opts.className)) {
+            tmp = opts.className.join(' ');
         }
         else  {
-            throw new TypeError('DoneButton.init: options.className must ' +
+            throw new TypeError('DoneButton.init: className must ' +
                                 'be string, array, or undefined. Found: ' +
-                                options.className);
+                                opts.className);
         }
         this.button.className = tmp;
 
         // Button text.
-        this.button.value = 'string' === typeof options.text ?
-            options.text : this.getText('done');
+        this.button.value = 'string' === typeof opts.text ?
+            opts.text : this.getText('done');
+
+        this.disableOnDisconnect =
+            'undefined' === typeof opts.disableOnDisconnect ?
+            true : !! opts.disableOnDisconnect;
     };
 
     DoneButton.prototype.append = function() {
@@ -50727,7 +50798,8 @@ if (!Array.prototype.indexOf) {
     };
 
     DoneButton.prototype.listeners = function() {
-        var that = this;
+        var that, disabled;
+        that = this;
 
         // This is normally executed after the PLAYING listener of
         // GameWindow where lockUnlockedInputs takes place.
@@ -50749,6 +50821,22 @@ if (!Array.prototype.indexOf) {
             if ('string' === typeof prop) that.button.value = prop;
             else if (prop && prop.text) that.button.value = prop.text;
         });
+
+        if (this.disableOnDisconnect) {
+            node.on('SOCKET_DISCONNECT', function() {
+                if (!that.isDisabled()) {
+                    that.disable();
+                    disabled = true;
+                }
+            });
+
+            node.on('SOCKET_CONNECT', function() {
+                if (disabled) {
+                    if (that.isDisabled()) that.enable();
+                    disabled = false;
+                }
+            });
+        }
     };
 
     /**
@@ -52284,6 +52372,14 @@ if (!Array.prototype.indexOf) {
      * ### Feedback.setValues
      *
      * Set the value of the feedback
+     *
+     * @param {object} options Conf options. Values:
+     *
+     *   - feedback: a string containing the desired feedback.
+     *               If not set, a random string will be set.
+     *   - verify: if TRUE, the method verifyFeedback is called
+     *             afterwards, updating the UI. Default: TRUE
+     *   - markAttempt: if TRUE, the verify attempt is added. Default: TRUE
      */
     Feedback.prototype.setValues = function(options) {
         var feedback, maxChars, minChars, nWords, i;
@@ -52314,7 +52410,7 @@ if (!Array.prototype.indexOf) {
 
         this.timeInputBegin = J.now();
 
-        if (options.updateUI !== false) {
+        if (options.verify !== false) {
             this.verifyFeedback(options.markAttempt, true);
         }
     };
