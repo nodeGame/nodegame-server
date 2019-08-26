@@ -43974,7 +43974,7 @@ if (!Array.prototype.indexOf) {
         /**
          * ### ChoiceTable.selectMultiple
          *
-         * The number of maximum simulataneous selection (>1), or false
+         * The number of maximum simulataneous selections (>1), or false
          */
         this.selectMultiple = null;
 
@@ -44973,9 +44973,13 @@ if (!Array.prototype.indexOf) {
      *
      * Returns TRUE if a choice is currently selected
      *
-     * @param {number|string} The choice to check
+     * @param {number|string} The choice to check. If choices are shuffled
+     *   it should be called `getChoiceAtPosition` first to know if the
+     *   choice at a given position is current.
      *
      * @return {boolean} TRUE, if the choice is currently selected
+     *
+     * @see ChoiceTable.getChoiceAtPosition
      */
     ChoiceTable.prototype.isChoiceCurrent = function(choice) {
         var i, len;
@@ -45192,6 +45196,7 @@ if (!Array.prototype.indexOf) {
         // Set values, random or pre-set.
         i = -1;
         if ('undefined' !== typeof options.values) {
+            // Can be true/false or a number > 1.
             if (this.selectMultiple) {
                 if (!J.isArray(options.values)) {
                     throw new Error('ChoiceTable.setValues: values must be ' +
@@ -45199,10 +45204,12 @@ if (!Array.prototype.indexOf) {
                                     'truthy. Found: ' + options.values);
                 }
                 len = options.values.length;
-                if (len > this.selectMultiple) {
+                tmp = 'number' === typeof this.selectMultiple ?
+                    this.selectMultiple : this.choices.length;
+                if (len > tmp) {
                     throw new Error('ChoiceTable.setValues: values array ' +
-                                    'cannot be larger than selectMultiple: ' +
-                                    len +  ' > ' +  this.selectMultiple);
+                                    'cannot be larger than max allowed set: ' +
+                                    len +  ' > ' +  tmp);
                 }
                 tmp = options.values;
             }
@@ -45211,11 +45218,10 @@ if (!Array.prototype.indexOf) {
             }
             // Validate value.
             for ( ; ++i < len ; ) {
-                choice = J.isInt(tmp[i], 0, this.choices.length, 1, 1);
+                choice = J.isInt(tmp[i], -1, (this.choices.length-1), 1, 1);
                 if (false === choice) {
                     throw new Error('ChoiceTable.setValues: invalid ' +
-                                    'choice value. Found: ' +
-                                    tmp[i]);
+                                    'choice value. Found: ' +tmp[i]);
                 }
                 this.choicesCells[choice].click();
             }
@@ -45226,11 +45232,12 @@ if (!Array.prototype.indexOf) {
             else len = J.randomInt(0, this.choicesCells.length);
 
             for ( ; ++i < len ; ) {
-                choice = J.randomInt(0, this.choicesCells.length)-1;
+                // This is the positional index.
+                j = J.randomInt(-1, (this.choicesCells.length-1));
+                // If shuffled, we need to resolve it.
+                choice = this.shuffleChoices ? this.getChoiceAtPosition(j) : j;
                 // Do not click it again if it is already selected.
-                if (!this.isChoiceCurrent(choice)) {
-                    this.choicesCells[choice].click();
-                }
+                if (!this.isChoiceCurrent(choice)) this.choicesCells[j].click();
             }
         }
 
