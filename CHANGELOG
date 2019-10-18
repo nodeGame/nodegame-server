@@ -1,7 +1,10 @@
 # nodegame-server change log
 
 ## 5.5.0 current
-- Updated CSS and built for new widget RiskGauge.
+- Updated CSS.
+- Fixed bug when logging some error with sysLogger.
+- Options client, append, filer for GameRoom.computeBonus.
+- New build includes widgets RiskGauge, CustomInputGroup.
 
 ## 5.4.0
 - Fixed homePage bug.
