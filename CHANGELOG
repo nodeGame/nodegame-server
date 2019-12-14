@@ -3,7 +3,7 @@
 ## 5.5.0
 - Updated CSS.
 - Fixed bug when logging some error with sysLogger.
-- Options client, append, filer for GameRoom.computeBonus.
+- Options client, append, filter for GameRoom.computeBonus.
 - New build includes widgets RiskGauge, CustomInputGroup.
 
 ## 5.4.0
