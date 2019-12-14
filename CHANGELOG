@@ -1,6 +1,6 @@
 # nodegame-server change log
 
-## 5.5.0 current
+## 5.5.0
 - Updated CSS.
 - Fixed bug when logging some error with sysLogger.
 - Options client, append, filer for GameRoom.computeBonus.

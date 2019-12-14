@@ -1251,7 +1251,8 @@ if (!Array.prototype.indexOf) {
      *
      * The original array is not modified.
      *
-     * @param {array} array the array to repeat
+     * @param {array|mixed} array the array to repeat. If not an array, it
+     *   it will be made an array.
      * @param {number} times The number of times the array must be appended
      *   to itself
      *
@@ -1259,13 +1260,12 @@ if (!Array.prototype.indexOf) {
      */
     ARRAY.rep = function(array, times) {
         var i, result;
-        if (!array) return;
+        if (!ARRAY.isArray(array)) array = [ array ];
         if (!times) return array.slice(0);
         if (times < 1) {
             JSUS.log('times must be greater or equal 1', 'ERR');
             return;
         }
-
         i = 1;
         result = array.slice(0);
         for (; i < times; i++) {
@@ -4596,7 +4596,7 @@ if (!Array.prototype.indexOf) {
      *
      * Generates a pseudo-random date between
      *
-     * @param {Date} startDate The lower date
+     * @param {Date} startDate Optional. The lower date. Default: 01-01-1900.
      * @param {Date} endDate Optional. The upper date. Default: today.
      *
      * @return {number} A random date in the chosen interval
@@ -4610,18 +4610,19 @@ if (!Array.prototype.indexOf) {
                 !isNaN(date);
         }
         return function(startDate, endDate) {
-            if (!isValidDate(startDate)) {
+            if ('undefined' === typeof startDate) {
+                startDate = new Date("1900");
+            }
+            else if (!isValidDate(startDate)) {
                 throw new TypeError('randomDate: startDate must be a valid ' +
                                     'date. Found: ' + startDate);
             }
-            if (endDate) {
-                if (!isValidDate(endDate)) {
-                    throw new TypeError('randomDate: endDate must be a valid ' +
-                                        'date or undefined. Found: ' + endDate);
-                }
-            }
-            else {
+            if ('undefined' === typeof endDate) {
                 endDate = new Date();
+            }
+            else if (!isValidDate(endDate)) {
+                throw new TypeError('randomDate: endDate must be a valid ' +
+                                    'date or undefined. Found: ' + endDate);
             }
             return new Date(startDate.getTime() + Math.random() *
                             (endDate.getTime() - startDate.getTime()));
@@ -10231,7 +10232,7 @@ if (!Array.prototype.indexOf) {
     node.support = JSUS.compatibility();
 
     // Auto-Generated.
-    node.version = '5.3.0';
+    node.version = '5.5.0';
 
 })(window);
 
@@ -23584,8 +23585,6 @@ if (!Array.prototype.indexOf) {
             stagerSync: true
         });
 
-
-
         // Setting to stage 0.0.0 and starting.
         this.setCurrentGameStage(new GameStage(), 'S');
         this.setStateLevel(constants.stateLevels.STARTING, 'S');
@@ -24428,10 +24427,14 @@ if (!Array.prototype.indexOf) {
             if (doneCb) {
                 origDoneCb = doneCb;
                 doneCb = function() {
-                    var values;
+                    var values, valuesCb;
                     values = widgetDone.call(this);
                     if (values !== false) {
-                        values = origDoneCb.call(this, values);
+                        valuesCb = origDoneCb.call(this, values);
+                        // Standard DONE callback behavior (to modify objects).
+                        if ('undefined' !== typeof valuesCb) {
+                            return values = valuesCb;
+                        }
                     }
                     return values;
                 };
@@ -34049,20 +34052,29 @@ if (!Array.prototype.indexOf) {
                 W.adjustFrameHeight(userMinHeight, 120);
                 return;
             }
-            // Try to find out how tall the frame should be.
-            minHeight = window.innerHeight || window.clientHeight;
 
-            contentHeight = iframe.contentWindow.document.body.offsetHeight;
-            // Rule of thumb.
-            contentHeight += 60;
 
-            if (W.headerPosition === "top") contentHeight += W.headerOffset;
+            if (W.conf.adjustFrameHeight === false) {
+                minHeight = '100vh';
+            }
+            else {
 
-            if (minHeight < contentHeight) minHeight = contentHeight;
-            if (minHeight < (userMinHeight || 0)) minHeight = userMinHeight;
+                // Try to find out how tall the frame should be.
+                minHeight = window.innerHeight || window.clientHeight;
+
+                contentHeight = iframe.contentWindow.document.body.offsetHeight;
+                // Rule of thumb.
+                contentHeight += 60;
+
+                if (W.headerPosition === "top") contentHeight += W.headerOffset;
+
+                if (minHeight < contentHeight) minHeight = contentHeight;
+                if (minHeight < (userMinHeight || 0)) minHeight = userMinHeight;
+                minHeight += 'px';
+            }
 
             // Adjust min-height based on content.
-            iframe.style['min-height'] = minHeight + 'px';
+            iframe.style['min-height'] = minHeight;
         };
 
         return function(userMinHeight, delay) {
@@ -41693,7 +41705,8 @@ if (!Array.prototype.indexOf) {
                     options.canvas.width = options.width;
                 }
             }
-            this.canvas = W.getCanvas('ChernoffFaces_canvas', options.canvas);
+            this.canvas = W.get('canvas', options.canvas);
+            this.canvas.id = 'ChernoffFaces_canvas';
 
             // Face Painter.
             this.fp = new FacePainter(this.canvas);
@@ -43727,7 +43740,7 @@ if (!Array.prototype.indexOf) {
 
     // ## Meta-data
 
-    ChoiceTable.version = '1.6.1';
+    ChoiceTable.version = '1.6.2';
     ChoiceTable.description = 'Creates a configurable table where ' +
         'each cell is a selectable choice.';
 
@@ -43749,8 +43762,13 @@ if (!Array.prototype.indexOf) {
         }
         else {
             if ('number' === typeof w.selectMultiple) {
-                res += 'select between ' + w.requiredChoice + ' and ' +
-                    w.selectMultiple;
+                if (w.selectMultiple === w.requiredChoice) {
+                    res += 'select ' + w.requiredChoice;
+                }
+                else {
+                    res += 'select between ' + w.requiredChoice +
+                        ' and ' + w.selectMultiple;
+                }
             }
             else {
                 res += 'select at least ' + w.requiredChoice;
@@ -45088,9 +45106,7 @@ if (!Array.prototype.indexOf) {
      *
      * Returns TRUE if a choice is currently selected
      *
-     * @param {number|string} The choice to check. If choices are shuffled
-     *   it should be called `getChoiceAtPosition` first to know if the
-     *   choice at a given position is current.
+     * @param {number|string} The choice to check.
      *
      * @return {boolean} TRUE, if the choice is currently selected
      *
@@ -45105,18 +45121,30 @@ if (!Array.prototype.indexOf) {
             throw new TypeError('ChoiceTable.isChoiceCurrent: choice ' +
                                 'must be string or number. Found: ' + choice);
         }
-        if (!this.selectMultiple) {
-            return this.currentChoice === choice;
-        }
-        else {
-            i = -1, len = this.currentChoice.length;
-            for ( ; ++i < len ; ) {
-                if (this.currentChoice[i] === choice) {
-                    return true;
-                }
-            }
+        if (!this.selectMultiple) return this.currentChoice === choice;
+        i = -1, len = this.currentChoice.length;
+        for ( ; ++i < len ; ) {
+            if (this.currentChoice[i] === choice) return true;
         }
         return false;
+    };
+
+    /**
+     * ### ChoiceTable.getChoiceAtPosition
+     *
+     * Returns a choice displayed at a given position
+     *
+     * @param {string|number} i The numeric position of a choice in display
+     *
+     * @return {string|undefined} The value associated the numeric position.
+     *   If no value is found, returns undefined
+     *
+     * @see ChoiceTable.order
+     * @see ChoiceTable.choices
+     */
+    ChoiceTable.prototype.getChoiceAtPosition = function(i) {
+        if (!this.choices || !this.order) return;
+        return this.choices[this.order[parseInt(i, 10)]];
     };
 
     /**
@@ -45152,24 +45180,6 @@ if (!Array.prototype.indexOf) {
         this.table.style.border = '';
         this.highlighted = false;
         this.emit('unhighlighted');
-    };
-
-    /**
-     * ### ChoiceTable.getChoiceAtPosition
-     *
-     * Returns a choice displayed at a given position
-     *
-     * @param {string|number} i The numeric position of a choice in display
-     *
-     * @return {string|undefined} The value associated the numeric position.
-     *   If no value is found, returns undefined
-     *
-     * @see ChoiceTable.order
-     * @see ChoiceTable.choices
-     */
-    ChoiceTable.prototype.getChoiceAtPosition = function(i) {
-        if (!this.choices || !this.order) return;
-        return this.choices[this.order[parseInt(i, 10)]];
     };
 
     /**
@@ -45394,7 +45404,7 @@ if (!Array.prototype.indexOf) {
             }
         }
 
-        if (this.textArea) this.textArea.value = '';
+        if (this.textarea) this.textarea.value = '';
         if (this.isHighlighted()) this.unhighlight();
 
         if (options.shuffleChoices) this.shuffle();
@@ -46744,6 +46754,92 @@ if (!Array.prototype.indexOf) {
 })(node);
 
 /**
+ * # ContentBox
+ * Copyright(c) 2019 Stefano Balietti
+ * MIT Licensed
+ *
+ * Displays some content.
+ *
+ * www.nodegame.org
+ */
+(function(node) {
+
+    "use strict";
+
+    node.widgets.register('ContentBox', ContentBox);
+
+    // ## Meta-data
+
+    ContentBox.version = '0.1.0';
+    ContentBox.description = 'Simply displays some content';
+
+    ContentBox.title = false;
+    ContentBox.panel = false;
+    ContentBox.className = 'contentbox';
+
+
+    // ## Dependencies
+
+    ContentBox.dependencies = {};
+
+    /**
+     * ## ContentBox constructor
+     *
+     */
+    function ContentBox() {
+
+        // ### ContentBox.mainText
+        // The main text above the content.
+        this.mainText = null;
+
+        // ### ContentBox.content
+        // Some Content to be displayed.
+        this.content = null;
+    }
+
+    // ## ContentBox methods
+    ContentBox.prototype.init = function(opts) {
+        // Set the mainText, if any.
+        if ('string' === typeof opts.mainText) {
+            this.mainText = opts.mainText;
+        }
+        else if ('undefined' !== typeof opts.mainText) {
+            throw new TypeError('ContentBox.init: mainText must ' +
+                                'be string or undefined. Found: ' +
+                                opts.mainText);
+        }
+        // Set the content, if any.
+        if ('string' === typeof opts.content) {
+            this.content = opts.content;
+        }
+        else if ('undefined' !== typeof opts.content) {
+            throw new TypeError('ContentBox.init: content must ' +
+                                'be string or undefined. Found: ' +
+                                opts.content);
+        }
+
+    };
+
+    ContentBox.prototype.append = function() {
+        // MainText.
+        if (this.mainText) {
+            W.append('span', this.bodyDiv, {
+                className: 'contentbox-maintext',
+                innerHTML: this.mainText
+            });
+        }
+        // Content.
+        if (this.content) {
+            W.append('div', this.bodyDiv, {
+                className: 'contentbox-content',
+                innerHTML: this.content
+            });
+        }
+    };
+
+})(node);
+
+/**
  * # Controls
  * Copyright(c) 2017 Stefano Balietti <ste@nodegame.org>
  * MIT Licensed
@@ -47388,8 +47484,9 @@ if (!Array.prototype.indexOf) {
             }
             return str;
         },
-        textErr: function(w, len) {
+        textErr: function(w, param) {
             var str, p;
+            if (param === 'num') return 'Cannot contain numbers';
             p = w.params;
             str = 'Must be ';
             if (p.exactly) {
@@ -47406,7 +47503,7 @@ if (!Array.prototype.indexOf) {
             }
             str += ' characters long';
             if (p.between) str += ' (extremes included)';
-            str += '. Current length: ' + len;
+            str += '. Current length: ' + param;
             return str;
         },
         dateErr: function(w, param) {
@@ -47742,6 +47839,9 @@ if (!Array.prototype.indexOf) {
 
                 // Checks for text only.
                 if (isText) {
+
+                    this.params.noNumbers = opts.noNumbers;
+                    
                     if ('undefined' !== typeof this.params.lower) {
                         if (this.params.lower < 0) {
                             throw new TypeError(e + 'min cannot be negative ' +
@@ -47764,19 +47864,25 @@ if (!Array.prototype.indexOf) {
                         p = that.params;
                         len = value.length;
                         out = { value: value };
-                        if (p.exactly) {
-                            err = len !== p.lower;
+                        if (p.noNumbers && /\d/.test(value)) {
+                            err = that.getText('textErr', 'num');
                         }
                         else {
-                            if (('undefined' !== typeof p.lower &&
-                                 len < p.lower) ||
-                                ('undefined' !== typeof p.upper &&
-                                 len > p.upper)) {
-
-                                err = true;
+                            if (p.exactly) {
+                                err = len !== p.lower;
                             }
+                            else {
+                                if (('undefined' !== typeof p.lower &&
+                                     len < p.lower) ||
+                                    ('undefined' !== typeof p.upper &&
+                                     len > p.upper)) {
+                                    
+                                    err = true;
+                                }
+                            }
+                            if (err) err = that.getText('textErr', len);
                         }
-                        if (err) out.err = that.getText('textErr', len);
+                        if (err) out.err = err;
                         return out;
                     };
 
@@ -50740,6 +50846,10 @@ if (!Array.prototype.indexOf) {
     };
 
     DisconnectBox.prototype.updateStatus = function(status) {
+        if (!this.statusSpan) {
+            node.warn('DisconnectBox.updateStatus: display disabled.');
+            return;
+        }
         this.statusSpan.innerHTML = this.getText(status);
         this.statusSpan.className = status === 'disconnected' ?
             'text-danger' : '';
@@ -50751,8 +50861,7 @@ if (!Array.prototype.indexOf) {
 
         this.ee = node.getCurrentEventEmitter();
         this.ee.on('SOCKET_DISCONNECT', function() {
-            // TODO: disconnect color text-danger.
-            that.updateStatus('disconnected');
+            if (that.statusSpan) that.updateStatus('disconnected');
             if (that.disconnectBtn) {
                 that.disconnectBtn.disabled = true;
                 that.disconnectBtn.innerHTML = that.getText('left');
@@ -50761,7 +50870,7 @@ if (!Array.prototype.indexOf) {
         });
 
         this.ee.on('SOCKET_CONNECT', function() {
-            that.updateStatus('connected');
+            if (that.statusSpan) that.updateStatus('connected');
             if (that.disconnectBtn) {
                 that.disconnectBtn.disabled = false;
                 that.disconnectBtn.innerHTML = that.getText('leave');
@@ -50966,8 +51075,11 @@ if (!Array.prototype.indexOf) {
      *
      * Disables the done button
      */
-    DoneButton.prototype.disable = function() {
-        this.button.disabled = 'disabled';
+    DoneButton.prototype.disable = function(opts) {
+        if (this.disabled) return;
+        this.disabled = true;
+        this.button.disabled = true;
+        this.emit('disabled', opts);
     };
 
     /**
@@ -50975,8 +51087,11 @@ if (!Array.prototype.indexOf) {
      *
      * Enables the done button
      */
-    DoneButton.prototype.enable = function() {
+    DoneButton.prototype.enable = function(opts) {
+        if (!this.disabled) return;
+        this.disabled = false;
         this.button.disabled = false;
+        this.emit('enabled', opts);
     };
 
 })(node);
@@ -51629,7 +51744,7 @@ if (!Array.prototype.indexOf) {
         if (this.showEmailForm && !this.emailForm) {
             this.emailForm = node.widgets.get('EmailForm', J.mixin({
                 label: this.getText('contactQuestion'),
-                onsubmit: { say: true, emailOnly: true, updateUI: true },
+                onsubmit: { send: true, emailOnly: true, updateUI: true },
                 storeRef: false
             }, options.email));
         }
@@ -51907,11 +52022,11 @@ if (!Array.prototype.indexOf) {
             }
             else if (w.minWords) {
                 res2 = 'at least ' + w.minWords + ' word';
-                if (w.minWords > 1) res += 's';
+                if (w.minWords > 1) res2 += 's';
             }
             else if (w.maxWords) {
                 res2 = 'at most ' +  w.maxWords + ' word';
-                if (w.maxWords > 1) res += 's';
+                if (w.maxWords > 1) res2 += 's';
             }
             if (res) {
                 res = '(' + res;;
@@ -53718,7 +53833,7 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # Requirements
- * Copyright(c) 2017 Stefano Balietti <ste@nodegame.org>
+ * Copyright(c) 2019 Stefano Balietti <ste@nodegame.org>
  * MIT Licensed
  *
  * Checks a list of requirements and displays the results
@@ -53736,7 +53851,7 @@ if (!Array.prototype.indexOf) {
 
     // ## Meta-data
 
-    Requirements.version = '0.7.1';
+    Requirements.version = '0.7.2';
     Requirements.description = 'Checks a set of requirements and display the ' +
         'results';
 
@@ -54117,7 +54232,7 @@ if (!Array.prototype.indexOf) {
 
         this.timeoutId = setTimeout(function() {
             if (that.stillChecking > 0) {
-                that.displayResults([this.getText('errStr')]);
+                that.displayResults([that.getText('errStr')]);
             }
             that.timeoutId = null;
             that.hasFailed = true;
@@ -55009,92 +55124,6 @@ if (!Array.prototype.indexOf) {
 
         return gauge;
     }
-
-})(node);
-
-/**
- * # ContentBox
- * Copyright(c) 2019 Stefano Balietti
- * MIT Licensed
- *
- * Displays some content.
- *
- * www.nodegame.org
- */
-(function(node) {
-
-    "use strict";
-
-    node.widgets.register('ContentBox', ContentBox);
-
-    // ## Meta-data
-
-    ContentBox.version = '0.1.0';
-    ContentBox.description = 'Simply displays some content';
-
-    ContentBox.title = false;
-    ContentBox.panel = false;
-    ContentBox.className = 'contentbox';
-
-
-    // ## Dependencies
-
-    ContentBox.dependencies = {};
-
-    /**
-     * ## ContentBox constructor
-     *
-     */
-    function ContentBox() {
-        
-        // ### ContentBox.mainText
-        // The main text above the content.
-        this.mainText = null;
-
-        // ### ContentBox.content
-        // Some Content to be displayed.
-        this.content = null;
-    }
-
-    // ## ContentBox methods
-    ContentBox.prototype.init = function(opts) {
-        // Set the mainText, if any.
-        if ('string' === typeof opts.mainText) {
-            this.mainText = opts.mainText;
-        }
-        else if ('undefined' !== typeof opts.mainText) {
-            throw new TypeError('ContentBox.init: mainText must ' +
-                                'be string or undefined. Found: ' +
-                                opts.mainText);
-        }
-        // Set the content, if any.
-        if ('string' === typeof opts.content) {
-            this.content = opts.content;
-        }
-        else if ('undefined' !== typeof opts.content) {
-            throw new TypeError('ContentBox.init: content must ' +
-                                'be string or undefined. Found: ' +
-                                opts.content);
-        }
-
-    };
-
-    ContentBox.prototype.append = function() {
-        // MainText.
-        if (this.mainText) {
-            W.append('span', this.bodyDiv, {
-                className: 'contentbox-maintext',
-                innerHTML: this.mainText
-            });
-        }
-        // Content.
-        if (this.content) {
-            W.append('div', this.bodyDiv, {
-                className: 'contentbox-content',
-                innerHTML: this.content
-            });
-        }
-    };
 
 })(node);
 
@@ -56726,7 +56755,7 @@ if (!Array.prototype.indexOf) {
             if (!this.isInitialized) {
                 this.internalTimer = true;
                 this.gameTimer = node.timer.createTimer({
-                    name: options.name || 'VisualTimer' // TODO auto naming
+                    name: options.name || 'VisualTimer_' + J.randomInt(10000000)
                 });
             }
         }
@@ -56775,13 +56804,6 @@ if (!Array.prototype.indexOf) {
             gameTimerOptions.timeup = options.timeup;
         }
 
-        if ('undefined' === typeof options.stopOnDone) {
-            options.stopOnDone = !!options.stopOnDone;
-        }
-        if ('undefined' === typeof options.startOnPlaying) {
-            options.startOnPlaying = !!options.startOnPlaying;
-        }
-
         // Init the gameTimer, regardless of the source (internal vs external).
         this.gameTimer.init(gameTimerOptions);
 
@@ -56807,6 +56829,13 @@ if (!Array.prototype.indexOf) {
 
         this.options = gameTimerOptions;
 
+        // Must be after this.options is assigned.
+        if ('undefined' === typeof this.options.stopOnDone) {
+            this.options.stopOnDone = true;
+        }
+        if ('undefined' === typeof this.options.startOnPlaying) {
+            this.options.startOnPlaying = true;
+        }
 
         if (!this.options.mainBoxOptions) {
             this.options.mainBoxOptions = {};
