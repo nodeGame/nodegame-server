@@ -1,5 +1,8 @@
 # nodegame-server change log
 
+## 5.6.1
+- Updated build widget BackButton.
+
 ## 5.6.0
 - The win property is added by default in every client
 - Updated build widgets (RiskGauge) and Client (PlayerList and widget.ref).
