@@ -10232,7 +10232,7 @@ if (!Array.prototype.indexOf) {
     node.support = JSUS.compatibility();
 
     // Auto-Generated.
-    node.version = '5.5.2';
+    node.version = '5.5.3';
 
 })(window);
 
@@ -24461,7 +24461,7 @@ if (!Array.prototype.indexOf) {
                     origExitCb = exitCb;
                     exitCb = function() {
                         widgetExit.call(this);
-                        origCb.call(this);
+                        origExitCb.call(this);
                     };
                 }
                 else {
