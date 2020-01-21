@@ -23530,12 +23530,12 @@ if (!Array.prototype.indexOf) {
          */
         this.plot = new GamePlot(this.node, new Stager());
 
-// TODO: check if we need this.
-//        // Overriding stdout for game plot and stager.
-//        this.plot.setDefaultLog(function() {
-//            // Must use apply, else will be executed in the wrong context.
-//            node.log.apply(node, arguments);
-//        });
+        // TODO: check if we need this.
+        //        // Overriding stdout for game plot and stager.
+        //        this.plot.setDefaultLog(function() {
+        //            // Must use apply, else will be executed in the wrong context.
+        //            node.log.apply(node, arguments);
+        //        });
 
         /**
          * ### Game.role
@@ -24000,6 +24000,29 @@ if (!Array.prototype.indexOf) {
     };
 
     /**
+     * ### Game.stepBack
+     *
+     * Executes the previous stage / step
+     *
+     * @param {object} options Optional. Options passed to `gotoStep`
+     *
+     * @return {boolean} FALSE, if the execution encountered an error
+     *
+     * @see Game.step
+     */
+    Game.prototype.stepBack = function(options) {
+        var prevStep;
+        prevStep = this.getPreviousStep(1, options);
+        if (!prevStep) return false;
+        // Update the array of stepped steps before we go back
+        // so that game.getPreviousStep() keeps working correctly.
+        // We need to remove current step, as well as previous, which is
+        // about to be re-added.
+        this._steppedSteps.splice(this._steppedSteps.length - 2, 2);
+        return this.gotoStep(prevStep, options);
+    };
+
+    /**
      * ### Game.step
      *
      * Executes the next stage / step
@@ -24436,7 +24459,7 @@ if (!Array.prototype.indexOf) {
                         valuesCb = origDoneCb.call(this, values);
                         // Standard DONE callback behavior (to modify objects).
                         if ('undefined' !== typeof valuesCb) {
-                            return values = valuesCb;
+                            values = valuesCb;
                         }
                     }
                     return values;
@@ -24604,7 +24627,7 @@ if (!Array.prototype.indexOf) {
         return this.plot.getStep(this.getCurrentGameStage());
     };
 
-     /**
+    /**
      * ### Game.getCurrentStep
      *
      * Alias for Game.prototype.getCurrentStepObj
@@ -24832,7 +24855,7 @@ if (!Array.prototype.indexOf) {
     Game.prototype.publishUpdate = function(type, update) {
         if ('string' !== typeof type) {
             throw new TypeError('Game.publishUpdate: type must be string. ' +
-                               'Found: ' + type);
+                                'Found: ' + type);
         }
         if (type !== 'stage' &&
             type !== 'stageLevel' &&
@@ -25025,7 +25048,7 @@ if (!Array.prototype.indexOf) {
         stateLevel = this.getStateLevel();
 
         return stateLevel > constants.stateLevels.INITIALIZING &&
-               stateLevel < constants.stateLevels.FINISHING;
+            stateLevel < constants.stateLevels.FINISHING;
     };
 
     /**
@@ -25104,12 +25127,22 @@ if (!Array.prototype.indexOf) {
      * Returns the game-stage played delta steps ago
      *
      * @param {number} delta Optional. The number of past steps. Default 1
-     * @param {bolean} execLoops Optional. If true, loop and doLoop
-     *   conditional function will be executed to determine the previous stage.
-     *   If false, null will be returned when a loop or doLoop is found
-     *   and more evaluations are still required. Note! This parameter is
-     *   evaluated only if no stage is found in the cache of stepped steps.
-     *   Default: true.
+     * @param {bolean|object} opts Optional. A configuration object accepting
+     *   the following options:
+     *
+     *      - acrossStages: if FALSE, if the previous step belongs to another
+     *          stage, it returns NULL. Default: TRUE.
+     *      - acrossRounds: if FALSE, if the previous step belongs to another
+     *          round, it returns NULL. Default: TRUE.
+     *      - noZeroStep: if TRUE, replaces return value 0.0.0 with NULL.
+     *          Default: FALSE.
+     *      - execLoops If TRUE, loop and doLoop conditional functions are
+     *          executed to determine the previous step. If FALSE, if a loop
+     *          or doLoop is found, it returns NULL. Note! This option is
+     *          evaluated only if no step is found in the cache. Default: TRUE
+     *
+     *   Note: for backward compatibility, if this parameter is a boolean,
+     *   it will be treated as option execLoops.
      *
      * @return {GameStage|null} The game-stage played delta steps ago,
      *   null if an error occurred (e.g., a loop stage), or stage 0.0.0 for
@@ -25118,8 +25151,8 @@ if (!Array.prototype.indexOf) {
      * @see Game._steppedSteps
      * @see GamePlot.jump
      */
-    Game.prototype.getPreviousStep = function(delta, execLoops) {
-        var len;
+    Game.prototype.getPreviousStep = function(delta, opts) {
+        var len, curStep, prevStep, execLoops;
         delta = delta || 1;
         if ('number' !== typeof delta || delta < 1) {
             throw new TypeError('Game.getPreviousStep: delta must be a ' +
@@ -25129,11 +25162,33 @@ if (!Array.prototype.indexOf) {
         len = this._steppedSteps.length - delta - 1;
         // In position 0 there is 0.0.0, which is added also in case
         // of a reconnection.
-        if (len > 0) return this._steppedSteps[len];
+        if (len > 0) {
+            prevStep = this._steppedSteps[len];
+        }
+        else {
+            // It is possible that it is a reconnection, so we are missing
+            // stepped steps. Let's do a deeper lookup.
+            if ('boolean' === typeof opts) execLoops = opts;
+            prevStep = this.plot.jump(this.getCurrentGameStage(),
+                                      -delta, execLoops);
+        }
+        // Additional checks might be needed.
+        if ('object' === typeof opts) {
+            curStep = node.game.getCurrentGameStage();
+            if (opts.acrossStages === false &&
+                (curStep.stage !== prevStep.stage)) {
 
-        // It is possible that it is a reconnection, so we are missing
-        // stepped steps. Let's do a deeper lookup.
-        return this.plot.jump(this.getCurrentGameStage(), -delta);
+                return null;
+            }
+            if (opts.acrossRounds === false &&
+                (curStep.round !== prevStep.round)) {
+
+                return null;
+            }
+            if (opts.noZeroStep && prevStep.stage === 0) return null;
+            
+        }
+        return prevStep;
         // For future reference, why is this complicated:
         // - Server could store all stepped steps and send them back
         //     upon reconnection, but it would miss steps stepped while client
@@ -40150,7 +40205,7 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # BackButton
- * Copyright(c) 2019 Stefano Balietti <ste@nodegame.org>
+ * Copyright(c) 2020 Stefano Balietti <ste@nodegame.org>
  * MIT Licensed
  *
  * Creates a button that if pressed goes to the previous step
@@ -40165,7 +40220,7 @@ if (!Array.prototype.indexOf) {
 
     // ## Meta-data
 
-    BackButton.version = '0.2.0';
+    BackButton.version = '0.3.0';
     BackButton.description = 'Creates a button that if ' +
         'pressed goes to the previous step.';
 
@@ -40212,30 +40267,44 @@ if (!Array.prototype.indexOf) {
                                 options.button);
         }
 
-        /**
-         * ### BackButton.acrossStages
-         *
-         * If TRUE, it allows to go back to previous stages
-         *
-         * Default: FALSE
-         */
-        this.acrossStages = null;
-
-        /**
-         * ### BackButton.acrossRounds
-         *
-         * If TRUE, it allows to go back previous rounds in the same stage
-         *
-         * Default: TRUE
-         */
-        this.acrossRounds = null;
-
         this.button.onclick = function() {
             var res;
+            res = node.game.stepBack(that.stepOptions);
+            if (res) that.disable();
+            return;
+            // OLD IMPLEMENTATION.
             res = getPreviousStep(that);
             if (!res) return;
+            // Update the array of stepped steps before we go back
+            // so that the new game.getPreviousStep() works correctly.
+            this._steppedSteps.pop();
             res = node.game.gotoStep(res);
             if (res) that.disable();
+        };
+
+        this.stepOptions = {
+
+            /**
+             * #### BackButton.stepOptions.acrossStages
+             *
+             * If TRUE, it allows to go back to previous stages
+             *
+             * Default: FALSE
+             */
+            acrossStages: null,
+
+            /**
+             * #### BackButton.stepOptions.acrossRounds
+             *
+             * If TRUE, it allows to go back previous rounds in the same stage
+             *
+             * Default: TRUE
+             */
+            acrossRounds: null,
+
+
+            // ## @api: private.
+            noZeroStep: true
         };
     }
 
@@ -40304,9 +40373,11 @@ if (!Array.prototype.indexOf) {
         this.button.value = 'string' === typeof options.text ?
             options.text : this.getText('back');
 
-        this.acrossStages = 'undefined' === typeof options.acrossStages ?
+        this.stepOptions.acrossStages =
+            'undefined' === typeof options.acrossStages ?
             false : !!options.acrossStages;
-        this.acrossRounds = 'undefined' === typeof options.acrossRounds ?
+        this.stepOptions.acrossRounds =
+            'undefined' === typeof options.acrossRounds ?
             true : !!options.acrossRounds;
     };
 
@@ -40320,7 +40391,7 @@ if (!Array.prototype.indexOf) {
         // Locks the back button in case of a timeout.
         node.events.game.on('PLAYING', function() {
             var prop, step;
-            step = getPreviousStep(that);
+            step = node.game.getPreviousStep(1, that.stepOptions);
             // It might be enabled already, but we do it again.
             if (step) that.enable();
             // Check options.
@@ -40366,7 +40437,7 @@ if (!Array.prototype.indexOf) {
      * @return {GameStage|Boolean} The previous step or FALSE if none is found
      */
     function getPreviousStep(that) {
-        var curStage,  prevStage;
+        var curStage, prevStage;
         curStage = node.game.getCurrentGameStage();
         if (curStage.stage === 0) return;
         prevStage = node.game.plot.jump(curStage, -1);
@@ -53918,7 +53989,7 @@ if (!Array.prototype.indexOf) {
         }
 
         gauge = node.widgets.get('ChoiceTableGroup', {
-            id: 'ipnassf',
+            id: options.id || 'ipnassf',
             items: items,
             mainText: this.mainText || this.getText('mainText'),
             title: false,
@@ -54613,7 +54684,7 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # RiskGauge
- * Copyright(c) 2019 Stefano Balietti
+ * Copyright(c) 2020 Stefano Balietti
  * MIT Licensed
  *
  * Displays an interface to measure risk preferences.
@@ -54628,7 +54699,7 @@ if (!Array.prototype.indexOf) {
 
     // ## Meta-data
 
-    RiskGauge.version = '0.3.0';
+    RiskGauge.version = '0.4.0';
     RiskGauge.description = 'Displays an interface to ' +
         'measure risk preferences.';
 
@@ -54817,19 +54888,19 @@ if (!Array.prototype.indexOf) {
         }
         if ('function' !== typeof gauge.getValues) {
             throw new Error('RiskGauge.init: method ' + method +
-                            ': gauge missing function getValues.');
+                            ': gauge missing function getValues');
         }
         if ('function' !== typeof gauge.enable) {
             throw new Error('RiskGauge.init: method ' + method +
-                            ': gauge missing function enable.');
+                            ': gauge missing function enable');
         }
         if ('function' !== typeof gauge.disable) {
             throw new Error('RiskGauge.init: method ' + method +
-                            ': gauge missing function disable.');
+                            ': gauge missing function disable');
         }
         if ('function' !== typeof gauge.append) {
             throw new Error('RiskGauge.init: method ' + method +
-                            ': gauge missing function append.');
+                            ': gauge missing function append');
         }
     }
 
@@ -54838,12 +54909,16 @@ if (!Array.prototype.indexOf) {
     // ### Holt and Laury
 
     function makeProbString(p1, v1, p2, v2, opts) {
-        var of, cur, sep;
+        var of, cur, sep, out;
         opts = opts || {};
         of = (opts.of || ' chance to win ');
         cur = opts.currency || '$';
         sep = opts.sep || '<span class="sep">and</span>';
-        return p1 + of + cur + v1 + sep + p2 + of + cur + v2;
+        out = p1 + of;
+        // Place currency sign before or after.
+        out += opts.currencyAfter ? v1 + cur : cur + v1;
+        out += sep + p2 + of;
+        return out + (opts.currencyAfter ? v2 + cur : cur + v2);
     }
 
     function holtLaury(options) {
@@ -54871,14 +54946,14 @@ if (!Array.prototype.indexOf) {
                 id: 'hl_' + j,
                 left: j + '. ',
                 choices: [
-                    makeProbString(p1, v1, p2, v2),
-                    makeProbString(p1, v3, p2, v4),
+                    makeProbString(p1, v1, p2, v2, options),
+                    makeProbString(p1, v3, p2, v4, options),
                 ]
             };
         }
 
         gauge = node.widgets.get('ChoiceTableGroup', {
-            id: 'holt_laury',
+            id: options.id || 'holt_laury',
             items: items,
             mainText: this.mainText || this.getText('mainText'),
             title: false,
@@ -55217,7 +55292,7 @@ if (!Array.prototype.indexOf) {
         }
 
         gauge = node.widgets.get('ChoiceTableGroup', {
-            id: 'svo_slider',
+            id: options.id || 'svo_slider',
             items: items,
             // TODO: should it be on getText at all?
             mainText: this.mainText || this.getText('mainText'),
