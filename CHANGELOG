@@ -1,5 +1,10 @@
 # nodegame-server change log
 
+## 5.6.4
+- GameRoom.computeBonus better handles amt vs non-amt parameters.
+- GameRoom.computeBonus headerKeys deprecated in favor of new syntax with
+arrays.
+
 ## 5.6.3
 - GameRoom.computeBonus has an option to add disconnected players to dump
 file; player type is now included by default.
