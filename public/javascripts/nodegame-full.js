@@ -10232,7 +10232,7 @@ if (!Array.prototype.indexOf) {
     node.support = JSUS.compatibility();
 
     // Auto-Generated.
-    node.version = '5.5.3';
+    node.version = '5.6.0';
 
 })(window);
 
@@ -23395,7 +23395,7 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # Game
- * Copyright(c) 2019 Stefano Balietti <ste@nodegame.org>
+ * Copyright(c) 2020 Stefano Balietti <ste@nodegame.org>
  * MIT Licensed
  *
  * Handles the flow of the game
@@ -23531,11 +23531,11 @@ if (!Array.prototype.indexOf) {
         this.plot = new GamePlot(this.node, new Stager());
 
         // TODO: check if we need this.
-        //        // Overriding stdout for game plot and stager.
-        //        this.plot.setDefaultLog(function() {
-        //            // Must use apply, else will be executed in the wrong context.
-        //            node.log.apply(node, arguments);
-        //        });
+        // // Overriding stdout for game plot and stager.
+        // this.plot.setDefaultLog(function() {
+        //     // Must use apply, else will be executed in the wrong context.
+        //     node.log.apply(node, arguments);
+        // });
 
         /**
          * ### Game.role
@@ -23641,6 +23641,9 @@ if (!Array.prototype.indexOf) {
          * Array of steps previously played
          *
          * @see Game.step
+         * @see Game.stepBack
+         *
+         * @api private
          */
         this._steppedSteps = [ new GameStage() ];
 
@@ -24004,11 +24007,18 @@ if (!Array.prototype.indexOf) {
      *
      * Executes the previous stage / step
      *
-     * @param {object} options Optional. Options passed to `gotoStep`
+     * Important! This function should be used only with the appropriate
+     * syncStepping settings and step rules. For more info see:
+     *
+     *   https://github.com/nodeGame/nodegame/wiki/BackButton-Widget-v5
+     *
+     * @param {object} options Optional. Options passed to
+     *   `getPreviousStep` and later `gotoStep`
      *
      * @return {boolean} FALSE, if the execution encountered an error
      *
-     * @see Game.step
+     * @see Game.getPreviousStep
+     * @see Game.gotoStep
      */
     Game.prototype.stepBack = function(options) {
         var prevStep;
@@ -25186,7 +25196,7 @@ if (!Array.prototype.indexOf) {
                 return null;
             }
             if (opts.noZeroStep && prevStep.stage === 0) return null;
-            
+
         }
         return prevStep;
         // For future reference, why is this complicated:
@@ -40220,7 +40230,7 @@ if (!Array.prototype.indexOf) {
 
     // ## Meta-data
 
-    BackButton.version = '0.3.0';
+    BackButton.version = '0.4.0';
     BackButton.description = 'Creates a button that if ' +
         'pressed goes to the previous step.';
 
@@ -40270,15 +40280,6 @@ if (!Array.prototype.indexOf) {
         this.button.onclick = function() {
             var res;
             res = node.game.stepBack(that.stepOptions);
-            if (res) that.disable();
-            return;
-            // OLD IMPLEMENTATION.
-            res = getPreviousStep(that);
-            if (!res) return;
-            // Update the array of stepped steps before we go back
-            // so that the new game.getPreviousStep() works correctly.
-            this._steppedSteps.pop();
-            res = node.game.gotoStep(res);
             if (res) that.disable();
         };
 
@@ -40424,32 +40425,6 @@ if (!Array.prototype.indexOf) {
     BackButton.prototype.enable = function() {
         this.button.disabled = false;
     };
-
-    // ## Helper functions.
-
-    /**
-     * ### getPreviousStage
-     *
-     * Returns the previous step accordingly with widget's settings
-     *
-     * @param {BackButton} that The current instance
-     *
-     * @return {GameStage|Boolean} The previous step or FALSE if none is found
-     */
-    function getPreviousStep(that) {
-        var curStage, prevStage;
-        curStage = node.game.getCurrentGameStage();
-        if (curStage.stage === 0) return;
-        prevStage = node.game.plot.jump(curStage, -1);
-        if (prevStage.stage === 0) return;
-        if ((curStage.stage > prevStage.stage) && !that.acrossStages) {
-            return false;
-        }
-        if ((curStage.round > prevStage.round) && !that.acrossRounds) {
-            return false;
-        }
-        return prevStage;
-    }
 
 })(node);
 
@@ -43796,7 +43771,7 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # ChoiceTable
- * Copyright(c) 2019 Stefano Balietti
+ * Copyright(c) 2020 Stefano Balietti
  * MIT Licensed
  *
  * Creates a configurable table where each cell is a selectable choice
@@ -43813,7 +43788,7 @@ if (!Array.prototype.indexOf) {
 
     // ## Meta-data
 
-    ChoiceTable.version = '1.6.2';
+    ChoiceTable.version = '1.6.3';
     ChoiceTable.description = 'Creates a configurable table where ' +
         'each cell is a selectable choice.';
 
@@ -43971,16 +43946,27 @@ if (!Array.prototype.indexOf) {
                 if ('number' === typeof that.selectMultiple &&
                     that.selected.length === that.selectMultiple) return;
 
-                that.setCurrentChoice(value);
                 J.addClass(td, 'selected');
 
-                if (that.selectMultiple) {
-                    that.selected.push(td);
+                if (that.oneTimeClick) {
+                    setTimeout(function() {
+                        J.removeClass(td, 'selected');
+                    }, 60);
                 }
                 else {
-                    // If only 1 selection allowed, remove old selection.
-                    if (that.selected) J.removeClass(that.selected, 'selected');
-                    that.selected = td;
+
+                    that.setCurrentChoice(value);
+
+                    if (that.selectMultiple) {
+                        that.selected.push(td);
+                    }
+                    else {
+                        // If only 1 selection allowed, remove old selection.
+                        if (that.selected) {
+                            J.removeClass(that.selected, 'selected');
+                        }
+                        that.selected = td;
+                    }
                 }
             }
 
@@ -44195,8 +44181,22 @@ if (!Array.prototype.indexOf) {
          * ### ChoiceTable.selectMultiple
          *
          * The number of maximum simulataneous selections (>1), or false
+         *
+         * Note: this option is incompatible with `oneTimeClick`.
          */
         this.selectMultiple = null;
+
+
+        /**
+        * ### ChoiceTable.oneTimeClick
+        *
+        * If TRUE, the selection is immediately removed after one click
+        *
+        * This is useful to create a buttons group which trigger some actions.
+        *
+        * Note: this option is incompatible with `selectMultiple`.
+        */
+        this.oneTimeClick = null;
 
         /**
          * ### ChoiceTable.shuffleChoices
@@ -44409,6 +44409,10 @@ if (!Array.prototype.indexOf) {
                                 opts.requiredChoice);
         }
 
+        if ('undefined' !== typeof opts.oneTimeClick) {
+            this.oneTimeClick = !!opts.oneTimeClick;
+        }
+
         // Set the group, if any.
         if ('string' === typeof opts.group ||
             'number' === typeof opts.group) {
@@ -44502,11 +44506,11 @@ if (!Array.prototype.indexOf) {
 
         // Conflict might be generated by id or seperator,
         // as specified by user.
-        if (this.id.indexOf(opts.separator) !== -1) {
+        if (this.id.indexOf(this.separator) !== -1) {
             throw new Error('ChoiceTable.init: opts.separator ' +
                             'cannot be a sequence of characters ' +
                             'included in the table id. Found: ' +
-                            opts.separator);
+                            this.separator);
         }
 
         if ('string' === typeof opts.left ||
@@ -45396,12 +45400,10 @@ if (!Array.prototype.indexOf) {
                             'built yet.');
         }
 
-        if (options.correct) {
-            // Value this.correctChoice can be string or array.
-            if (!this.correctChoice || !this.correctChoice.length) {
-                throw new Error('Choicetable.setValues: "correct" is set, ' +
-                               'but no correct choice is found.');
-            }
+        // Value this.correctChoice can undefined, string or array.
+        // If no correct choice is set, we simply ignore the correct param.
+        if (options.correct && this.correctChoice) {
+
             // Make it an array (can be a string).
             correctChoice = J.isArray(this.correctChoice) ?
                 this.correctChoice : [this.correctChoice];
@@ -45427,14 +45429,10 @@ if (!Array.prototype.indexOf) {
         // Set values, random or pre-set.
         i = -1;
         if ('undefined' !== typeof options.values) {
+            if (!J.isArray(options.values)) tmp = [ options.values ];
+            len = tmp.length;
             // Can be true/false or a number > 1.
             if (this.selectMultiple) {
-                if (!J.isArray(options.values)) {
-                    throw new Error('ChoiceTable.setValues: values must be ' +
-                                    'array or undefined if selectMultiple is ' +
-                                    'truthy. Found: ' + options.values);
-                }
-                len = options.values.length;
                 tmp = 'number' === typeof this.selectMultiple ?
                     this.selectMultiple : this.choices.length;
                 if (len > tmp) {
@@ -45444,15 +45442,13 @@ if (!Array.prototype.indexOf) {
                 }
                 tmp = options.values;
             }
-            else {
-                tmp = [options.values];
-            }
+
             // Validate value.
             for ( ; ++i < len ; ) {
                 choice = J.isInt(tmp[i], -1, (this.choices.length-1), 1, 1);
                 if (false === choice) {
                     throw new Error('ChoiceTable.setValues: invalid ' +
-                                    'choice value. Found: ' +tmp[i]);
+                                    'choice value. Found: ' + tmp[i]);
                 }
                 this.choicesCells[choice].click();
             }
