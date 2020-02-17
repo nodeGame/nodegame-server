@@ -410,17 +410,17 @@ div.choicetable div.panel-heading {
   padding: 0;
 }
 
-.choicetable-maintext, .custominput-maintext, .feedback-maintext, .slider-maintext {
+.choicetable-maintext, .custominput-maintext, .feedback-maintext {
   margin: 20px 0 0 !important;
   padding: 0;
   display: block;
   text-align: left;
 }
-.choicetable-maintext .choicetable-hint, .choicetable-maintext .custominput-hint, .custominput-maintext .choicetable-hint, .custominput-maintext .custominput-hint, .feedback-maintext .choicetable-hint, .feedback-maintext .custominput-hint, .choicetable-maintext .feedback-hint, .custominput-maintext .feedback-hint, .feedback-maintext .feedback-hint, .custominputgroup-maintext .custominputgroup-hint, .slider-maintext .slider-hint {
+.choicetable-maintext .choicetable-hint, .choicetable-maintext .custominput-hint, .custominput-maintext .choicetable-hint, .custominput-maintext .custominput-hint, .feedback-maintext .choicetable-hint, .feedback-maintext .custominput-hint, .choicetable-maintext .feedback-hint, .custominput-maintext .feedback-hint, .feedback-maintext .feedback-hint, .custominputgroup-maintext .custominputgroup-hint {
   margin-left: 10px;
 }
 
-.choicetable-hint, .custominput-hint, .feedback-hint, .custominputgroup-hint, .slider-hint {
+.choicetable-hint, .custominput-hint, .feedback-hint, .custominputgroup-hint {
   font-color: gray;
   font-size: 14px;
   font-weight: normal;
@@ -729,144 +729,6 @@ div.riskgauge .sep {
 .chat_msg_collapse {
   font-style: oblique;
   font-size: 13px;
-}
-
-/** Slider **/
-
-.container-slider {
-    clear: both;
-    position: relative;
-    display: inline-block;
-    width: 100%;
-    height: 40px;
-    /* border: 2px solid black; */
-}
-
-.fill-slider {
-    position: absolute;
-    box-sizing: border-box;
-    display: inline-block;
-    left: 0;
-    top: 15px;
-    border-radius: 8px;
-    border-top-right-radius: 0;
-    border-bottom-right-radius: 0;
-    width: calc(100% - 10px);
-    height: 10px;
-    background: black;
-}
-
-.volume-slider {
-    position: absolute;
-    top: 0;
-    left: 0;
-    -webkit-appearance: none;
-    width: 100%;
-    height: 40px;
-    background: transparent;
-    padding: 0;
-    box-sizing: border-box;
-    cursor: pointer;
-}
-.volume-slider::-webkit-slider-thumb {
-    -webkit-appearance: none;
-}
-.volume-slider::-ms-track {
-    width: 100%;
-    cursor: pointer;
-    background: transparent;
-    border-color: transparent;
-    color: transparent;
-}
-.volume-slider:focus {
-    outline: none;
-}
-.volume-slider::-moz-focus-outer {
-    border: 0;
-}
-
-.volume-slider::-webkit-slider-thumb {
-    -webkit-appearance: none;
-    border: 3px solid #282d32;
-    height: 30px;
-    width: 30px;
-    border-radius: 50%;
-    background: #fff;
-    cursor: pointer;
-    margin-top: -11px;
-}
-.volume-slider::-webkit-slider-runnable-track {
-    width: 300px;
-    height: 10px;
-    cursor: pointer;
-    background: transparent;
-    border-radius: 8px;
-    border: 1px solid #fff;
-}
-
-.volume-slider::-moz-range-thumb {
-    border: 3px solid #282d32;
-    height: 30px;
-    width: 30px;
-    border-radius: 50%;
-    background: #fff;
-    cursor: pointer;
-}
-.volume-slider::-moz-range-track {
-    box-sizing: border-box;
-    width: 100%;
-    height: 10px;
-    cursor: pointer;
-    background: transparent;
-    border-radius: 8px;
-    border: 1px solid #fff;
-}
-
-@media all and (-ms-high-contrast: none), (-ms-high-contrast: active) {
-    .fill-slider {
-        display: none;
-    }
-}
-
-.volume-slider::-ms-thumb {
-    box-shadow: 0 0 0 3px #282d32;
-    height: 30px;
-    width: 30px;
-    border-radius: 50%;
-    background: #fff;
-    cursor: pointer;
-    margin-top: 2px;
-    box-sizing: border-box;
-    border: 0;
-}
-.volume-slider:focus::-ms-thumb {
-    border: 0;
-}
-.volume-slider::-ms-track {
-    width: 100%;
-    height: 10px;
-    cursor: pointer;
-    background: transparent;
-    border-radius: 8px;
-    border: 1px solid #fff;
-    color: transparent;
-    box-sizing: border-box;
-}
-.volume-slider::-ms-fill-lower {
-    background: #fff;
-    border-radius: 8px;
-    border: 1px solid #fff;
-}
-.volume-slider::-ms-fill-upper {
-    background: transparent;
-}
-.volume-slider::-ms-tooltip {
-    display: none;
-}
-
-.slider-display-value {
-    clear:both;
-    font-size: 14px;
 }
 
 /*# sourceMappingURL=nodegame.css.map */

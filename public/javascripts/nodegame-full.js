@@ -43128,7 +43128,7 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # ChoiceManager
- * Copyright(c) 2019 Stefano Balietti
+ * Copyright(c) 2020 Stefano Balietti
  * MIT Licensed
  *
  * Creates and manages a set of selectable choices forms (e.g., ChoiceTable).
@@ -43143,7 +43143,7 @@ if (!Array.prototype.indexOf) {
 
     // ## Meta-data
 
-    ChoiceManager.version = '1.2.0';
+    ChoiceManager.version = '1.2.1';
     ChoiceManager.description = 'Groups together and manages a set of ' +
         'selectable choices forms (e.g. ChoiceTable).';
 
@@ -43162,9 +43162,6 @@ if (!Array.prototype.indexOf) {
      * Creates a new instance of ChoiceManager
      */
     function ChoiceManager() {
-        var that;
-        that = this;
-
         /**
          * ### ChoiceManager.dl
          *
@@ -43295,8 +43292,7 @@ if (!Array.prototype.indexOf) {
      * @see ChoiceManager.setForms
      */
     ChoiceManager.prototype.init = function(options) {
-        var tmp, that;
-        that = this;
+        var tmp;
 
         // Option shuffleForms, default false.
         if ('undefined' === typeof options.shuffleForms) tmp = false;
@@ -43431,14 +43427,19 @@ if (!Array.prototype.indexOf) {
                                     form);
                 }
             }
-            forms[i] = form;
+
             if (form.id) {
                 if (formsById[form.id]) {
                     throw new Error('ChoiceManager.setForms: duplicated ' +
                                     'form id: ' + form.id);
                 }
-                formsById[form.id] = forms[i];
+
             }
+            else {
+                form.id = form.className + '_' + i;
+            }
+            forms[i] = form;
+            formsById[form.id] = forms[i];
         }
         // Assigned verified forms.
         this.forms = forms;
@@ -43460,7 +43461,7 @@ if (!Array.prototype.indexOf) {
      * @see ChoiceManager.order
      */
     ChoiceManager.prototype.buildDl = function() {
-        var i, len, dl, dt;
+        var i, len, dt;
         var form;
 
         i = -1, len = this.forms.length;
@@ -44856,11 +44857,11 @@ if (!Array.prototype.indexOf) {
      *
      * A reference to the cell is saved in `choicesCells`.
      *
-     * @param {mixed} choice The choice element. It must be string or number,
-     *   or array where the first element is the 'value' (incorporated in the
-     *   `id` field) and the second the text to display as choice. If a
-     *   renderer function is defined there are no restriction on the
-     *   format of choice
+     * @param {mixed} choice The choice element. It may be string, number,
+     *   array where the first element is the 'value' and the second the
+     *   text to display as choice, or an object with properties value and
+     *   display. If a renderer function is defined there are no restriction
+     *   on the format of choice.
      * @param {number} idx The position of the choice within the choice array
      *
      * @return {HTMLElement} td The newly created cell of the table
@@ -51053,7 +51054,7 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # DoneButton
- * Copyright(c) 2019 Stefano Balietti <ste@nodegame.org>
+ * Copyright(c) 2020 Stefano Balietti <ste@nodegame.org>
  * MIT Licensed
  *
  * Creates a button that if pressed emits node.done()
@@ -51068,7 +51069,7 @@ if (!Array.prototype.indexOf) {
 
     // ## Meta-data
 
-    DoneButton.version = '1.0.0';
+    DoneButton.version = '1.1.0';
     DoneButton.description = 'Creates a button that if ' +
         'pressed emits node.done().';
 
@@ -51121,7 +51122,21 @@ if (!Array.prototype.indexOf) {
             if (res) that.disable();
         };
 
+        /**
+         * ### DoneButton.disableOnDisconnect
+         *
+         * If TRUE, the button is automatically disableb upon disconnection
+         */
         this.disableOnDisconnect = null;
+
+        /**
+         * ### DoneButton.delayOnPlaying
+         *
+         * The number of milliseconds to wait to enable at a new step
+         *
+         * A small delay prevents accidental double clicking between steps.
+         */
+        this.delayOnPlaying = 800;
     }
 
     // ## DoneButton methods
@@ -51138,6 +51153,9 @@ if (!Array.prototype.indexOf) {
      * - className: the className of the button (string, array), or false
      *     to have none. Default bootstrap classes: 'btn btn-lg btn-primary'
      * - text: the text on the button. Default: DoneButton.text
+     * - disableOnDisconnect: TRUE to disable upon disconnection. Default: TRUE
+     * - delayOnPlaying: number of milliseconds to wait to enable after
+     *     the `PLAYING` event is fired (e.g., a new step begins). Default: 800
      *
      * @param {object} opts Optional. Configuration options
      */
@@ -51189,6 +51207,15 @@ if (!Array.prototype.indexOf) {
         this.disableOnDisconnect =
             'undefined' === typeof opts.disableOnDisconnect ?
             true : !! opts.disableOnDisconnect;
+
+        tmp = opts.delayOnPlaying;
+        if ('number' === typeof tmp) {
+            this.delayOnPlaying = tmp;
+        }
+        else if ('undefined' !== typeof tmp) {
+            throw new TypeError('DoneButton.init: delayOnPlaying must ' +
+                                'be number or undefined. Found: ' + tmp);
+        }
     };
 
     DoneButton.prototype.append = function() {
@@ -51205,7 +51232,8 @@ if (!Array.prototype.indexOf) {
         // then unlocked by GameWindow, but otherwise it must be
         // done here.
         node.on('PLAYING', function() {
-            var prop, step;
+            var prop, step, delay;
+
             step = node.game.getCurrentGameStage();
             prop = node.game.plot.getProperty(step, 'donebutton');
             if (prop === false || (prop && prop.enableOnPlaying === false)) {
@@ -51213,8 +51241,24 @@ if (!Array.prototype.indexOf) {
                 that.disable();
             }
             else {
-                // It might be enabled already, but we do it again.
-                that.enable();
+                if (prop && prop.hasOwnProperty &&
+                    prop.hasOwnProperty('delayOnPlaying')) {
+                        delay = prop.delayOnPlaying;
+                }
+                else {
+                    delay = that.delayOnPlaying;
+                }
+                if (delay) {
+                    setTimeout(function () {
+                        // If not disabled because of a disconnection,
+                        // enable it.
+                        if (!disabled) that.enable();
+                    }, delay);
+                }
+                else {
+                    // It might be enabled already, but we do it again.
+                    that.enable();
+                }
             }
             if ('string' === typeof prop) that.button.value = prop;
             else if (prop && prop.text) that.button.value = prop.text;
@@ -54959,6 +55003,391 @@ if (!Array.prototype.indexOf) {
 
         return gauge;
     }
+
+})(node);
+
+/**
+ * # Slider
+ * Copyright(c) 2020 Stefano Balietti
+ * MIT Licensed
+ *
+ * Creates a configurable slider.
+ *
+ * Kudos for initial code: https://codepen.io/gotpop/pen/RMZbya.
+ *
+ * www.nodegame.org
+ */
+(function(node) {
+
+    "use strict";
+
+    node.widgets.register('Slider', Slider);
+
+    // ## Meta-data
+
+    Slider.version = '0.2.0';
+    Slider.description = 'Creates a configurable Slider ';
+
+    Slider.title = false;
+    Slider.className = 'slider';
+
+    // ## Dependencies
+
+    Slider.dependencies = {
+        JSUS: {}
+    };
+
+    Slider.texts = {
+        currentValue: 'Value: '
+    };
+
+
+    /**
+     * ## Slider constructor
+     *
+     * Creates a new instance of Slider
+     */
+    function Slider() {
+        var that;
+        that = this;
+
+        /** Slider.slider
+         *
+         * The HTML input slider Element
+         */
+        this.slider = null;
+
+        /** Slider.slider
+         *
+         * The HTML div Element creating the slider background
+         */
+        this.rangeFill = null;
+
+        /** Slider.scale
+         *
+         * Scaling factor for the slider (fixed to 1 for now)
+         */
+        this.scale = 1;
+
+        /** Slider.scale
+         *
+         * The current value of the slider (as well as the initial one)
+         */
+        this.currentValue = 50;
+
+        /**
+        * ### Slider.mainText
+        *
+        * A text preceeding the slider
+        */
+        this.mainText = null;
+
+        /**
+        * ### Slider.required
+        *
+        * If TRUE, the user must move the slider
+        */
+        this.required = null;
+
+        /**
+        * ### Slider.requiredChoice
+        *
+        * Same as Slider.required (backward compatibility)
+        */
+        this.requiredChoice = null;
+
+        /**
+        * ### Slider.hint
+        *
+        * An additional informative text
+        *
+        * If not specified, it may be auto-filled, e.g. '*'.
+        *
+        * TODO: autoHint
+        * @see Slider.texts.autoHint
+        */
+        this.hint = null;
+
+        /** Slider.min
+         *
+         * The value of the slider at the leftmost position
+         */
+        this.min = 0;
+
+        /** Slider.max
+         *
+         * The value of the slider at the rightmost position
+         */
+        this.max = 100;
+
+        /** Slider.correctValue
+         *
+         * The correct value of the slider, if any
+         */
+        this.correctValue = null;
+
+        /** Slider.displayValue
+         *
+         * If TRUE, the current value of the slider is displayed
+         */
+        this.displayValue = true;
+
+        /** Slider.valueSpan
+         *
+         * The SPAN element containint the current value
+         *
+         * @see Slider.displayValue
+         */
+        this.valueSpan = null;
+
+        /** Slider.totalMove
+         *
+         * The total movement of the slider
+         */
+        this.totalMove = 0;
+
+        /** Slider.volumeSlider
+         *
+         * If TRUE, only the slider to the left of the pointer is colored
+         *
+         * Available types: 'volume', 'flat'.
+         */
+        this.type = 'volume';
+
+        /** Slider.listener
+         *
+         * The main function listening for slider movement
+         *
+         * Calls user-defined listener oninput
+         *
+         * @see Slider.onmove
+         */
+        var timeOut = null;
+        this.listener = function() {
+            if (timeOut) return;
+
+            timeOut = setTimeout(function() {
+                var percent, diffPercent;
+
+                percent = that.slider.value * that.scale;
+                diffPercent = percent - that.currentValue;
+                that.currentValue = percent;
+
+                // console.log(diffPercent);
+                // console.log(that.slider.value, percent);
+
+                if (that.type === 'volume') {
+                    // Otherwise it goes a bit outside.
+                    if (percent > 99) percent = 99;
+                    that.rangeFill.style.width = percent + '%';
+                }
+                else {
+                    that.rangeFill.style.width = '99%';
+                }
+
+                if (that.displayValue) {
+                    that.valueSpan.innerHTML = that.getText('currentValue') +
+                    that.slider.value;
+                }
+
+                that.totalMove += Math.abs(diffPercent);
+
+                if (that.onmove) {
+                    that.onmove.call(that, that.slider.value, diffPercent);
+                }
+
+                timeOut = null;
+            }, 0);
+        }
+
+        /** Slider.onmove
+         *
+         * User-defined listener function to slider movement
+         *
+         * @see Slider.listener
+         */
+         this.onmove = null;
+
+    }
+
+    // ## Slider methods
+
+    /**
+     * ### Slider.init
+     *
+     *
+     * @param {object} opts Configuration options
+     */
+    Slider.prototype.init = function(opts) {
+        var tmp, e;
+        e = 'Slider.init: '
+
+        if ('undefined' !== typeof opts.min) {
+            tmp = J.isInt(opts.min);
+            if ('number' !== typeof tmp) {
+                throw new TypeError(e + 'min must be an integer or ' +
+                'undefined. Found: ' + opts.min);
+            }
+            this.min = tmp;
+        }
+        if ('undefined' !== typeof opts.max) {
+            tmp = J.isInt(opts.max);
+            if ('number' !== typeof tmp) {
+                throw new TypeError(e + 'max must be an integer or ' +
+                'undefined. Found: ' + opts.max);
+            }
+            this.max = tmp;
+        }
+
+        if ('undefined' !== typeof opts.initialValue) {
+            tmp = J.isInt(opts.initialValue, this.min, this.max, true, true);
+            if ('number' !== typeof tmp) {
+                throw new TypeError(e + 'initialValue must be an integer >= ' +
+                this.min + ' and =< ' + this.max + ' or undefined. Found: ' +
+                opts.initialValue);
+            }
+            // currentValue is the first update.
+            this.currentValue = tmp;
+        }
+
+        if ('undefined' !== typeof opts.displayValue) {
+            this.displayValue = !!opts.displayValue;
+        }
+        if (opts.type) {
+            if (opts.type !== 'volume' && opts.type !== 'flat') {
+                throw new TypeError(e + 'type must be "volume", "flat", or ' +
+                'undefined. Found: ' + opts.type);
+            }
+            this.type = opts.type;
+        }
+
+        tmp = opts.requiredChoice;
+
+        if ('undefined' !== typeof tmp) {
+            console.log('***Slider.init: requiredChoice is deprecated. Use ' +
+            'required instead.***');
+        }
+        else if ('undefined' !== typeof opts.required) {
+            tmp = opts.required;
+        }
+        if ('undefined' !== typeof tmp) {
+            this.requiredChoice = this.required = !!tmp;
+        }
+
+        if (opts.mainText) {
+            if ('string' !== typeof opts.mainText) {
+                throw new TypeError(e + 'mainText must be string or ' +
+                                    'undefined. Found: ' + opts.mainText);
+            }
+            this.mainText = opts.mainText;
+        }
+        if ('undefined' !== typeof opts.hint) {
+            if (false !== opts.hint && 'string' !== typeof opts.hint) {
+                throw new TypeError(e + 'hint must be a string, false, or ' +
+                                    'undefined. Found: ' + opts.hint);
+            }
+            this.hint = opts.hint;
+        }
+        else {
+            // TODO: Do we need it?
+            // this.hint = this.getText('autoHint');
+        }
+
+        if (this.required) {
+            if (!this.hint) this.hint = 'Movement required';
+            this.hint += ' *';
+        }
+
+        if (opts.onmove) {
+            if ('function' !== typeof opts.onmove) {
+                throw new TypeError(e + 'onmove must be a function or ' +
+                                    'undefined. Found: ' + opts.onmove);
+            }
+            this.onmove = opts.onmove;
+        }
+
+        //TODO: not working
+        if (opts.width) {
+            if ('string' !== typeof opts.width) {
+                throw new TypeError(e + 'width must be string or ' +
+                                    'undefined. Found: ' + opts.width);
+            }
+            this.sliderWidth = opts.width;
+        }
+    };
+
+    /**
+     * ### Slider.append
+     *
+     *g
+     * @param {object} opts Configuration options
+     */
+    Slider.prototype.append = function() {
+        var container;
+
+        // MainText.
+        if (this.mainText) {
+            this.spanMainText = W.append('span', this.bodyDiv, {
+                className: 'slider-maintext',
+                innerHTML: this.mainText
+            });
+        }
+        // Hint.
+        if (this.hint) {
+            W.append('span', this.bodyDiv, {
+                className: 'slider-hint',
+                innerHTML: this.hint
+            });
+        }
+
+        container = W.add('div', this.bodyDiv, {
+            className: 'container-slider'
+        });
+
+        this.rangeFill = W.add('div', container, {
+            className: 'fill-slider',
+            // id: 'range-fill'
+        });
+
+        this.slider = W.add('input', container, {
+            className: 'volume-slider',
+            // id: 'range-slider-input',
+            name: 'rangeslider',
+            type: 'range',
+            min: this.min,
+            max: this.max
+        });
+
+        if (this.sliderWidth) this.slider.style.width = this.sliderWidth;
+
+        if (this.displayValue) {
+            this.valueSpan = W.add('span', this.bodyDiv, {
+                className: 'slider-display-value'
+            })
+        }
+
+        this.slider.oninput = this.listener;
+
+        this.slider.oninput();
+    };
+
+    Slider.prototype.getValues = function(opts) {
+        var res, value;
+        res = true;
+        value = this.currentValue;
+        if ((this.required && this.totalMove === 0) ||
+           (null !== this.correctValue && this.correctValue !== value)) {
+
+            res = false;
+        }
+
+        return {
+            value: value,
+            totalMove: this.totalMove,
+            isCorrect: res
+        };
+    };
+
 
 })(node);
 
