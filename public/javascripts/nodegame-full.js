@@ -55073,13 +55073,13 @@ if (!Array.prototype.indexOf) {
          *
          * The current value of the slider
          */
-        this.currentValue = null;
+        this.currentValue = 50;
 
         /** Slider.initialValue
         *
         * The initial value of the slider
         */
-        this.initialValue = null;
+        this.initialValue = 50;
 
         /**
         * ### Slider.mainText
@@ -55172,6 +55172,8 @@ if (!Array.prototype.indexOf) {
         this.listener = function() {
             if (timeOut) return;
 
+            if (that.isHighlighted()) that.unhighlight();
+
             timeOut = setTimeout(function() {
                 var percent, diffPercent;
 
@@ -55214,6 +55216,17 @@ if (!Array.prototype.indexOf) {
          */
          this.onmove = null;
 
+         /**
+         * ### Slider.timeFrom
+         *
+         * Time event from which measuring time
+         *
+         * Default: 'step'
+         *
+         * @see node.timer.getTimeSince
+         */
+         this.timeFrom = 'step';
+
     }
 
     // ## Slider methods
@@ -55253,9 +55266,9 @@ if (!Array.prototype.indexOf) {
             else {
                 tmp = J.isInt(tmp, this.min, this.max, true, true);
                 if ('number' !== typeof tmp) {
-                    throw new TypeError(e + 'initialValue must be an integer >= ' +
-                    this.min + ' and =< ' + this.max + ' or undefined. Found: ' +
-                    opts.initialValue);
+                    throw new TypeError(e + 'initialValue must be an ' +
+                    'integer >= ' + this.min + ' and =< ' + this.max +
+                    ' or undefined. Found: ' + opts.initialValue);
                 }
 
             }
@@ -55387,11 +55400,14 @@ if (!Array.prototype.indexOf) {
 
     Slider.prototype.getValues = function(opts) {
         var res, value;
+        opts = opts || {};
         res = true;
+        if ('undefined' === typeof opts.highlight) opts.highlight = true;
         value = this.currentValue;
         if ((this.required && this.totalMove === 0) ||
            (null !== this.correctValue && this.correctValue !== value)) {
 
+            if (opts.highlight) this.highlight();
             res = false;
         }
 
@@ -55400,6 +55416,7 @@ if (!Array.prototype.indexOf) {
             initialValue: this.initialValue,
             totalMove: this.totalMove,
             isCorrect: res,
+            time: node.timer.getTimeSince(this.timeFrom)
         };
     };
 
