@@ -1,5 +1,8 @@
 # nodegame-server change log
 
+## 5.6.6
+- Updated build widgets Slider and ContentBox.
+
 ## 5.6.5
 - Updated build widget ChoiceTable.
 
