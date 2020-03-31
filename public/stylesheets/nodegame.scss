@@ -216,6 +216,10 @@ p {
   font-weight: bold;
 }
 
+.italic {
+  font-style: italic;
+}
+
 .underline {
   text-decoration: underline;
 }
@@ -999,5 +1003,29 @@ div.riskgauge {
 }
 
 .slider-hint {
+  @extend .choicetable-hint;
+}
+
+.slider-display-value,
+.slider-display-nochange {
+    clear:both;
+    font-size: 14px;
+}
+
+.slider-display-nochange {
+    float: right;
+}
+
+/** Content Box **/
+
+.contentbox-maintext {
+  @extend .choicetable-maintext;
+
+  .contentbox-hint {
+    @extend .choicetable-hint;
+  }
+}
+
+.contentbox-hint {
   @extend .choicetable-hint;
 }

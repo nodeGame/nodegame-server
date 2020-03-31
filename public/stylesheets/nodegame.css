@@ -191,6 +191,10 @@ p {
   font-weight: bold;
 }
 
+.italic {
+  font-style: italic;
+}
+
 .underline {
   text-decoration: underline;
 }
@@ -416,11 +420,11 @@ div.choicetable div.panel-heading {
   display: block;
   text-align: left;
 }
-.choicetable-maintext .choicetable-hint, .choicetable-maintext .custominput-hint, .custominput-maintext .choicetable-hint, .custominput-maintext .custominput-hint, .feedback-maintext .choicetable-hint, .feedback-maintext .custominput-hint, .choicetable-maintext .feedback-hint, .custominput-maintext .feedback-hint, .feedback-maintext .feedback-hint, .custominputgroup-maintext .custominputgroup-hint, .slider-maintext .slider-hint {
+.choicetable-maintext .choicetable-hint, .choicetable-maintext .custominput-hint, .custominput-maintext .choicetable-hint, .custominput-maintext .custominput-hint, .feedback-maintext .choicetable-hint, .feedback-maintext .custominput-hint, .choicetable-maintext .feedback-hint, .custominput-maintext .feedback-hint, .feedback-maintext .feedback-hint, .custominputgroup-maintext .custominputgroup-hint, .slider-maintext .slider-hint, .contentbox-maintext .contentbox-hint {
   margin-left: 10px;
 }
 
-.choicetable-hint, .custominput-hint, .feedback-hint, .custominputgroup-hint, .slider-hint {
+.choicetable-hint, .custominput-hint, .feedback-hint, .custominputgroup-hint, .slider-hint, .contentbox-hint {
   font-color: gray;
   font-size: 14px;
   font-weight: normal;
@@ -864,9 +868,14 @@ div.riskgauge .sep {
     display: none;
 }
 
-.slider-display-value {
+.slider-display-value,
+.slider-display-nochange {
     clear:both;
     font-size: 14px;
+}
+
+.slider-display-nochange {
+    float: right;
 }
 
 /*# sourceMappingURL=nodegame.css.map */
