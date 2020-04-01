@@ -12,7 +12,7 @@ before_install:
 install:
   - npm install --only=dev
   # --branch v4
-  - node nodegame-installer.js @dev --install-dir node_modules --no-spinner --yes
+  - node nodegame-installer.js @dev --install-dir node_modules --no-spinner --yes --no-parent-dir-check
 
 script:
 # Add nodegame-server tests here.
