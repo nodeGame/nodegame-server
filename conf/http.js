@@ -145,104 +145,108 @@ function configure(app, servernode) {
         var colors;
         var name, card, color, filteredGames;
 
+        // Must be first.
+        if (!J.isEmpty(req.query)) {
+            if (servernode.enableInfoQuery) {
+
+                q = req.query.q;
+                if (!q) {
+                    res.status(400).send('Query must start with q=XXX');
+                    return;
+                }
+
+                switch(q) {
+                case 'info':
+                    //console.log(servernode.info);
+                    res.status(200).send(servernode.info);
+                    break;
+
+                case 'channels':
+                    //console.log(servernode.info);
+                    res.status(200).send(servernode.info.channels);
+                    break;
+
+                case 'games':
+                    //console.log(servernode.info);
+                    res.status(200).send(servernode.info.games);
+                    break;
+                default:
+                    res.status(400).send('Unknown query received.');
+                }
+            }
+            else {
+                res.status(403).end();
+            }
+
+            return;
+        }
+
         if (servernode.defaultChannel) {
             next();
             return;
         }
 
-        if (J.isEmpty(req.query)) {
-            if (servernode.homePage === false ||
-                servernode.homePage.enabled === false) {
+        if (servernode.homePage === false ||
+            servernode.homePage.enabled === false) {
 
-                res.render('index_simple', {
-                    title: 'Yay! nodeGame server is running.'
-                });
-            }
-            else {
-                colors = servernode.homePage.colors;
-                gamesObj = servernode.info.games;
-                listOfGames = J.keys(gamesObj);
-                // Remove aliases.
-                filteredGames = listOfGames.filter(function(name) {
-                    return (!gamesObj[name].errored &&
-                            (!gamesObj[name].alias ||
-                             gamesObj[name].alias.indexOf(name) === -1));
-                });
-                if (J.isArray(servernode.homePage.cardsOrder)) {
-                    filteredGames =
-                        servernode.homePage.cardsOrder.filter(function(name) {
-                            if (filteredGames.indexOf(name) !== -1) return true;
-                            servernode.logger.error('homePage.cardsOrder ' +
-                                                    'game not found: ' + name);
-                        });
-                }
-                else {
-                    filteredGames.sort();
-                }
-                i = 0;
-                for (j = 0; j < filteredGames.length; j++) {
-                    name = filteredGames[j];
-                    if (i >= colors.length) i = 0;
-                    color = colors[i];
-                    // Mixout name and description from package.json
-                    // if not in card, or if no card is defined.
-                    card = J.mixout(gamesObj[name].info.card || {}, {
-                        name: name.charAt(0).toUpperCase() + name.slice(1),
-                        description: gamesObj[name].info.description
-                    });
-                    games.push({
-                        name: card.name,
-                        color: color,
-                        url: card.url,
-                        description: card.description,
-                        publication: card.publication,
-                        wiki: card.wiki,
-                        icon: card.icon
-                    });
-                    i++;
-                }
-                res.render('homepage', {
-                    title: servernode.homePage.title,
-                    games: games,
-                    nodeGameCard: servernode.homePage.nodeGameCard,
-                    footerContent: servernode.homePage.footerContent,
-                    logo: servernode.homePage.logo
-                });
-            }
-
-            return;
-        }
-
-        if (servernode.enableInfoQuery) {
-
-            q = req.query.q;
-            if (!q) {
-                res.status(400).send('Query must start with q=XXX');
-                return;
-            }
-
-            switch(q) {
-            case 'info':
-                //console.log(servernode.info);
-                res.status(200).send(servernode.info);
-                break;
-
-            case 'channels':
-                //console.log(servernode.info);
-                res.status(200).send(servernode.info.channels);
-                break;
-
-            case 'games':
-                //console.log(servernode.info);
-                res.status(200).send(servernode.info.games);
-                break;
-            default:
-                res.status(400).send('Unknown query received.');
-            }
+            res.render('index_simple', {
+                title: 'Yay! nodeGame server is running.'
+            });
         }
         else {
-            res.status(403).end();
+            colors = servernode.homePage.colors;
+            gamesObj = servernode.info.games;
+            listOfGames = J.keys(gamesObj);
+            // Remove aliases.
+            filteredGames = listOfGames.filter(function(name) {
+                return (!gamesObj[name].errored &&
+                        (!gamesObj[name].alias ||
+                         gamesObj[name].alias.indexOf(name) === -1));
+            });
+            if (J.isArray(servernode.homePage.cardsOrder)) {
+                filteredGames =
+                    servernode.homePage.cardsOrder.filter(function(name) {
+                        if (filteredGames.indexOf(name) !== -1) return true;
+                        servernode.logger.error('homePage.cardsOrder ' +
+                                                'game not found: ' + name);
+                    });
+            }
+            else {
+                filteredGames.sort();
+            }
+            i = 0;
+            for (j = 0; j < filteredGames.length; j++) {
+                name = filteredGames[j];
+                if (i >= colors.length) i = 0;
+                color = colors[i];
+                // Mixout name and description from package.json
+                // if not in card, or if no card is defined.
+                card = J.mixout(gamesObj[name].info.card || {}, {
+                    name: name.charAt(0).toUpperCase() + name.slice(1),
+                    description: gamesObj[name].info.description
+                });
+                games.push({
+                    name: card.name,
+                    color: color,
+                    url: card.url,
+                    description: card.description,
+                    publication: card.publication,
+                    wiki: card.wiki,
+                    icon: card.icon
+                });
+                i++;
+            }
+            res.render('homepage', {
+                title: servernode.homePage.title,
+                games: games,
+                nodeGameCard: servernode.homePage.nodeGameCard,
+                footerContent: servernode.homePage.footerContent,
+                logo: servernode.homePage.logo
+            });
         }
+
+
+
     });
 
     return true;
