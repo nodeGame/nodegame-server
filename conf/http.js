@@ -163,6 +163,9 @@ function configure(app, servernode) {
 
                 case 'channels':
                     //console.log(servernode.info);
+                    // res.header("Access-Control-Allow-Origin", "*");
+                    // res.header("Access-Control-Allow-Headers",
+                    //            "X-Requested-With");
                     res.status(200).send(servernode.info.channels);
                     break;
 
@@ -170,6 +173,21 @@ function configure(app, servernode) {
                     //console.log(servernode.info);
                     res.status(200).send(servernode.info.games);
                     break;
+
+                case 'waitroom':
+                    let game = req.query.game;
+                    game = servernode.channels[game];
+                    if (!game) {
+                        // TODO: Return info for all games or
+                        // take into account default channel.
+                        res.status(400).send("You must specify a game.");
+                    }
+                    else {
+                        let nPlayers = game.waitingRoom.clients.player.size();
+                        res.status(200).send({ nPlayers: nPlayers });
+                    }
+                    break;
+
                 default:
                     res.status(400).send('Unknown query received.');
                 }
