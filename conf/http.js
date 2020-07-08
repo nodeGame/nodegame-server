@@ -146,12 +146,11 @@ function configure(app, servernode) {
         var name, card, color, filteredGames;
 
         // Must be first.
-        if (!J.isEmpty(req.query)) {
-            if (servernode.enableInfoQuery) {
-
-                q = req.query.q;
-                if (!q) {
-                    res.status(400).send('Query must start with q=XXX');
+        if (req.query) {
+            q = req.query.q;
+            if (q) {
+                if (!servernode.enableInfoQuery) {
+                    res.status(403).end();
                     return;
                 }
 
@@ -191,12 +190,8 @@ function configure(app, servernode) {
                 default:
                     res.status(400).send('Unknown query received.');
                 }
+                return;
             }
-            else {
-                res.status(403).end();
-            }
-
-            return;
         }
 
         if (servernode.defaultChannel) {
