@@ -1,7 +1,7 @@
 # nodegame-server change log
 
-## 5.7.0
-- Info query: waiting room parameter.
+## 5.7.0 (current)
+- Info query: added q=waitroom parameter and allowed non q= queries.
 - Fixed bot client type loading from levels folder.
 - Fixed accidental loading of non-default game in #ServerNode.getDefaultChannel.
 

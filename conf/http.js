@@ -1,6 +1,6 @@
 /**
  * # http.js
- * Copyright(c) 2019 Stefano Balietti
+ * Copyright(c) 2020 Stefano Balietti
  * MIT Licensed
  *
  * Configuration file for Express server in nodegame-server
