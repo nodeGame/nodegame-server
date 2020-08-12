@@ -1,5 +1,10 @@
 # nodegame-server change log
 
+## 5.7.0
+- Info query: waiting room parameter.
+- Fixed bot client type loading from levels folder.
+- Fixed accidental loading of non-default game in #ServerNode.getDefaultChannel.
+
 ## 5.6.7
 - Minor.
 
