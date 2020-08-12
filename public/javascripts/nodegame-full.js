@@ -5469,8 +5469,10 @@ if (!Array.prototype.indexOf) {
      * @see PARSE.isFloat
      */
     PARSE.isNumber = function(n, lower, upper, leq, ueq) {
+        // Booleans and empty strings pass this check.
         if (isNaN(n) || !isFinite(n)) return false;
         n = parseFloat(n);
+        if (isNaN(n)) return false;
         if ('number' === typeof lower && (leq ? n < lower : n <= lower)) {
             return false;
         }
@@ -21618,7 +21620,8 @@ if (!Array.prototype.indexOf) {
     Matcher.prototype.generateMatches = function(alg) {
         var matches;
         if ('string' !== typeof alg) {
-            throw new TypeError('Matcher.generateMatches: alg must be string.');
+            throw new TypeError('Matcher.generateMatches: alg must be ' +
+            'string. Found: ' + alg);
         }
         alg = alg.toLowerCase();
         if (alg === 'roundrobin' || alg === 'round_robin' ||
@@ -21628,7 +21631,7 @@ if (!Array.prototype.indexOf) {
         }
         else {
             throw new Error('Matcher.generateMatches: unknown algorithm: ' +
-                            alg + '.');
+                            alg);
         }
 
         this.setMatches(matches);
@@ -21746,7 +21749,8 @@ if (!Array.prototype.indexOf) {
      */
     Matcher.prototype.setAssignerCb = function(cb) {
         if ('function' !== typeof cb) {
-            throw new TypeError('Matcher.setAssignerCb: cb must be function.');
+            throw new TypeError('Matcher.setAssignerCb: cb must be ' +
+                                'function. Found: ' + cb);
         }
         this.assignerCb = cb;
     };
@@ -23160,6 +23164,9 @@ if (!Array.prototype.indexOf) {
                     fixedRoles: settings.fixedRoles,
                     canMatchSameRole: settings.canMatchSameRole
                 });
+                if (settings.assignerCb) {
+                    this.matcher.setAssignerCb(settings.assignerCb);
+                }
                 this.matcher.setIds(game.pl.id.getAllKeys());
                 // Generates matches.
                 this.matcher.match(true);
@@ -24309,15 +24316,17 @@ if (!Array.prototype.indexOf) {
             this.setStageLevel(constants.stageLevels.INITIALIZING);
 
             // Execute the init function of the stage, if any:
+            // TODO: check: does this need to be looked up with getProperty?
             if (nextStageObj.hasOwnProperty('init')) {
                 nextStageObj.init.call(node.game);
             }
         }
 
-        // Important! A role might have changed the init function.
-        stepInitCb = this.role ?
-            this.plot.getProperty(nextStep, 'init') : nextStepObj.init;
-
+        // Important! Cannot use: nextStepObj.init because
+        // a role might have changed the init function, or
+        // there might be a default property (setDefaultProperty). 
+        stepInitCb = this.plot.getProperty(nextStep, 'init');
+        
         // Execute the init function of the step, if any.
         if (stepInitCb) {
             this.setStateLevel(constants.stateLevels.STEP_INIT);
@@ -27596,7 +27605,8 @@ if (!Array.prototype.indexOf) {
     Matcher.prototype.generateMatches = function(alg) {
         var matches;
         if ('string' !== typeof alg) {
-            throw new TypeError('Matcher.generateMatches: alg must be string.');
+            throw new TypeError('Matcher.generateMatches: alg must be ' +
+            'string. Found: ' + alg);
         }
         alg = alg.toLowerCase();
         if (alg === 'roundrobin' || alg === 'round_robin' ||
@@ -27606,7 +27616,7 @@ if (!Array.prototype.indexOf) {
         }
         else {
             throw new Error('Matcher.generateMatches: unknown algorithm: ' +
-                            alg + '.');
+                            alg);
         }
 
         this.setMatches(matches);
@@ -27724,7 +27734,8 @@ if (!Array.prototype.indexOf) {
      */
     Matcher.prototype.setAssignerCb = function(cb) {
         if ('function' !== typeof cb) {
-            throw new TypeError('Matcher.setAssignerCb: cb must be function.');
+            throw new TypeError('Matcher.setAssignerCb: cb must be ' +
+                                'function. Found: ' + cb);
         }
         this.assignerCb = cb;
     };
@@ -43789,7 +43800,7 @@ if (!Array.prototype.indexOf) {
 
     // ## Meta-data
 
-    ChoiceTable.version = '1.6.3';
+    ChoiceTable.version = '1.7.0';
     ChoiceTable.description = 'Creates a configurable table where ' +
         'each cell is a selectable choice.';
 
@@ -43840,12 +43851,8 @@ if (!Array.prototype.indexOf) {
      * ## ChoiceTable constructor
      *
      * Creates a new instance of ChoiceTable
-     *
-     * @param {object} options Optional. Configuration options.
-     *   If a `table` option is specified, it sets it as the clickable
-     *   table. All other options are passed to the init method.
      */
-    function ChoiceTable(options) {
+    function ChoiceTable() {
         var that;
         that = this;
 
@@ -43916,6 +43923,10 @@ if (!Array.prototype.indexOf) {
 
             name = value[0];
             value = value[1];
+
+            // Choice disabled.
+            // console.log('VALUE: ', value);
+            if (that.disabledChoices[value]) return;
 
             // One more click.
             that.numberOfClicks++;
@@ -44187,7 +44198,6 @@ if (!Array.prototype.indexOf) {
          */
         this.selectMultiple = null;
 
-
         /**
         * ### ChoiceTable.oneTimeClick
         *
@@ -44286,6 +44296,13 @@ if (!Array.prototype.indexOf) {
          * @see ChoiceTable.renderChoice
          */
         this.tabbable = null;
+
+        /**
+         * ### ChoiceTable.disabledChoices
+         *
+         * An object containing the list of disabled values
+         */
+        this.disabledChoices = {};
     }
 
     // ## ChoiceTable methods
@@ -44325,6 +44342,7 @@ if (!Array.prototype.indexOf) {
      *       or FALSE, to measure absolute time for current choice
      *   - tabbable: if TRUE, each cell can be reached with TAB and clicked
      *       with SPACE or ENTER. Default: TRUE.
+     *   - disabledChoices: array of disabled choices (values).
      *
      * @param {object} opts Configuration options
      */
@@ -44519,8 +44537,8 @@ if (!Array.prototype.indexOf) {
 
             this.left = '' + opts.left;
         }
-        else if(J.isNode(opts.left) ||
-                J.isElement(opts.left)) {
+        else if (J.isNode(opts.left) ||
+                 J.isElement(opts.left)) {
 
             this.left = opts.left;
         }
@@ -44535,8 +44553,8 @@ if (!Array.prototype.indexOf) {
 
             this.right = '' + opts.right;
         }
-        else if(J.isNode(opts.right) ||
-                J.isElement(opts.right)) {
+        else if (J.isNode(opts.right) ||
+                 J.isElement(opts.right)) {
 
             this.right = opts.right;
         }
@@ -44618,6 +44636,48 @@ if (!Array.prototype.indexOf) {
 
             this.choicesSetSize = opts.choicesSetSize;
         }
+
+        // Add the correct choices.
+        if ('undefined' !== typeof opts.disabledChoices) {
+            if (!J.isArray(opts.disabledChoices)) {
+                throw new Error('ChoiceTable.init: disabledChoices must be ' +
+                                'undefined or array. Found: ' +
+                                opts.disabledChoices);
+            }
+
+            // TODO: check if values of disabled choices are correct?
+            // Do we have the choices now, or can they be added later?
+            tmp = opts.disabledChoices.length;
+            if (tmp) {
+                (function() {
+                    for (var i = 0; i < tmp; i++) {
+                        that.disableChoice(opts.disabledChoices[i]);
+                    }
+                })();
+            }
+        }
+    };
+
+    /**
+     * ### ChoiceTable.disableChoice
+     *
+     * Marks a choice as disabled (will not be clickable)
+     *
+     * @param {string|number} value The value of the choice to disable`
+     */
+    ChoiceTable.prototype.disableChoice = function(value) {
+        this.disabledChoices[value] = true;
+    };
+
+    /**
+     * ### ChoiceTable.enableChoice
+     *
+     * Enables a choice (will be clickable again if previously disabled)
+     *
+     * @param {string|number} value The value of the choice to disable`
+     */
+    ChoiceTable.prototype.enableChoice = function(value) {
+        this.disabledChoices[value] = null;
     };
 
     /**
@@ -44732,7 +44792,7 @@ if (!Array.prototype.indexOf) {
         }
 
         return function() {
-            var i, len, H, doSets;
+            var len, H, doSets;
 
             if (!this.choicesCells) {
                 throw new Error('ChoiceTable.buildTable: choices not set, ' +
@@ -44840,7 +44900,7 @@ if (!Array.prototype.indexOf) {
         td.id = this.id + this.separator + 'special-cell-' + type;
         return td;
     };
-    /* UPDATED TEX
+    /* UPDATED TEXT
      * @param {mixed} choice The choice element. It must be string or
      *   number, HTML element, or an array. If array, the first
      *   element is the short value (string or number), and the second
@@ -45138,7 +45198,7 @@ if (!Array.prototype.indexOf) {
             clone = this.currentChoice.slice(0);
             for ( ; ++i < len ; ) {
                 found = false;
-                c = correctChoices[i];
+                c = correctChoice[i];
                 j = -1;
                 for ( ; ++j < lenJ ; ) {
                     if (clone[j] === c) {
@@ -45313,7 +45373,7 @@ if (!Array.prototype.indexOf) {
      * @see ChoiceTable.reset
      */
     ChoiceTable.prototype.getValues = function(opts) {
-        var obj, resetOpts, i, len, tmp;
+        var obj, resetOpts, i, len;
         opts = opts || {};
         obj = {
             id: this.id,
@@ -45382,7 +45442,7 @@ if (!Array.prototype.indexOf) {
      * @experimental
      */
     ChoiceTable.prototype.setValues = function(options) {
-        var choice, correctChoice, cell, tmp;
+        var choice, correctChoice, tmp;
         var i, len, j, lenJ;
 
         if (!this.choices || !this.choices.length) {
@@ -45605,7 +45665,7 @@ if (!Array.prototype.indexOf) {
      *
      * @see ChoiceTable.tr
      */
-    function createTR(that, trid) {
+    function createTR(that) {
         var tr;
         tr = document.createElement('tr');
         tr.id = 'tr' + that.separator + that.id;
@@ -56844,6 +56904,7 @@ if (!Array.prototype.indexOf) {
      * @param {object} options Additional options, e.g. 'toTotal'
      */
     function generalConstructor(that, visualRound, name, options) {
+        options = options || {};
 
         /**
          * #### visualRound
@@ -56867,7 +56928,7 @@ if (!Array.prototype.indexOf) {
          *
          * The options for this instance
          */
-        that.options = options || {};
+        that.options = options;
 
         /**
          * #### displayDiv
@@ -56941,7 +57002,7 @@ if (!Array.prototype.indexOf) {
 
     // ## Meta-data
 
-    VisualStage.version = '0.8.0';
+    VisualStage.version = '0.9.0';
     VisualStage.description =
         'Displays the name of the current, previous and next step of the game.';
 
@@ -56993,6 +57054,11 @@ if (!Array.prototype.indexOf) {
         //
         // If TRUE, the name/id of a step is capitalized. Default: TRUE.
         this.capitalize = true;
+
+        // ### VisualStage.replaceUnderscore
+        //
+        // If TRUE, underscores are replaced with spaces. Default: TRUE.
+        this.replaceUnderscore = true;
 
         // Default display settings.
 
@@ -57052,7 +57118,7 @@ if (!Array.prototype.indexOf) {
             err = checkOrderOption(opts.order, this.order.slice(0));
             if (err) {
                 throw new TypeError('VisualStage.init: order contains ' +
-                                    'errors: ' + order);
+                                    'errors: ' + opts.order);
             }
             this.order = opts.order;
         }
@@ -57071,6 +57137,10 @@ if (!Array.prototype.indexOf) {
         }
         if ('undefined' !== typeof opts.capitalize) {
             this.capitalize = !!opts.capitalize;
+        }
+
+        if ('undefined' !== typeof opts.replaceUnderscore) {
+            this.replaceUnderscore = !!opts.replaceUnderscore;
         }
     };
 
@@ -57111,10 +57181,9 @@ if (!Array.prototype.indexOf) {
      * @see VisualStage.getStepName
      */
     VisualStage.prototype.updateDisplay = function() {
-        var name, str;
         var curStep, nextStep, prevStep;
         var curStepName, nextStepName, prevStepName;
-        var order, t, tmp;
+        var order, t;
 
         order = {};
         curStep = node.game.getCurrentGameStage();
@@ -57165,8 +57234,8 @@ if (!Array.prototype.indexOf) {
      * Returns the step name of a given step
      *
      * @param {GameStage} gameStage The game stage we want to to get the name
-     * @param {GameStage} gameStage The current game stage
-     * @param {string} A modifier: 'current', 'previous', 'next'.
+     * @param {GameStage} curStage The current game stage
+     * @param {string} mod A modifier: 'current', 'previous', 'next'.
      *
      * @return {string} name The name of the step
      *
@@ -57175,6 +57244,7 @@ if (!Array.prototype.indexOf) {
     VisualStage.prototype.getStepName = function(gameStage, curStage, mod) {
         var name, round;
         name = getName(gameStage, this.getText('miss'));
+        if (this.replaceUnderscore) name = name.replace(/_/g, " ");
         if (this.capitalize) name = capitalize(name);
         if (this.showRounds) {
             round = getRound(gameStage, curStage, mod);
