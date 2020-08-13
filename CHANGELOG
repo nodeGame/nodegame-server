@@ -5,6 +5,8 @@
 - Fixed bot client type loading from levels folder.
 - Fixed accidental loading of non-default game in #ServerNode.getDefaultChannel.
 - Fixed missing winProperty in #GameRoom.computeBonus() (thanks pull request MarcCote).
+- #Servernode.parseSettings no longer retunrs a value and automatically
+updates the settings for all levels.
 
 ## 5.6.7
 - Minor.
