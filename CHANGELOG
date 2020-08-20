@@ -1,5 +1,8 @@
 # nodegame-server change log
 
+## 5.7.1
+- Built client to fix bug with stage init functions.
+
 ## 5.7.0
 - Info query: added q=waitroom parameter and allowed non q= queries.
 - Fixed bot client type loading from levels folder.

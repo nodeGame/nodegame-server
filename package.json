@@ -1,7 +1,7 @@
 {
     "name": "nodegame-server"
   , "description": "nodeGame server for the browser and node.js"
-  , "version": "5.7.0"
+  , "version": "5.7.1"
   , "main" : "index.js"
   , "homepage": "http://nodegame.org"
   , "keywords": [ "game", "multiplayer", "experiment", "behavioral", "socket.io", "websockets"]
