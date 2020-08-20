@@ -10234,7 +10234,7 @@ if (!Array.prototype.indexOf) {
     node.support = JSUS.compatibility();
 
     // Auto-Generated.
-    node.version = '5.6.0';
+    node.version = '5.6.1';
 
 })(window);
 
@@ -13309,7 +13309,7 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # GamePlot
- * Copyright(c) 2019 Stefano Balietti
+ * Copyright(c) 2020 Stefano Balietti
  * MIT Licensed
  *
  * Wraps a stager and exposes methods to navigate through the sequence
@@ -13330,7 +13330,7 @@ if (!Array.prototype.indexOf) {
     GamePlot.GAMEOVER = 'NODEGAME_GAMEOVER';
     GamePlot.END_SEQ  = 'NODEGAME_END_SEQ';
     GamePlot.NO_SEQ   = 'NODEGAME_NO_SEQ';
-
+    
     /**
      * ## GamePlot constructor
      *
@@ -14223,9 +14223,9 @@ if (!Array.prototype.indexOf) {
     /**
      * ### GamePlot.getProperty
      *
-     * Looks up the value of a property
+     * Looks up the value of a property in a hierarchy of lookup locations
      *
-     * Looks for definitions of a property in:
+     * The hierarchy of lookup locations is:
      *
      * 1. the temporary cache, if game stage equals current game stage
      * 2. the game plot cache
@@ -14235,70 +14235,87 @@ if (!Array.prototype.indexOf) {
      *
      * @param {GameStage|string} gameStage The GameStage object,
      *   or its string representation
-     * @param {string} property The name of the property
+     * @param {string} prop The name of the property
+     * @param {mixed} notFound Optional. A value to return if 
+     *   property is not found. Default: NULL
+     * @param {object} mask Optional. An object disabling specific lookup
+     *    locations. Default: 
+     * ```
+     * { tmpCache: false, cache: false, step: false, stage: false, game: false }
+     * ```
      *
      * @return {mixed|null} The value of the property if found, NULL otherwise.
      *
      * @see GamePlot.cache
      */
-    GamePlot.prototype.getProperty = function(gameStage, property, notFound) {
+    GamePlot.prototype.getProperty = function(gameStage, prop, notFound, mask) {
+        
         var stepObj, stageObj, defaultProps, found, res;
 
-        if ('string' !== typeof property) {
+        if ('string' !== typeof prop) {
             throw new TypeError('GamePlot.getProperty: property must be ' +
-                                'string. Found: ' + property);
+                                'string. Found: ' + prop);
         }
 
         gameStage = new GameStage(gameStage);
 
-        // Look in the tmpCache (cleared every step).
-        if (this.tmpCache.hasOwnProperty(property) &&
-            GameStage.compare(gameStage, this.node.player.stage) === 0) {
+        mask = mask || {};
+        if ('object' !== typeof mask) {
+            throw new TypeError('GamePlot.getProperty: mask must be ' +
+                                'object or undefined. Found: ' + mask);
+        }
 
-            return this.tmpCache(property);
+        // Look in the tmpCache (cleared every step).
+        if (!mask.tmpCache && this.tmpCache.hasOwnProperty(prop) &&
+            GameStage.compare(gameStage,this.node.player.stage) === 0) {
+
+            return this.tmpCache(prop);
         }
 
         // Look in the main cache (this persists over steps).
-        if (this.cache[gameStage] &&
-            this.cache[gameStage].hasOwnProperty(property)) {
+        if (!mask.tmpCache && this.cache[gameStage] &&
+            this.cache[gameStage].hasOwnProperty(prop)) {
 
-            return this.cache[gameStage][property];
+            return this.cache[gameStage][prop];
         }
 
         // Look in current step.
-        stepObj = this.getStep(gameStage);
-        if (stepObj && stepObj.hasOwnProperty(property)) {
-            res = stepObj[property];
-            found = true;
+        if (!mask.step) {
+            stepObj = this.getStep(gameStage);
+            if (stepObj && stepObj.hasOwnProperty(prop)) {
+                res = stepObj[prop];
+                found = true;
+            }
         }
 
         // Look in current stage.
-        if (!found) {
+        if (!found && !mask.stage) {
             stageObj = this.getStage(gameStage);
-            if (stageObj && stageObj.hasOwnProperty(property)) {
-                res = stageObj[property];
+            if (stageObj && stageObj.hasOwnProperty(prop)) {
+                res = stageObj[prop];
                 found = true;
             }
         }
 
         // Look in Stager's defaults.
-        if (!found && this.stager) {
+        if (!found && !mask.game && this.stager) {
             defaultProps = this.stager.getDefaultProperties();
-            if (defaultProps && defaultProps.hasOwnProperty(property)) {
-                res = defaultProps[property];
+            if (defaultProps && defaultProps.hasOwnProperty(prop)) {
+                res = defaultProps[prop];
                 found = true;
             }
         }
 
         // Cache it and return it.
         if (found) {
-            cacheStepProperty(this, gameStage, property, res);
+            cacheStepProperty(this, gameStage, prop, res);
             return res;
         }
 
         // Return notFound.
         return 'undefined' === typeof notFound ? null : notFound;
     };
+    
 
     /**
      * ### GamePlot.updateProperty
@@ -24216,6 +24233,7 @@ if (!Array.prototype.indexOf) {
 
             // TODO: see if we can avoid code duplication below.
             // Calling exit function of the stage.
+            // Note: stage.exit is not inherited.
             if (curStageObj && curStageObj.exit) {
                 this.setStateLevel(constants.stateLevels.STAGE_EXIT);
                 this.setStageLevel(constants.stageLevels.EXITING);
@@ -24252,6 +24270,7 @@ if (!Array.prototype.indexOf) {
         if (!curStageObj || nextStageObj.id !== curStageObj.id) {
 
             // Calling exit function.
+            // Note: stage.exit is not inherited.
             if (curStageObj && curStageObj.exit) {
                 this.setStateLevel(constants.stateLevels.STAGE_EXIT);
                 this.setStageLevel(constants.stageLevels.EXITING);
@@ -24316,7 +24335,7 @@ if (!Array.prototype.indexOf) {
             this.setStageLevel(constants.stageLevels.INITIALIZING);
 
             // Execute the init function of the stage, if any:
-            // TODO: check: does this need to be looked up with getProperty?
+            // Note: this property is not inherited.
             if (nextStageObj.hasOwnProperty('init')) {
                 nextStageObj.init.call(node.game);
             }
@@ -24324,9 +24343,11 @@ if (!Array.prototype.indexOf) {
 
         // Important! Cannot use: nextStepObj.init because
         // a role might have changed the init function, or
-        // there might be a default property (setDefaultProperty). 
-        stepInitCb = this.plot.getProperty(nextStep, 'init');
-        
+        // there might be a default property (setDefaultProperty).
+        // We are the skipping the stage.init property.
+        stepInitCb = this.plot.getProperty(nextStep, 'init',
+                                           null, { stage: true });
+
         // Execute the init function of the step, if any.
         if (stepInitCb) {
             this.setStateLevel(constants.stateLevels.STEP_INIT);
@@ -24498,7 +24519,9 @@ if (!Array.prototype.indexOf) {
                     // Remove node.game reference.
                     this[widget.ref] = null;
                 };
-                exitCb = this.plot.getProperty(step, 'exit');
+                // We are skipping the stage.exit property.
+                exitCb = this.plot.getProperty(step, 'exit',
+                                               null, { stage: true });
                 if (exitCb) {
                     origExitCb = exitCb;
                     exitCb = function() {
@@ -43713,11 +43736,11 @@ if (!Array.prototype.indexOf) {
     ChoiceManager.prototype.getValues = function(opts) {
         var obj, i, len, form;
         obj = {
-            id: this.id,
             order: this.order,
             forms: {},
             missValues: []
         };
+        if ('undefined' !== typeof this.id) obj.id = this.id;
         opts = opts || {};
         if ('undefined' === typeof opts.markAttempt) opts.markAttempt = true;
         if ('undefined' === typeof opts.highlight) opts.highlight = true;
@@ -45177,7 +45200,7 @@ if (!Array.prototype.indexOf) {
         }
 
         // If no correct choice is set return null.
-        if (!this.correctChoice) return null;
+        if ('undefined' === typeof this.correctChoice) return null;
         // Mark attempt by default.
         markAttempt = 'undefined' === typeof markAttempt ? true : markAttempt;
         if (markAttempt) this.attempts.push(this.currentChoice);
@@ -45463,7 +45486,7 @@ if (!Array.prototype.indexOf) {
 
         // Value this.correctChoice can undefined, string or array.
         // If no correct choice is set, we simply ignore the correct param.
-        if (options.correct && this.correctChoice) {
+        if (options.correct && 'undefined' !== typeof this.correctChoice) {
 
             // Make it an array (can be a string).
             correctChoice = J.isArray(this.correctChoice) ?
