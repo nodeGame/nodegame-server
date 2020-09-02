@@ -644,23 +644,6 @@ div.moodgauge {
   }
 }
 
-
-div.riskgauge {
-
-  table.choicetable,
-  span.choicetable-maintext {
-    text-align: center;
-    width: auto;
-  }
-
-  table.choicetable {
-    margin: 0 auto;
-    text-align: center;
-    border-spacing: 0 30px;
-    border-collapse: separate;
-  }
-}
-
 /** SVO and Risk **/
 /******************/
 
@@ -730,6 +713,32 @@ div.riskgauge {
         margin: 0px auto;
         font-size: 13px;
         display: block;
+    }
+
+    /* Bomb Risk */
+
+    .bomb-table {
+        width: 60%;
+        margin-left: 20%;
+        margin-right: 20%;
+    }
+
+    .bomb-box {
+        height: 50px;
+        width: 50px;
+        background: black;
+    }
+
+    #bomb_result {
+        font-weight: bold;
+    }
+
+    .bomb_lost {
+        color: #fa0404;
+    }
+
+    .bomb_won {
+        color: #1be139;
     }
 }
 

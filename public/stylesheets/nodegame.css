@@ -624,6 +624,29 @@ div.riskgauge .sep {
   display: block;
 }
 
+/* Bomb Risk */
+
+div.riskgauge .bomb-table {
+    width: 60%;
+    margin-left: 20%;
+    margin-right: 20%;
+}
+div.riskgauge .bomb-box {
+    height: 50px;
+    width: 50px;
+    background: black;
+}
+div.riskgauge #bomb_result {
+    font-weight: bold;
+}
+div.riskgauge .bomb_lost {
+    color: #fa0404;
+}
+div.riskgauge .bomb_won {
+    color: #1be139;
+}
+
+
 /** EmailForm and FeedbackForm **/
 /********************************/
 .emailform-input,

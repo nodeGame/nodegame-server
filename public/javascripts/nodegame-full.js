@@ -7185,6 +7185,10 @@ if (!Array.prototype.indexOf) {
         this.__H[idx] = func;
     };
 
+    NDDB.prototype.flatten = function(idx, func) {
+        // TODO
+    };
+
     /**
      * ### NDDB.resetIndexes
      *
@@ -10234,7 +10238,7 @@ if (!Array.prototype.indexOf) {
     node.support = JSUS.compatibility();
 
     // Auto-Generated.
-    node.version = '5.6.1';
+    node.version = '5.7.0';
 
 })(window);
 
@@ -13330,7 +13334,7 @@ if (!Array.prototype.indexOf) {
     GamePlot.GAMEOVER = 'NODEGAME_GAMEOVER';
     GamePlot.END_SEQ  = 'NODEGAME_END_SEQ';
     GamePlot.NO_SEQ   = 'NODEGAME_NO_SEQ';
-    
+
     /**
      * ## GamePlot constructor
      *
@@ -14236,10 +14240,10 @@ if (!Array.prototype.indexOf) {
      * @param {GameStage|string} gameStage The GameStage object,
      *   or its string representation
      * @param {string} prop The name of the property
-     * @param {mixed} notFound Optional. A value to return if 
+     * @param {mixed} notFound Optional. A value to return if
      *   property is not found. Default: NULL
      * @param {object} mask Optional. An object disabling specific lookup
-     *    locations. Default: 
+     *    locations. Default:
      * ```
      * { tmpCache: false, cache: false, step: false, stage: false, game: false }
      * ```
@@ -14249,7 +14253,7 @@ if (!Array.prototype.indexOf) {
      * @see GamePlot.cache
      */
     GamePlot.prototype.getProperty = function(gameStage, prop, notFound, mask) {
-        
+
         var stepObj, stageObj, defaultProps, found, res;
 
         if ('string' !== typeof prop) {
@@ -14315,7 +14319,7 @@ if (!Array.prototype.indexOf) {
         // Return notFound.
         return 'undefined' === typeof notFound ? null : notFound;
     };
-    
+
 
     /**
      * ### GamePlot.updateProperty
@@ -23304,12 +23308,10 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # GameDB
- * Copyright(c) 2017 Stefano Balietti
+ * Copyright(c) 2020 Stefano Balietti
  * MIT Licensed
  *
  * Provides a simple, lightweight NO-SQL database for nodeGame
- *
- * Entries are stored as GameBit messages.
  *
  * It automatically indexes inserted items by:
  *
@@ -23376,11 +23378,12 @@ if (!Array.prototype.indexOf) {
         }
         if (!this.stage) {
             this.hash('stage', function(o) {
-                if (o.stage) {
-                    return GameStage.toHash(o.stage, 'S.s.r');
-                }
+                if (o.stage) return GameStage.toHash(o.stage, 'S.s.r');
             });
         }
+
+        this.times = {};
+
 
         this.node = this.__shared.node;
     }
@@ -23399,16 +23402,20 @@ if (!Array.prototype.indexOf) {
      */
     GameDB.prototype.add = function(o) {
         if ('string' !== typeof o.player) {
-            throw new TypeError('GameDB.add: player field ' +
-                                'missing or invalid: ', o);
+            throw new TypeError('GameDB.add: player missing or invalid: ', o);
         }
         if ('object' !== typeof o.stage) {
-            throw new Error('GameDB.add: stage field ' +
-                            'missing or invalid: ', o);
+            throw new Error('GameDB.add: stage missing or invalid: ', o);
         }
         // if (node.nodename !== nodename) o.session = node.nodename;
         if (!o.timestamp) o.timestamp = Date.now ?
             Date.now() : new Date().getTime();
+
+        // SAVE times. 
+        this.times[o.player]
+
+        // if (this.flatten[o.stage.stage])
+
         this.insert(o);
     };
 
@@ -39395,8 +39402,6 @@ if (!Array.prototype.indexOf) {
 
     "use strict";
 
-    var NDDB = window.NDDB;
-
     // ## Widgets constructor
 
     function Widgets() {
@@ -39623,7 +39628,6 @@ if (!Array.prototype.indexOf) {
      * @see Widgets.instances
      */
     Widgets.prototype.get = function(widgetName, options) {
-        var that;
         var WidgetPrototype, widget, changes;
 
         if ('string' !== typeof widgetName) {
@@ -39645,8 +39649,6 @@ if (!Array.prototype.indexOf) {
                                     'if options.docked is true.');
             }
         }
-
-        that = this;
 
         WidgetPrototype = J.getNestedValue(widgetName, this.widgets);
 
@@ -39886,8 +39888,7 @@ if (!Array.prototype.indexOf) {
      * @see Widgets.get
      */
     Widgets.prototype.append = function(w, root, options) {
-        var tmp, lastDocked, right;
-        var dockedMargin;
+        var tmp;
 
         if ('string' !== typeof w && 'object' !== typeof w) {
             throw new TypeError('Widgets.append: w must be string or object. ' +
@@ -40738,7 +40739,7 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # Chat
- * Copyright(c) 2019 Stefano Balietti
+ * Copyright(c) 2020 Stefano Balietti
  * MIT Licensed
  *
  * Creates a simple configurable chat
@@ -40778,7 +40779,7 @@ if (!Array.prototype.indexOf) {
         quit: function(w, data) {
             return (w.senderToNameMap[data.id] || data.id) + ' left the chat';
         },
-        noMoreParticipants: function(w, data) {
+        noMoreParticipants: function() {
             return 'No active participant left. Chat disabled.';
         },
         // For both collapse and uncollapse.
@@ -40796,7 +40797,7 @@ if (!Array.prototype.indexOf) {
 
     // ## Meta-data
 
-    Chat.version = '1.2.0';
+    Chat.version = '1.2.1';
     Chat.description = 'Offers a uni-/bi-directional communication interface ' +
         'between players, or between players and the server.';
 
@@ -41351,7 +41352,8 @@ if (!Array.prototype.indexOf) {
         }
         else {
             this.isTypingDivs[id] = this.writeMsg('incoming', {
-                msg: this.getText('isTyping', {id: id })
+                msg: this.getText('isTyping'),
+                id: id
             });
         }
         this.scrollToBottom();
@@ -44546,13 +44548,15 @@ if (!Array.prototype.indexOf) {
                                 opts.separator);
         }
 
-        // Conflict might be generated by id or seperator,
-        // as specified by user.
-        if (this.id.indexOf(this.separator) !== -1) {
-            throw new Error('ChoiceTable.init: opts.separator ' +
-                            'cannot be a sequence of characters ' +
-                            'included in the table id. Found: ' +
-                            this.separator);
+        // Conflict might be generated by id or seperator.
+        tmp = this.id + this.separator.substring(0, (this.separator.length -1));
+        if (this.id.indexOf(this.separator) !== -1 ||
+            tmp.indexOf(this.separator) !== -1) {
+
+            throw new Error('ChoiceTable.init: separator cannot be ' +
+                            'included in the id or in the concatenation ' +
+                            '(id + separator). Please specify the right ' +
+                            'separator option. Found: ' + this.separator);
         }
 
         if ('string' === typeof opts.left ||
@@ -44655,6 +44659,12 @@ if (!Array.prototype.indexOf) {
                 throw new Error('ChoiceTable.init: choicesSetSize must be ' +
                                 'undefined or an integer > 0. Found: ' +
                                 opts.choicesSetSize);
+            }
+
+            if (this.left || this.right) {
+                throw new Error('ChoiceTable.init: choicesSetSize option ' +
+                                'cannot be specified when either left or ' +
+                                'right options are set.');
             }
 
             this.choicesSetSize = opts.choicesSetSize;
@@ -45778,7 +45788,7 @@ if (!Array.prototype.indexOf) {
      *   If a `table` option is specified, it sets it as the clickable
      *   table. All other options are passed to the init method.
      */
-    function ChoiceTableGroup(options) {
+    function ChoiceTableGroup() {
         var that;
         that = this;
 
@@ -46159,8 +46169,7 @@ if (!Array.prototype.indexOf) {
      * @param {object} opts Configuration options
      */
     ChoiceTableGroup.prototype.init = function(opts) {
-        var tmp, that;
-        that = this;
+        var tmp;
 
         // TODO: many options checking are replicated. Skip them all?
         // Have a method in ChoiceTable?
@@ -46331,6 +46340,9 @@ if (!Array.prototype.indexOf) {
         }
 
         if (opts.tabbable !== false) this.tabbable = true;
+
+        // Separator checked by ChoiceTable.
+        if (opts.separator) this.separator = opts.separator;
 
         // After all configuration opts are evaluated, add items.
 
@@ -54828,7 +54840,9 @@ if (!Array.prototype.indexOf) {
  * Copyright(c) 2020 Stefano Balietti
  * MIT Licensed
  *
- * Displays an interface to measure risk preferences.
+ * Displays an interface to measure risk preferences with different methods
+ *
+ * Available methods: Holt_Laury (default), and Bomb.
  *
  * www.nodegame.org
  */
@@ -54840,17 +54854,76 @@ if (!Array.prototype.indexOf) {
 
     // ## Meta-data
 
-    RiskGauge.version = '0.4.0';
+    RiskGauge.version = '0.7.0';
     RiskGauge.description = 'Displays an interface to ' +
-        'measure risk preferences.';
+        'measure risk preferences with different methods.';
 
     RiskGauge.title = 'Risk Gauge';
     RiskGauge.className = 'riskgauge';
 
-    RiskGauge.texts.mainText = 'Below you find a series of hypothetical ' +
-        'lotteries. Each row contains two lotteries with different ' +
-        'probabalities of winning. In each row, select the lottery you would ' +
-        'rather take part in.';
+    RiskGauge.texts =  {
+
+        // Holt Laury.
+
+        holt_laury_mainText:
+            'Below you find a series of hypothetical lotteries, each ' +
+            'contains two lotteries with different probabalities of winning. ' +
+            'In each row, select the lottery you would rather take part in.',
+
+        // Bomb.
+
+        // probBomb is passed as input param because it may be hidden.
+        bomb_mainText: function(widget, probBomb) {
+            var str;
+            str =  'Below there are 100 black boxes. ';
+            str += 'Every box contains a prize of ' +
+                    widget.boxValue + ' ' + widget.currency + ', but ';
+            if (probBomb === 1) {
+                str += 'one box contains a <em>bomb</em>.';
+            }
+            else {
+                if (widget.revealProbBomb) {
+                    str += 'with probability ' + probBomb +
+                    ' one of those boxes contains a <em>bomb</em>.';
+                }
+                else {
+                    str += 'one of those boxes might contain a <em>bomb</em>.';
+                }
+            }
+            str += '<br/><br/>You must decide how many boxes you want to open';
+            str += ', between 1 and ' + widget.maxBoxes + ' boxes.';
+            if (widget.withPrize) {
+                str += 'You will receive a prize equal to the ' +
+                       'sum of all the prizes collected from every opened ' +
+                       'box. However, if you open ';
+                str += probBomb === 1 ? 'the' : 'a';
+                str += ' box with the bomb, you get nothing. '
+            }
+            str += '<strong>How many boxes do ' +
+                   'you want to open?</strong><br/><br/>';
+            return str;
+        },
+
+        bomb_sliderHint:
+            'Move the slider below to change the number of boxes to open.',
+
+        bomb_boxValue: 'Prize in each box: ',
+
+        bomb_numBoxes: ' Number of boxes to open: ',
+
+        bomb_totalWin: ' Total potential win: ',
+
+        bomb_openButton: 'Open Boxes',
+
+        bomb_warn: 'Open at least one box.',
+
+        bomb_won: 'You won! You did not open the box with the bomb.',
+
+        bomb_lost: 'You lost! You opened the box with the bomb.'
+    };
+
+    // Backward compatibility.
+    RiskGauge.texts.mainText = RiskGauge.texts.holt_laury_mainText;
 
     // ## Dependencies
     RiskGauge.dependencies = {
@@ -54862,12 +54935,9 @@ if (!Array.prototype.indexOf) {
      *
      * Creates a new instance of RiskGauge
      *
-     * @param {object} options Optional. Configuration options
-     * which is forwarded to RiskGauge.init.
-     *
      * @see RiskGauge.init
      */
-    function RiskGauge(options) {
+    function RiskGauge() {
 
         /**
          * ### RiskGauge.methods
@@ -54880,8 +54950,7 @@ if (!Array.prototype.indexOf) {
          * and accepts the `options` parameters passed to constructor.
          * Each method must return widget-like gauge object
          * implementing functions: append, enable, disable, getValues
-         *
-         * or an error will be thrown
+         * or an error will be thrown.
          */
         this.methods = {};
 
@@ -54890,7 +54959,7 @@ if (!Array.prototype.indexOf) {
          *
          * The method used to measure mood
          *
-         * Available methods: 'Holt_Laury'
+         * Available methods: 'Holt_Laury', 'Bomb'
          *
          * Default method is: 'Holt_Laury'
          *
@@ -54919,6 +54988,7 @@ if (!Array.prototype.indexOf) {
         this.gauge = null;
 
         this.addMethod('Holt_Laury', holtLaury);
+        this.addMethod('Bomb', bomb);
     }
 
     // ## RiskGauge methods.
@@ -54952,25 +55022,31 @@ if (!Array.prototype.indexOf) {
         }
         // Call method.
         gauge = this.methods[this.method].call(this, opts);
+
         // Check properties.
-        checkGauge(this.method, gauge);
+        if (!node.widgets.isWidget(gauge)) {
+            throw new Error('RiskGauge.init: method ' + this.method +
+                            ' created invalid gauge: missing default widget ' +
+                            'methods.')
+        }
+
         // Approved.
         this.gauge = gauge;
 
         this.on('enabled', function() {
-            gauge.enable();
+            if (gauge.enable) gauge.enable();
         });
 
         this.on('disabled', function() {
-            gauge.disable();
+            if (gauge.disable) gauge.disable();
         });
 
         this.on('highlighted', function() {
-            gauge.highlight();
+            if (gauge.highlight) gauge.highlight();
         });
 
         this.on('unhighlighted', function() {
-            gauge.unhighlight();
+            if (gauge.unhighlight) gauge.unhighlight();
         });
     };
 
@@ -54988,11 +55064,11 @@ if (!Array.prototype.indexOf) {
      */
     RiskGauge.prototype.addMethod = function(name, cb) {
         if ('string' !== typeof name) {
-            throw new Error('RiskGauge.addMethod: name must be string: ' +
+            throw new TypeError('RiskGauge.addMethod: name must be string: ' +
                             name);
         }
         if ('function' !== typeof cb) {
-            throw new Error('RiskGauge.addMethod: cb must be function: ' +
+            throw new TypeError('RiskGauge.addMethod: cb must be function: ' +
                             cb);
         }
         if (this.methods[name]) {
@@ -55010,42 +55086,7 @@ if (!Array.prototype.indexOf) {
         return this.gauge.setValues(opts);
     };
 
-    // ## Helper functions.
-
-    /**
-     * ### checkGauge
-     *
-     * Checks if a gauge is properly constructed, throws an error otherwise
-     *
-     * @param {string} method The name of the method creating it
-     * @param {object} gauge The object to check
-     *
-     * @see ModdGauge.init
-     */
-    function checkGauge(method, gauge) {
-        if (!gauge) {
-            throw new Error('RiskGauge.init: method ' + method +
-                            'did not create element gauge.');
-        }
-        if ('function' !== typeof gauge.getValues) {
-            throw new Error('RiskGauge.init: method ' + method +
-                            ': gauge missing function getValues');
-        }
-        if ('function' !== typeof gauge.enable) {
-            throw new Error('RiskGauge.init: method ' + method +
-                            ': gauge missing function enable');
-        }
-        if ('function' !== typeof gauge.disable) {
-            throw new Error('RiskGauge.init: method ' + method +
-                            ': gauge missing function disable');
-        }
-        if ('function' !== typeof gauge.append) {
-            throw new Error('RiskGauge.init: method ' + method +
-                            ': gauge missing function append');
-        }
-    }
-
-    // ## Available methods.
+    // ## Methods.
 
     // ### Holt and Laury
 
@@ -55096,13 +55137,259 @@ if (!Array.prototype.indexOf) {
         gauge = node.widgets.get('ChoiceTableGroup', {
             id: options.id || 'holt_laury',
             items: items,
-            mainText: this.mainText || this.getText('mainText'),
+            mainText: this.mainText || this.getText('holt_laury_mainText'),
             title: false,
             requiredChoice: true,
             storeRef: false
         });
 
         return gauge;
+    }
+
+
+    // ### Bomb Risk
+
+    function bomb(opts) {
+        var that;
+        that = this;
+
+        // Private variables.
+
+        // Probability that there is a bomb. Default 1.
+        var probBomb;
+        if ('undefined' !== typeof opts.probBomb) {
+            if (false === J.isNumber(opts.probBomb, 0, 1, true, true)) {
+                throw new Error('Bomb.init: probBomb must be a number ' +
+                                'between 0 and 1 or undefined. Found: ' +
+                                opts.probBomb);
+            }
+            probBomb = opts.probBomb;
+        }
+        else {
+            probBomb = 1;
+        }
+
+        // The index of the box with the bomb (0-100), or 101 if no bomb.
+        var bombBox;
+
+        // Div containing info about how many boxes to open, etc.
+        var infoDiv;
+
+        // Paragraph containing the outcome of opening the box or a warning.
+        var bombResult;
+
+        // The Slider widget to select how many boxes to open.
+        var slider;
+
+        // The open box button.
+        var button;
+
+        // Flag that participant did not found the bomb.
+        var isWinner;
+
+        // Holds the final number of boxes opened after clicking the button.
+        var finalValue;
+
+
+        // Public variables.
+
+        // The value of each box. Default 1.
+        if ('undefined' !== typeof opts.boxValue) {
+            this.boxValue = J.isInt(opts.boxValue, 0);
+            if (!this.boxValue) {
+                throw new TypeError('Bomb.init: boxValue must be an ' +
+                                    'a number > 0 or undefined. Found: ' +
+                                    opts.boxValue);
+            }
+        }
+        else {
+            this.boxValue = 1;
+        }
+
+        // The currency of the prize. Default: USD.
+        this.currency = opts.currency || 'USD';
+
+        // Flag TRUE if the probability that a bomb exists is revealed.
+        this.revealProbBomb = 'undefined' === typeof opts.revealProbBomb ?
+                              true : !!opts.revealProbBomb;
+
+        // Max number of boxes to open (default 99 if probBomb = 1, else 100).
+        if ('undefined' !== typeof opts.maxBoxes) {
+            if (!J.isInt(opts.maxBoxes, 0, 100)) {
+                throw new TypeError('Bomb.init: maxBoxes must be an ' +
+                                    'integer <= 100 or undefined. Found: ' +
+                                    opts.maxBoxes);
+            }
+            this.maxBoxes = opts.maxBoxes;
+        }
+        else {
+            this.maxBoxes = this.propBomb === 1 ? 99 : 100;
+        }
+
+        // If TRUE, there is an actual prize for the participant. Default: TRUE.
+        this.withPrize = 'undefined' === typeof opts.withPrize ?
+                         true : !!opts.withPrize;
+
+
+        // Pick bomb box id, if probability permits it, else set to 101.
+        bombBox = (probBomb === 0 || Math.random() <= probBomb) ? 101 :
+            Math.ceil(Math.random()*100);
+
+        // Return widget-like object.
+        return {
+
+            setValues: function(opts) {
+                slider.setValues(opts);
+            },
+
+            getValues: function() {
+                var out, values;
+                values = slider.getValues();
+                out = {
+                    isCorrect: 'undefined' !== typeof finalValue,
+                    nBoxes: values.value,
+                    totalMove: values.totalMove,
+                    isWinner: isWinner,
+                    time: values.time,
+                    payment: 0
+                };
+                // We use finalValue, because values.value might be manipulated.
+                if (isWinner === true) out.payment = finalValue * that.boxValue;
+                return out;
+            },
+
+            append: function() {
+
+                // Main text.
+                W.add('div', that.bodyDiv, {
+                    innerHTML: that.mainText ||
+                               that.getText('bomb_mainText', probBomb)
+                });
+
+                // Table.
+                W.add('div', that.bodyDiv, {
+                    innerHTML: makeTable()
+                });
+
+                // Slider.
+                slider = node.widgets.add('Slider', that.bodyDiv, {
+                    min: 0,
+                    max: that.maxBoxes,
+                    hint: that.getText('bomb_sliderHint'),
+                    title: false,
+                    initialValue: 0,
+                    displayValue: false,
+                    displayNoChange: false,
+                    type: 'flat',
+                    required: true,
+                    // texts: {
+                    //     currentValue: that.getText('sliderValue')
+                    // },
+                    onmove: function(value) {
+                        var i, div, c, v;
+
+                        if (value > 0) {
+                            button.disabled = false;
+                            bombResult.innerHTML = '';
+                        }
+                        else {
+                            bombResult.innerHTML = that.getText('bomb_warn');
+                            button.disabled = true;
+                        }
+
+                        // Need to do until maxBoxes
+                        // in case we are reducing the value.
+                        for (i = 0; i < that.maxBoxes; i++) {
+                            div = W.gid(getBoxId(i));
+                            if (value > i) div.style.background = '#1be139';
+                            else div.style.background = '#000000';
+                        }
+
+                        // Update display.
+                        W.gid('bomb_numBoxes').innerText = value;
+                        c = that.currency;
+                        v = that.boxValue;
+                        if (that.withPrize) {
+                            W.gid('bomb_boxValue').innerText = v + c;
+                            W.gid('bomb_totalWin').innerText = (value * v) + c;
+                        }
+                    },
+                    storeRef: false,
+                    width: '100%'
+                });
+
+                // Info div.
+                infoDiv = W.add('div', that.bodyDiv);
+                W.add('p', infoDiv, {
+                    innerHTML: that.getText('bomb_numBoxes') +
+                               ' <span id="bomb_numBoxes">0</span>'
+                });
+
+                if (that.withPrize) {
+                    W.add('p', infoDiv, {
+                        innerHTML: that.getText('bomb_boxValue') +
+                        ' <span id="bomb_boxValue">' + this.boxValue + '</span>'
+                    });
+                    W.add('p', infoDiv, {
+                        innerHTML: that.getText('bomb_totalWin') +
+                        ' <span id="bomb_totalWin">0</span>'
+                    });
+                }
+
+                bombResult = W.add('p', infoDiv, { id: 'bomb_result' });
+
+                button = W.add('button', that.bodyDiv, {
+                    className: 'btn-danger',
+                    innerHTML: that.getText('bomb_openButton')
+                });
+
+                button.onclick = function() {
+                    var cl;
+                    // Set global variables.
+                    finalValue = slider.getValues().value;
+                    isWinner = finalValue < bombBox;
+                    // Update table.
+                    if (bombBox < 101) {
+                        W.gid(getBoxId(bombBox)).style.background = '#fa0404';
+                    }
+                    // Hide slider and button
+                    slider.hide();
+                    W.hide(button);
+                    // Give feedback.
+                    cl = 'bomb_' + (isWinner ? 'won' : 'lost');
+                    bombResult.innerHTML = that.getText(cl);
+                    bombResult.className += (' ' + cl);
+                };
+            }
+        };
+    }
+
+    // ### Helper methods.
+
+    // Returns the Bomb Box Id in the HTML from its index.
+    function getBoxId(i) {
+        return 'bc_' + i;
+    }
+
+    function makeBoxRow(j) {
+        var i, out;
+        out = '<tr>';
+        for (i = 0; i < 10; i++) {
+            out = out + '<td><div class="bomb-box square" id="' +
+            getBoxId(i + (10*j)) + '"></td>';
+        }
+        out += '</tr>';
+        return out;
+    }
+
+    function makeTable() {
+        var j, out;
+        out = '<table class="bomb-table">';
+        for (j = 0; j < 10; j++) {
+            out = out + makeBoxRow(j);
+        }
+        out += '</table><br>';
+        return out;
     }
 
 })(node);
@@ -55470,7 +55757,6 @@ if (!Array.prototype.indexOf) {
             this.onmove = opts.onmove;
         }
 
-        //TODO: not working
         if (opts.width) {
             if ('string' !== typeof opts.width) {
                 throw new TypeError(e + 'width must be string or ' +
@@ -55575,7 +55861,7 @@ if (!Array.prototype.indexOf) {
 
         return {
             value: value,
-            noChange: nochange,
+            noChange: !!nochange,
             initialValue: this.initialValue,
             totalMove: this.totalMove,
             isCorrect: res,
@@ -55583,6 +55869,11 @@ if (!Array.prototype.indexOf) {
         };
     };
 
+    Slider.prototype.setValues = function(opts) {
+        opts = opts || {};
+        this.slider.value = opts.value;
+        this.slider.oninput();
+    };
 
 })(node);
 
