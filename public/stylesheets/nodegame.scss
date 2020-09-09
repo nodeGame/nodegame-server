@@ -715,17 +715,15 @@ div.riskgauge {
         display: block;
     }
 
-    /* Bomb Risk */
+    /* Bomb */
 
     .bomb-table {
-        width: 60%;
-        margin-left: 20%;
-        margin-right: 20%;
+        margin-left: 10%;
+        margin-right: 10%;
     }
 
     .bomb-box {
-        height: 50px;
-        width: 50px;
+        height: 30px;
         background: black;
     }
 
@@ -739,6 +737,23 @@ div.riskgauge {
 
     .bomb_won {
         color: #1be139;
+    }
+
+    button.btn-danger {
+        display: block;
+        margin: auto;
+        padding: 0.3em;
+    }
+    .risk-info {
+        text-align: center;
+    }
+    .risk-info p {
+        display: inline-flex;
+        margin-right: 20px;
+    }
+    .risk-info span {
+        font-weight: bold;
+        margin-left: 0.3em;
     }
 }
 

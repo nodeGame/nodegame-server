@@ -23382,8 +23382,7 @@ if (!Array.prototype.indexOf) {
             });
         }
 
-        this.times = {};
-
+        // this.times = {};
 
         this.node = this.__shared.node;
     }
@@ -23411,8 +23410,8 @@ if (!Array.prototype.indexOf) {
         if (!o.timestamp) o.timestamp = Date.now ?
             Date.now() : new Date().getTime();
 
-        // SAVE times. 
-        this.times[o.player]
+        // TODO: Work in progress: saving times.
+        // this.times[o.player];
 
         // if (this.flatten[o.stage.stage])
 
@@ -25533,7 +25532,7 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # Timer
- * Copyright(c) 2017 Stefano Balietti
+ * Copyright(c) 2020 Stefano Balietti
  * MIT Licensed
  *
  * Timing-related utility functions
@@ -26427,7 +26426,7 @@ if (!Array.prototype.indexOf) {
         this.hookNames = {};
 
         /**
-         * ### GameTimer.hookNames
+         * ### GameTimer.eventEmitterName
          *
          * The name of the event emitter where the timer was registered
          *
@@ -26609,10 +26608,10 @@ if (!Array.prototype.indexOf) {
         }
 
         if ('function' === typeof h) {
-            h.call(ctx || this.node.game);
+            h.call(ctx || this.node.game, this.timeLeft, this);
         }
         else if ('string' === typeof h) {
-            this.node.emit(h);
+            this.node.emit(h, this.timeLeft, this);
         }
         else {
             throw new TypeError('GameTimer.fire: h must be function, string ' +
@@ -26710,10 +26709,9 @@ if (!Array.prototype.indexOf) {
         if (!name) {
             name = J.uniqueKey(this.hookNames, 'timerHook');
         }
-        for (i = 0; i < this.hooks.length; i++) {
-            if (this.hooks[i].name === name) {
-                return false;
-            }
+        else if (this.hookNames[name]) {
+            throw new Error('GameTimer.addHook: name already existing: ' +
+                            name);
         }
         this.hookNames[name] = true;
         this.hooks.push({hook: hook, ctx: ctx, name: name});
@@ -54875,7 +54873,8 @@ if (!Array.prototype.indexOf) {
         // probBomb is passed as input param because it may be hidden.
         bomb_mainText: function(widget, probBomb) {
             var str;
-            str =  'Below there are 100 black boxes. ';
+            str = '<p style="margin-bottom: 0.3em">';
+            str +=  'Below there are 100 black boxes. ';
             str += 'Every box contains a prize of ' +
                     widget.boxValue + ' ' + widget.currency + ', but ';
             if (probBomb === 1) {
@@ -54890,28 +54889,29 @@ if (!Array.prototype.indexOf) {
                     str += 'one of those boxes might contain a <em>bomb</em>.';
                 }
             }
-            str += '<br/><br/>You must decide how many boxes you want to open';
-            str += ', between 1 and ' + widget.maxBoxes + ' boxes.';
+            str += ' You must decide how many boxes you want to open.';
+            str += '</p>';
             if (widget.withPrize) {
-                str += 'You will receive a prize equal to the ' +
-                       'sum of all the prizes collected from every opened ' +
-                       'box. However, if you open ';
-                str += probBomb === 1 ? 'the' : 'a';
-                str += ' box with the bomb, you get nothing. '
+                str += '<p style="margin-bottom: 0.3em">';
+                str += 'You will receive a reward equal to the ' +
+                       'sum of all the prizes in every opened ' +
+                       'box. However, if you open the box ' +
+                       'with the bomb, you get nothing.</p>'
             }
-            str += '<strong>How many boxes do ' +
-                   'you want to open?</strong><br/><br/>';
+            str += '<p style="margin-bottom: 0.5em">';
+            str += '<strong>How many boxes do you want to open ';
+            str += 'between 1 and ' + widget.maxBoxes + '?</strong></p>';
             return str;
         },
 
         bomb_sliderHint:
             'Move the slider below to change the number of boxes to open.',
 
-        bomb_boxValue: 'Prize in each box: ',
+        bomb_boxValue: 'Prize per box: ',
 
-        bomb_numBoxes: ' Number of boxes to open: ',
+        bomb_numBoxes: 'Number of boxes: ',
 
-        bomb_totalWin: ' Total potential win: ',
+        bomb_totalWin: 'Total reward: ',
 
         bomb_openButton: 'Open Boxes',
 
@@ -55157,17 +55157,6 @@ if (!Array.prototype.indexOf) {
 
         // Probability that there is a bomb. Default 1.
         var probBomb;
-        if ('undefined' !== typeof opts.probBomb) {
-            if (false === J.isNumber(opts.probBomb, 0, 1, true, true)) {
-                throw new Error('Bomb.init: probBomb must be a number ' +
-                                'between 0 and 1 or undefined. Found: ' +
-                                opts.probBomb);
-            }
-            probBomb = opts.probBomb;
-        }
-        else {
-            probBomb = 1;
-        }
 
         // The index of the box with the bomb (0-100), or 101 if no bomb.
         var bombBox;
@@ -55191,11 +55180,43 @@ if (!Array.prototype.indexOf) {
         var finalValue;
 
 
+        // Init private variables.
+
+        // The height of every box in px (default: 30px in css).
+        if (opts.boxHeight) {
+            if ('string' !== typeof opts.boxHeight) {
+                throw new Error('Bomb.init: boxHeight must be string ' +
+                                'or undefined. Found: ' + opts.boxHeight);
+            }
+            W.cssRule('div.riskgauge .bomb-box { height: ' +
+                      opts.boxHeight + '}');
+        }
+
+        if ('undefined' !== typeof opts.probBomb) {
+            if (false === J.isNumber(opts.probBomb, 0, 1, true, true)) {
+                throw new Error('Bomb.init: probBomb must be a number ' +
+                'between 0 and 1 or undefined. Found: ' +
+                opts.probBomb);
+            }
+            probBomb = opts.probBomb;
+        }
+        else {
+            probBomb = 1;
+        }
+
+        // Pick bomb box id, if probability permits it, else set to 101.
+        bombBox = Math.random() >= probBomb ?
+            101 : Math.ceil(Math.random() * 100);
+
         // Public variables.
 
-        // The value of each box. Default 1.
+        // Store locally because they are overwritten. TODO: check if needed.
+        this._highlight = this.highlight;
+        this._unhighlight = this.unhighlight;
+
+        // The value of each box. Default 0.01.
         if ('undefined' !== typeof opts.boxValue) {
-            this.boxValue = J.isInt(opts.boxValue, 0);
+            this.boxValue = J.isNumber(opts.boxValue, 0);
             if (!this.boxValue) {
                 throw new TypeError('Bomb.init: boxValue must be an ' +
                                     'a number > 0 or undefined. Found: ' +
@@ -55203,7 +55224,7 @@ if (!Array.prototype.indexOf) {
             }
         }
         else {
-            this.boxValue = 1;
+            this.boxValue = 0.01;
         }
 
         // The currency of the prize. Default: USD.
@@ -55223,17 +55244,13 @@ if (!Array.prototype.indexOf) {
             this.maxBoxes = opts.maxBoxes;
         }
         else {
-            this.maxBoxes = this.propBomb === 1 ? 99 : 100;
+            this.maxBoxes = probBomb === 1 ? 99 : 100;
         }
 
         // If TRUE, there is an actual prize for the participant. Default: TRUE.
         this.withPrize = 'undefined' === typeof opts.withPrize ?
                          true : !!opts.withPrize;
 
-
-        // Pick bomb box id, if probability permits it, else set to 101.
-        bombBox = (probBomb === 0 || Math.random() <= probBomb) ? 101 :
-            Math.ceil(Math.random()*100);
 
         // Return widget-like object.
         return {
@@ -55242,21 +55259,46 @@ if (!Array.prototype.indexOf) {
                 slider.setValues(opts);
             },
 
-            getValues: function() {
-                var out, values;
+            getValues: function(opts) {
+                var out, values, nb, ic;
+                opts = opts || {};
                 values = slider.getValues();
+                // We use finalValue, because values.value might be manipulated.
+                if ('undefined' !== typeof finalValue) {
+                    nb = finalValue;
+                    ic = true
+                }
+                else {
+                    // TODO: slider.getValues returns non-integers. Check.
+                    nb = parseInt(slider.slider.value, 10);
+                    ic = false;
+                }
                 out = {
-                    isCorrect: 'undefined' !== typeof finalValue,
-                    nBoxes: values.value,
+                    isCorrect: ic,
+                    nBoxes: nb,
                     totalMove: values.totalMove,
                     isWinner: isWinner,
                     time: values.time,
                     payment: 0
                 };
-                // We use finalValue, because values.value might be manipulated.
+                if (!out.isCorrect &&
+                    ('undefined' === typeof opts.highlight || opts.highlight)) {
+
+                        slider.highlight();
+                }
                 if (isWinner === true) out.payment = finalValue * that.boxValue;
                 return out;
             },
+
+            highlight: function() {
+                slider.highlight();
+            },
+
+            unhighlight: function() {
+                slider.unhighlight();
+            },
+
+            // slider: slider,
 
             append: function() {
 
@@ -55288,11 +55330,17 @@ if (!Array.prototype.indexOf) {
                     onmove: function(value) {
                         var i, div, c, v;
 
+                        // TODO: not working.
+                        // if (that.isHighlighted()) that._unhighlight();
+                        that._unhighlight();
+
                         if (value > 0) {
+                            button.style.display = '';
                             button.disabled = false;
                             bombResult.innerHTML = '';
                         }
                         else {
+                            button.style.display = 'none';
                             bombResult.innerHTML = that.getText('bomb_warn');
                             button.disabled = true;
                         }
@@ -55311,7 +55359,8 @@ if (!Array.prototype.indexOf) {
                         v = that.boxValue;
                         if (that.withPrize) {
                             W.gid('bomb_boxValue').innerText = v + c;
-                            W.gid('bomb_totalWin').innerText = (value * v) + c;
+                            W.gid('bomb_totalWin').innerText =
+                                Number((value * v)).toFixed(2) + c;
                         }
                     },
                     storeRef: false,
@@ -55319,20 +55368,24 @@ if (!Array.prototype.indexOf) {
                 });
 
                 // Info div.
-                infoDiv = W.add('div', that.bodyDiv);
+                infoDiv = W.add('div', that.bodyDiv, {
+                    className: 'risk-info',
+                });
+
                 W.add('p', infoDiv, {
                     innerHTML: that.getText('bomb_numBoxes') +
-                               ' <span id="bomb_numBoxes">0</span>'
+                               '&nbsp;<span id="bomb_numBoxes">0</span>'
                 });
 
                 if (that.withPrize) {
                     W.add('p', infoDiv, {
                         innerHTML: that.getText('bomb_boxValue') +
-                        ' <span id="bomb_boxValue">' + this.boxValue + '</span>'
+                        '&nbsp;<span id="bomb_boxValue">' +
+                        this.boxValue + '</span>'
                     });
                     W.add('p', infoDiv, {
                         innerHTML: that.getText('bomb_totalWin') +
-                        ' <span id="bomb_totalWin">0</span>'
+                        '&nbsp;<span id="bomb_totalWin">0</span>'
                     });
                 }
 
@@ -55340,13 +55393,16 @@ if (!Array.prototype.indexOf) {
 
                 button = W.add('button', that.bodyDiv, {
                     className: 'btn-danger',
-                    innerHTML: that.getText('bomb_openButton')
+                    innerHTML: that.getText('bomb_openButton'),
                 });
+                // Initially hidden.
+                button.style.display = 'none';
 
                 button.onclick = function() {
                     var cl;
                     // Set global variables.
-                    finalValue = slider.getValues().value;
+                    // slider.getValues().value fails (no int numbers).
+                    finalValue = parseInt(slider.slider.value, 10),
                     isWinner = finalValue < bombBox;
                     // Update table.
                     if (bombBox < 101) {
@@ -55413,8 +55469,8 @@ if (!Array.prototype.indexOf) {
 
     // ## Meta-data
 
-    Slider.version = '0.3.0';
-    Slider.description = 'Creates a configurable Slider ';
+    Slider.version = '0.4.0';
+    Slider.description = 'Creates a configurable slider';
 
     Slider.title = false;
     Slider.className = 'slider';
@@ -55566,6 +55622,12 @@ if (!Array.prototype.indexOf) {
          */
         this.type = 'volume';
 
+        /** Slider.hoverColor
+         *
+         * The color of the slider on mouse over
+         */
+        this.hoverColor = '#2076ea';
+
         /** Slider.listener
          *
          * The main function listening for slider movement
@@ -55604,8 +55666,8 @@ if (!Array.prototype.indexOf) {
                 }
 
                 if (that.displayValue) {
-                    that.valueSpan.innerHTML = that.getText('currentValue',
-                    that.slider.value);
+                    that.valueSpan.innerHTML =
+                        that.getText('currentValue', that.slider.value);
                 }
 
                 if (that.displayNoChange && noChange !== true) {
@@ -55764,6 +55826,14 @@ if (!Array.prototype.indexOf) {
             }
             this.sliderWidth = opts.width;
         }
+
+        if (opts.hoverColor) {
+            if ('string' !== typeof opts.hoverColor) {
+                throw new TypeError(e + 'hoverColor must be string or ' +
+                                    'undefined. Found: ' + opts.hoverColor);
+            }
+            this.hoverColor = opts.hoverColor;
+        }
     };
 
     /**
@@ -55774,6 +55844,12 @@ if (!Array.prototype.indexOf) {
      */
     Slider.prototype.append = function() {
         var container;
+
+        // The original color of the rangeFill container (default black)
+        // that is replaced upon highlighting.
+        // Need to do js onmouseover because ccs:hover does not work here.
+        var tmpColor;
+
         var that = this;
 
         // MainText.
@@ -55808,6 +55884,14 @@ if (!Array.prototype.indexOf) {
             min: this.min,
             max: this.max
         });
+
+        this.slider.onmouseover = function() {
+            tmpColor = that.rangeFill.style.background || 'black';
+            that.rangeFill.style.background = that.hoverColor;
+        };
+        this.slider.onmouseout = function() {
+            that.rangeFill.style.background = tmpColor;
+        };
 
         if (this.sliderWidth) this.slider.style.width = this.sliderWidth;
 
