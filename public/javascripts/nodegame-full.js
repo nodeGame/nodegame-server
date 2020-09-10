@@ -56631,8 +56631,17 @@ if (!Array.prototype.indexOf) {
             case 'COUNT_UP_STEPS_TO_TOTAL':
                 displayModes.push(new CountUpSteps(this, { toTotal: true }));
                 break;
+            case 'COUNT_UP_STEPS_TO_TOTAL_IFNOT1':
+                displayModes.push(new CountUpSteps(this, {
+                    toTotal: true,
+                    ifNotOne: true
+                }));
+                break;
             case 'COUNT_UP_STEPS':
                 displayModes.push(new CountUpSteps(this));
+                break;
+            case 'COUNT_UP_STEPS_IFNOT1':
+                displayModes.push(new CountUpSteps(this, { ifNotOne: true }));
                 break;
             case 'COUNT_DOWN_STEPS':
                 displayModes.push(new CountDownSteps(this));
@@ -56903,8 +56912,16 @@ if (!Array.prototype.indexOf) {
      * Values are updated according to the state of `visualRound`.
      */
     CountUpSteps.prototype.updateDisplay = function() {
-        this.current.innerHTML = this.visualRound.curStage;
-        if (this.total) this.total.innerHTML = this.visualRound.totStage || '?';
+        if (this.options.ifNotOne && this.visualRound.totStep === 1) {
+            this.displayDiv.style.display = 'none';
+        }
+        else {
+            this.current.innerHTML = this.visualRound.curStep;
+            if (this.total) {
+                this.total.innerHTML = this.visualRound.totStep || '?';
+            }
+            this.displayDiv.style.display = '';
+        }
     };
 
    /**
@@ -56960,9 +56977,7 @@ if (!Array.prototype.indexOf) {
      *   `options.toTotal == true`, then the total number of rounds is displayed
      */
     function CountUpRounds(visualRound, options) {
-
         generalConstructor(this, visualRound, 'COUNT_UP_ROUNDS', options);
-
         generalInit(this, 'rounddiv', visualRound.getText('round'));
     }
 
@@ -57019,19 +57034,14 @@ if (!Array.prototype.indexOf) {
     CountDownRounds.prototype.updateDisplay = function() {
         var v;
         v = this.visualRound;
-        if (v.totRound === v.curRound) {
-            this.current.innerHTML = 0;
-        }
-        else {
-            this.current.innerHTML = (v.totRound - v.curRound) || '?';
-        }
+        if (v.totRound === v.curRound) this.current.innerHTML = 0;
+        else this.current.innerHTML = (v.totRound - v.curRound) || '?';
     };
 
     /**
      * # CompoundDisplayMode
      *
-     * Defines a displayMode for the `VisualRound` which displays the
-     * information according to multiple displayModes
+     * Creates a display mode which groups together other display modes
      */
 
     /**
@@ -57150,7 +57160,6 @@ if (!Array.prototype.indexOf) {
 
     // ## Helper Methods.
 
-
     function setLayout(d, layout, lastDisplay) {
         if (layout === 'vertical' || layout === 'multimode_vertical' ||
             layout === 'all_vertical') {
@@ -57190,7 +57199,6 @@ if (!Array.prototype.indexOf) {
         }
         return false;
     }
-
 
     /**
      * ### generalConstructor
