@@ -259,23 +259,31 @@ p {
 }
 .ng_header_position-horizontal-t .visualround .rounddiv,
 .ng_header_position-horizontal-t .visualround .stagediv,
+.ng_header_position-horizontal-t .visualround .stepdiv,
 .ng_header_position-horizontal-b .visualround .rounddiv,
-.ng_header_position-horizontal-b .visualround .stagediv {
+.ng_header_position-horizontal-b .visualround .stagediv,
+.ng_header_position-horizontal-b .visualround .stepdiv {
   float: left;
 }
 .ng_header_position-horizontal-t .visualround .rounddiv .title,
 .ng_header_position-horizontal-t .visualround .stagediv .title,
+.ng_header_position-horizontal-t .visualround .stepdiv  .title,
 .ng_header_position-horizontal-b .visualround .rounddiv .title,
-.ng_header_position-horizontal-b .visualround .stagediv .title {
+.ng_header_position-horizontal-b .visualround .stagediv .title,
+.ng_header_position-horizontal-b .visualround .stepdiv  .title {
   float: left;
   margin-right: 6px;
 }
 .ng_header_position-horizontal-t .visualround .rounddiv .content,
 .ng_header_position-horizontal-t .visualround .stagediv .content,
+.ng_header_position-horizontal-t .visualround .stepdiv .content,
 .ng_header_position-horizontal-b .visualround .rounddiv .content,
-.ng_header_position-horizontal-b .visualround .stagediv .content {
+.ng_header_position-horizontal-b .visualround .stagediv .content,
+.ng_header_position-horizontal-b .visualround .stepdiv .content {
   float: right;
 }
+.ng_header_position-horizontal-t .visualround .stepdiv,
+.ng_header_position-horizontal-b .visualround .stepdiv
 .ng_header_position-horizontal-t .visualround .rounddiv,
 .ng_header_position-horizontal-b .visualround .rounddiv {
   margin-left: 8px;
