@@ -43855,7 +43855,7 @@ if (!Array.prototype.indexOf) {
      * @see ChoiceManager.verifyChoice
      */
     ChoiceManager.prototype.getValues = function(opts) {
-        var obj, i, len, form;
+        var obj, i, len, form, lastErrored;
         obj = {
             order: this.order,
             forms: {},
@@ -43884,15 +43884,23 @@ if (!Array.prototype.indexOf) {
                       !obj.forms[form.id].choice.length))) {
 
                     obj.missValues.push(form.id);
+                    lastErrored = form;
                 }
                 if (opts.markAttempt &&
                     obj.forms[form.id].isCorrect === false) {
 
-                    obj.isCorrect = false;
+                    // obj.isCorrect = false;
+                    lastErrored = form;
                 }
             }
         }
-        if (obj.missValues.length) obj.isCorrect = false;
+        if (lastErrored) {
+            if ('function' === typeof lastErrored.bodyDiv.scrollIntoView) {
+                lastErrored.bodyDiv.scrollIntoView({ behavior: 'smooth' });
+            }
+            obj.isCorrect = false;
+        }
+        // if (obj.missValues.length) obj.isCorrect = false;
         if (this.textarea) obj.freetext = this.textarea.value;
         return obj;
     };
