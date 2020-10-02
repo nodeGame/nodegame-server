@@ -212,7 +212,7 @@ function configure(app, servernode) {
             listOfGames = J.keys(gamesObj);
             // Remove aliases.
             filteredGames = listOfGames.filter(function(name) {
-                return (!gamesObj[name].errored &&
+                return (!gamesObj[name].disabled && !gamesObj[name].errored &&
                         (!gamesObj[name].alias ||
                          gamesObj[name].alias.indexOf(name) === -1));
             });
