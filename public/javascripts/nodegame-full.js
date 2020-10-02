@@ -5834,18 +5834,28 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # NDDB: N-Dimensional Database
- * Copyright(c) 2017 Stefano Balietti <ste@nodegame.org>
+ * Copyright(c) 2020 Stefano Balietti <ste@nodegame.org>
  * MIT Licensed
  *
  * NDDB is a powerful and versatile object database for node.js and the browser.
  * ---
  */
-(function(exports, J) {
+(function(J) {
 
     "use strict";
 
-    // Expose constructors
-    exports.NDDB = NDDB;
+    if ('undefined' !== typeof module &&
+        'undefined' !== typeof module.exports) {
+
+        J = module.parent.exports.JSUS || require('JSUS').JSUS;
+        module.exports = NDDB;
+        // Backward compatibility.
+        module.exports.NDDB = NDDB;
+    }
+    else {
+        J = JSUS;
+        window.NDDB = NDDB;
+    }
 
     if (!J) throw new Error('NDDB: missing dependency: JSUS.');
 
@@ -5941,7 +5951,10 @@ if (!Array.prototype.indexOf) {
         this.hooks = {
             insert: [],
             remove: [],
-            update: []
+            update: [],
+            setwd: [],
+            save: [],
+            load: []
         };
 
         // ### nddb_pointer
@@ -6011,6 +6024,12 @@ if (!Array.prototype.indexOf) {
         // Default working directory for saving and loading files.
         this.__wd = null;
 
+        // ### __parentDb
+        // The parent NDDB instance from which this db was created.
+        // Set in views and hashes.
+        // @experimental
+        this.__parentDb = null;
+
         // ### log
         // Std out for log messages
         //
@@ -6063,6 +6082,12 @@ if (!Array.prototype.indexOf) {
         if ('function' === typeof this.addDefaultFormats) {
             this.addDefaultFormats();
         }
+
+        // Stores information about files saved (e.g., headers).
+        // Keys are filenames. There is one centeral cache for
+        // all hashes and views.
+        // @experimental.
+        this.__cache = {};
 
         // Mixing in user options and defaults.
         this.init(options);
@@ -6538,6 +6563,29 @@ if (!Array.prototype.indexOf) {
             this.initLog(options.log, options.logCtx);
         }
 
+        if (options.formats) {
+            if ('object' !== typeof options.formats) {
+                errMsg = 'options.formats must be object or undefined';
+                this.throwErr('TypeError', 'init', errMsg);
+            }
+            for (i in options.formats) {
+                if (options.formats.hasOwnProperty(i)) {
+                    this.addFormat(i, options.formats[i]);
+                }
+            }
+        }
+
+        if (options.defaultFormat) {
+            this.setDefaultFormat(options.defaultFormat);
+        }
+
+        if (options.wd && 'function' === typeof this.setWD) {
+            this.setWD(options.wd);
+        }
+
+        // Below there might modifications to the options
+        // object via the cloneSettings method.
+
         if (options.C) {
             if ('object' !== typeof options.C) {
                 errMsg = 'options.C must be object or undefined';
@@ -6585,27 +6633,6 @@ if (!Array.prototype.indexOf) {
                 }
             }
         }
-
-        if (options.formats) {
-            if ('object' !== typeof options.formats) {
-                errMsg = 'options.formats must be object or undefined';
-                this.throwErr('TypeError', 'init', errMsg);
-            }
-            for (i in options.formats) {
-                if (options.formats.hasOwnProperty(i)) {
-                    this.addFormat(i, options.formats[i]);
-                }
-            }
-        }
-
-        if (options.defaultFormat) {
-            this.setDefaultFormat(options.defaultFormat);
-        }
-
-        if (options.wd && 'function' === typeof this.setWD) {
-            this.setWD(options.wd);
-        }
-
     };
 
     /**
@@ -6767,6 +6794,32 @@ if (!Array.prototype.indexOf) {
     };
 
     /**
+     * ### NDDB.slice
+     *
+     * Creates a clone of the current NDDB object
+     *
+     * Takes care of calling the actual constructor of the class,
+     * so that inheriting objects will preserve their prototype.
+     *
+     * @param {array} db Optional. Array of items to import in the new database.
+     *   Default, items currently in the database
+     *
+     * @return {NDDB|object} The new database
+     */
+    NDDB.prototype.slice = function(start, end) {
+        if ('number' !== typeof start) {
+            this.throwErr('TypeError', 'slice', 'start must be number. ' +
+                          'Found: ' + start);
+        }
+        if ('undefined' !== typeof end && 'number' !== typeof end) {
+            this.throwErr('TypeError', 'slice', 'end must be number or ' +
+                          'undefined. Found: ' + end);
+        }
+        // In case the class was inherited.
+        return this.breed(this.fetch().slice(start, end));
+    };
+
+    /**
      * ### NDDB.breed
      *
      * Creates a clone of the current NDDB object
@@ -6781,8 +6834,8 @@ if (!Array.prototype.indexOf) {
      */
     NDDB.prototype.breed = function(db) {
         if (db && !J.isArray(db)) {
-            this.throwErr('TypeError', 'importDB', 'db must be array ' +
-                          'or undefined');
+            this.throwErr('TypeError', 'breed', 'db must be array ' +
+                          'or undefined. Found: ' + db);
         }
         // In case the class was inherited.
         return new this.constructor(this.cloneSettings(), db || this.fetch());
@@ -6871,6 +6924,7 @@ if (!Array.prototype.indexOf) {
             options.logCtx = logCtxCopy;
             this.__options.logCtx = logCtxCopy;
         }
+
         return options;
     };
 
@@ -7142,7 +7196,12 @@ if (!Array.prototype.indexOf) {
         // Create a copy of the current settings, without the views
         // functions, else we create an infinite loop in the constructor.
         settings = this.cloneSettings( {V: ''} );
-        this.__V[idx] = func, this[idx] = new NDDB(settings);
+        this.__V[idx] = func;
+        this[idx] = new NDDB(settings);
+        // Reference to this instance.
+        this[idx].__parentDb = this;
+
+        return this[idx];
     };
 
     /**
@@ -7183,10 +7242,7 @@ if (!Array.prototype.indexOf) {
         }
         this[idx] = {};
         this.__H[idx] = func;
-    };
 
-    NDDB.prototype.flatten = function(idx, func) {
-        // TODO
     };
 
     /**
@@ -7366,6 +7422,7 @@ if (!Array.prototype.indexOf) {
                     continue;
                 }
                 //this.__V[idx] = func, this[idx] = new this.constructor();
+                // TODO: When is the view not already created? Check!
                 if (!this[key]) {
                     // Create a copy of the current settings,
                     // without the views functions, otherwise
@@ -7373,6 +7430,8 @@ if (!Array.prototype.indexOf) {
                     // constructor, and the hooks.
                     settings = this.cloneSettings({ V: true, hooks: true });
                     this[key] = new NDDB(settings);
+                    // Reference to this instance.
+                    this[key].__parentDb = this;
                 }
                 this[key].insert(o);
             }
@@ -7416,6 +7475,8 @@ if (!Array.prototype.indexOf) {
                     this[key][hash] = new NDDB(settings);
                 }
                 this[key][hash].insert(o);
+                // Reference to this instance.
+                this[key][hash].__parentDb = this;
                 this.hashtray.set(key, o._nddbid, hash);
             }
         }
@@ -7523,7 +7584,7 @@ if (!Array.prototype.indexOf) {
      *   one callback function returned FALSE.
      */
     NDDB.prototype.emit = function() {
-        var event;
+        var event, hooks;
         var h, h2;
         var i, len, argLen, args;
         var res;
@@ -7531,17 +7592,21 @@ if (!Array.prototype.indexOf) {
         if ('string' !== typeof event) {
             this.throwErr('TypeError', 'emit', 'first argument must be string');
         }
-        if (!this.hooks[event]) {
+
+        // If this is a child db (e.g. a hash or a view)
+        hooks = this.__parentDb ? this.__parentDb.hooks : this.hooks;
+
+        if (!hooks[event]) {
             this.throwErr('TypeError', 'emit', 'unknown event: ' + event);
         }
-        len = this.hooks[event].length;
+        len = hooks[event].length;
         if (!len) return true;
         argLen = arguments.length;
 
         switch(len) {
 
         case 1:
-            h = this.hooks[event][0];
+            h = hooks[event][0];
             if (argLen === 1) res = h.call(this);
             else if (argLen === 2) res = h.call(this, arguments[1]);
             else if (argLen === 3) {
@@ -7556,7 +7621,7 @@ if (!Array.prototype.indexOf) {
             }
             break;
         case 2:
-            h = this.hooks[event][0], h2 = this.hooks[event][1];
+            h = hooks[event][0], h2 = hooks[event][1];
             if (argLen === 1) {
                 res = h.call(this) !== false;
                 res = res && h2.call(this) !== false;
@@ -7581,14 +7646,14 @@ if (!Array.prototype.indexOf) {
         default:
              if (argLen === 1) {
                  for (i = 0; i < len; i++) {
-                     res = this.hooks[event][i].call(this) !== false;
+                     res = hooks[event][i].call(this) !== false;
                      if (res === false) break;
                  }
             }
             else if (argLen === 2) {
                 res = true;
                 for (i = 0; i < len; i++) {
-                    res = this.hooks[event][i].call(this,
+                    res = hooks[event][i].call(this,
                                                     arguments[1]) !== false;
                     if (res === false) break;
 
@@ -7597,7 +7662,7 @@ if (!Array.prototype.indexOf) {
             else if (argLen === 3) {
                 res = true;
                 for (i = 0; i < len; i++) {
-                    res = this.hooks[event][i].call(this,
+                    res = hooks[event][i].call(this,
                                                     arguments[1],
                                                     arguments[2]) !== false;
                     if (res === false) break;
@@ -7610,7 +7675,7 @@ if (!Array.prototype.indexOf) {
                 }
                 res = true;
                 for (i = 0; i < len; i++) {
-                    res = this.hooks[event][i].apply(this, args) !== false;
+                    res = hooks[event][i].apply(this, args) !== false;
                     if (res === false) break;
                 }
 
@@ -7906,10 +7971,8 @@ if (!Array.prototype.indexOf) {
         }
         db = this.fetch();
         len = db.length;
-        for (i = 0 ; i < db.length ; i++) {
-            if (J.equals(db[i], o)) {
-                return true;
-            }
+        for (i = 0 ; i < len ; i++) {
+            if (J.equals(db[i], o)) return true;
         }
         return false;
     };
@@ -8418,7 +8481,7 @@ if (!Array.prototype.indexOf) {
      * @api private
      */
     NDDB.prototype._join = function(key1, key2, comparator, pos, select) {
-        var out, idxs, foreign_key, key;
+        var out, foreign_key, key;
         var i, j, o, o2;
         if (!key1 || !key2) return this.breed([]);
 
@@ -8428,7 +8491,7 @@ if (!Array.prototype.indexOf) {
             select = (select instanceof Array) ? select : [select];
         }
 
-        out = [], idxs = [];
+        out = [];
         for (i = 0; i < this.db.length; i++) {
 
             foreign_key = J.getNestedValue(key1, this.db[i]);
@@ -8658,11 +8721,11 @@ if (!Array.prototype.indexOf) {
         return out;
     };
 
-    function getValuesArray(o, key) {
+    function getValuesArray(o) {
         return J.obj2Array(o, 1);
     }
 
-    function getKeyValuesArray(o, key) {
+    function getKeyValuesArray(o) {
         return J.obj2KeyedArray(o, 1);
     }
 
@@ -8670,14 +8733,14 @@ if (!Array.prototype.indexOf) {
     function getValuesArray_KeyString(o, key) {
         var el = J.getNestedValue(key, o);
         if ('undefined' !== typeof el) {
-            return J.obj2Array(el,1);
+            return J.obj2Array(el, 1);
         }
     }
 
     function getValuesArray_KeyArray(o, key) {
         var el = J.subobj(o, key);
         if (!J.isEmpty(el)) {
-            return J.obj2Array(el,1);
+            return J.obj2Array(el, 1);
         }
     }
 
@@ -9684,15 +9747,21 @@ if (!Array.prototype.indexOf) {
      */
     function executeSaveLoad(that, method, file, cb, options) {
         var ff, format;
-        validateSaveLoadParameters(that, method, file, cb, options);
         if (!that.storageAvailable()) {
             that.throwErr('Error', 'save', 'no persistent storage available');
         }
+        validateSaveLoadParameters(that, method, file, cb, options);
         options = options || {};
         format = extractExtension(file);
         // If try to get the format function based on the extension,
         // otherwise try to use the default one. Throws errors.
         ff = findFormatFunction(that, method, format);
+        // Emit save or load. Options can be modified.
+        that.emit(method.charAt(0) === 's' ? 'save' : 'load', options, {
+            file: file,
+            format: format,
+            cb: cb
+        });
         ff(that, file, cb, options);
     }
 
@@ -10208,12 +10277,7 @@ if (!Array.prototype.indexOf) {
         return out;
     };
 
-})(
-    ('undefined' !== typeof module && 'undefined' !== typeof module.exports) ?
-        module.exports : window ,
-    ('undefined' !== typeof module && 'undefined' !== typeof module.exports) ?
-        module.parent.exports.JSUS || require('JSUS').JSUS : JSUS
-);
+})();
 
 /**
  * # nodeGame: Social Experiments in the Browser
@@ -23381,6 +23445,13 @@ if (!Array.prototype.indexOf) {
                 if (o.stage) return GameStage.toHash(o.stage, 'S.s.r');
             });
         }
+        if (!this.done) {
+            this.view('done');
+        }
+
+        this.on('save', function(options, info) {
+            if (info.format === 'csv') decorateSavingOptions(options);
+        });
 
         // this.times = {};
 
@@ -23410,13 +23481,33 @@ if (!Array.prototype.indexOf) {
         if (!o.timestamp) o.timestamp = Date.now ?
             Date.now() : new Date().getTime();
 
-        // TODO: Work in progress: saving times.
-        // this.times[o.player];
-
-        // if (this.flatten[o.stage.stage])
-
         this.insert(o);
     };
+
+    /**
+     * ### decorateSavingOptions
+     *
+     * Adds default options to improve data saving.
+     *
+     * @param {object} opts Optional. The option object to decorate
+     */
+    function decorateSavingOptions(opts) {
+        if (!opts) return;
+        if ('undefined' === typeof opts.bool2num) opts.bool2num = true;
+        if (opts.flatten) {
+            if ('undefined' === typeof opts.headers) opts.headers = 'all';
+            opts.preprocess = function(item, current) {
+                var s;
+                s = item.stage.stage + '.' + item.stage.step +
+                '.' + item.stage.round;
+                if (item.time) item['time_' + s] = item.time;
+                if (item.timeup) item['timeup_' + s] = item.timeup;
+                if (item.timestamp) item['timestamp_' + s] = item.timestamp;
+                delete item.time;
+                delete item.timestamp;
+            };
+        }
+    }
 
 })(
     'undefined' != typeof node ? node : module.exports,
@@ -43895,7 +43986,9 @@ if (!Array.prototype.indexOf) {
             }
         }
         if (lastErrored) {
-            if ('function' === typeof lastErrored.bodyDiv.scrollIntoView) {
+            if (opts.highlight &&
+                'function' === typeof lastErrored.bodyDiv.scrollIntoView) {
+
                 lastErrored.bodyDiv.scrollIntoView({ behavior: 'smooth' });
             }
             obj.isCorrect = false;
@@ -47924,9 +48017,7 @@ if (!Array.prototype.indexOf) {
             }
             return 'Must follow format ' + w.params.format;
         },
-        emptyErr: function(w) {
-            return 'Cannot be empty';
-        }
+        emptyErr: 'Cannot be empty'
     };
 
     // ## Dependencies
@@ -48294,7 +48385,7 @@ if (!Array.prototype.indexOf) {
                         return out;
                     };
 
-                    setValues = function(opts) {
+                    setValues = function() {
                         var a, b;
                         a = 'undefined' !== typeof that.params.lower ?
                             (that.params.lower + 1) : 5;
@@ -48321,17 +48412,19 @@ if (!Array.prototype.indexOf) {
                         };
                     })();
 
-                    setValues = function(opts) {
+                    setValues = function() {
                         var p, a, b;
                         p = that.params;
                         if (that.type === 'float') return J.random();
                         a = 0;
-                        b = 10;
                         if ('undefined' !== typeof p.lower) {
                             a = p.leq ? (p.lower - 1) : p.lower;
                         }
                         if ('undefined' !== typeof p.upper) {
                             b = p.ueq ? p.upper : (p.upper - 1);
+                        }
+                        else {
+                            b = 100 + a;
                         }
                         return J.randomInt(a, b);
                     };
@@ -48480,7 +48573,7 @@ if (!Array.prototype.indexOf) {
                     return res;
                 };
 
-                setValues = function(opts) {
+                setValues = function() {
                     var p, minD, maxD, d, day, month, year;
                     p = that.params;
                     minD = p.minDate ? p.minDate.obj : new Date('01/01/1900');
@@ -48532,7 +48625,7 @@ if (!Array.prototype.indexOf) {
                     return res;
                 };
 
-                setValues = function(opts) {
+                setValues = function() {
                     return J.randomKey(that.params.usStateVal);
                 };
 
@@ -48547,7 +48640,7 @@ if (!Array.prototype.indexOf) {
                     return res;
                 };
 
-                setValues = function(opts) {
+                setValues = function() {
                     return Math.floor(Math.random()*90000) + 10000;
                 };
             }
@@ -48676,7 +48769,7 @@ if (!Array.prototype.indexOf) {
                 };
 
                 if (this.type === 'us_city_state_zip') {
-                    setValues = function(opts) {
+                    setValues = function() {
                         var sep;
                         sep = that.params.listSep + ' ';
                         return J.randomString(8) + sep +
@@ -49243,13 +49336,13 @@ if (!Array.prototype.indexOf) {
             return usStatesTerr;
 
         case 'usStatesLow':
-            if (!usStatesLow) usStatesLow = objToLow(usStates, toLK);
+            if (!usStatesLow) usStatesLow = objToLK(usStates);
             return usStatesLow;
         case 'usStates':
             return usStates;
 
         case 'usTerrLow':
-            if (!usTerrLow) usTerrLow = objToLow(usTerr, toLK);
+            if (!usTerrLow) usTerrLow = objToLK(usTerr);
             return usTerrLow;
         case 'usTerr':
             return usTerr;
@@ -51357,10 +51450,18 @@ if (!Array.prototype.indexOf) {
         }
 
         this.button.onclick = function() {
-            var res;
-            res = node.done();
-            if (res) that.disable();
+            if (that.onclick && false === that.onclick()) return;
+            if (node.done()) that.disable();
         };
+
+        /**
+         * ### DoneButton.onclick
+         *
+         * A callback executed after the button is clicked
+         *
+         * If it return FALSE, node.done() is not called.
+         */
+        this.onclick = null;
 
         /**
          * ### DoneButton.disableOnDisconnect
@@ -51393,6 +51494,7 @@ if (!Array.prototype.indexOf) {
      * - className: the className of the button (string, array), or false
      *     to have none. Default bootstrap classes: 'btn btn-lg btn-primary'
      * - text: the text on the button. Default: DoneButton.text
+     * - onclick: a callback executed when the button is clicked. Default: null
      * - disableOnDisconnect: TRUE to disable upon disconnection. Default: TRUE
      * - delayOnPlaying: number of milliseconds to wait to enable after
      *     the `PLAYING` event is fired (e.g., a new step begins). Default: 800
@@ -51455,6 +51557,15 @@ if (!Array.prototype.indexOf) {
         else if ('undefined' !== typeof tmp) {
             throw new TypeError('DoneButton.init: delayOnPlaying must ' +
                                 'be number or undefined. Found: ' + tmp);
+        }
+
+        tmp = opts.onclick;
+        if (tmp) {
+            if ('function' !== typeof tmp) {
+                throw new TypeError('DoneButton.init: onclick must function ' +
+                                    'or undefined. Found: ' + tmp);
+            }
+            this.onclick = tmp;
         }
     };
 
@@ -51519,6 +51630,27 @@ if (!Array.prototype.indexOf) {
                 }
             });
         }
+    };
+
+    /**
+     * ### DoneButton.updateText
+     *
+     * Updates the text on the button, possibly for a given duration only
+     *
+     * @param {string} text The new text
+     * @param {number} duration Optional. The number of milliseconds the new
+     *   text is displayed. If undefined, the new text stays indefinitely.
+     */
+    DoneButton.prototype.updateText = function(text, duration) {
+        var oldText, that;
+        if (duration) {
+            that = this;
+            oldText = this.button.value;
+            node.timer.setTimeout(function() {
+                that.button.value = oldText;
+            }, duration);
+        }
+        this.button.value = text;
     };
 
     /**
@@ -51700,7 +51832,7 @@ if (!Array.prototype.indexOf) {
             event.preventDefault();
             that.getValues(that.onsubmit);
         }, true);
-        J.addEvent(formElement, 'input', function(event) {
+        J.addEvent(formElement, 'input', function() {
             if (!that.timeInput) that.timeInput = J.now();
             if (that.isHighlighted()) that.unhighlight();
         }, true);
@@ -52390,7 +52522,7 @@ if (!Array.prototype.indexOf) {
                 // Need to compute total manually.
                 if ('undefined' === typeof totalWin) {
                     totalRaw = J.isNumber(data.totalRaw, 0);
-                    totalWin = parseFloat(ex*data.totalRaw).toFixed(2);
+                    totalWin = parseFloat(ex*totalRaw).toFixed(2);
                     totalWin = J.isNumber(totalWin, 0);
                     if (totalWin === false) {
                         node.err('EndScreen.updateDisplay: invalid : ' +
@@ -52480,7 +52612,7 @@ if (!Array.prototype.indexOf) {
                 if (w.maxWords > 1) res2 += 's';
             }
             if (res) {
-                res = '(' + res;;
+                res = '(' + res;
                 if (res2) res +=  ', and ' + res2;
                 return res + ')';
             }
@@ -52998,7 +53130,7 @@ if (!Array.prototype.indexOf) {
      * Appends widget to this.bodyDiv
      */
     Feedback.prototype.append = function() {
-        var that, label;
+        var that;
         that = this;
 
         // this.feedbackForm = W.get('div', { className: 'feedback' });
@@ -53044,11 +53176,11 @@ if (!Array.prototype.indexOf) {
 
         this.showCounters();
 
-        J.addEvent(this.feedbackForm, 'input', function(event) {
+        J.addEvent(this.feedbackForm, 'input', function() {
             if (that.isHighlighted()) that.unhighlight();
             that.verifyFeedback(false, true);
         });
-        J.addEvent(this.feedbackForm, 'click', function(event) {
+        J.addEvent(this.feedbackForm, 'click', function() {
             if (that.isHighlighted()) that.unhighlight();
         });
 
@@ -53137,7 +53269,7 @@ if (!Array.prototype.indexOf) {
      * @see getFeedback
      */
     Feedback.prototype.getValues = function(opts) {
-        var feedback, feedbackBr, res;
+        var feedback, res;
 
         opts = opts || {};
 
@@ -53809,7 +53941,7 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # MoneyTalks
- * Copyright(c) 2017 Stefano Balietti
+ * Copyright(c) 2020 Stefano Balietti
  * MIT Licensed
  *
  * Displays a box for formatting earnings ("money") in currency
@@ -53824,7 +53956,7 @@ if (!Array.prototype.indexOf) {
 
     // ## Meta-data
 
-    MoneyTalks.version = '0.4.0';
+    MoneyTalks.version = '0.5.0';
     MoneyTalks.description = 'Displays the earnings of a player.';
 
     MoneyTalks.title = 'Earnings';
@@ -53839,14 +53971,11 @@ if (!Array.prototype.indexOf) {
     /**
      * ## MoneyTalks constructor
      *
-     * `MoneyTalks` displays the earnings ("money") of the player so far
-     *
-     * @param {object} options Optional. Configuration options
-     * which is forwarded to MoneyTalks.init.
+     * `MoneyTalks` displays the earnings ("money") of players
      *
      * @see MoneyTalks.init
      */
-    function MoneyTalks(options) {
+    function MoneyTalks() {
 
         /**
          * ### MoneyTalks.spanCurrency
@@ -53924,6 +54053,7 @@ if (!Array.prototype.indexOf) {
      *   - `showCurrency`: Flag whether the name of currency is to be displayed.
      */
     MoneyTalks.prototype.init = function(options) {
+        options = options || {};
         if ('string' === typeof options.currency) {
             this.currency = options.currency;
         }
@@ -53979,6 +54109,8 @@ if (!Array.prototype.indexOf) {
      * @param {boolean} clear Optional. If TRUE, money will be set to 0
      *    before adding the new amount
      *
+     * @return {number} The current value after the update
+     *
      * @see MoneyTalks.money
      * @see MonetyTalks.spanMoney
      */
@@ -53992,6 +54124,7 @@ if (!Array.prototype.indexOf) {
         if (clear) this.money = 0;
         this.money += parsedAmount;
         this.spanMoney.innerHTML = this.money.toFixed(this.precision);
+        return this.money;
     };
 
     /**
@@ -54981,7 +55114,7 @@ if (!Array.prototype.indexOf) {
 
     // ## Meta-data
 
-    RiskGauge.version = '0.7.0';
+    RiskGauge.version = '0.8.0';
     RiskGauge.description = 'Displays an interface to ' +
         'measure risk preferences with different methods.';
 
@@ -55003,7 +55136,7 @@ if (!Array.prototype.indexOf) {
         bomb_mainText: function(widget, probBomb) {
             var str;
             str = '<p style="margin-bottom: 0.3em">';
-            str +=  'Below there are 100 black boxes. ';
+            str +=  'Below there are ' + widget.totBoxes + ' black boxes. ';
             str += 'Every box contains a prize of ' +
                     widget.boxValue + ' ' + widget.currency + ', but ';
             if (probBomb === 1) {
@@ -55287,7 +55420,7 @@ if (!Array.prototype.indexOf) {
         // Probability that there is a bomb. Default 1.
         var probBomb;
 
-        // The index of the box with the bomb (0-100), or 101 if no bomb.
+        // The index of the box with the bomb (0 to totBoxes), or -1 if no bomb.
         var bombBox;
 
         // Div containing info about how many boxes to open, etc.
@@ -55307,7 +55440,6 @@ if (!Array.prototype.indexOf) {
 
         // Holds the final number of boxes opened after clicking the button.
         var finalValue;
-
 
         // Init private variables.
 
@@ -55333,9 +55465,7 @@ if (!Array.prototype.indexOf) {
             probBomb = 1;
         }
 
-        // Pick bomb box id, if probability permits it, else set to 101.
-        bombBox = Math.random() >= probBomb ?
-            101 : Math.ceil(Math.random() * 100);
+        // Variable bombBox is init after totBoxes is validated.
 
         // Public variables.
 
@@ -55364,22 +55494,56 @@ if (!Array.prototype.indexOf) {
                               true : !!opts.revealProbBomb;
 
         // Max number of boxes to open (default 99 if probBomb = 1, else 100).
-        if ('undefined' !== typeof opts.maxBoxes) {
-            if (!J.isInt(opts.maxBoxes, 0, 100)) {
+        if ('undefined' !== typeof opts.totBoxes) {
+            if (!J.isInt(opts.totBoxes, 0, 10000, false, true)) {
                 throw new TypeError('Bomb.init: maxBoxes must be an ' +
-                                    'integer <= 100 or undefined. Found: ' +
-                                    opts.maxBoxes);
+                'integer > 0 and <= 10000 or undefined. Found: ' +
+                opts.totBoxes);
+            }
+            this.totBoxes = opts.totBoxes;
+        }
+        else {
+            this.totBoxes = 100;
+        }
+
+        // Max num of boxes to open.
+        // Default totBoxes -1 if probBomb = 1, else this.totBoxes.
+        if ('undefined' !== typeof opts.maxBoxes) {
+            if (!J.isInt(opts.maxBoxes, 0, this.totBoxes)) {
+                throw new TypeError('Bomb.init: maxBoxes must be a positive' +
+                                    ' integer <= ' + this.totBoxes +
+                                    ' or undefined. Found: ' + opts.maxBoxes);
             }
             this.maxBoxes = opts.maxBoxes;
         }
         else {
-            this.maxBoxes = probBomb === 1 ? 99 : 100;
+            this.maxBoxes = probBomb === 1 ? this.totBoxes - 1 : this.totBoxes;
+        }
+
+        // Number of boxes in each row.
+        if ('undefined' !== typeof opts.boxesInRow) {
+            if (!J.isInt(opts.boxesInRow, 0)) {
+                throw new TypeError('Bomb.init: boxesInRow must be a positive' +
+                                    ' integer or undefined. Found: ' +
+                                    opts.boxesInRow);
+            }
+            this.boxesInRow = opts.boxesInRow > this.totBoxes ?
+                                  this.totBoxes : opts.boxesInRow;
+        }
+        else {
+            this.boxesInRow = this.totBoxes < 10 ? this.totBoxes : 10;
         }
 
         // If TRUE, there is an actual prize for the participant. Default: TRUE.
         this.withPrize = 'undefined' === typeof opts.withPrize ?
                          true : !!opts.withPrize;
 
+
+        // Bomb box.
+
+        // Pick bomb box id, if probability permits it, else set to -1.
+        bombBox = Math.random() >= probBomb ?
+                  -1 : Math.ceil(Math.random() * this.totBoxes);
 
         // Return widget-like object.
         return {
@@ -55403,19 +55567,19 @@ if (!Array.prototype.indexOf) {
                     ic = false;
                 }
                 out = {
+                    value: nb,
                     isCorrect: ic,
-                    nBoxes: nb,
                     totalMove: values.totalMove,
                     isWinner: isWinner,
                     time: values.time,
-                    payment: 0
+                    reward: 0
                 };
                 if (!out.isCorrect &&
                     ('undefined' === typeof opts.highlight || opts.highlight)) {
 
                         slider.highlight();
                 }
-                if (isWinner === true) out.payment = finalValue * that.boxValue;
+                if (isWinner === true) out.reward = finalValue * that.boxValue;
                 return out;
             },
 
@@ -55430,6 +55594,7 @@ if (!Array.prototype.indexOf) {
             // slider: slider,
 
             append: function() {
+                var nRows;
 
                 // Main text.
                 W.add('div', that.bodyDiv, {
@@ -55438,8 +55603,9 @@ if (!Array.prototype.indexOf) {
                 });
 
                 // Table.
+                nRows = Math.ceil(that.totBoxes / that.boxesInRow);
                 W.add('div', that.bodyDiv, {
-                    innerHTML: makeTable()
+                    innerHTML: makeTable(nRows, that.boxesInRow, that.totBoxes)
                 });
 
                 // Slider.
@@ -55534,7 +55700,7 @@ if (!Array.prototype.indexOf) {
                     finalValue = parseInt(slider.slider.value, 10),
                     isWinner = finalValue < bombBox;
                     // Update table.
-                    if (bombBox < 101) {
+                    if (bombBox > -1) {
                         W.gid(getBoxId(bombBox)).style.background = '#fa0404';
                     }
                     // Hide slider and button
@@ -55556,22 +55722,34 @@ if (!Array.prototype.indexOf) {
         return 'bc_' + i;
     }
 
-    function makeBoxRow(j) {
+    //
+    function makeBoxRow(rowId, boxesInRow, colSpan) {
         var i, out;
         out = '<tr>';
-        for (i = 0; i < 10; i++) {
+        for (i = 0; i < boxesInRow; i++) {
+            // If there are not enough boxes in this row, do a long colspan.
+            if (colSpan && i > colSpan) {
+                out = out + '<td colspan="' + (boxesInRow - colSpan) +
+                      '"></td>';
+                break;
+            }
             out = out + '<td><div class="bomb-box square" id="' +
-            getBoxId(i + (10*j)) + '"></td>';
+            getBoxId(i + (boxesInRow * rowId)) + '"></td>';
         }
         out += '</tr>';
         return out;
     }
 
-    function makeTable() {
-        var j, out;
+    function makeTable(nRows, boxesInRow, totBoxes) {
+        var rowId, out, boxCount, colSpan;
         out = '<table class="bomb-table">';
-        for (j = 0; j < 10; j++) {
-            out = out + makeBoxRow(j);
+        for (rowId = 0; rowId < nRows; rowId++) {
+            // Check if the last row has less cells to complete the row.
+            boxCount = (rowId+1) * boxesInRow;
+            if (boxCount > totBoxes) {
+                colSpan = totBoxes - (rowId * boxesInRow) - 1;
+            }
+            out = out + makeBoxRow(rowId, boxesInRow, colSpan);
         }
         out += '</table><br>';
         return out;
@@ -58638,7 +58816,6 @@ if (!Array.prototype.indexOf) {
 
         // #### executionMode
         executionMode: function(w) {
-            var startDate;
             if (w.executionMode === 'WAIT_FOR_N_PLAYERS') {
                 return 'Waiting for All Players to Connect: ';
             }
@@ -58751,7 +58928,7 @@ if (!Array.prototype.indexOf) {
      *
      * @param {object} options
      */
-    function WaitingRoom(options) {
+    function WaitingRoom() {
 
         /**
          * ### WaitingRoom.connected
@@ -59398,8 +59575,7 @@ if (!Array.prototype.indexOf) {
             }
         });
 
-        node.on.data('TIME', function(msg) {
-            msg = msg || {};
+        node.on.data('TIME', function() {
             node.info('waiting room: TIME IS UP!');
             that.stopTimer();
         });
