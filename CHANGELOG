@@ -1,5 +1,8 @@
 # nodegame-server change log
 
+## 5.8.0
+- Channels can be disabled with conf option in channel.settings.js.
+
 ## 5.7.1
 - Built client to fix bug with stage init functions.
 
