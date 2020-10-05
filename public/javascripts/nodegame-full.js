@@ -7653,18 +7653,15 @@ if (!Array.prototype.indexOf) {
             else if (argLen === 2) {
                 res = true;
                 for (i = 0; i < len; i++) {
-                    res = hooks[event][i].call(this,
-                                                    arguments[1]) !== false;
+                    res = hooks[event][i].call(this, arguments[1]) !== false;
                     if (res === false) break;
-
                 }
             }
             else if (argLen === 3) {
                 res = true;
                 for (i = 0; i < len; i++) {
-                    res = hooks[event][i].call(this,
-                                                    arguments[1],
-                                                    arguments[2]) !== false;
+                    res = hooks[event][i].call(this, arguments[1],
+                                                     arguments[2]) !== false;
                     if (res === false) break;
                 }
             }
@@ -13494,6 +13491,15 @@ if (!Array.prototype.indexOf) {
             return handler;
         })();
 
+        /**
+        * ### GamePlot._normalizedCache
+        *
+        * Caches the value of previously normalized Game Stages objects.
+        *
+        * @api private
+        */
+        this._normalizedCache = {};
+
         this.init(stager);
     }
 
@@ -14552,6 +14558,18 @@ if (!Array.prototype.indexOf) {
         var stageNo, stageObj, stepNo, seqIdx, seqObj;
         var gs;
 
+        if (this.isFlexibleMode()) {
+            throw new Error('GamePlot.normalizeGameStage: invalid call in ' +
+                            'flexible sequence.')
+        }
+
+        // If already normalized and in cache, return it.
+        if ('string' === typeof gameStage) {
+            if (this._normalizedCache[gameStage]) {
+                return this._normalizedCache[gameStage];
+            }
+        }
+
         gs = new GameStage(gameStage);
 
         // Find stage number.
@@ -14624,11 +14642,17 @@ if (!Array.prototype.indexOf) {
         // Check round property.
         if ('number' !== typeof gs.round) return null;
 
-        return new GameStage({
+        gs = new GameStage({
             stage: stageNo,
             step:  stepNo,
             round: gs.round
         });
+
+        if ('string' === typeof gameStage) {
+            this._normalizedCache[gameStage] = gs;
+        }
+
+        return gs;
     };
 
     /**
@@ -24205,7 +24229,7 @@ if (!Array.prototype.indexOf) {
      * @emit STEPPING
      */
     Game.prototype.gotoStep = function(nextStep, options) {
-        var node;
+        var node, tmp;
 
         // Steps references.
         var curStep, curStageObj, nextStepObj, nextStageObj;
@@ -24232,7 +24256,7 @@ if (!Array.prototype.indexOf) {
 
         if ('string' !== typeof nextStep && 'object' !== typeof nextStep) {
             throw new TypeError('Game.gotoStep: nextStep must be ' +
-                                'an object or a string. Found: ' + nextStep);
+                                'a object or a string. Found: ' + nextStep);
         }
 
         if (options && 'object' !== typeof options) {
@@ -24351,8 +24375,19 @@ if (!Array.prototype.indexOf) {
                 }
                 return null;
             }
+            // Was:
             // else do nothing
-            return null;
+            // return null;
+            else {
+                // Try to resolve game stage.
+                tmp = this.plot.normalizeGameStage(nextStep);
+                if (!nextStep) {
+                    throw new Error('Game.gotoStep: could not resolve step: ' +
+                                    nextStep);
+                }
+                nextStep = tmp;
+                tmp = null;
+            }
         }
 
         // Here we start processing the new STEP.
@@ -25424,6 +25459,32 @@ if (!Array.prototype.indexOf) {
         return this.plot.getProperty(this.getCurrentGameStage(), prop, nf);
     };
 
+    // /**
+    //  * ### Game.getStage
+    //  *
+    //  * Returns the current/remaining/past/total stage number in current stage
+    //  *
+    //  * @param {string} mod Optional. Modifies the return value.
+    //  *
+    //  *   - 'current': current round number (default)
+    //  *   - 'total': total number of rounds
+    //  *   - 'remaining': number of rounds remaining (excluding current round)
+    //  *   - 'past': number of rounds already past  (excluding current round)
+    //  *
+    //  * @return {number|null} The requested information, or null if
+    //  *   the number of rounds is not known (e.g. if the stage is a loop)
+    //  *
+    //  * @see GamePlot.getRound
+    //  */
+    // Game.prototype.getStage = function(mod) {
+    //     var s;
+    //     s = this.getCurrentGameStage();
+    //     // Default: return the name
+    //     if (!mod) return this.plot.getStage(s).id;
+    //     if (!)
+    //
+    // };
+
     /**
      * ### Game.getRound
      *
@@ -25443,6 +25504,84 @@ if (!Array.prototype.indexOf) {
      */
     Game.prototype.getRound = function(mod) {
         return this.plot.getRound(this.getCurrentGameStage(), mod);
+    };
+
+    /**
+    * ### Game.isStage
+    *
+    * Returns TRUE if current stage matches input parameter
+    *
+    * Steps and rounds aer not considered.
+    *
+    * @param {string|GameStage|number} stage The name of the stage, its
+    *    ordinal position in the game sequence, or its object
+    *    representation. If string, the object is resolved
+    *    with GamePlot.normalizeGameStage
+    *
+    * @return {boolean} TRUE if current stage matches input parameter
+    *
+    * @see GamePlot.normalizeGameStage
+    */
+    Game.prototype.isStage = function(stage) {
+        var s;
+        s = this.getCurrentGameStage().stage;
+        if ('number' === typeof stage) return stage === s;
+        stage = this.plot.normalizeGameStage(stage);
+        return !!(stage && stage.stage === s);
+    };
+
+    /**
+    * ### Game.isStep
+    *
+    * Returns TRUE if current step matches input parameter
+    *
+    * Behavior changes depending on type of input parameter:
+    *
+    *   - number: only the ordinal position in the game stage is matched
+    *   - object|string: the stage and the step are matched
+    *
+    * @param {string|GameStage|number} stage The name of the step, its
+    *    ordinal position in the game stage, or its object
+    *    representation. If string, the object is resolved
+    *    with GamePlot.normalizeGameStage
+    *
+    * @return {boolean} TRUE if current step matches input parameter
+    *
+    * @see GamePlot.normalizeGameStage
+    */
+    Game.prototype.isStep = function(step) {
+        var s;
+        s = this.getCurrentGameStage().step;
+        if ('number' === typeof step) return step === s;
+        step = this.plot.normalizeGameStage(step);
+        return !!(step && step.step === s);
+    };
+
+    /**
+    * ### Game.isRound
+    *
+    * Returns TRUE if current step matches input parameter
+    *
+    * Behavior changes depending on type of input parameter:
+    *
+    *   - number: only the ordinal position in the game stage is matched
+    *   - object|string: the stage and the step are matched
+    *
+    * @param {string|GameStage|number} stage The name of the step, its
+    *    ordinal position in the game stage, or its object
+    *    representation. If string, the object is resolved
+    *    with GamePlot.normalizeGameStage
+    *
+    * @return {boolean} TRUE if current step matches input parameter
+    *
+    * @see GamePlot.normalizeGameStage
+    */
+    Game.prototype.isRound = function(round) {
+        var r;
+        r = this.getRound();
+        if ('number' === typeof round) return round === r;
+        round = this.plot.normalizeGameStage(round);
+        return !!(round && round.step === r);
     };
 
     /**
@@ -26215,10 +26354,12 @@ if (!Array.prototype.indexOf) {
      * @param {string} event The name of the event
      * @param {number} maxWait Optional. The maximum time (in milliseconds)
      *   to wait before emitting the event. Default: 6000
+     * @param {number} minWait Optional. The minimum time (in milliseconds)
+     *   to wait before executing the callback. Default: 1000
      *
      * @see randomFire
      */
-    Timer.prototype.randomEmit = function(event, maxWait) {
+    Timer.prototype.randomEmit = function(event, maxWait, minWait) {
         var args, i, len;
         if ('string' !== typeof event) {
             throw new TypeError('Timer.randomEmit: event must be string. ' +
@@ -26238,7 +26379,8 @@ if (!Array.prototype.indexOf) {
                 args[i] = arguments[i+2];
             }
         }
-        randomFire.call(this, 'randomEmit', event, maxWait, true, null, args);
+        randomFire.call(this, 'randomEmit', event, maxWait,
+                        minWait, true, null, args);
     };
 
     /**
@@ -26253,12 +26395,14 @@ if (!Array.prototype.indexOf) {
      * @param {function} func The callback function to execute
      * @param {number} maxWait Optional. The maximum time (in milliseconds)
      *   to wait before executing the callback. Default: 6000
+     * @param {number} minWait Optional. The minimum time (in milliseconds)
+     *   to wait before executing the callback. Default: 1000
      * @param {object|function} ctx Optional. The context of execution of
      *   of the callback function. Default node.game
      *
      * @see randomFire
      */
-    Timer.prototype.randomExec = function(func, maxWait, ctx) {
+    Timer.prototype.randomExec = function(func, maxWait, minWait, ctx) {
         var args, i, len;
         if ('function' !== typeof func) {
             throw new TypeError('Timer.randomExec: func must be function. ' +
@@ -26285,7 +26429,8 @@ if (!Array.prototype.indexOf) {
                 args[i] = arguments[i+3];
             }
         }
-        randomFire.call(this, 'randomExec', func, maxWait, false, ctx, args);
+        randomFire.call(this, 'randomExec', func, maxWait,
+                        minWait, false, ctx, args);
     };
 
     /**
@@ -26299,10 +26444,12 @@ if (!Array.prototype.indexOf) {
      *
      * @param {number} maxWait Optional. The maximum time (in milliseconds)
      *   to wait before executing the callback. Default: 6000
+     * @param {number} minWait Optional. The minimum time (in milliseconds)
+     *   to wait before executing the callback. Default: 1000
      *
      * @see randomFire
      */
-    Timer.prototype.randomDone = function(maxWait) {
+    Timer.prototype.randomDone = function(maxWait, minWait) {
         var args, i, len;
         len = arguments.length;
         if (len == 2) {
@@ -26318,8 +26465,8 @@ if (!Array.prototype.indexOf) {
                 args[i] = arguments[i+1];
             }
         }
-        randomFire.call(this, 'randomDone', this.node.done,
-                        maxWait, false, this.node, args);
+        randomFire.call(this, 'randomDone', this.node.done, maxWait,
+                        minWait, false, this.node, args);
     };
 
     /**
@@ -26381,7 +26528,7 @@ if (!Array.prototype.indexOf) {
     // ## Helper Methods.
 
     /**
-     * ### randomFire
+     * ### destroyTempTimers
      *
      * Common handler for randomEmit, randomExec, randomDone
      *
@@ -26407,11 +26554,13 @@ if (!Array.prototype.indexOf) {
      * @param {string|function} hook The function to call or the event to emit
      * @param {number} maxWait Optional. The max number of milliseconds
      *   to wait before firing
+     * @param {number} minWait Optional. The min number of milliseconds
+     *   to wait before firing. Default: 1000 or 0 if maxWait is smaller.
      * @param {boolean} emit TRUE, if it is an event to emit
      * @param {object|function} ctx Optional. The context of execution for
      *   the function
      */
-    function randomFire(method, hook, maxWait, emit, ctx, args) {
+    function randomFire(method, hook, maxWait, minWait, emit, ctx, args) {
         var that;
         var waitTime;
         var callback;
@@ -26427,8 +26576,15 @@ if (!Array.prototype.indexOf) {
             throw new TypeError('Timer.' + method + ': maxWait must ' +
                                 'be number or undefined. Found: ' + maxWait);
         }
+        if ('undefined' === typeof minWait) {
+            minWait = maxWait < 1000 ? 0 : 1000;
+        }
+        else if ('number' !== typeof minWait) {
+            throw new TypeError('Timer.' + method + ': minWait must ' +
+                                'be number or undefined. Found: ' + minWait);
+        }
 
-        waitTime = Math.random() * maxWait;
+        waitTime = J.randomInt(minWait, maxWait);
 
         // Timeup callback: Emit.
         if (emit) {
