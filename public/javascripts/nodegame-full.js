@@ -25459,32 +25459,6 @@ if (!Array.prototype.indexOf) {
         return this.plot.getProperty(this.getCurrentGameStage(), prop, nf);
     };
 
-    // /**
-    //  * ### Game.getStage
-    //  *
-    //  * Returns the current/remaining/past/total stage number in current stage
-    //  *
-    //  * @param {string} mod Optional. Modifies the return value.
-    //  *
-    //  *   - 'current': current round number (default)
-    //  *   - 'total': total number of rounds
-    //  *   - 'remaining': number of rounds remaining (excluding current round)
-    //  *   - 'past': number of rounds already past  (excluding current round)
-    //  *
-    //  * @return {number|null} The requested information, or null if
-    //  *   the number of rounds is not known (e.g. if the stage is a loop)
-    //  *
-    //  * @see GamePlot.getRound
-    //  */
-    // Game.prototype.getStage = function(mod) {
-    //     var s;
-    //     s = this.getCurrentGameStage();
-    //     // Default: return the name
-    //     if (!mod) return this.plot.getStage(s).id;
-    //     if (!)
-    //
-    // };
-
     /**
      * ### Game.getRound
      *
@@ -25506,83 +25480,84 @@ if (!Array.prototype.indexOf) {
         return this.plot.getRound(this.getCurrentGameStage(), mod);
     };
 
-    /**
-    * ### Game.isStage
-    *
-    * Returns TRUE if current stage matches input parameter
-    *
-    * Steps and rounds aer not considered.
-    *
-    * @param {string|GameStage|number} stage The name of the stage, its
-    *    ordinal position in the game sequence, or its object
-    *    representation. If string, the object is resolved
-    *    with GamePlot.normalizeGameStage
-    *
-    * @return {boolean} TRUE if current stage matches input parameter
-    *
-    * @see GamePlot.normalizeGameStage
-    */
-    Game.prototype.isStage = function(stage) {
-        var s;
-        s = this.getCurrentGameStage().stage;
-        if ('number' === typeof stage) return stage === s;
-        stage = this.plot.normalizeGameStage(stage);
-        return !!(stage && stage.stage === s);
-    };
 
-    /**
-    * ### Game.isStep
-    *
-    * Returns TRUE if current step matches input parameter
-    *
-    * Behavior changes depending on type of input parameter:
-    *
-    *   - number: only the ordinal position in the game stage is matched
-    *   - object|string: the stage and the step are matched
-    *
-    * @param {string|GameStage|number} stage The name of the step, its
-    *    ordinal position in the game stage, or its object
-    *    representation. If string, the object is resolved
-    *    with GamePlot.normalizeGameStage
-    *
-    * @return {boolean} TRUE if current step matches input parameter
-    *
-    * @see GamePlot.normalizeGameStage
-    */
-    Game.prototype.isStep = function(step) {
-        var s;
-        s = this.getCurrentGameStage().step;
-        if ('number' === typeof step) return step === s;
-        step = this.plot.normalizeGameStage(step);
-        return !!(step && step.step === s);
-    };
+        /**
+        * ### Game.isStage
+        *
+        * Returns TRUE if current stage matches input parameter
+        *
+        * Steps and rounds aer not considered.
+        *
+        * @param {string|GameStage|number} stage The name of the stage, its
+        *    ordinal position in the game sequence, or its object
+        *    representation. If string, the object is resolved
+        *    with GamePlot.normalizeGameStage
+        *
+        * @return {boolean} TRUE if current stage matches input parameter
+        *
+        * @see GamePlot.normalizeGameStage
+        */
+        Game.prototype.isStage = function(stage) {
+            var s;
+            s = this.getCurrentGameStage().stage;
+            if ('number' === typeof stage) return stage === s;
+            stage = this.plot.normalizeGameStage(stage);
+            return !!(stage && stage.stage === s);
+        };
 
-    /**
-    * ### Game.isRound
-    *
-    * Returns TRUE if current step matches input parameter
-    *
-    * Behavior changes depending on type of input parameter:
-    *
-    *   - number: only the ordinal position in the game stage is matched
-    *   - object|string: the stage and the step are matched
-    *
-    * @param {string|GameStage|number} stage The name of the step, its
-    *    ordinal position in the game stage, or its object
-    *    representation. If string, the object is resolved
-    *    with GamePlot.normalizeGameStage
-    *
-    * @return {boolean} TRUE if current step matches input parameter
-    *
-    * @see GamePlot.normalizeGameStage
-    */
-    Game.prototype.isRound = function(round) {
-        var r;
-        r = this.getRound();
-        if ('number' === typeof round) return round === r;
-        round = this.plot.normalizeGameStage(round);
-        return !!(round && round.step === r);
-    };
+        /**
+        * ### Game.isStep
+        *
+        * Returns TRUE if current step matches input parameter
+        *
+        * Behavior changes depending on type of input parameter:
+        *
+        *   - number: only the ordinal position in the game stage is matched
+        *   - object|string: the stage and the step are matched
+        *
+        * @param {string|GameStage|number} stage The name of the step, its
+        *    ordinal position in the game stage, or its object
+        *    representation. If string, the object is resolved
+        *    with GamePlot.normalizeGameStage
+        *
+        * @return {boolean} TRUE if current step matches input parameter
+        *
+        * @see GamePlot.normalizeGameStage
+        */
+        Game.prototype.isStep = function(step) {
+            var s;
+            s = this.getCurrentGameStage().step;
+            if ('number' === typeof step) return step === s;
+            step = this.plot.normalizeGameStage(step);
+            return !!(step && step.step === s);
+        };
+
+        /**
+        * ### Game.isRound
+        *
+        * Returns TRUE if current step matches input parameter
+        *
+        * Behavior changes depending on type of input parameter:
+        *
+        *   - number: only the ordinal position in the game stage is matched
+        *   - object|string: the stage and the step are matched
+        *
+        * @param {string|GameStage|number} stage The name of the step, its
+        *    ordinal position in the game stage, or its object
+        *    representation. If string, the object is resolved
+        *    with GamePlot.normalizeGameStage
+        *
+        * @return {boolean} TRUE if current step matches input parameter
+        *
+        * @see GamePlot.normalizeGameStage
+        */
+        Game.prototype.isRound = function(round) {
+            var r;
+            r = this.getRound();
+            if ('number' === typeof round) return round === r;
+            round = this.plot.normalizeGameStage(round);
+            return !!(round && round.step === r);
+        };
 
     /**
      * ### Game.setRole
@@ -25909,6 +25884,136 @@ if (!Array.prototype.indexOf) {
             }
             that._pausedTimestamps = {};
         });
+
+
+        /**
+        * ### Timer.random
+        *
+        * Setups an object exposing multiple random handlers.
+        *
+        * Respects pausing / resuming. If the game has not started yet, it waits
+        * until the `PLAYING` event is fired to start the random handler.
+        *
+        * Additional parameters are passed to each handler accordingly.
+        *
+        * @param {number} maxWait Optional. The maximum time (in milliseconds)
+        *   to wait before emitting the event. Default: 6000
+        * @param {number} minWait Optional. The minimum time (in milliseconds)
+        *   to wait before executing the callback. Default: 1000
+        *
+        * @return {object} Object containing different random handlers
+        *
+        * ### Timer.random.done
+        *
+        * Randomly calls `node.done`
+        *
+        * ### Timer.random.emit
+        *
+        * Randomly emits an event
+        *
+        * @param {string} event The name of the event
+        *
+        * ### Timer.random.exec
+        *
+        * Randomly executs a function
+        *
+        * @param {function} func The callback function to execute
+        * @param {object|function} ctx Optional. The context of execution of
+        *   of the callback function. Default node.game
+        *
+        * @see randomFire
+        */
+        this.random = (function() {
+            var _minWait, _maxWait;
+            var args, i, len;
+
+            function done() {
+                len = arguments.length;
+                if (len == 1) {
+                    args = [arguments[0]];
+                }
+                else if (len === 2) {
+                    args = [arguments[1], arguments[0]];
+                }
+                else if (len > 2) {
+                    i = -1;
+                    args = new Array(len);
+                    for ( ; ++i < len ; ) {
+                        args[i] = arguments[i];
+                    }
+                }
+                randomFire.call(that, 'randomDone', node.done, _maxWait,
+                                _minWait, false, node, args);
+            }
+
+            function emit(event) {
+
+                if ('string' !== typeof event) {
+                    throw new TypeError('Timer.random.emit: event must be ' +
+                    'string. Found: ' + event);
+                }
+                len = arguments.length;
+                if (len === 2) {
+                    args = [arguments[1]];
+                }
+                else if (len === 3) {
+                    args = [arguments[2], arguments[1]];
+                }
+                else if (len > 3) {
+                    i = -1, len = (len-1);
+                    args = new Array(len);
+                    for ( ; ++i < len ; ) {
+                        args[i] = arguments[i+1];
+                    }
+                }
+                randomFire.call(that, 'randomEmit', event, _maxWait,
+                                _minWait, true, null, args);
+            }
+
+            function exec(func, ctx) {
+
+                if ('function' !== typeof func) {
+                    throw new TypeError('Timer.random.exec: func must ' +
+                    'be function. Found: ' + func);
+                }
+                if ('undefined' === typeof ctx) {
+                    ctx = node.game;
+                }
+                else if ('object' !== typeof ctx && 'function' !== typeof ctx) {
+                    throw new TypeError('Timer.random.exec: ctx must be ' +
+                    'object, function or undefined. ' +
+                    'Found: ' + ctx);
+                }
+                len = arguments.length;
+                if (len === 3) {
+                    args = [arguments[2]];
+                }
+                else if (len === 4) {
+                    args = [arguments[3], arguments[2]];
+                }
+                else if (len > 4) {
+                    i = -1, len = (len-2);
+                    args = new Array(len);
+                    for ( ; ++i < len ; ) {
+                        args[i] = arguments[i+2];
+                    }
+                }
+                randomFire.call(that, 'randomExec', func, _maxWait,
+                                _minWait, false, ctx, args);
+            };
+
+            return function(maxWait, minWait) {
+                _maxWait = maxWait;
+                _minWait = minWait;
+
+                return {
+                    done: done,
+                    emit: emit,
+                    exec: exec
+                };
+            };
+        })();
+
     }
 
     // ## Timer methods
@@ -26342,132 +26447,142 @@ if (!Array.prototype.indexOf) {
         return timeTo - timeFrom;
     };
 
-    /**
-     * ### Timer.randomEmit
-     *
-     * Emits an event after a random time interval between 0 and maxWait
-     *
-     * Respects pausing / resuming.
-     *
-     * Additional parameters are passed to the node.emit
-     *
-     * @param {string} event The name of the event
-     * @param {number} maxWait Optional. The maximum time (in milliseconds)
-     *   to wait before emitting the event. Default: 6000
-     * @param {number} minWait Optional. The minimum time (in milliseconds)
-     *   to wait before executing the callback. Default: 1000
-     *
-     * @see randomFire
-     */
-    Timer.prototype.randomEmit = function(event, maxWait, minWait) {
-        var args, i, len;
-        if ('string' !== typeof event) {
-            throw new TypeError('Timer.randomEmit: event must be string. ' +
-                                'Found: ' + event);
-        }
-        len = arguments.length;
-        if (len == 3) {
-            args = [arguments[2]];
-        }
-        else if (len === 4) {
-            args = [arguments[2], arguments[3]];
-        }
-        else if (len > 4) {
-            i = -1, len = (len-2);
-            args = new Array(len);
-            for ( ; ++i < len ; ) {
-                args[i] = arguments[i+2];
-            }
-        }
-        randomFire.call(this, 'randomEmit', event, maxWait,
-                        minWait, true, null, args);
-    };
-
-    /**
-     * ### Timer.randomExec
-     *
-     * Executes a callback function after a random time interval
-     *
-     * Respects pausing / resuming.
-     *
-     * Additional parameters are passed to the the callback function.
-     *
-     * @param {function} func The callback function to execute
-     * @param {number} maxWait Optional. The maximum time (in milliseconds)
-     *   to wait before executing the callback. Default: 6000
-     * @param {number} minWait Optional. The minimum time (in milliseconds)
-     *   to wait before executing the callback. Default: 1000
-     * @param {object|function} ctx Optional. The context of execution of
-     *   of the callback function. Default node.game
-     *
-     * @see randomFire
-     */
-    Timer.prototype.randomExec = function(func, maxWait, minWait, ctx) {
-        var args, i, len;
-        if ('function' !== typeof func) {
-            throw new TypeError('Timer.randomExec: func must be function. ' +
-                               'Found: ' + func);
-        }
-        if ('undefined' === typeof ctx) {
-            ctx = this.node.game;
-        }
-        else if ('object' !== typeof ctx && 'function' !== typeof ctx) {
-            throw new TypeError('Timer.randomExec: ctx must be object, ' +
-                                'function or undefined. Found: ' + ctx);
-        }
-        len = arguments.length;
-        if (len == 4) {
-            args = [arguments[3]];
-        }
-        else if (len === 5) {
-            args = [arguments[3], arguments[4]];
-        }
-        else if (len > 5) {
-            i = -1, len = (len-3);
-            args = new Array(len);
-            for ( ; ++i < len ; ) {
-                args[i] = arguments[i+3];
-            }
-        }
-        randomFire.call(this, 'randomExec', func, maxWait,
-                        minWait, false, ctx, args);
-    };
-
-    /**
-     * ### Timer.randomDone
-     *
-     * Executes node.done after a random time interval
-     *
-     * Respects pausing / resuming.
-     *
-     * Additional parameters are passed to the the done event listener.
-     *
-     * @param {number} maxWait Optional. The maximum time (in milliseconds)
-     *   to wait before executing the callback. Default: 6000
-     * @param {number} minWait Optional. The minimum time (in milliseconds)
-     *   to wait before executing the callback. Default: 1000
-     *
-     * @see randomFire
-     */
-    Timer.prototype.randomDone = function(maxWait, minWait) {
-        var args, i, len;
-        len = arguments.length;
-        if (len == 2) {
-            args = [arguments[1]];
-        }
-        else if (len === 3) {
-            args = [arguments[1], arguments[2]];
-        }
-        else if (len > 3) {
-            i = -1, len--;
-            args = new Array(len);
-            for ( ; ++i < len ; ) {
-                args[i] = arguments[i+1];
-            }
-        }
-        randomFire.call(this, 'randomDone', this.node.done, maxWait,
-                        minWait, false, this.node, args);
-    };
+    //
+    // /**
+    //  * ### Timer.randomEmit
+    //  *
+    //  * Emits an event after a random time interval between 0 and maxWait
+    //  *
+    //  * Respects pausing / resuming.
+    //  *
+    //  * Additional parameters are passed to the node.emit
+    //  *
+    //  * @param {string} event The name of the event
+    //  * @param {number} maxWait Optional. The maximum time (in milliseconds)
+    //  *   to wait before emitting the event. Default: 6000
+    //  * @param {number} minWait Optional. The minimum time (in milliseconds)
+    //  *   to wait before executing the callback. Default: 1000
+    //  *
+    //  * @see randomFire
+    //  */
+    // Timer.prototype.randomEmit = function(event, maxWait, minWait) {
+    //     var args, i, len;
+    //
+    //     console.log('***Deprecated warning: use timer.random().emit***');
+    //
+    //     if ('string' !== typeof event) {
+    //         throw new TypeError('Timer.randomEmit: event must be string. ' +
+    //                             'Found: ' + event);
+    //     }
+    //     len = arguments.length;
+    //     if (len == 4) {
+    //         args = [arguments[3]];
+    //     }
+    //     else if (len === 5) {
+    //         args = [arguments[3], arguments[4]];
+    //     }
+    //     else if (len > 5) {
+    //         i = -1, len = (len-3);
+    //         args = new Array(len);
+    //         for ( ; ++i < len ; ) {
+    //             args[i] = arguments[i+3];
+    //         }
+    //     }
+    //     randomFire.call(this, 'randomEmit', event, maxWait,
+    //                     minWait, true, null, args);
+    // };
+    //
+    // /**
+    //  * ### Timer.randomExec
+    //  *
+    //  * Executes a callback function after a random time interval
+    //  *
+    //  * Respects pausing / resuming.
+    //  *
+    //  * Additional parameters are passed to the the callback function.
+    //  *
+    //  * @param {function} func The callback function to execute
+    //  * @param {number} maxWait Optional. The maximum time (in milliseconds)
+    //  *   to wait before executing the callback. Default: 6000
+    //  * @param {number} minWait Optional. The minimum time (in milliseconds)
+    //  *   to wait before executing the callback. Default: 1000
+    //  * @param {object|function} ctx Optional. The context of execution of
+    //  *   of the callback function. Default node.game
+    //  *
+    //  * @see randomFire
+    //  */
+    // Timer.prototype.randomExec = function(func, maxWait, minWait, ctx) {
+    //     var args, i, len;
+    //
+    //     console.log('***Deprecated warning: use timer.random().exec***');
+    //
+    //     if ('function' !== typeof func) {
+    //         throw new TypeError('Timer.randomExec: func must be function. ' +
+    //                            'Found: ' + func);
+    //     }
+    //     if ('undefined' === typeof ctx) {
+    //         ctx = this.node.game;
+    //     }
+    //     else if ('object' !== typeof ctx && 'function' !== typeof ctx) {
+    //         throw new TypeError('Timer.randomExec: ctx must be object, ' +
+    //                             'function or undefined. Found: ' + ctx);
+    //     }
+    //     len = arguments.length;
+    //     if (len == 5) {
+    //         args = [arguments[4]];
+    //     }
+    //     else if (len === 6) {
+    //         args = [arguments[4], arguments[5]];
+    //     }
+    //     else if (len > 6) {
+    //         i = -1, len = (len-4);
+    //         args = new Array(len);
+    //         for ( ; ++i < len ; ) {
+    //             args[i] = arguments[i+4];
+    //         }
+    //     }
+    //     randomFire.call(this, 'randomExec', func, maxWait,
+    //                     minWait, false, ctx, args);
+    // };
+    //
+    // /**
+    //  * ### Timer.randomDone
+    //  *
+    //  * Executes node.done after a random time interval
+    //  *
+    //  * Respects pausing / resuming.
+    //  *
+    //  * Additional parameters are passed to the the done event listener.
+    //  *
+    //  * @param {number} maxWait Optional. The maximum time (in milliseconds)
+    //  *   to wait before executing the callback. Default: 6000
+    //  * @param {number} minWait Optional. The minimum time (in milliseconds)
+    //  *   to wait before executing the callback. Default: 1000
+    //  *
+    //  * @see randomFire
+    //  */
+    // Timer.prototype.randomDone = function(maxWait, minWait) {
+    //     var args, i, len;
+    //
+    //     console.log('***Deprecated warning: use timer.random().done***');
+    //
+    //     len = arguments.length;
+    //     if (len == 3) {
+    //         args = [arguments[2]];
+    //     }
+    //     else if (len === 4) {
+    //         args = [arguments[2], arguments[3]];
+    //     }
+    //     else if (len > 4) {
+    //         i = -1, len--;
+    //         args = new Array(len-2);
+    //         for ( ; ++i < len ; ) {
+    //             args[i] = arguments[i+2];
+    //         }
+    //     }
+    //     randomFire.call(this, 'randomDone', this.node.done, maxWait,
+    //                     minWait, false, this.node, args);
+    // };
 
     /**
      * ## Timer.parseInput
