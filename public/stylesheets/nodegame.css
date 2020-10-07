@@ -283,7 +283,7 @@ p {
   float: right;
 }
 .ng_header_position-horizontal-t .visualround .stepdiv,
-.ng_header_position-horizontal-b .visualround .stepdiv
+.ng_header_position-horizontal-b .visualround .stepdiv,
 .ng_header_position-horizontal-t .visualround .rounddiv,
 .ng_header_position-horizontal-b .visualround .rounddiv {
   margin-left: 8px;
