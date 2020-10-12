@@ -7334,7 +7334,7 @@ if (!Array.prototype.indexOf) {
             };
         }
         else if (h && !i && v) {
-            cb = function(o, idx) {
+            cb = function(o) {
                 this._hashIt(o);
                 this._viewIt(o);
             };
@@ -7593,20 +7593,28 @@ if (!Array.prototype.indexOf) {
             this.throwErr('TypeError', 'emit', 'first argument must be string');
         }
 
-        // If this is a child db (e.g. a hash or a view)
-        hooks = this.__parentDb ? this.__parentDb.hooks : this.hooks;
-
-        if (!hooks[event]) {
+        hooks = this.hooks[event];
+        if (!hooks) {
             this.throwErr('TypeError', 'emit', 'unknown event: ' + event);
         }
-        len = hooks[event].length;
+
+        // If this is a child db (e.g. a hash or a view) must fire also the
+        // parent hooks. Local hooks fire first.
+        // Check: all events should be fired on the parent? E.g., setWD?
+        if (this.__parentDb) {
+            hooks = hooks.length ?
+                    hooks.concat(this.__parentDb.hooks[event]) :
+                    this.__parentDb.hooks[event];
+        }
+
+        len = hooks.length;
         if (!len) return true;
         argLen = arguments.length;
 
         switch(len) {
 
         case 1:
-            h = hooks[event][0];
+            h = hooks[0];
             if (argLen === 1) res = h.call(this);
             else if (argLen === 2) res = h.call(this, arguments[1]);
             else if (argLen === 3) {
@@ -7621,7 +7629,7 @@ if (!Array.prototype.indexOf) {
             }
             break;
         case 2:
-            h = hooks[event][0], h2 = hooks[event][1];
+            h = hooks[0], h2 = hooks[1];
             if (argLen === 1) {
                 res = h.call(this) !== false;
                 res = res && h2.call(this) !== false;
@@ -7646,22 +7654,22 @@ if (!Array.prototype.indexOf) {
         default:
              if (argLen === 1) {
                  for (i = 0; i < len; i++) {
-                     res = hooks[event][i].call(this) !== false;
+                     res = hooks[i].call(this) !== false;
                      if (res === false) break;
                  }
             }
             else if (argLen === 2) {
                 res = true;
                 for (i = 0; i < len; i++) {
-                    res = hooks[event][i].call(this, arguments[1]) !== false;
+                    res = hooks[i].call(this, arguments[1]) !== false;
                     if (res === false) break;
                 }
             }
             else if (argLen === 3) {
                 res = true;
                 for (i = 0; i < len; i++) {
-                    res = hooks[event][i].call(this, arguments[1],
-                                                     arguments[2]) !== false;
+                    res = hooks[i].call(this, arguments[1],
+                                        arguments[2]) !== false;
                     if (res === false) break;
                 }
             }
@@ -7672,7 +7680,7 @@ if (!Array.prototype.indexOf) {
                 }
                 res = true;
                 for (i = 0; i < len; i++) {
-                    res = hooks[event][i].apply(this, args) !== false;
+                    res = hooks[i].apply(this, args) !== false;
                     if (res === false) break;
                 }
 
@@ -9407,7 +9415,7 @@ if (!Array.prototype.indexOf) {
      *
      * @param {string|number} tag An alphanumeric id
      * @param {mixed} idx Optional. The reference to the object.
-     *   Defaults, `nddb_pointer`
+     *   Defaults, last element in db
      * @return {object} ref A reference to the tagged object
      *
      * @see NDDB.resolveTag
@@ -9421,7 +9429,7 @@ if (!Array.prototype.indexOf) {
         ref = null, typeofIdx = typeof idx;
 
         if (typeofIdx === 'undefined') {
-            ref = this.db[this.nddb_pointer];
+            ref = this.db[this.db.length-1];
         }
         else if (typeofIdx === 'number') {
 
@@ -9704,15 +9712,15 @@ if (!Array.prototype.indexOf) {
     function validateSaveLoadParameters(that, method, file, cb, options) {
         if ('string' !== typeof file || file.trim() === '') {
             that.throwErr('TypeError', method, 'file must be ' +
-                          'a non-empty string');
+                          'a non-empty string. Found: ' + file);
         }
         if (cb && 'function' !== typeof cb) {
             that.throwErr('TypeError', method, 'cb must be function ' +
-                          'or undefined');
+                          'or undefined. Found: ' + cb);
         }
         if (options && 'object' !== typeof options) {
             that.throwErr('TypeError', method, 'options must be object ' +
-                          'or undefined');
+                          'or undefined. Found: ' + options);
         }
     }
 
@@ -14838,7 +14846,7 @@ if (!Array.prototype.indexOf) {
             from: node.player ? node.player.id : constants.UNDEFINED_PLAYER,
             to: 'undefined' !== typeof msg.to ? msg.to : 'SERVER',
             text: 'undefined' !== typeof msg.text ? "" + msg.text : null,
-            data: 'undefined' !== typeof msg.data ? msg.data : null,
+            data: 'undefined' !== typeof msg.data ? msg.data : {},
             priority: priority,
             reliable: msg.reliable || 1
         });
@@ -14856,7 +14864,7 @@ if (!Array.prototype.indexOf) {
  *
  * Push players to advance to next step, otherwise disconnects them.
  *
- * Copyright(c) 2018 Stefano Balietti
+ * Copyright(c) 2020 Stefano Balietti
  * MIT Licensed
  */
 (function(exports, parent) {
@@ -14970,7 +14978,7 @@ if (!Array.prototype.indexOf) {
      * @see GameTimer.parseMilliseconds
      */
     PushManager.prototype.startTimer = function(conf) {
-        var stage, pushCb, that, offset;
+        var stage, that, offset;
         var node;
 
         // Adjust user input.
@@ -14984,11 +14992,11 @@ if (!Array.prototype.indexOf) {
 
         node = this.node;
 
-        console.log('PUSH.TIMER ************************* ',
-                    node.player.stage, conf);
-
         if (!this.timer) {
-            this.timer = node.timer.createTimer({ name: 'push_clients' });
+            this.timer = node.timer.createTimer({
+                name: 'push_clients',
+                validity: 'game'
+            });
         }
         else {
             this.clearTimer();
@@ -15008,18 +15016,15 @@ if (!Array.prototype.indexOf) {
             round: node.player.stage.round
         };
 
-        node.silly('push-manager: starting timer: ' + offset + ', ' + stage);
-        // console.log('push-manager: starting timer: ', offset, stage);
-
+        node.info('push-manager: starting timer with offset ' + offset);
 
         that = this;
-        pushCb = function() { that.pushGame.call(that, stage, conf); };
 
         // Make sure milliseconds and update are the same.
         this.timer.init({
             milliseconds: offset,
             update: offset,
-            timeup: pushCb,
+            timeup: function() { that.pushGame.call(that, stage, conf); },
         });
         this.timer.start();
     };
@@ -15049,7 +15054,7 @@ if (!Array.prototype.indexOf) {
      */
     PushManager.prototype.isActive = function() {
         return !this.timer.isStopped();
-    }
+    };
 
     /**
      * ### PushManager.pushGame
@@ -15070,8 +15075,7 @@ if (!Array.prototype.indexOf) {
         var m, node, replyWaitTime, checkPushWaitTime;
         node = this.node;
 
-        // console.log('push-manager: checking clients');
-        node.silly('push-manager: checking clients.');
+        node.info('push-manager: checking clients');
 
         if ('object' === typeof conf) {
             m = 'pushGame';
@@ -15092,7 +15096,7 @@ if (!Array.prototype.indexOf) {
                 GameStage.compare(p.stage, stage) === 0) {
 
                 // console.log('push needed: ', p.id);
-                node.warn('push needed: ' + p.id);
+                node.warn('push-manager: push needed: ' + p.id);
                 // Send push.
                 node.get(PUSH_STEP,
                          function(value) {
@@ -15156,16 +15160,10 @@ if (!Array.prototype.indexOf) {
      * @param {NodeGameClient} node The node instance used to send msg
      * @param {object} p The player object containing info about id and sid
      */
-//     function forceDisconnect(node, p) {
-//         // No reply to GET, disconnect client.
-//         node.warn('push-manager: disconnecting: ' + p.id);
-//         node.disconnectClient(p);
-//     }
-
     function forceDisconnect(node, p) {
         var msg;
         // No reply to GET, disconnect client.
-        node.warn('push-manager: disconnecting: ' + p.id);
+        node.warn('push-manager: disconnecting ' + p.id);
         // console.log('push-manager: disconnecting: ' + p.id);
         msg = node.msg.create({
             target: 'SERVERCOMMAND',
@@ -17840,7 +17838,6 @@ if (!Array.prototype.indexOf) {
      * @param {string} id The id to check
      */
     function checkStageStepId(method, s, id) {
-        var char0;
         if ('string' !== typeof id) {
             throw new TypeError('Stager.' + method + ': ' + s + '.id must ' +
                                 'be string. Found: ' + id);
@@ -17849,20 +17846,13 @@ if (!Array.prototype.indexOf) {
             throw new TypeError('Stager.' + method + ': ' + s + '.id cannot ' +
                                 'be an empty string.');
         }
-        char0 = id.charAt(0);
-        if (char0 === '.') {
-            throw new Error('Stager.' + method + ': ' + s + '.id cannot ' +
-                            'begin with a dot. Found: ' + id);
-        }
         if (id.lastIndexOf('.') !== -1) {
-            console.log('*** deprecated naming! Stager.' + method + ': ' +
-                        s + '.id contains dots. Game will run, but will fail ' +
-                        'to normalize ' + s + 's. Found: ' + id + ' ***');
+            throw new Error('Stager.' + method + ': ' + s + '.id cannot ' +
+                            'contains dots. Found: ' + id);
         }
-        if (/^\d+$/.test(char0)) {
-            console.log('*** deprecated naming! Stager.' + method + ': ' + s +
-                        '.id begins with a number. Game will run, but will ' +
-                        'fail to normalize ' + s + 's. Found: ' + id + ' ***');
+        if (/^\d+$/.test(id.charAt(0))) {
+            throw new Error('Stager.' + method + ': ' + s + '.id cannot ' +
+                            'begin with a number. Found: ' + id);
         }
     }
 
@@ -19376,7 +19366,7 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # Socket
- * Copyright(c) 2018 Stefano Balietti
+ * Copyright(c) 2020 Stefano Balietti
  * MIT Licensed
  *
  * Wrapper class for the actual socket to send messages
@@ -19580,22 +19570,22 @@ if (!Array.prototype.indexOf) {
                 indexes: true
             }
         });
-        this.journal.comparator('stage', function(o1, o2) {
-            return parent.GameStage.compare(o1.stage, o2.stage);
-        });
-
         if (!this.journal.player) {
-            this.journal.hash('to', function(gb) {
-                return gb.to;
-            });
+            this.journal.hash('to');
         }
-        if (!this.journal.stage) {
-            this.journal.hash('stage', function(gb) {
-                if (gb.stage) {
-                    return parent.GameStage.toHash(gb.stage, 'S.s.r');
-                }
-            });
-        }
+
+        // this.journal.comparator('stage', function(o1, o2) {
+        //     return parent.GameStage.compare(o1.stage, o2.stage);
+        // });
+
+
+        // if (!this.journal.stage) {
+        //     this.journal.hash('stage', function(gb) {
+        //         if (gb.stage) {
+        //             return parent.GameStage.toHash(gb.stage, 'S.s.r');
+        //         }
+        //     });
+        // }
         // End Experimental Code.
 
         /**
@@ -20156,7 +20146,8 @@ if (!Array.prototype.indexOf) {
         // TODO: check this.
         // Experimental code.
         if (this.journalOn) {
-            this.journal.insert(msg);
+            // Only Game messages are stored.
+            if (this.node.game.isReady()) this.journal.insert(msg);
         }
         // End experimental code.
 
@@ -21326,7 +21317,7 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # Matcher
- * Copyright(c) 2017 Stefano Balietti
+ * Copyright(c) 2020 Stefano Balietti
  * MIT Licensed
  *
  * Class handling the creation of tournament schedules.
@@ -21768,6 +21759,19 @@ if (!Array.prototype.indexOf) {
     };
 
     /**
+     * ### Matcher.getMatches
+     *
+     * Returns the matches for current instance
+     *
+     * @return {array|null} The array of matches (NULL if not yet set)
+     *
+     * @see this.matches
+     */
+    Matcher.prototype.getMatches = function() {
+        return this.matches;
+    };
+
+    /**
      * ### Matcher.setIds
      *
      * Sets the ids to be used for the matches
@@ -21895,7 +21899,7 @@ if (!Array.prototype.indexOf) {
         var roles, rolesObj, idRolesObj, r1, r2;
 
         if (!J.isArray(this.matches) || !this.matches.length) {
-            throw new Error('Matcher.match: no matches found.');
+            throw new Error('Matcher.match: no matches found');
         }
 
         // Assign/generate ids if not done before.
@@ -22799,7 +22803,7 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # MatcherManager
- * Copyright(c) 2017 Stefano Balietti <ste@nodegame.org>
+ * Copyright(c) 2020 Stefano Balietti <ste@nodegame.org>
  * MIT Licensed
  *
  * Handles matching roles to players and players to players.
@@ -22879,6 +22883,11 @@ if (!Array.prototype.indexOf) {
      *    Values: 'roles', 'matches', 'all'. Default: 'all'
      */
     MatcherManager.prototype.clear = function(mod) {
+
+        this.lastMatches = null;
+        this.lastSettings = null;
+        this.lastMatchesById = {};
+
         switch(mod) {
         case 'roles':
             this.roler.clear();
@@ -22990,7 +22999,7 @@ if (!Array.prototype.indexOf) {
      *   (default: current game round).
      *
      * @return {array|object|null} The requested matches in the requested
-     *   format, or null if none is found
+     *   format, or null matches are not yet set
      *
      * @see round2Index
      * @see Matcher.getMatch
@@ -23012,6 +23021,9 @@ if (!Array.prototype.indexOf) {
             throw new TypeError('MatcherManager.getMatches: round ' +
                                 'must be undefined or number. Found: ' + round);
         }
+
+        if (!this.matcher.getMatches()) return null;
+
         round = round2Index.call(this, 'getMatches', round);
 
         if (mod === 'ARRAY') return this.matcher.getMatch(round);
@@ -23037,12 +23049,13 @@ if (!Array.prototype.indexOf) {
      *   rounds than matches)
      *
      * @return {string|null} The current match for the id, or null
-     *    if the id is not found
+     *    if the id is not found or matches are not set
      *
      * @see Matcher.getMatchFor
      * @see round2Index
      */
     MatcherManager.prototype.getMatchFor = function(id, round) {
+        if (!this.matcher.getMatches()) return null;
         round = round2Index.call(this, 'getMatchFor', round);
         return this.matcher.getMatchFor(id, round);
     };
@@ -23058,12 +23071,13 @@ if (!Array.prototype.indexOf) {
      *   rounds than matches)
      *
      * @return {string|null} The role hold by id at the
-     *    specified round or null if not found
+     *    specified round or null if matches are not yet set
      *
      * @see Roler.getRolerFor
      * @see round2Index
      */
     MatcherManager.prototype.getRoleFor = function(id, round) {
+        if (!this.matcher.getMatches()) return null;
         round = round2Index.call(this, 'getRoleFor', round);
         return this.roler.getRoleFor(id, round);
     };
@@ -23078,12 +23092,14 @@ if (!Array.prototype.indexOf) {
      *   than current (will be normalized if there are more
      *   rounds than matches)
      *
-     * @return {array} Array of id/s holding the role at round x
+     * @return {array|null} Array of id/s holding the role at round x, or
+     *   null if matches are not yet set
      *
      * @see Roler.getIdForRole
      * @see round2Index
      */
     MatcherManager.prototype.getIdForRole = function(role, round) {
+        if (!this.matcher.getMatches()) return null;
         round = round2Index.call(this, 'getIdForRole', round);
         return this.roler.getIdForRole(role, round);
     };
@@ -23141,7 +23157,7 @@ if (!Array.prototype.indexOf) {
      *
      * @param {string} id The id to get the setup object for
      *
-     * @return {object} The requested setup object
+     * @return {object|null} The requested setup object or null if not found
      *
      * @see Matcher.match
      * @see round2index
@@ -23177,10 +23193,10 @@ if (!Array.prototype.indexOf) {
      */
     function round2Index(method, round) {
         if ('undefined' === typeof round) {
-            round = this.node.game.getCurrentGameStage().round;
+            round = this.node.game.getRound();
             if (round === 0) {
                 throw new Error('MatcherManager.' + method + ': game stage ' +
-                                'is 0.0.0, please specify a valid round.');
+                                'is 0.0.0, please specify a valid round');
             }
         }
         if ('number' === typeof round) {
@@ -23477,8 +23493,6 @@ if (!Array.prototype.indexOf) {
             if (info.format === 'csv') decorateSavingOptions(options);
         });
 
-        // this.times = {};
-
         this.node = this.__shared.node;
     }
 
@@ -23501,9 +23515,11 @@ if (!Array.prototype.indexOf) {
         if ('object' !== typeof o.stage) {
             throw new Error('GameDB.add: stage missing or invalid: ', o);
         }
-        // if (node.nodename !== nodename) o.session = node.nodename;
+
         if (!o.timestamp) o.timestamp = Date.now ?
             Date.now() : new Date().getTime();
+
+        o.session = this.node.nodename;
 
         this.insert(o);
     };
@@ -23555,6 +23571,7 @@ if (!Array.prototype.indexOf) {
     exports.Game = Game;
 
     var GameStage = parent.GameStage,
+        GameMsg = parent.GameMsg,
         GameDB = parent.GameDB,
         GamePlot = parent.GamePlot,
         PlayerList = parent.PlayerList,
@@ -24285,6 +24302,13 @@ if (!Array.prototype.indexOf) {
         // Clear the cache of temporary changes to steps.
         this.plot.tmpCache.clear();
 
+        // By default socket journal is off and cleared.
+        // Need to do it before setup messages are send to clients.
+        if (node.socket.journalOn) {
+            node.socket.journalOn = false;
+            node.socket.journal.clear();
+        }
+
         // Sends start / step command to connected clients if option is on.
         if (this.plot.getProperty(nextStep, 'syncStepping')) {
 
@@ -24323,12 +24347,15 @@ if (!Array.prototype.indexOf) {
                 }
             }
             else {
+
                 if (curStep.stage === 0) {
                     node.remoteCommand('start', 'ROOM');
                 }
                 else {
                     node.remoteCommand('goto_step', 'ROOM', nextStep);
                 }
+
+                // this.matcher.clear();
             }
         }
 
@@ -24510,6 +24537,13 @@ if (!Array.prototype.indexOf) {
         // Update list of stepped steps.
         this._steppedSteps.push(nextStep);
 
+        // TODO: check if here is right place, or better in execStep.
+        // If reconnect is TRUE we save a copy of  all messages sent to clients.
+        // Note: the journal is active only if Game.isReady is true.
+        if (this.plot.getProperty(nextStep, 'reconnect') === true) {
+            node.socket.journalOn = true;
+        }
+
         // If we should be done now, we emit PLAYING without executing the step.
         // node.game.willBeDone is already set, and will trigger node.done().
         if (this.beDone) node.emit('PLAYING');
@@ -24557,6 +24591,10 @@ if (!Array.prototype.indexOf) {
                     widget.ref = J.uniqueKey(this, widget.ref);
                 }
             }
+
+            // Add options, if missing.
+            if (!widget.options) widget.options = {};
+
             // Make main callback to get/append the widget.
             widgetCb = function() {
 
@@ -24565,6 +24603,11 @@ if (!Array.prototype.indexOf) {
                                                       widget.options);
                 }
                 else {
+                    // Default class.
+                    if (!widget.options.className) {
+                        widget.options.className = 'centered';
+                    }
+
                     // Default id 'container' (as in default.html).
                     if ('string' === typeof widget.root) {
                         widgetRoot = widget.root;
@@ -24575,7 +24618,7 @@ if (!Array.prototype.indexOf) {
                                             widget.root);
                     }
                     else {
-                        widgetRoot = 'widget-container';
+                        widgetRoot = 'container';
                     }
                     // If widgetRoot is not existing, it follows the
                     // default procedure for appending a widget.
@@ -24611,7 +24654,8 @@ if (!Array.prototype.indexOf) {
                 }
                 // Under some special conditions (e.g., very fast DONE
                 // clicking this can be null. TODO: check why.
-                values = this[widget.ref].getValues(opts);
+                // Changed from this[widget.ref] to widgetObj.
+                values = widgetObj.getValues(opts);
 
                 // If it is not timeup, and user did not
                 // disabled it, check answers.
@@ -24625,6 +24669,14 @@ if (!Array.prototype.indexOf) {
                          (values.missValues && values.missValues.length) ||
                          values.choice === null ||
                          values.isCorrect === false)) {
+
+                         if ('function' === typeof
+                             widgetObj.bodyDiv.scrollIntoView) {
+
+                             widgetObj.bodyDiv.scrollIntoView({
+                                 behavior: 'smooth'
+                             });
+                         }
 
                         return false;
                     }
@@ -24724,7 +24776,7 @@ if (!Array.prototype.indexOf) {
 
             }
 
-            reloadFrame = uri !== w.unprocessedUri;
+            if (w) reloadFrame = uri !== w.unprocessedUri;
             // We reload the frame if (order matters):
             // - it is a different uri from previous step,
             // - unless frameOptions.reload is false,
@@ -25560,6 +25612,10 @@ if (!Array.prototype.indexOf) {
         var s;
         s = this.getCurrentGameStage().step;
         if ('number' === typeof step) return step === s;
+        // Add the current stage id for normalization if no stage is provided.
+        if (step.lastIndexOf('.') === -1) {
+            step = this.getStageId() + '.' + step;
+        }
         step = this.plot.normalizeGameStage(step);
         return !!(step && step.step === s);
     };
@@ -25732,6 +25788,7 @@ if (!Array.prototype.indexOf) {
      *   - beDone: game is done without loading the frame or
      *       executing the step callback function,
      *   - plot: add entries to the tmpCache of the plot,
+     *   - msgs: incoming messages to emit.
      *   - cb: a callback executed with the game context, and with options
      *       object itself as parameter
      *
@@ -25767,6 +25824,12 @@ if (!Array.prototype.indexOf) {
                     game.plot.tmpCache(prop, options.plot[prop]);
                 }
             }
+        }
+
+        if (options.msgs) {
+            options.msgs.foreach(function(msg) {
+                game.node.socket.onMessage(new GameMsg(msg).toInEvent(), msg);
+            });
         }
 
         // TODO: rename cb.
@@ -26071,26 +26134,12 @@ if (!Array.prototype.indexOf) {
                 _minWait = 1000;
             }
 
-            function done() {
+            function done(param) {
 
                 // Probalistic abort.
                 if (!evaluateProb()) return;
 
-                len = arguments.length;
-                if (len == 1) {
-                    args = [arguments[0]];
-                }
-                else if (len === 2) {
-                    args = [arguments[1], arguments[0]];
-                }
-                else if (len > 2) {
-                    i = -1;
-                    args = new Array(len);
-                    for ( ; ++i < len ; ) {
-                        args[i] = arguments[i];
-                    }
-                }
-                randomFire.call(that, 'done', node.done, false, node, args);
+                randomFire.call(that, 'done', node.done, false, node, [param]);
             }
 
             function emit(event) {
@@ -26154,13 +26203,13 @@ if (!Array.prototype.indexOf) {
                 randomFire.call(that, 'exec', func, false, ctx, args);
             }
 
-            function timeup() {
+            function timeup(param) {
                 // Probalistic abort.
                 if (!evaluateProb()) return;
 
                 randomFire.call(that, 'timeup',
-                               function() { node.timer.doTimeUp(); },
-                               false, ctx, args);
+                               function() { node.game.timer.doTimeUp(); },
+                               false, node.game, [param]);
             }
 
             function evaluateProb() {
@@ -26224,11 +26273,13 @@ if (!Array.prototype.indexOf) {
             random.emit = emit;
             random.exec = exec;
             random.prob = prob;
+            random.timeup = timeup;
 
             wait.done = done;
             wait.emit = emit;
             wait.exec = exec;
             wait.prob = prob;
+            wait.timeup = timeup;
 
             // Assign random and wait functions to Timer.
             that.random = random;
@@ -27715,7 +27766,7 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # Matcher
- * Copyright(c) 2017 Stefano Balietti
+ * Copyright(c) 2020 Stefano Balietti
  * MIT Licensed
  *
  * Class handling the creation of tournament schedules.
@@ -28157,6 +28208,19 @@ if (!Array.prototype.indexOf) {
     };
 
     /**
+     * ### Matcher.getMatches
+     *
+     * Returns the matches for current instance
+     *
+     * @return {array|null} The array of matches (NULL if not yet set)
+     *
+     * @see this.matches
+     */
+    Matcher.prototype.getMatches = function() {
+        return this.matches;
+    };
+
+    /**
      * ### Matcher.setIds
      *
      * Sets the ids to be used for the matches
@@ -28284,7 +28348,7 @@ if (!Array.prototype.indexOf) {
         var roles, rolesObj, idRolesObj, r1, r2;
 
         if (!J.isArray(this.matches) || !this.matches.length) {
-            throw new Error('Matcher.match: no matches found.');
+            throw new Error('Matcher.match: no matches found');
         }
 
         // Assign/generate ids if not done before.
@@ -30214,7 +30278,7 @@ if (!Array.prototype.indexOf) {
  *
  * Implementation of node.[say|set|get|done].
  *
- * Copyright(c) 2019 Stefano Balietti
+ * Copyright(c) 2020 Stefano Balietti
  * MIT Licensed
  */
 (function(exports, parent) {
@@ -30500,18 +30564,20 @@ if (!Array.prototype.indexOf) {
      *
      * All input parameters are passed along to `node.emit`.
      *
+     * @param {mixed} param Optional. A value or object to send to the server
+     *   in a set message.
+     *
      * @return {boolean} TRUE, if the method is authorized, FALSE otherwise
      *
      * @see NodeGameClient.emit
      * @emits DONE
      */
-    NGC.prototype.done = function() {
-        var that, game, doneCb, len, i;
-        var arg1, arg2, args, args2;
-        var stepTime, timeup;
-        var autoSet;
+    NGC.prototype.done = function(param) {
+        var that, game, doneCb;
+        var stepTime;
+        var args, o;
 
-        // Get step execution time.
+        // First, get step execution time.
         stepTime = this.timer.getTimeSince('step');
 
         game = this.game;
@@ -30520,8 +30586,6 @@ if (!Array.prototype.indexOf) {
                      game.getCurrentGameStage());
             return false;
         }
-
-        len = arguments.length;
 
         // Check if there are required widgets that are not ready.
         // Widget steps update the done callback, so no need to check them.
@@ -30543,59 +30607,14 @@ if (!Array.prototype.indexOf) {
         // A done callback can manipulate arguments, add new values to
         // send to server, or even halt the procedure if returning false.
         if (doneCb) {
-            switch(len) {
-            case 0:
-                args = doneCb.call(game);
-                break;
-            case 1:
-                args = doneCb.call(game, arguments[0]);
-                break;
-            case 2:
-                args = doneCb.call(game, arguments[0], arguments[1]);
-                break;
-            default:
-                args = new Array(len);
-                for (i = -1 ; ++i < len ; ) {
-                    args[i] = arguments[i];
-                }
-                args = doneCb.apply(game, args);
-            };
+            args = doneCb.call(game, param);
 
             // If a `done` callback returns false, exit.
-            if ('boolean' === typeof args) {
-                if (args === false) {
-                    this.silly('node.done: done callback returned false');
-                    return false;
-                }
-                else {
-                    console.log('***');
-                    console.log('node.done: done callback returned true. ' +
-                                'For retro-compatibility the value is not ' +
-                                'processed and sent to server. If you wanted ' +
-                                'to return "true" return an array: [true]. ' +
-                                'In future releases any value ' +
-                                'different from false and undefined will be ' +
-                                'treated as a done argument and processed.');
-                    console.log('***');
-
-                    args = null;
-                }
-            }
-            // If a value is provided make it an array, if not already one.
-            else if ('undefined' !== typeof args &&
-                Object.prototype.toString.call(args) !== '[object Array]') {
-
-                args = [args];
+            if (args === false) {
+                this.silly('node.done: done callback returned false');
+                return false;
             }
         }
-
-        // Build set object (will be sent to server).
-        // Back-compatible checks.
-        if (game.timer && game.timer.isTimeup) {
-            timeup = game.timer.isTimeup();
-        }
-
-        autoSet = game.plot.getProperty(game.getCurrentGameStage(), 'autoSet');
 
         // Keep track that the game will be done (done is asynchronous)
         // to avoid calling `node.done` multiple times in the same stage.
@@ -30604,69 +30623,41 @@ if (!Array.prototype.indexOf) {
         // TODO: it is possible that DONE messages (in.set.DATA) are sent
         // to server before PLAYING is set. Is this OK?
 
-        // Args can be the original arguments array, or
-        // the one returned by the done callback.
-        // TODO: check if it safe to copy arguments by reference.
-        if (!args) args = arguments;
-        else len = args.length;
-        that = this;
-        // The arguments object must not be passed or leaked anywhere.
-        // Therefore, we recreate an args array here. We have a different
-        // timeout in a different branch for optimization.
-        switch(len) {
+        if (!args) args = param;
 
-        case 0:
-            if (autoSet) {
-                this.set(getSetObj(stepTime, timeup), 'SERVER', 'done');
+        if (game.plot.getProperty(game.getCurrentGameStage(), 'autoSet')) {
+
+            // Create object.
+            if ('object' === typeof args) {
+                o = args;
             }
-            setTimeout(function() { that.events.emit('DONE'); }, 0);
-            break;
-        case 1:
-            arg1 = args[0];
-            if (autoSet) {
-                this.set(getSetObj(stepTime, timeup, arg1), 'SERVER', 'done');
-            }
-            setTimeout(function() { that.events.emit('DONE', arg1); }, 0);
-            break;
-        case 2:
-            arg1 = args[0], arg2 = args[1];
-            // Send two setObjs.
-            if (autoSet) {
-                this.set(getSetObj(stepTime, timeup, arg1), 'SERVER', 'done');
-                this.set(getSetObj(stepTime, timeup, arg2), 'SERVER', 'done');
-            }
-            setTimeout(function() { that.events.emit('DONE', arg1, arg2); }, 0);
-            break;
-        default:
-            args2 = new Array(len+1);
-            args2[0] = 'DONE';
-            for (i = 0; i < len; i++) {
-                args2[i+1] = args[i];
-                if (autoSet) {
-                    this.set(getSetObj(stepTime, timeup, args2[i+1]),
-                             'SERVER', 'done');
+            else {
+                o = {};
+                if ('string' === typeof args || 'number' === typeof args) {
+                    o[args] = true;
                 }
             }
-            setTimeout(function() {
-                that.events.emit.apply(that.events, args2);
-            }, 0);
+
+            // Time and timeup.
+            if (!o.time) o.time = stepTime;
+            if (!o.timeup) o.timeup = game.timer.isTimeup();
+
+            // Add role and partner info.
+            if (game.role && !o.role) o.role = game.role;
+            if (game.partner && !o.partner) o.partner = game.partner;
+
+            // Mark done msg.
+            o.done = true;
+
+            // Send to server.
+            this.set(o, 'SERVER', 'done');
         }
+
+        that = this;
+        setTimeout(function() { that.events.emit('DONE', param); }, 0);
 
         return true;
     };
-
-    // ## Helper methods.
-
-    function getSetObj(time, timeup, arg) {
-        var o;
-        o = { time: time , timeup: timeup };
-        if ('object' === typeof arg) J.mixin(o, arg);
-        else if ('string' === typeof arg || 'number' === typeof arg) {
-            o[arg] = true;
-        }
-        o.done = true;
-        return o;
-    }
 
 })(
     'undefined' != typeof node ? node : module.exports,
@@ -38877,7 +38868,7 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # Widget
- * Copyright(c) 2019 Stefano Balietti <ste@nodegame.org>
+ * Copyright(c) 2020 Stefano Balietti <ste@nodegame.org>
  * MIT Licensed
  *
  * Prototype of a widget class
@@ -40621,24 +40612,39 @@ if (!Array.prototype.indexOf) {
      *
      * @return {array} res List of destroyed widgets
      */
-    Widgets.prototype.garbageCollection = function() {
-        var w, i, fd, res;
-        res = [];
-        fd = W.getFrameDocument();
-        w = node.widgets.instances;
-        for (i = 0; i < w.length; i++) {
-            // Check if widget is not on page any more.
-            if (w[i].isAppended() &&
-                (fd && !fd.contains(w[i].panelDiv)) &&
-                !document.body.contains(w[i].panelDiv)) {
+    Widgets.prototype.garbageCollection = (function() {
 
-                res.push(w[i]);
-                w[i].destroy();
-                i--;
+        // Some IE were missing .contains, so we fallback gracefully.
+        function contains(target, widget) {
+            var parentNode;
+            if (target.contains) return target.contains(widget.panelDiv);
+            parentNode = widget.panelDiv.parentNode;
+            while (parentNode != null) {
+                if (parentNode == target) return true;
+                parentNode = parentNode.parentNode;
             }
+            return false;
         }
-        return res;
-    };
+
+        return function() {
+            var w, i, fd, res;
+            res = [];
+            fd = W.getFrameDocument();
+            w = node.widgets.instances;
+            for (i = 0; i < w.length; i++) {
+                // Check if widget is not on page any more.
+                if (w[i].isAppended() &&
+                (fd && !contains(fd, w[i])) &&
+                !contains(document.body, w[i])) {
+
+                    res.push(w[i]);
+                    w[i].destroy();
+                    i--;
+                }
+            }
+            return res;
+        };
+    })();
 
     /**
      * ### Widgets.isActionRequired
@@ -40655,11 +40661,22 @@ if (!Array.prototype.indexOf) {
      * @see Widget.isActionRequired
      */
     Widgets.prototype.isActionRequired = function(opts) {
-        var w, i, res;
+        var w, i, lastErrored, res;
         w = node.widgets.instances;
         res = false;
         for (i = 0; i < w.length; i++) {
-            if (w[i].required) res = res || w[i].isActionRequired(opts);
+            if (w[i].required) {
+                if (w[i].isActionRequired(opts)) {
+                    res = true;
+                    lastErrored = w[i];
+                }
+            }
+        }
+        // Scroll to error.
+        if (lastErrored && opts.highlight &&
+            'function' === typeof lastErrored.bodyDiv.scrollIntoView) {
+
+            lastErrored.bodyDiv.scrollIntoView({ behavior: 'smooth' });
         }
         return res;
     };
@@ -46057,7 +46074,7 @@ if (!Array.prototype.indexOf) {
 
         // Value this.correctChoice can undefined, string or array.
         // If no correct choice is set, we simply ignore the correct param.
-        if (options.correct && 'undefined' !== typeof this.correctChoice) {
+        if (options.correct && this.correctChoice !== null) {
 
             // Make it an array (can be a string).
             correctChoice = J.isArray(this.correctChoice) ?
@@ -51639,8 +51656,6 @@ if (!Array.prototype.indexOf) {
 
     // ## DisconnectBox methods
     DisconnectBox.prototype.init = function(opts) {
-        var that;
-        that = this;
 
         if (opts.connectCb) {
             if ('function' !== typeof opts.connectCb) {
@@ -52432,7 +52447,7 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # EndScreen
- * Copyright(c) 2019 Stefano Balietti <ste@nodegame.org>
+ * Copyright(c) 2020 Stefano Balietti <ste@nodegame.org>
  * MIT Licensed
  *
  * Creates an interface to display final earnings, exit code, etc.
@@ -52448,29 +52463,26 @@ if (!Array.prototype.indexOf) {
 
     // ## Add Meta-data
 
-    EndScreen.version = '0.6.0';
+    EndScreen.version = '0.7.0';
     EndScreen.description = 'Game end screen. With end game message, ' +
                             'email form, and exit code.';
 
-    EndScreen.title = 'End Screen';
+    EndScreen.title = false;
     EndScreen.className = 'endscreen';
 
-    EndScreen.texts.headerMessage = 'Thank you for participating!';
-    EndScreen.texts.message = 'You have now completed this task ' +
-                               'and your data has been saved. ' +
-                               'Please go back to the Amazon Mechanical Turk ' +
-                               'web site and submit the HIT.';
-    EndScreen.texts.contactQuestion = 'Would you like to be contacted again' +
-                                       'for future experiments? If so, leave' +
-                                       'your email here and press submit: ';
-    EndScreen.texts.totalWin = 'Your total win:';
-    EndScreen.texts.exitCode = 'Your exit code:';
-    EndScreen.texts.errTotalWin = 'Error: invalid total win.';
-    EndScreen.texts.errExitCode = 'Error: invalid exit code.';
-    EndScreen.texts.copyButton = 'Copy';
-    EndScreen.texts.exitCopyMsg = 'Exit code copied to clipboard.';
-    EndScreen.texts.exitCopyError = 'Failed to copy exit code. Please copy it' +
-                                    ' manually.';
+    EndScreen.texts = {
+        headerMessage: 'Thank you for participating!',
+        message: 'You have now completed this task and your data has ' +
+                 'been saved. Please go back to the Amazon Mechanical Turk ' +
+                 'web site and submit the HIT.',
+        totalWin: 'Your total win:',
+        exitCode: 'Your exit code:',
+        errTotalWin: 'Error: invalid total win.',
+        errExitCode: 'Error: invalid exit code.',
+        copyButton: 'Copy',
+        exitCopyMsg: 'Exit code copied to clipboard.',
+        exitCopyError: 'Failed to copy exit code. Please copy it manually.'
+    };
 
     // ## Dependencies
 
@@ -52665,17 +52677,30 @@ if (!Array.prototype.indexOf) {
     }
 
     EndScreen.prototype.init = function(options) {
+
+
+
         if (this.showEmailForm && !this.emailForm) {
+            // TODO: nested properties are overwitten fully. Update.
             this.emailForm = node.widgets.get('EmailForm', J.mixin({
-                label: this.getText('contactQuestion'),
-                onsubmit: { send: true, emailOnly: true, updateUI: true },
-                storeRef: false
+                onsubmit: {
+                    send: true,
+                    emailOnly: true,
+                    updateUI: true
+                },
+                storeRef: false,
+                texts: {
+                    label: 'If you would like to be contacted for future ' +
+                        'studies, please enter your email (optional):',
+                    errString: 'Please enter a valid email and retry'
+                },
+                setMsg: true // Sends a set message for logic's db.
             }, options.email));
         }
 
         if (this.showFeedbackForm) {
             this.feedback = node.widgets.get('Feedback', J.mixin(
-                { storeRef: false },
+                { storeRef: false, minChars: 50, setMsg: true },
                 options.feedback));
         }
     };
