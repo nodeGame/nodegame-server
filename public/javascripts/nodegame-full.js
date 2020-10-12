@@ -14172,12 +14172,10 @@ if (!Array.prototype.indexOf) {
     GamePlot.prototype.getStep = function(gameStage) {
         var seqObj, stepObj;
         if (!this.stager) return null;
-        gameStage = this.normalizeGameStage(gameStage);
-        if (gameStage) {
-            seqObj = this.getSequenceObject(gameStage);
-            if (seqObj) {
-                stepObj = this.stager.steps[seqObj.steps[gameStage.step - 1]];
-            }
+        // Game stage is normalized inside getSequenceObject.
+        seqObj = this.getSequenceObject(gameStage);
+        if (seqObj) {
+            stepObj = this.stager.steps[seqObj.steps[gameStage.step - 1]];
         }
         return stepObj || null;
     };
@@ -23475,22 +23473,18 @@ if (!Array.prototype.indexOf) {
             return GameStage.compare(o1.stage, o2.stage);
         });
 
-        if (!this.player) {
-            this.hash('player', function(o) {
-                return o.player;
-            });
-        }
-        if (!this.stage) {
-            this.hash('stage', function(o) {
-                if (o.stage) return GameStage.toHash(o.stage, 'S.s.r');
-            });
-        }
-        if (!this.done) {
-            this.view('done');
-        }
+        this.hash('player', function(o) {
+            return o.player;
+        });
+
+        this.hash('stage', function(o) {
+            if (o.stage) return GameStage.toHash(o.stage, 'S.s.r');
+        });
+
+        this.view('done');
 
         this.on('save', function(options, info) {
-            if (info.format === 'csv') decorateSavingOptions(options);
+            if (info.format === 'csv') decorateCSVSaveOptions(that, options);
         });
 
         this.node = this.__shared.node;
@@ -23525,15 +23519,58 @@ if (!Array.prototype.indexOf) {
     };
 
     /**
-     * ### decorateSavingOptions
+     * ### decorateCSVSaveOptions
      *
      * Adds default options to improve data saving.
      *
      * @param {object} opts Optional. The option object to decorate
      */
-    function decorateSavingOptions(opts) {
-        if (!opts) return;
+    function decorateCSVSaveOptions(that, opts) {
+        var toId, split, plot;
         if ('undefined' === typeof opts.bool2num) opts.bool2num = true;
+
+        // Handle stage object.
+        toId = 'undefined' === typeof opts.stageNum2Id ?
+                    true : opts.stageNum2Id;
+        split = 'undefined' === typeof opts.splitStage ?
+                    true : opts.splitStage;
+
+        plot = that.node.game.plot;
+
+        if (!opts.adapter) opts.adapter = {};
+
+        if (split) {
+            if ('undefined' === typeof opts.adapter.stage) {
+                opts.adapter.stage = function(i) {
+                    if (!i.stage) return;
+                    return toId ? plot.getStage(i.stage).id : i.stage.stage;
+                };
+            }
+            if ('undefined' === typeof opts.adapter.step) {
+                opts.adapter.step = function(i) {
+                    if (!i.stage) return;
+                    return toId ? plot.getStep(i.stage).id : i.stage.step;
+                };
+            }
+            if ('undefined' === typeof opts.adapter.round) {
+                opts.adapter.round = function(i) { return i.stage.round; };
+            }
+        }
+        else {
+            if ('undefined' === typeof opts.adapter.stage) {
+                opts.adapter.stage = function(i) {
+                    var s = i.stage;
+                    if (!s) return;
+                    if (toId) {
+                        return plot.getStage(s).id + '.' +
+                               plot.getStep(s).id + '.' + s.round;
+                    }
+                    return s.stage + '.' + s.step + '.' + s.round;
+                };
+            }
+        }
+
+        // Flatten.
         if (opts.flatten) {
             if ('undefined' === typeof opts.headers) opts.headers = 'all';
             opts.preprocess = function(item, current) {
