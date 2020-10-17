@@ -24351,7 +24351,7 @@ if (!Array.prototype.indexOf) {
 
             matcherOptions = this.plot.getProperty(nextStep, 'matcher');
 
-            if (matcherOptions) {
+            if (matcherOptions && 'object' === typeof matcherOptions) {
 
                 // matches = [
                 //             {
@@ -24385,11 +24385,24 @@ if (!Array.prototype.indexOf) {
             }
             else {
 
+                if (true === matcherOptions) {
+                    remoteOptions = { plot: { role: true, partner: true }};
+                }
+
                 if (curStep.stage === 0) {
-                    node.remoteCommand('start', 'ROOM');
+                    // Note: Game.start looks for the stepOptions property
+                    // and passes it Game.step.
+                    node.remoteCommand('start', 'ROOM', {
+                        stepOptions: remoteOptions
+                    });
                 }
                 else {
-                    node.remoteCommand('goto_step', 'ROOM', nextStep);
+                    // Note: 'goto_step' listeners extract the targetStep
+                    // property from object if payload is not the targetStep
+                    // itself (string|GameStage).
+                    if (!remoteOptions) remoteOptions = nextStep;
+                    else remoteOptions.targetStep = nextStep;
+                    node.remoteCommand('goto_step', 'ROOM', remoteOptions);
                 }
 
                 // this.matcher.clear();
@@ -24504,7 +24517,8 @@ if (!Array.prototype.indexOf) {
         role = this.plot.getProperty(nextStep, 'role');
 
         if (role === true) {
-            if (!this.role) {
+            role = this.role;
+            if (!role) {
                 throw new Error('Game.gotoStep: "role" is true, but no ' +
                                 'previous role is found in step ' + nextStep);
             }
@@ -24517,10 +24531,9 @@ if (!Array.prototype.indexOf) {
                 throw new Error('Game.gotoStep: "role" is null, but "roles" ' +
                                 'are found in step ' + nextStep);
             }
-
-            // Overwrites step properties if a role is set.
-            this.setRole(role, true);
         }
+        // Overwrites step properties if a role is set.
+        this.setRole(role, true);
 
         partner = this.plot.getProperty(nextStep, 'partner');
         if (!partner) partner = null;
@@ -26299,7 +26312,7 @@ if (!Array.prototype.indexOf) {
                     timeup: timeup,
                     prob: prob
                 };
-            };
+            }
 
             function wait(wait) {
                 return random(wait, wait);
@@ -31718,7 +31731,7 @@ if (!Array.prototype.indexOf) {
             var step;
             if (!node.game.isSteppable()) {
                 node.warn('"' + CMD + gcommands.goto_step + '": game cannot ' +
-                          'be stepped now.');
+                          'be stepped now');
                 return;
             }
 
