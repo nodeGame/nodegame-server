@@ -6951,6 +6951,8 @@ if (!Array.prototype.indexOf) {
      *
      * Cyclic objects are decycled.
      *
+     * Evaluates pending queries with `fetch`.
+     *
      * @param {boolean} TRUE, if compressed
      *
      * @return {string} out A machine-readable representation of the database
@@ -6958,16 +6960,17 @@ if (!Array.prototype.indexOf) {
      * @see JSUS.stringify
      */
     NDDB.prototype.stringify = function(compressed) {
-        var spaces, out;
+        var db, spaces, out;
         var item, i, len;
         if (!this.size()) return '[]';
         compressed = ('undefined' === typeof compressed) ? true : compressed;
         spaces = compressed ? 0 : 4;
         out = '[';
-        i = -1, len = this.db.length;
+        db = this.fetch();
+        i = -1, len = db.length;
         for ( ; ++i < len ; ) {
             // Decycle, if possible.
-            item = NDDB.decycle(this.db[i]);
+            item = NDDB.decycle(db[i]);
             out += J.stringify(item, spaces);
             if (i !== len-1) out += ', ';
         }
@@ -9742,7 +9745,11 @@ if (!Array.prototype.indexOf) {
     /**
      * ### executeSaveLoad
      *
-     * Fetches the right format and executes save, saveSync, load, or loadSync
+     * Executes save, saveSync, load, or loadSync for the requested format
+     *
+     * Evaluates pending queries with `fetch`.
+     * Technical note: for the JSON format, queries are fetched by
+     * the `stringify` method, for the CSV format, by the `saveCsv`.
      *
      * @param {NDDB} that The reference to the current instance
      * @param {string} method The name of the method invoking validation
@@ -25567,31 +25574,38 @@ if (!Array.prototype.indexOf) {
         return this.plot.getProperty(this.getCurrentGameStage(), prop, nf);
     };
 
-
     /**
     * ### Game.getStageId
     *
-    * Returns the id of current stage
+    * Returns the id of current stage, or of another user-specified stage
     *
-    * @return {string} The id of current stage
+    * @param {object} stage Optional. A GameStage object. Default: current
+    *     game stage.
     *
-    * @see Game.getCurrentStageObj
+    * @return {string|null} The id of (current) stage, or NULL if not found
+    *
+    * @see GamePlot.getStage
     */
-    Game.prototype.getStageId = function() {
-        return this.getCurrentStageObj().id;
+    Game.prototype.getStageId = function(stage) {
+        stage = this.plot.getStage(stage || this.getCurrentGameStage());
+        return stage ? stage.id : null;
     };
 
     /**
     * ### Game.getStepId
     *
-    * Returns the id of current step
+    * Returns the id of current step, or of another user-specified stage
     *
-    * @return {string} The id of current step
+    * @param {object} stage Optional. A GameStage object. Default: current
+    *     game stage.
     *
-    * @see Game.getCurrentStepObj
+    * @return {string|null} The id of (current) step, or NULL if not found
+    *
+    * @see GamePlot.getStage
     */
-    Game.prototype.getStepId = function() {
-        return this.getCurrentStepObj().id;
+    Game.prototype.getStepId = function(stage) {
+        stage = this.plot.getStep(stage || this.getCurrentGameStage());
+        return stage ? stage.id : null;
     };
 
     /**
@@ -25649,7 +25663,7 @@ if (!Array.prototype.indexOf) {
     *   - number: only the ordinal position in the game stage is matched
     *   - object|string: the stage and the step are matched
     *
-    * @param {string|GameStage|number} stage The name of the step, its
+    * @param {string|GameStage|number} step The name of the step, its
     *    ordinal position in the game stage, or its object
     *    representation. If string, the object is resolved
     *    with GamePlot.normalizeGameStage
@@ -45224,11 +45238,14 @@ if (!Array.prototype.indexOf) {
         if ('undefined' === typeof opts.className) {
             this.className = ChoiceTable.className;
         }
-        else if (opts.className === false ||
-                 'string' === typeof opts.className ||
-                 J.isArray(opts.className)) {
-
-            this.className = opts.className;
+        else if (opts.className === false) {
+            this.className = false;
+        }
+        else if ('string' === typeof opts.className) {
+            this.className =  ChoiceTable.className + ' ' + opts.className;
+        }
+        else if ( J.isArray(opts.className)) {
+            this.className = [ChoiceTable.className].concat(opts.className);
         }
         else {
             throw new TypeError('ChoiceTable.init: opts.' +
@@ -58795,7 +58812,8 @@ if (!Array.prototype.indexOf) {
      *
      * Restarts the timer with new options
      *
-     * @param {object} options Configuration object
+     * @param {object|number} options Configuration object or the number of
+     *     milliseconds
      *
      * @see VisualTimer.init
      * @see VisualTimer.start
@@ -58803,6 +58821,7 @@ if (!Array.prototype.indexOf) {
      */
     VisualTimer.prototype.restart = function(options) {
         this.stop();
+        if ('number' === typeof options) options = { milliseconds: options };
         this.init(options);
         this.start();
     };
