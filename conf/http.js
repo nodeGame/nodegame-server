@@ -180,22 +180,29 @@ function configure(app, servernode) {
                         res.status(400).send("You must specify a game.");
                     }
                     else {
-                        let room = req.query.room;
-                        if (room) {
-                             room = game.gameRooms[room];
-                             if (!room) {
-                                 res.status(400).send("Room not found: " +
-                                                      req.query.room);
-                             }
+                        let level = req.query.level;
+                        if (level) {
+                            game = game.gameLevels[level];
+                            if (!game) {
+                                res.status(400).send("Level not found: " +
+                                                     level);
+                                break;
+                            }
+                        }
+
+                        let room = game.waitingRoom;
+
+                        if (!room) {
+                            res.status(400)
+                               .send("Channel/level has no waitroom.");
                         }
                         else {
-                            room = game.waitingRoom;
+                            let nPlayers = room.clients.playerConnected.size();
+                            res.status(200).send({
+                                nPlayers: nPlayers,
+                                open: room.isRoomOpen()
+                            });
                         }
-                        let nPlayers = room.clients.playerConnected.size();
-                        res.status(200).send({
-                            nPlayers: nPlayers,
-                            open: room.isRoomOpen()
-                        });
                     }
                     break;
 
@@ -213,8 +220,12 @@ function configure(app, servernode) {
 
                 // @experimental
                 case 'highscore':
-                    let highscore = game.highscore;
-                    res.status(200).send({ highscore: highscore });
+                    if (!game) {
+                        res.status(400).send("You must specify a game.");
+                    }
+                    else {
+                        res.status(200).send({ highscore: game.highscore });
+                    }
                     break;
 
                 default:
