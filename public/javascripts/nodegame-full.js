@@ -5957,6 +5957,18 @@ if (!Array.prototype.indexOf) {
             load: []
         };
 
+        // ### sharedHooks
+        // The list of hooks and associated callbacks shared with child database
+        // @experimental
+        this.sharedHooks = {
+            insert: [],
+            remove: [],
+            update: [],
+            setwd: [],
+            save: [],
+            load: []
+        };
+
         // ### nddb_pointer
         // Pointer for iterating along all the elements
         this.nddb_pointer = 0;
@@ -7196,9 +7208,10 @@ if (!Array.prototype.indexOf) {
             this.throwErr('TypeError', 'view', 'func must be function or ' +
                           'undefined. Found: ' + func);
         }
-        // Create a copy of the current settings, without the views
-        // functions, else we create an infinite loop in the constructor.
-        settings = this.cloneSettings( {V: ''} );
+        // Create a copy of the current settings, without the views and hooks
+        // functions, else we create an infinite loop in the constructor or
+        // hooks are executed multiple times.
+        settings = this.cloneSettings( { V: true, hooks: true } );
         this.__V[idx] = func;
         this[idx] = new NDDB(settings);
         // Reference to this instance.
@@ -7476,10 +7489,10 @@ if (!Array.prototype.indexOf) {
                     // and the hooks (should be called only on main db).
                     settings = this.cloneSettings({ H: true, hooks: true });
                     this[key][hash] = new NDDB(settings);
+                    // Reference to this instance.
+                    this[key][hash].__parentDb = this;
                 }
                 this[key][hash].insert(o);
-                // Reference to this instance.
-                this[key][hash].__parentDb = this;
                 this.hashtray.set(key, o._nddbid, hash);
             }
         }
@@ -7514,10 +7527,16 @@ if (!Array.prototype.indexOf) {
      * });
      * ```
      *
-     * @param {string} event The name of an event: 'insert', 'update', 'remove'
+     * @param {string} event The name of an event
      * @param {function} func The callback function associated to the event
+     * @param {boolean} shared Optional. Experimental. If TRUE, this event
+     *   is shared with all nested databases. Careful! It may created
+     *   infinite loops. Default: FALSE.
+     *
+     * @see NDDB.emit
+     * @experimental shared parameter
      */
-    NDDB.prototype.on = function(event, func) {
+    NDDB.prototype.on = function(event, func, shared) {
         if ('string' !== typeof event) {
             this.throwErr('TypeError', 'on', 'event must be string. Found: ' +
                          event);
@@ -7530,6 +7549,7 @@ if (!Array.prototype.indexOf) {
             this.throwErr('TypeError', 'on', 'unknown event: ' + event);
         }
         this.hooks[event].push(func);
+        if (shared) this.sharedHooks[event].push(func);
     };
 
     /**
@@ -7559,9 +7579,15 @@ if (!Array.prototype.indexOf) {
 
         if (!func) {
             this.hooks[event] = [];
+            this.sharedHooks[event] = [];
             return true;
         }
         for (i = 0; i < this.hooks[event].length; i++) {
+            // Shared hooks contains at most as many items as hooks, but
+            // probably much less.
+            if (this.sharedHooks[event][i] == func) {
+                this.sharedHooks[event].splice(i, 1);
+            }
             if (this.hooks[event][i] == func) {
                 this.hooks[event].splice(i, 1);
                 return true;
@@ -7606,8 +7632,8 @@ if (!Array.prototype.indexOf) {
         // Check: all events should be fired on the parent? E.g., setWD?
         if (this.__parentDb) {
             hooks = hooks.length ?
-                    hooks.concat(this.__parentDb.hooks[event]) :
-                    this.__parentDb.hooks[event];
+                    hooks.concat(this.__parentDb.sharedHooks[event]) :
+                    this.__parentDb.sharedHooks[event];
         }
 
         len = hooks.length;
@@ -14612,8 +14638,8 @@ if (!Array.prototype.indexOf) {
         }
 
         if (stageNo < 1 || stageNo > this.stager.sequence.length) {
-            this.node.warn('GamePlot.normalizeGameStage: non-existent stage: ' +
-                           gs.stage);
+            this.node.silly('GamePlot.normalizeGameStage: non-existent ' +
+                            'stage: ' + gs.stage);
             return null;
         }
 
@@ -23492,7 +23518,7 @@ if (!Array.prototype.indexOf) {
 
         this.on('save', function(options, info) {
             if (info.format === 'csv') decorateCSVSaveOptions(that, options);
-        });
+        }, true);
 
         this.node = this.__shared.node;
     }
@@ -23545,6 +23571,8 @@ if (!Array.prototype.indexOf) {
         plot = that.node.game.plot;
 
         if (!opts.adapter) opts.adapter = {};
+
+        if (opts.append) opts.flags = 'a';
 
         if (split) {
             if ('undefined' === typeof opts.adapter.stage) {
@@ -25640,14 +25668,29 @@ if (!Array.prototype.indexOf) {
     *    ordinal position in the game sequence, or its object
     *    representation. If string, the object is resolved
     *    with GamePlot.normalizeGameStage
+    * @param {GameStage} compareStage The stage to compare against.
+    *    Default: current game stage.
     *
     * @return {boolean} TRUE if current stage matches input parameter
     *
     * @see GamePlot.normalizeGameStage
+    * @see Game.getCurrentGameStage
     */
-    Game.prototype.isStage = function(stage) {
+    Game.prototype.isStage = function(stage, compareStage) {
         var s;
-        s = this.getCurrentGameStage().stage;
+        if (compareStage) {
+            if ('object' === typeof compareStage) {
+                s = compareStage.stage;
+            }
+            else {
+                throw new TypeError('Game.isStage: compareStage must be ' +
+                                    'object or undefined. Found: ' +
+                                    compareStage);
+            }
+        }
+        else {
+            s = this.getCurrentGameStage().stage;
+        }
         if ('number' === typeof stage) return stage === s;
         stage = this.plot.normalizeGameStage(stage);
         return !!(stage && stage.stage === s);
@@ -25667,18 +25710,32 @@ if (!Array.prototype.indexOf) {
     *    ordinal position in the game stage, or its object
     *    representation. If string, the object is resolved
     *    with GamePlot.normalizeGameStage
+    * @param {GameStage} compareStage The stage to compare against.
+    *    Default: current game stage.
     *
     * @return {boolean} TRUE if current step matches input parameter
     *
     * @see GamePlot.normalizeGameStage
     */
-    Game.prototype.isStep = function(step) {
+    Game.prototype.isStep = function(step, compareStage) {
         var s;
-        s = this.getCurrentGameStage().step;
+        if (compareStage) {
+            if ('object' === typeof compareStage) {
+                s = compareStage.step;
+            }
+            else {
+                throw new TypeError('Game.isStep: compareStage must be ' +
+                                    'object or undefined. Found: ' +
+                                    compareStage);
+            }
+        }
+        else {
+            s = this.getCurrentGameStage().step
+        }
         if ('number' === typeof step) return step === s;
         // Add the current stage id for normalization if no stage is provided.
         if (step.lastIndexOf('.') === -1) {
-            step = this.getStageId() + '.' + step;
+            step = this.getStageId(compareStage) + '.' + step;
         }
         step = this.plot.normalizeGameStage(step);
         return !!(step && step.step === s);
