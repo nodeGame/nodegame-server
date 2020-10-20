@@ -14,13 +14,13 @@
       , "url": "https://github.com/nodeGame/nodegame-server.git"
     }
   , "dependencies": {
-      "express": "4.16.4"
+      "express": "4.17.1"
   ,   "body-parser": "*"
   ,   "cookie-parser": "*"
   ,   "cookie-session": "*"
   ,   "errorhandler": "*"
   ,   "archiver": "*"
-  ,   "socket.io": "2.2.0"
+  ,   "socket.io": "2.3.0"
   ,   "request": "2.88.0"
   ,   "winston": "2.4.0"
   ,   "phantomjs": ">=2.1.7"
