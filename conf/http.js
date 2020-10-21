@@ -177,7 +177,7 @@ function configure(app, servernode) {
                     if (!game) {
                         // TODO: Return info for all games or
                         // take into account default channel.
-                        res.status(400).send("You must specify a game.");
+                        res.status(400).send("You must specify a valid game.");
                     }
                     else {
                         let level = req.query.level;
@@ -209,7 +209,7 @@ function configure(app, servernode) {
                 // @experimental
                 case 'clients':
                     if (!game) {
-                        res.status(400).send("You must specify a game.");
+                        res.status(400).send("You must specify a valid game.");
                     }
                     else {
                         let nClients = game.registry.clients.connectedPlayer;
@@ -221,7 +221,7 @@ function configure(app, servernode) {
                 // @experimental
                 case 'highscore':
                     if (!game) {
-                        res.status(400).send("You must specify a game.");
+                        res.status(400).send("You must specify a valid game.");
                     }
                     else {
                         res.status(200).send({ highscore: game.highscore });
