@@ -1,5 +1,18 @@
 # nodegame-server change log
 
+# 6.0.0
+- GameRoom:
+    - updateWin method
+    - computeBonus new defaults: say, print, dump = true
+    - computeBonus clients option accepts ids (as well as objects)
+    - if matcher is truthy resends role and partner information upon reconnect
+- GameMsgGenerator: default data is empty object (before null)
+- Log messages are displayed
+- Channels can be disabled in channel.settings.js
+- Default clientsLogInterval increased from 1000 to 10000
+- Option port accepted in init
+- Updated socket.io and express
+
 ## 5.8.0
 - Channels can be disabled with conf option in channel.settings.js.
 

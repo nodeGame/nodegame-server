@@ -154,14 +154,15 @@ function configure(app, servernode) {
                     return;
                 }
 
+                let game = req.query.game;
+                game = servernode.channels[game];
+
                 switch(q) {
                 case 'info':
-                    //console.log(servernode.info);
                     res.status(200).send(servernode.info);
                     break;
 
                 case 'channels':
-                    //console.log(servernode.info);
                     // res.header("Access-Control-Allow-Origin", "*");
                     // res.header("Access-Control-Allow-Headers",
                     //            "X-Requested-With");
@@ -169,21 +170,61 @@ function configure(app, servernode) {
                     break;
 
                 case 'games':
-                    //console.log(servernode.info);
                     res.status(200).send(servernode.info.games);
                     break;
 
                 case 'waitroom':
-                    let game = req.query.game;
-                    game = servernode.channels[game];
                     if (!game) {
                         // TODO: Return info for all games or
                         // take into account default channel.
-                        res.status(400).send("You must specify a game.");
+                        res.status(400).send("You must specify a valid game.");
                     }
                     else {
-                        let nPlayers = game.waitingRoom.clients.player.size();
-                        res.status(200).send({ nPlayers: nPlayers });
+                        let level = req.query.level;
+                        if (level) {
+                            game = game.gameLevels[level];
+                            if (!game) {
+                                res.status(400).send("Level not found: " +
+                                                     level);
+                                break;
+                            }
+                        }
+
+                        let room = game.waitingRoom;
+
+                        if (!room) {
+                            res.status(400)
+                               .send("Channel/level has no waitroom.");
+                        }
+                        else {
+                            let nPlayers = room.clients.playerConnected.size();
+                            res.status(200).send({
+                                nPlayers: nPlayers,
+                                open: room.isRoomOpen()
+                            });
+                        }
+                    }
+                    break;
+
+                // @experimental
+                case 'clients':
+                    if (!game) {
+                        res.status(400).send("You must specify a valid game.");
+                    }
+                    else {
+                        let nClients = game.registry.clients.connectedPlayer;
+                        nClients = nClients.size();
+                        res.status(200).send({ nClients: nClients });
+                    }
+                    break;
+
+                // @experimental
+                case 'highscore':
+                    if (!game) {
+                        res.status(400).send("You must specify a valid game.");
+                    }
+                    else {
+                        res.status(200).send({ highscore: game.highscore });
                     }
                     break;
 

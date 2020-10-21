@@ -5957,6 +5957,18 @@ if (!Array.prototype.indexOf) {
             load: []
         };
 
+        // ### sharedHooks
+        // The list of hooks and associated callbacks shared with child database
+        // @experimental
+        this.sharedHooks = {
+            insert: [],
+            remove: [],
+            update: [],
+            setwd: [],
+            save: [],
+            load: []
+        };
+
         // ### nddb_pointer
         // Pointer for iterating along all the elements
         this.nddb_pointer = 0;
@@ -6951,6 +6963,8 @@ if (!Array.prototype.indexOf) {
      *
      * Cyclic objects are decycled.
      *
+     * Evaluates pending queries with `fetch`.
+     *
      * @param {boolean} TRUE, if compressed
      *
      * @return {string} out A machine-readable representation of the database
@@ -6958,16 +6972,17 @@ if (!Array.prototype.indexOf) {
      * @see JSUS.stringify
      */
     NDDB.prototype.stringify = function(compressed) {
-        var spaces, out;
+        var db, spaces, out;
         var item, i, len;
         if (!this.size()) return '[]';
         compressed = ('undefined' === typeof compressed) ? true : compressed;
         spaces = compressed ? 0 : 4;
         out = '[';
-        i = -1, len = this.db.length;
+        db = this.fetch();
+        i = -1, len = db.length;
         for ( ; ++i < len ; ) {
             // Decycle, if possible.
-            item = NDDB.decycle(this.db[i]);
+            item = NDDB.decycle(db[i]);
             out += J.stringify(item, spaces);
             if (i !== len-1) out += ', ';
         }
@@ -7193,9 +7208,10 @@ if (!Array.prototype.indexOf) {
             this.throwErr('TypeError', 'view', 'func must be function or ' +
                           'undefined. Found: ' + func);
         }
-        // Create a copy of the current settings, without the views
-        // functions, else we create an infinite loop in the constructor.
-        settings = this.cloneSettings( {V: ''} );
+        // Create a copy of the current settings, without the views and hooks
+        // functions, else we create an infinite loop in the constructor or
+        // hooks are executed multiple times.
+        settings = this.cloneSettings( { V: true, hooks: true } );
         this.__V[idx] = func;
         this[idx] = new NDDB(settings);
         // Reference to this instance.
@@ -7334,7 +7350,7 @@ if (!Array.prototype.indexOf) {
             };
         }
         else if (h && !i && v) {
-            cb = function(o, idx) {
+            cb = function(o) {
                 this._hashIt(o);
                 this._viewIt(o);
             };
@@ -7473,10 +7489,10 @@ if (!Array.prototype.indexOf) {
                     // and the hooks (should be called only on main db).
                     settings = this.cloneSettings({ H: true, hooks: true });
                     this[key][hash] = new NDDB(settings);
+                    // Reference to this instance.
+                    this[key][hash].__parentDb = this;
                 }
                 this[key][hash].insert(o);
-                // Reference to this instance.
-                this[key][hash].__parentDb = this;
                 this.hashtray.set(key, o._nddbid, hash);
             }
         }
@@ -7511,10 +7527,16 @@ if (!Array.prototype.indexOf) {
      * });
      * ```
      *
-     * @param {string} event The name of an event: 'insert', 'update', 'remove'
+     * @param {string} event The name of an event
      * @param {function} func The callback function associated to the event
+     * @param {boolean} shared Optional. Experimental. If TRUE, this event
+     *   is shared with all nested databases. Careful! It may created
+     *   infinite loops. Default: FALSE.
+     *
+     * @see NDDB.emit
+     * @experimental shared parameter
      */
-    NDDB.prototype.on = function(event, func) {
+    NDDB.prototype.on = function(event, func, shared) {
         if ('string' !== typeof event) {
             this.throwErr('TypeError', 'on', 'event must be string. Found: ' +
                          event);
@@ -7527,6 +7549,7 @@ if (!Array.prototype.indexOf) {
             this.throwErr('TypeError', 'on', 'unknown event: ' + event);
         }
         this.hooks[event].push(func);
+        if (shared) this.sharedHooks[event].push(func);
     };
 
     /**
@@ -7556,9 +7579,15 @@ if (!Array.prototype.indexOf) {
 
         if (!func) {
             this.hooks[event] = [];
+            this.sharedHooks[event] = [];
             return true;
         }
         for (i = 0; i < this.hooks[event].length; i++) {
+            // Shared hooks contains at most as many items as hooks, but
+            // probably much less.
+            if (this.sharedHooks[event][i] == func) {
+                this.sharedHooks[event].splice(i, 1);
+            }
             if (this.hooks[event][i] == func) {
                 this.hooks[event].splice(i, 1);
                 return true;
@@ -7593,20 +7622,28 @@ if (!Array.prototype.indexOf) {
             this.throwErr('TypeError', 'emit', 'first argument must be string');
         }
 
-        // If this is a child db (e.g. a hash or a view)
-        hooks = this.__parentDb ? this.__parentDb.hooks : this.hooks;
-
-        if (!hooks[event]) {
+        hooks = this.hooks[event];
+        if (!hooks) {
             this.throwErr('TypeError', 'emit', 'unknown event: ' + event);
         }
-        len = hooks[event].length;
+
+        // If this is a child db (e.g. a hash or a view) must fire also the
+        // parent hooks. Local hooks fire first.
+        // Check: all events should be fired on the parent? E.g., setWD?
+        if (this.__parentDb) {
+            hooks = hooks.length ?
+                    hooks.concat(this.__parentDb.sharedHooks[event]) :
+                    this.__parentDb.sharedHooks[event];
+        }
+
+        len = hooks.length;
         if (!len) return true;
         argLen = arguments.length;
 
         switch(len) {
 
         case 1:
-            h = hooks[event][0];
+            h = hooks[0];
             if (argLen === 1) res = h.call(this);
             else if (argLen === 2) res = h.call(this, arguments[1]);
             else if (argLen === 3) {
@@ -7621,7 +7658,7 @@ if (!Array.prototype.indexOf) {
             }
             break;
         case 2:
-            h = hooks[event][0], h2 = hooks[event][1];
+            h = hooks[0], h2 = hooks[1];
             if (argLen === 1) {
                 res = h.call(this) !== false;
                 res = res && h2.call(this) !== false;
@@ -7646,25 +7683,22 @@ if (!Array.prototype.indexOf) {
         default:
              if (argLen === 1) {
                  for (i = 0; i < len; i++) {
-                     res = hooks[event][i].call(this) !== false;
+                     res = hooks[i].call(this) !== false;
                      if (res === false) break;
                  }
             }
             else if (argLen === 2) {
                 res = true;
                 for (i = 0; i < len; i++) {
-                    res = hooks[event][i].call(this,
-                                                    arguments[1]) !== false;
+                    res = hooks[i].call(this, arguments[1]) !== false;
                     if (res === false) break;
-
                 }
             }
             else if (argLen === 3) {
                 res = true;
                 for (i = 0; i < len; i++) {
-                    res = hooks[event][i].call(this,
-                                                    arguments[1],
-                                                    arguments[2]) !== false;
+                    res = hooks[i].call(this, arguments[1],
+                                        arguments[2]) !== false;
                     if (res === false) break;
                 }
             }
@@ -7675,7 +7709,7 @@ if (!Array.prototype.indexOf) {
                 }
                 res = true;
                 for (i = 0; i < len; i++) {
-                    res = hooks[event][i].apply(this, args) !== false;
+                    res = hooks[i].apply(this, args) !== false;
                     if (res === false) break;
                 }
 
@@ -9410,7 +9444,7 @@ if (!Array.prototype.indexOf) {
      *
      * @param {string|number} tag An alphanumeric id
      * @param {mixed} idx Optional. The reference to the object.
-     *   Defaults, `nddb_pointer`
+     *   Defaults, last element in db
      * @return {object} ref A reference to the tagged object
      *
      * @see NDDB.resolveTag
@@ -9424,7 +9458,7 @@ if (!Array.prototype.indexOf) {
         ref = null, typeofIdx = typeof idx;
 
         if (typeofIdx === 'undefined') {
-            ref = this.db[this.nddb_pointer];
+            ref = this.db[this.db.length-1];
         }
         else if (typeofIdx === 'number') {
 
@@ -9707,15 +9741,15 @@ if (!Array.prototype.indexOf) {
     function validateSaveLoadParameters(that, method, file, cb, options) {
         if ('string' !== typeof file || file.trim() === '') {
             that.throwErr('TypeError', method, 'file must be ' +
-                          'a non-empty string');
+                          'a non-empty string. Found: ' + file);
         }
         if (cb && 'function' !== typeof cb) {
             that.throwErr('TypeError', method, 'cb must be function ' +
-                          'or undefined');
+                          'or undefined. Found: ' + cb);
         }
         if (options && 'object' !== typeof options) {
             that.throwErr('TypeError', method, 'options must be object ' +
-                          'or undefined');
+                          'or undefined. Found: ' + options);
         }
     }
 
@@ -9737,7 +9771,11 @@ if (!Array.prototype.indexOf) {
     /**
      * ### executeSaveLoad
      *
-     * Fetches the right format and executes save, saveSync, load, or loadSync
+     * Executes save, saveSync, load, or loadSync for the requested format
+     *
+     * Evaluates pending queries with `fetch`.
+     * Technical note: for the JSON format, queries are fetched by
+     * the `stringify` method, for the CSV format, by the `saveCsv`.
      *
      * @param {NDDB} that The reference to the current instance
      * @param {string} method The name of the method invoking validation
@@ -13494,6 +13532,15 @@ if (!Array.prototype.indexOf) {
             return handler;
         })();
 
+        /**
+        * ### GamePlot._normalizedCache
+        *
+        * Caches the value of previously normalized Game Stages objects.
+        *
+        * @api private
+        */
+        this._normalizedCache = {};
+
         this.init(stager);
     }
 
@@ -14158,12 +14205,10 @@ if (!Array.prototype.indexOf) {
     GamePlot.prototype.getStep = function(gameStage) {
         var seqObj, stepObj;
         if (!this.stager) return null;
-        gameStage = this.normalizeGameStage(gameStage);
-        if (gameStage) {
-            seqObj = this.getSequenceObject(gameStage);
-            if (seqObj) {
-                stepObj = this.stager.steps[seqObj.steps[gameStage.step - 1]];
-            }
+        // Game stage is normalized inside getSequenceObject.
+        seqObj = this.getSequenceObject(gameStage);
+        if (seqObj) {
+            stepObj = this.stager.steps[seqObj.steps[gameStage.step - 1]];
         }
         return stepObj || null;
     };
@@ -14552,6 +14597,18 @@ if (!Array.prototype.indexOf) {
         var stageNo, stageObj, stepNo, seqIdx, seqObj;
         var gs;
 
+        if (this.isFlexibleMode()) {
+            throw new Error('GamePlot.normalizeGameStage: invalid call in ' +
+                            'flexible sequence.')
+        }
+
+        // If already normalized and in cache, return it.
+        if ('string' === typeof gameStage) {
+            if (this._normalizedCache[gameStage]) {
+                return this._normalizedCache[gameStage];
+            }
+        }
+
         gs = new GameStage(gameStage);
 
         // Find stage number.
@@ -14581,8 +14638,8 @@ if (!Array.prototype.indexOf) {
         }
 
         if (stageNo < 1 || stageNo > this.stager.sequence.length) {
-            this.node.warn('GamePlot.normalizeGameStage: non-existent stage: ' +
-                           gs.stage);
+            this.node.silly('GamePlot.normalizeGameStage: non-existent ' +
+                            'stage: ' + gs.stage);
             return null;
         }
 
@@ -14624,11 +14681,17 @@ if (!Array.prototype.indexOf) {
         // Check round property.
         if ('number' !== typeof gs.round) return null;
 
-        return new GameStage({
+        gs = new GameStage({
             stage: stageNo,
             step:  stepNo,
             round: gs.round
         });
+
+        if ('string' === typeof gameStage) {
+            this._normalizedCache[gameStage] = gs;
+        }
+
+        return gs;
     };
 
     /**
@@ -14814,7 +14877,7 @@ if (!Array.prototype.indexOf) {
             from: node.player ? node.player.id : constants.UNDEFINED_PLAYER,
             to: 'undefined' !== typeof msg.to ? msg.to : 'SERVER',
             text: 'undefined' !== typeof msg.text ? "" + msg.text : null,
-            data: 'undefined' !== typeof msg.data ? msg.data : null,
+            data: 'undefined' !== typeof msg.data ? msg.data : {},
             priority: priority,
             reliable: msg.reliable || 1
         });
@@ -14832,7 +14895,7 @@ if (!Array.prototype.indexOf) {
  *
  * Push players to advance to next step, otherwise disconnects them.
  *
- * Copyright(c) 2018 Stefano Balietti
+ * Copyright(c) 2020 Stefano Balietti
  * MIT Licensed
  */
 (function(exports, parent) {
@@ -14946,7 +15009,7 @@ if (!Array.prototype.indexOf) {
      * @see GameTimer.parseMilliseconds
      */
     PushManager.prototype.startTimer = function(conf) {
-        var stage, pushCb, that, offset;
+        var stage, that, offset;
         var node;
 
         // Adjust user input.
@@ -14960,11 +15023,11 @@ if (!Array.prototype.indexOf) {
 
         node = this.node;
 
-        console.log('PUSH.TIMER ************************* ',
-                    node.player.stage, conf);
-
         if (!this.timer) {
-            this.timer = node.timer.createTimer({ name: 'push_clients' });
+            this.timer = node.timer.createTimer({
+                name: 'push_clients',
+                validity: 'game'
+            });
         }
         else {
             this.clearTimer();
@@ -14984,18 +15047,15 @@ if (!Array.prototype.indexOf) {
             round: node.player.stage.round
         };
 
-        node.silly('push-manager: starting timer: ' + offset + ', ' + stage);
-        // console.log('push-manager: starting timer: ', offset, stage);
-
+        node.info('push-manager: starting timer with offset ' + offset);
 
         that = this;
-        pushCb = function() { that.pushGame.call(that, stage, conf); };
 
         // Make sure milliseconds and update are the same.
         this.timer.init({
             milliseconds: offset,
             update: offset,
-            timeup: pushCb,
+            timeup: function() { that.pushGame.call(that, stage, conf); },
         });
         this.timer.start();
     };
@@ -15025,7 +15085,7 @@ if (!Array.prototype.indexOf) {
      */
     PushManager.prototype.isActive = function() {
         return !this.timer.isStopped();
-    }
+    };
 
     /**
      * ### PushManager.pushGame
@@ -15046,8 +15106,7 @@ if (!Array.prototype.indexOf) {
         var m, node, replyWaitTime, checkPushWaitTime;
         node = this.node;
 
-        // console.log('push-manager: checking clients');
-        node.silly('push-manager: checking clients.');
+        node.info('push-manager: checking clients');
 
         if ('object' === typeof conf) {
             m = 'pushGame';
@@ -15068,7 +15127,7 @@ if (!Array.prototype.indexOf) {
                 GameStage.compare(p.stage, stage) === 0) {
 
                 // console.log('push needed: ', p.id);
-                node.warn('push needed: ' + p.id);
+                node.warn('push-manager: push needed: ' + p.id);
                 // Send push.
                 node.get(PUSH_STEP,
                          function(value) {
@@ -15132,16 +15191,10 @@ if (!Array.prototype.indexOf) {
      * @param {NodeGameClient} node The node instance used to send msg
      * @param {object} p The player object containing info about id and sid
      */
-//     function forceDisconnect(node, p) {
-//         // No reply to GET, disconnect client.
-//         node.warn('push-manager: disconnecting: ' + p.id);
-//         node.disconnectClient(p);
-//     }
-
     function forceDisconnect(node, p) {
         var msg;
         // No reply to GET, disconnect client.
-        node.warn('push-manager: disconnecting: ' + p.id);
+        node.warn('push-manager: disconnecting ' + p.id);
         // console.log('push-manager: disconnecting: ' + p.id);
         msg = node.msg.create({
             target: 'SERVERCOMMAND',
@@ -17816,7 +17869,6 @@ if (!Array.prototype.indexOf) {
      * @param {string} id The id to check
      */
     function checkStageStepId(method, s, id) {
-        var char0;
         if ('string' !== typeof id) {
             throw new TypeError('Stager.' + method + ': ' + s + '.id must ' +
                                 'be string. Found: ' + id);
@@ -17825,20 +17877,13 @@ if (!Array.prototype.indexOf) {
             throw new TypeError('Stager.' + method + ': ' + s + '.id cannot ' +
                                 'be an empty string.');
         }
-        char0 = id.charAt(0);
-        if (char0 === '.') {
-            throw new Error('Stager.' + method + ': ' + s + '.id cannot ' +
-                            'begin with a dot. Found: ' + id);
-        }
         if (id.lastIndexOf('.') !== -1) {
-            console.log('*** deprecated naming! Stager.' + method + ': ' +
-                        s + '.id contains dots. Game will run, but will fail ' +
-                        'to normalize ' + s + 's. Found: ' + id + ' ***');
+            throw new Error('Stager.' + method + ': ' + s + '.id cannot ' +
+                            'contains dots. Found: ' + id);
         }
-        if (/^\d+$/.test(char0)) {
-            console.log('*** deprecated naming! Stager.' + method + ': ' + s +
-                        '.id begins with a number. Game will run, but will ' +
-                        'fail to normalize ' + s + 's. Found: ' + id + ' ***');
+        if (/^\d+$/.test(id.charAt(0))) {
+            throw new Error('Stager.' + method + ': ' + s + '.id cannot ' +
+                            'begin with a number. Found: ' + id);
         }
     }
 
@@ -19352,7 +19397,7 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # Socket
- * Copyright(c) 2018 Stefano Balietti
+ * Copyright(c) 2020 Stefano Balietti
  * MIT Licensed
  *
  * Wrapper class for the actual socket to send messages
@@ -19556,22 +19601,22 @@ if (!Array.prototype.indexOf) {
                 indexes: true
             }
         });
-        this.journal.comparator('stage', function(o1, o2) {
-            return parent.GameStage.compare(o1.stage, o2.stage);
-        });
-
         if (!this.journal.player) {
-            this.journal.hash('to', function(gb) {
-                return gb.to;
-            });
+            this.journal.hash('to');
         }
-        if (!this.journal.stage) {
-            this.journal.hash('stage', function(gb) {
-                if (gb.stage) {
-                    return parent.GameStage.toHash(gb.stage, 'S.s.r');
-                }
-            });
-        }
+
+        // this.journal.comparator('stage', function(o1, o2) {
+        //     return parent.GameStage.compare(o1.stage, o2.stage);
+        // });
+
+
+        // if (!this.journal.stage) {
+        //     this.journal.hash('stage', function(gb) {
+        //         if (gb.stage) {
+        //             return parent.GameStage.toHash(gb.stage, 'S.s.r');
+        //         }
+        //     });
+        // }
         // End Experimental Code.
 
         /**
@@ -20132,7 +20177,8 @@ if (!Array.prototype.indexOf) {
         // TODO: check this.
         // Experimental code.
         if (this.journalOn) {
-            this.journal.insert(msg);
+            // Only Game messages are stored.
+            if (this.node.game.isReady()) this.journal.insert(msg);
         }
         // End experimental code.
 
@@ -21302,7 +21348,7 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # Matcher
- * Copyright(c) 2017 Stefano Balietti
+ * Copyright(c) 2020 Stefano Balietti
  * MIT Licensed
  *
  * Class handling the creation of tournament schedules.
@@ -21744,6 +21790,19 @@ if (!Array.prototype.indexOf) {
     };
 
     /**
+     * ### Matcher.getMatches
+     *
+     * Returns the matches for current instance
+     *
+     * @return {array|null} The array of matches (NULL if not yet set)
+     *
+     * @see this.matches
+     */
+    Matcher.prototype.getMatches = function() {
+        return this.matches;
+    };
+
+    /**
      * ### Matcher.setIds
      *
      * Sets the ids to be used for the matches
@@ -21871,7 +21930,7 @@ if (!Array.prototype.indexOf) {
         var roles, rolesObj, idRolesObj, r1, r2;
 
         if (!J.isArray(this.matches) || !this.matches.length) {
-            throw new Error('Matcher.match: no matches found.');
+            throw new Error('Matcher.match: no matches found');
         }
 
         // Assign/generate ids if not done before.
@@ -22775,7 +22834,7 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # MatcherManager
- * Copyright(c) 2017 Stefano Balietti <ste@nodegame.org>
+ * Copyright(c) 2020 Stefano Balietti <ste@nodegame.org>
  * MIT Licensed
  *
  * Handles matching roles to players and players to players.
@@ -22855,6 +22914,11 @@ if (!Array.prototype.indexOf) {
      *    Values: 'roles', 'matches', 'all'. Default: 'all'
      */
     MatcherManager.prototype.clear = function(mod) {
+
+        this.lastMatches = null;
+        this.lastSettings = null;
+        this.lastMatchesById = {};
+
         switch(mod) {
         case 'roles':
             this.roler.clear();
@@ -22966,7 +23030,7 @@ if (!Array.prototype.indexOf) {
      *   (default: current game round).
      *
      * @return {array|object|null} The requested matches in the requested
-     *   format, or null if none is found
+     *   format, or null matches are not yet set
      *
      * @see round2Index
      * @see Matcher.getMatch
@@ -22988,6 +23052,9 @@ if (!Array.prototype.indexOf) {
             throw new TypeError('MatcherManager.getMatches: round ' +
                                 'must be undefined or number. Found: ' + round);
         }
+
+        if (!this.matcher.getMatches()) return null;
+
         round = round2Index.call(this, 'getMatches', round);
 
         if (mod === 'ARRAY') return this.matcher.getMatch(round);
@@ -23013,12 +23080,13 @@ if (!Array.prototype.indexOf) {
      *   rounds than matches)
      *
      * @return {string|null} The current match for the id, or null
-     *    if the id is not found
+     *    if the id is not found or matches are not set
      *
      * @see Matcher.getMatchFor
      * @see round2Index
      */
     MatcherManager.prototype.getMatchFor = function(id, round) {
+        if (!this.matcher.getMatches()) return null;
         round = round2Index.call(this, 'getMatchFor', round);
         return this.matcher.getMatchFor(id, round);
     };
@@ -23034,12 +23102,13 @@ if (!Array.prototype.indexOf) {
      *   rounds than matches)
      *
      * @return {string|null} The role hold by id at the
-     *    specified round or null if not found
+     *    specified round or null if matches are not yet set
      *
      * @see Roler.getRolerFor
      * @see round2Index
      */
     MatcherManager.prototype.getRoleFor = function(id, round) {
+        if (!this.matcher.getMatches()) return null;
         round = round2Index.call(this, 'getRoleFor', round);
         return this.roler.getRoleFor(id, round);
     };
@@ -23054,12 +23123,14 @@ if (!Array.prototype.indexOf) {
      *   than current (will be normalized if there are more
      *   rounds than matches)
      *
-     * @return {array} Array of id/s holding the role at round x
+     * @return {array|null} Array of id/s holding the role at round x, or
+     *   null if matches are not yet set
      *
      * @see Roler.getIdForRole
      * @see round2Index
      */
     MatcherManager.prototype.getIdForRole = function(role, round) {
+        if (!this.matcher.getMatches()) return null;
         round = round2Index.call(this, 'getIdForRole', round);
         return this.roler.getIdForRole(role, round);
     };
@@ -23117,7 +23188,7 @@ if (!Array.prototype.indexOf) {
      *
      * @param {string} id The id to get the setup object for
      *
-     * @return {object} The requested setup object
+     * @return {object|null} The requested setup object or null if not found
      *
      * @see Matcher.match
      * @see round2index
@@ -23153,10 +23224,10 @@ if (!Array.prototype.indexOf) {
      */
     function round2Index(method, round) {
         if ('undefined' === typeof round) {
-            round = this.node.game.getCurrentGameStage().round;
+            round = this.node.game.getRound();
             if (round === 0) {
                 throw new Error('MatcherManager.' + method + ': game stage ' +
-                                'is 0.0.0, please specify a valid round.');
+                                'is 0.0.0, please specify a valid round');
             }
         }
         if ('number' === typeof round) {
@@ -23435,25 +23506,19 @@ if (!Array.prototype.indexOf) {
             return GameStage.compare(o1.stage, o2.stage);
         });
 
-        if (!this.player) {
-            this.hash('player', function(o) {
-                return o.player;
-            });
-        }
-        if (!this.stage) {
-            this.hash('stage', function(o) {
-                if (o.stage) return GameStage.toHash(o.stage, 'S.s.r');
-            });
-        }
-        if (!this.done) {
-            this.view('done');
-        }
-
-        this.on('save', function(options, info) {
-            if (info.format === 'csv') decorateSavingOptions(options);
+        this.hash('player', function(o) {
+            return o.player;
         });
 
-        // this.times = {};
+        this.hash('stage', function(o) {
+            if (o.stage) return GameStage.toHash(o.stage, 'S.s.r');
+        });
+
+        this.view('done');
+
+        this.on('save', function(options, info) {
+            if (info.format === 'csv') decorateCSVSaveOptions(that, options);
+        }, true);
 
         this.node = this.__shared.node;
     }
@@ -23477,23 +23542,70 @@ if (!Array.prototype.indexOf) {
         if ('object' !== typeof o.stage) {
             throw new Error('GameDB.add: stage missing or invalid: ', o);
         }
-        // if (node.nodename !== nodename) o.session = node.nodename;
+
         if (!o.timestamp) o.timestamp = Date.now ?
             Date.now() : new Date().getTime();
+
+        o.session = this.node.nodename;
 
         this.insert(o);
     };
 
     /**
-     * ### decorateSavingOptions
+     * ### decorateCSVSaveOptions
      *
      * Adds default options to improve data saving.
      *
      * @param {object} opts Optional. The option object to decorate
      */
-    function decorateSavingOptions(opts) {
-        if (!opts) return;
+    function decorateCSVSaveOptions(that, opts) {
+        var toId, split, plot;
         if ('undefined' === typeof opts.bool2num) opts.bool2num = true;
+
+        // Handle stage object.
+        toId = 'undefined' === typeof opts.stageNum2Id ?
+                    true : opts.stageNum2Id;
+        split = 'undefined' === typeof opts.splitStage ?
+                    true : opts.splitStage;
+
+        plot = that.node.game.plot;
+
+        if (!opts.adapter) opts.adapter = {};
+
+        if (opts.append) opts.flags = 'a';
+
+        if (split) {
+            if ('undefined' === typeof opts.adapter.stage) {
+                opts.adapter.stage = function(i) {
+                    if (!i.stage) return;
+                    return toId ? plot.getStage(i.stage).id : i.stage.stage;
+                };
+            }
+            if ('undefined' === typeof opts.adapter.step) {
+                opts.adapter.step = function(i) {
+                    if (!i.stage) return;
+                    return toId ? plot.getStep(i.stage).id : i.stage.step;
+                };
+            }
+            if ('undefined' === typeof opts.adapter.round) {
+                opts.adapter.round = function(i) { return i.stage.round; };
+            }
+        }
+        else {
+            if ('undefined' === typeof opts.adapter.stage) {
+                opts.adapter.stage = function(i) {
+                    var s = i.stage;
+                    if (!s) return;
+                    if (toId) {
+                        return plot.getStage(s).id + '.' +
+                               plot.getStep(s).id + '.' + s.round;
+                    }
+                    return s.stage + '.' + s.step + '.' + s.round;
+                };
+            }
+        }
+
+        // Flatten.
         if (opts.flatten) {
             if ('undefined' === typeof opts.headers) opts.headers = 'all';
             opts.preprocess = function(item, current) {
@@ -23531,6 +23643,7 @@ if (!Array.prototype.indexOf) {
     exports.Game = Game;
 
     var GameStage = parent.GameStage,
+        GameMsg = parent.GameMsg,
         GameDB = parent.GameDB,
         GamePlot = parent.GamePlot,
         PlayerList = parent.PlayerList,
@@ -24205,7 +24318,7 @@ if (!Array.prototype.indexOf) {
      * @emit STEPPING
      */
     Game.prototype.gotoStep = function(nextStep, options) {
-        var node;
+        var node, tmp;
 
         // Steps references.
         var curStep, curStageObj, nextStepObj, nextStageObj;
@@ -24232,7 +24345,7 @@ if (!Array.prototype.indexOf) {
 
         if ('string' !== typeof nextStep && 'object' !== typeof nextStep) {
             throw new TypeError('Game.gotoStep: nextStep must be ' +
-                                'an object or a string. Found: ' + nextStep);
+                                'a object or a string. Found: ' + nextStep);
         }
 
         if (options && 'object' !== typeof options) {
@@ -24261,12 +24374,19 @@ if (!Array.prototype.indexOf) {
         // Clear the cache of temporary changes to steps.
         this.plot.tmpCache.clear();
 
+        // By default socket journal is off and cleared.
+        // Need to do it before setup messages are send to clients.
+        if (node.socket.journalOn) {
+            node.socket.journalOn = false;
+            node.socket.journal.clear();
+        }
+
         // Sends start / step command to connected clients if option is on.
         if (this.plot.getProperty(nextStep, 'syncStepping')) {
 
             matcherOptions = this.plot.getProperty(nextStep, 'matcher');
 
-            if (matcherOptions) {
+            if (matcherOptions && 'object' === typeof matcherOptions) {
 
                 // matches = [
                 //             {
@@ -24299,12 +24419,28 @@ if (!Array.prototype.indexOf) {
                 }
             }
             else {
+
+                if (true === matcherOptions) {
+                    remoteOptions = { plot: { role: true, partner: true }};
+                }
+
                 if (curStep.stage === 0) {
-                    node.remoteCommand('start', 'ROOM');
+                    // Note: Game.start looks for the stepOptions property
+                    // and passes it Game.step.
+                    node.remoteCommand('start', 'ROOM', {
+                        stepOptions: remoteOptions
+                    });
                 }
                 else {
-                    node.remoteCommand('goto_step', 'ROOM', nextStep);
+                    // Note: 'goto_step' listeners extract the targetStep
+                    // property from object if payload is not the targetStep
+                    // itself (string|GameStage).
+                    if (!remoteOptions) remoteOptions = nextStep;
+                    else remoteOptions.targetStep = nextStep;
+                    node.remoteCommand('goto_step', 'ROOM', remoteOptions);
                 }
+
+                // this.matcher.clear();
             }
         }
 
@@ -24351,8 +24487,19 @@ if (!Array.prototype.indexOf) {
                 }
                 return null;
             }
+            // Was:
             // else do nothing
-            return null;
+            // return null;
+            else {
+                // Try to resolve game stage.
+                tmp = this.plot.normalizeGameStage(nextStep);
+                if (!nextStep) {
+                    throw new Error('Game.gotoStep: could not resolve step: ' +
+                                    nextStep);
+                }
+                nextStep = tmp;
+                tmp = null;
+            }
         }
 
         // Here we start processing the new STEP.
@@ -24405,7 +24552,8 @@ if (!Array.prototype.indexOf) {
         role = this.plot.getProperty(nextStep, 'role');
 
         if (role === true) {
-            if (!this.role) {
+            role = this.role;
+            if (!role) {
                 throw new Error('Game.gotoStep: "role" is true, but no ' +
                                 'previous role is found in step ' + nextStep);
             }
@@ -24418,10 +24566,9 @@ if (!Array.prototype.indexOf) {
                 throw new Error('Game.gotoStep: "role" is null, but "roles" ' +
                                 'are found in step ' + nextStep);
             }
-
-            // Overwrites step properties if a role is set.
-            this.setRole(role, true);
         }
+        // Overwrites step properties if a role is set.
+        this.setRole(role, true);
 
         partner = this.plot.getProperty(nextStep, 'partner');
         if (!partner) partner = null;
@@ -24475,6 +24622,13 @@ if (!Array.prototype.indexOf) {
         // Update list of stepped steps.
         this._steppedSteps.push(nextStep);
 
+        // TODO: check if here is right place, or better in execStep.
+        // If reconnect is TRUE we save a copy of  all messages sent to clients.
+        // Note: the journal is active only if Game.isReady is true.
+        if (this.plot.getProperty(nextStep, 'reconnect') === true) {
+            node.socket.journalOn = true;
+        }
+
         // If we should be done now, we emit PLAYING without executing the step.
         // node.game.willBeDone is already set, and will trigger node.done().
         if (this.beDone) node.emit('PLAYING');
@@ -24507,6 +24661,9 @@ if (!Array.prototype.indexOf) {
         widget = this.plot.getProperty(step, 'widget');
 
         if (widget) {
+            // Mark that it is a widget step.
+            this.widgetStep = true;
+
             // Parse input params. // TODO: throws errors.
             if ('string' === typeof widget) widget = { name: widget };
             if ('string' !== typeof widget.id) {
@@ -24519,6 +24676,10 @@ if (!Array.prototype.indexOf) {
                     widget.ref = J.uniqueKey(this, widget.ref);
                 }
             }
+
+            // Add options, if missing.
+            if (!widget.options) widget.options = {};
+
             // Make main callback to get/append the widget.
             widgetCb = function() {
 
@@ -24527,6 +24688,11 @@ if (!Array.prototype.indexOf) {
                                                       widget.options);
                 }
                 else {
+                    // Default class.
+                    if (!widget.options.className) {
+                        widget.options.className = 'centered';
+                    }
+
                     // Default id 'container' (as in default.html).
                     if ('string' === typeof widget.root) {
                         widgetRoot = widget.root;
@@ -24537,7 +24703,7 @@ if (!Array.prototype.indexOf) {
                                             widget.root);
                     }
                     else {
-                        widgetRoot = 'widget-container';
+                        widgetRoot = 'container';
                     }
                     // If widgetRoot is not existing, it follows the
                     // default procedure for appending a widget.
@@ -24573,7 +24739,8 @@ if (!Array.prototype.indexOf) {
                 }
                 // Under some special conditions (e.g., very fast DONE
                 // clicking this can be null. TODO: check why.
-                values = this[widget.ref].getValues(opts);
+                // Changed from this[widget.ref] to widgetObj.
+                values = widgetObj.getValues(opts);
 
                 // If it is not timeup, and user did not
                 // disabled it, check answers.
@@ -24587,6 +24754,14 @@ if (!Array.prototype.indexOf) {
                          (values.missValues && values.missValues.length) ||
                          values.choice === null ||
                          values.isCorrect === false)) {
+
+                         if ('function' === typeof
+                             widgetObj.bodyDiv.scrollIntoView) {
+
+                             widgetObj.bodyDiv.scrollIntoView({
+                                 behavior: 'smooth'
+                             });
+                         }
 
                         return false;
                     }
@@ -24646,6 +24821,9 @@ if (!Array.prototype.indexOf) {
                 frame = '/pages/default.html';
             }
         }
+        else {
+            this.widgetStep = false;
+        }
 
         w = this.node.window;
         // Handle frame loading natively, if required.
@@ -24683,7 +24861,7 @@ if (!Array.prototype.indexOf) {
 
             }
 
-            reloadFrame = uri !== w.unprocessedUri;
+            if (w) reloadFrame = uri !== w.unprocessedUri;
             // We reload the frame if (order matters):
             // - it is a different uri from previous step,
             // - unless frameOptions.reload is false,
@@ -25425,24 +25603,183 @@ if (!Array.prototype.indexOf) {
     };
 
     /**
-     * ### Game.getRound
-     *
-     * Returns the current/remaining/past/total round number in current stage
-     *
-     * @param {string} mod Optional. Modifies the return value.
-     *
-     *   - 'current': current round number (default)
-     *   - 'total': total number of rounds
-     *   - 'remaining': number of rounds remaining (excluding current round)
-     *   - 'past': number of rounds already past  (excluding current round)
-     *
-     * @return {number|null} The requested information, or null if
-     *   the number of rounds is not known (e.g. if the stage is a loop)
-     *
-     * @see GamePlot.getRound
-     */
+    * ### Game.getStageId
+    *
+    * Returns the id of current stage, or of another user-specified stage
+    *
+    * @param {object} stage Optional. A GameStage object. Default: current
+    *     game stage.
+    *
+    * @return {string|null} The id of (current) stage, or NULL if not found
+    *
+    * @see GamePlot.getStage
+    */
+    Game.prototype.getStageId = function(stage) {
+        stage = this.plot.getStage(stage || this.getCurrentGameStage());
+        return stage ? stage.id : null;
+    };
+
+    /**
+    * ### Game.getStepId
+    *
+    * Returns the id of current step, or of another user-specified stage
+    *
+    * @param {object} stage Optional. A GameStage object. Default: current
+    *     game stage.
+    *
+    * @return {string|null} The id of (current) step, or NULL if not found
+    *
+    * @see GamePlot.getStage
+    */
+    Game.prototype.getStepId = function(stage) {
+        stage = this.plot.getStep(stage || this.getCurrentGameStage());
+        return stage ? stage.id : null;
+    };
+
+    /**
+    * ### Game.getRound
+    *
+    * Returns the current/remaining/past/total round number in current stage
+    *
+    * @param {string} mod Optional. Modifies the return value.
+    *
+    *   - 'current': current round number (default)
+    *   - 'total': total number of rounds
+    *   - 'remaining': number of rounds remaining (excluding current round)
+    *   - 'past': number of rounds already past  (excluding current round)
+    *
+    * @return {number|null} The requested information, or null if
+    *   the number of rounds is not known (e.g. if the stage is a loop)
+    *
+    * @see GamePlot.getRound
+    */
     Game.prototype.getRound = function(mod) {
         return this.plot.getRound(this.getCurrentGameStage(), mod);
+    };
+
+    /**
+    * ### Game.isStage
+    *
+    * Returns TRUE if current stage matches input parameter
+    *
+    * Steps and rounds aer not considered.
+    *
+    * @param {string|GameStage|number} stage The name of the stage, its
+    *    ordinal position in the game sequence, or its object
+    *    representation. If string, the object is resolved
+    *    with GamePlot.normalizeGameStage
+    * @param {GameStage} compareStage The stage to compare against.
+    *    Default: current game stage.
+    *
+    * @return {boolean} TRUE if current stage matches input parameter
+    *
+    * @see GamePlot.normalizeGameStage
+    * @see Game.getCurrentGameStage
+    */
+    Game.prototype.isStage = function(stage, compareStage) {
+        var s;
+        if (compareStage) {
+            if ('object' === typeof compareStage) {
+                s = compareStage.stage;
+            }
+            else {
+                throw new TypeError('Game.isStage: compareStage must be ' +
+                                    'object or undefined. Found: ' +
+                                    compareStage);
+            }
+        }
+        else {
+            s = this.getCurrentGameStage().stage;
+        }
+        if ('number' === typeof stage) return stage === s;
+        stage = this.plot.normalizeGameStage(stage);
+        return !!(stage && stage.stage === s);
+    };
+
+    /**
+    * ### Game.isStep
+    *
+    * Returns TRUE if current step matches input parameter
+    *
+    * Behavior changes depending on type of input parameter:
+    *
+    *   - number: only the ordinal position in the game stage is matched
+    *   - object|string: the stage and the step are matched
+    *
+    * @param {string|GameStage|number} step The name of the step, its
+    *    ordinal position in the game stage, or its object
+    *    representation. If string, the object is resolved
+    *    with GamePlot.normalizeGameStage
+    * @param {GameStage} compareStage The stage to compare against.
+    *    Default: current game stage.
+    *
+    * @return {boolean} TRUE if current step matches input parameter
+    *
+    * @see GamePlot.normalizeGameStage
+    */
+    Game.prototype.isStep = function(step, compareStage) {
+        var s;
+        if (compareStage) {
+            if ('object' === typeof compareStage) {
+                s = compareStage.step;
+            }
+            else {
+                throw new TypeError('Game.isStep: compareStage must be ' +
+                                    'object or undefined. Found: ' +
+                                    compareStage);
+            }
+        }
+        else {
+            s = this.getCurrentGameStage().step
+        }
+        if ('number' === typeof step) return step === s;
+        // Add the current stage id for normalization if no stage is provided.
+        if (step.lastIndexOf('.') === -1) {
+            step = this.getStageId(compareStage) + '.' + step;
+        }
+        step = this.plot.normalizeGameStage(step);
+        return !!(step && step.step === s);
+    };
+
+    /**
+    * ### Game.isRound
+    *
+    * Returns TRUE if current step matches input parameter
+    *
+    * Behavior changes depending on type of input parameter:
+    *
+    *   - number: only the ordinal position in the game stage is matched
+    *   - object|string: the stage and the step are matched
+    *
+    * @param {string|GameStage|number} stage The name of the step, its
+    *    ordinal position in the game stage, or its object
+    *    representation. If string, the object is resolved
+    *    with GamePlot.normalizeGameStage
+    *
+    * @return {boolean} TRUE if current step matches input parameter
+    *
+    * @see GamePlot.normalizeGameStage
+    */
+    Game.prototype.isRound = function(round) {
+        var r;
+        r = this.getRound();
+        if ('number' === typeof round) return round === r;
+        round = this.plot.normalizeGameStage(round);
+        return !!(round && round.step === r);
+    };
+
+    /**
+    * ### Game.isWidgetStep
+    *
+    * Returns TRUE if current step is a widget step
+    *
+    * @return {boolean} TRUE if current step is a widget step
+    *
+    * @see GamePlot.widgetStep
+    * @see GamePlot.execStep
+    */
+    Game.prototype.isWidgetStep = function() {
+        return this.widgetStep;
     };
 
     /**
@@ -25572,6 +25909,7 @@ if (!Array.prototype.indexOf) {
      *   - beDone: game is done without loading the frame or
      *       executing the step callback function,
      *   - plot: add entries to the tmpCache of the plot,
+     *   - msgs: incoming messages to emit.
      *   - cb: a callback executed with the game context, and with options
      *       object itself as parameter
      *
@@ -25607,6 +25945,12 @@ if (!Array.prototype.indexOf) {
                     game.plot.tmpCache(prop, options.plot[prop]);
                 }
             }
+        }
+
+        if (options.msgs) {
+            options.msgs.foreach(function(msg) {
+                game.node.socket.onMessage(new GameMsg(msg).toInEvent(), msg);
+            });
         }
 
         // TODO: rename cb.
@@ -25770,6 +26114,299 @@ if (!Array.prototype.indexOf) {
             }
             that._pausedTimestamps = {};
         });
+
+        /**
+        * ### Timer.random | Timer.wait
+        *
+        * Setups an object exposing multiple random handlers.
+        *
+        * Respects pausing / resuming. If the game has not started yet, it waits
+        * until the `PLAYING` event is fired to start the random handler.
+        *
+        * Additional parameters are passed to each handler accordingly.
+        *
+        * @param {number} maxWait Optional. The maximum time (in milliseconds)
+        *   to wait before emitting the event. Default: 5000
+        * @param {number} minWait Optional. The minimum time (in milliseconds)
+        *   to wait before executing the callback. Default: 1000
+        *
+        * @return {object} Object containing different random handlers
+        *
+        * ### Timer.random.done
+        *
+        * Randomly calls `node.done`
+        *
+        * ### Timer.random.emit
+        *
+        * Randomly emits an event
+        *
+        * @param {string} event The name of the event
+        *
+        * ### Timer.random.exec
+        *
+        * Randomly executs a function
+        *
+        * @param {function} func The callback function to execute
+        * @param {object|function} ctx Optional. The context of execution of
+        *   of the callback function. Default node.game
+        *
+        * @see randomFire
+        */
+        (function(that) {
+            var _minWait, _maxWait, _prob;
+            var args, i, len;
+
+            // Init certain probability.
+            _prob = 1;
+
+
+            /**
+            * ### randomFire
+            *
+            * Common handler for firing/emitting
+            *
+            * @param {string} method The name of the method invoking randomFire
+            * @param {string|function} hook The function to call or the
+             *  event to emit
+            * @param {boolean} emit TRUE, if it is an event to emit
+            * @param {object|function} ctx Optional. The context of
+            *   execution for the function
+            */
+            function randomFire(method, hook, emit, ctx, args) {
+                var that;
+                var waitTime;
+                var callback;
+                var timerObj;
+                var tentativeName;
+
+                that = this;
+
+                if ('undefined' === typeof _maxWait) {
+                    _maxWait = 5000;
+                }
+                else if ('number' !== typeof _maxWait) {
+                    resetWaits();
+                    throw new TypeError('Timer.' + method + ': maxWait must ' +
+                                        'be number or undefined. Found: ' +
+                                        _maxWait);
+                }
+                if ('undefined' === typeof _minWait) {
+                    _minWait = _maxWait < 1000 ? 0 : 1000;
+                }
+                else if ('number' !== typeof _minWait) {
+                    resetWaits();
+                    throw new TypeError('Timer.' + method + ': minWait must ' +
+                                        'be number or undefined. Found: ' +
+                                        _minWait);
+                }
+
+                waitTime = J.randomInt(_minWait, _maxWait);
+
+                // Timeup callback: Emit.
+                if (emit) {
+                    callback = function() {
+                        that.destroyTimer(timerObj);
+                        if (args) {
+                            that.node.emit.apply(that.node.events,
+                                                [hook].concat(args));
+                        }
+                        else {
+                            that.node.emit(hook);
+                        }
+                    };
+                }
+                // Timeup callback: Exec.
+                else {
+                    callback = function() {
+                        that.destroyTimer(timerObj);
+                        hook.apply(ctx, args);
+                    };
+                }
+
+                tentativeName = method + '_' + hook + '_' +
+                                J.randomInt(0, 1000000);
+
+                // Create and run timer:
+                timerObj = this.createTimer({
+                    milliseconds: waitTime,
+                    timeup: callback,
+                    name: J.uniqueKey(this.timers, tentativeName)
+                });
+
+                // TODO: check if this condition is ok.
+                if (this.node.game && this.node.game.isReady()) {
+                    timerObj.start();
+                }
+                else {
+                    // TODO: this is not enough. Does not cover all use cases.
+                    this.node.once('PLAYING', function() {
+                        timerObj.start();
+                    });
+                }
+
+                resetWaits();
+            }
+
+            function resetWaits() {
+                // Reset min and max wait to default.
+                // Need to do it here, because user can access the random
+                // and wait functions without executing them.
+                _maxWait = 5000;
+                _minWait = 1000;
+            }
+
+            function done(param) {
+
+                // Probalistic abort.
+                if (!evaluateProb()) return;
+
+                randomFire.call(that, 'done', node.done, false, node, [param]);
+            }
+
+            function emit(event) {
+
+                if ('string' !== typeof event) {
+                    throw new TypeError('Timer.emit: event must be ' +
+                    'string. Found: ' + event);
+                }
+
+                // Probalistic abort.
+                if (!evaluateProb()) return;
+
+                len = arguments.length;
+                if (len === 2) {
+                    args = [arguments[1]];
+                }
+                else if (len === 3) {
+                    args = [arguments[2], arguments[1]];
+                }
+                else if (len > 3) {
+                    i = -1, len = (len-1);
+                    args = new Array(len);
+                    for ( ; ++i < len ; ) {
+                        args[i] = arguments[i+1];
+                    }
+                }
+                randomFire.call(that, 'emit', event, true, null, args);
+            }
+
+            function exec(func, ctx) {
+                if ('function' !== typeof func) {
+                    throw new TypeError('Timer.exec: func must ' +
+                    'be function. Found: ' + func);
+                }
+                if ('undefined' === typeof ctx) {
+                    ctx = node.game;
+                }
+                else if ('object' !== typeof ctx && 'function' !== typeof ctx) {
+                    throw new TypeError('Timer.exec: ctx must be ' +
+                    'object, function or undefined. ' +
+                    'Found: ' + ctx);
+                }
+
+                // Probalistic abort.
+                if (!evaluateProb()) return;
+
+                len = arguments.length;
+                if (len === 3) {
+                    args = [arguments[2]];
+                }
+                else if (len === 4) {
+                    args = [arguments[3], arguments[2]];
+                }
+                else if (len > 4) {
+                    i = -1, len = (len-2);
+                    args = new Array(len);
+                    for ( ; ++i < len ; ) {
+                        args[i] = arguments[i+2];
+                    }
+                }
+                randomFire.call(that, 'exec', func, false, ctx, args);
+            }
+
+            function timeup(param) {
+                // Probalistic abort.
+                if (!evaluateProb()) return;
+
+                randomFire.call(that, 'timeup',
+                               function() { node.game.timer.doTimeUp(); },
+                               false, node.game, [param]);
+            }
+
+            function evaluateProb() {
+                var p;
+                // Get current value and resets it to 1.
+                p = _prob;
+                _prob = 1;
+                if ('number' === typeof p) return Math.random() <= p;
+                // It is either number of function.
+                return !!p.call(node.game);
+            }
+
+            function prob(prob) {
+                var tmp;
+                if ('undefined' === typeof prob) {
+                    _prob = 0.5;
+                }
+                else if ('function' === typeof prob) {
+                    _prob = prob;
+                }
+                else {
+                    tmp = J.isNumber(prob, 0, 1, true, true);
+                    if (tmp === false) {
+                        throw new Error('Timer.prob: ' +
+                                        'prob must be a number between 0 and ' +
+                                        '1, undefined or function. Found: ' +
+                                        prob);
+                    }
+                    _prob = tmp;
+                }
+
+                return {
+                    done: done,
+                    emit: emit,
+                    exec: exec,
+                    timeup: timeup
+                };
+            }
+
+            // Random and Wait functions.
+
+            function random(maxWait, minWait) {
+                _maxWait = maxWait;
+                _minWait = minWait;
+
+                return {
+                    done: done,
+                    emit: emit,
+                    exec: exec,
+                    timeup: timeup,
+                    prob: prob
+                };
+            }
+
+            function wait(wait) {
+                return random(wait, wait);
+            }
+
+            // Make the handlers properties of the random and wait functions.
+            random.done = done;
+            random.emit = emit;
+            random.exec = exec;
+            random.prob = prob;
+            random.timeup = timeup;
+
+            wait.done = done;
+            wait.emit = emit;
+            wait.exec = exec;
+            wait.prob = prob;
+            wait.timeup = timeup;
+
+            // Assign random and wait functions to Timer.
+            that.random = random;
+            that.wait = wait;
+        })(this);
+
     }
 
     // ## Timer methods
@@ -26204,125 +26841,6 @@ if (!Array.prototype.indexOf) {
     };
 
     /**
-     * ### Timer.randomEmit
-     *
-     * Emits an event after a random time interval between 0 and maxWait
-     *
-     * Respects pausing / resuming.
-     *
-     * Additional parameters are passed to the node.emit
-     *
-     * @param {string} event The name of the event
-     * @param {number} maxWait Optional. The maximum time (in milliseconds)
-     *   to wait before emitting the event. Default: 6000
-     *
-     * @see randomFire
-     */
-    Timer.prototype.randomEmit = function(event, maxWait) {
-        var args, i, len;
-        if ('string' !== typeof event) {
-            throw new TypeError('Timer.randomEmit: event must be string. ' +
-                                'Found: ' + event);
-        }
-        len = arguments.length;
-        if (len == 3) {
-            args = [arguments[2]];
-        }
-        else if (len === 4) {
-            args = [arguments[2], arguments[3]];
-        }
-        else if (len > 4) {
-            i = -1, len = (len-2);
-            args = new Array(len);
-            for ( ; ++i < len ; ) {
-                args[i] = arguments[i+2];
-            }
-        }
-        randomFire.call(this, 'randomEmit', event, maxWait, true, null, args);
-    };
-
-    /**
-     * ### Timer.randomExec
-     *
-     * Executes a callback function after a random time interval
-     *
-     * Respects pausing / resuming.
-     *
-     * Additional parameters are passed to the the callback function.
-     *
-     * @param {function} func The callback function to execute
-     * @param {number} maxWait Optional. The maximum time (in milliseconds)
-     *   to wait before executing the callback. Default: 6000
-     * @param {object|function} ctx Optional. The context of execution of
-     *   of the callback function. Default node.game
-     *
-     * @see randomFire
-     */
-    Timer.prototype.randomExec = function(func, maxWait, ctx) {
-        var args, i, len;
-        if ('function' !== typeof func) {
-            throw new TypeError('Timer.randomExec: func must be function. ' +
-                               'Found: ' + func);
-        }
-        if ('undefined' === typeof ctx) {
-            ctx = this.node.game;
-        }
-        else if ('object' !== typeof ctx && 'function' !== typeof ctx) {
-            throw new TypeError('Timer.randomExec: ctx must be object, ' +
-                                'function or undefined. Found: ' + ctx);
-        }
-        len = arguments.length;
-        if (len == 4) {
-            args = [arguments[3]];
-        }
-        else if (len === 5) {
-            args = [arguments[3], arguments[4]];
-        }
-        else if (len > 5) {
-            i = -1, len = (len-3);
-            args = new Array(len);
-            for ( ; ++i < len ; ) {
-                args[i] = arguments[i+3];
-            }
-        }
-        randomFire.call(this, 'randomExec', func, maxWait, false, ctx, args);
-    };
-
-    /**
-     * ### Timer.randomDone
-     *
-     * Executes node.done after a random time interval
-     *
-     * Respects pausing / resuming.
-     *
-     * Additional parameters are passed to the the done event listener.
-     *
-     * @param {number} maxWait Optional. The maximum time (in milliseconds)
-     *   to wait before executing the callback. Default: 6000
-     *
-     * @see randomFire
-     */
-    Timer.prototype.randomDone = function(maxWait) {
-        var args, i, len;
-        len = arguments.length;
-        if (len == 2) {
-            args = [arguments[1]];
-        }
-        else if (len === 3) {
-            args = [arguments[1], arguments[2]];
-        }
-        else if (len > 3) {
-            i = -1, len--;
-            args = new Array(len);
-            for ( ; ++i < len ; ) {
-                args[i] = arguments[i+1];
-            }
-        }
-        randomFire.call(this, 'randomDone', this.node.done,
-                        maxWait, false, this.node, args);
-    };
-
-    /**
      * ## Timer.parseInput
      *
      * Resolves an unknown value to a valid time quantity (number >=0)
@@ -26381,7 +26899,7 @@ if (!Array.prototype.indexOf) {
     // ## Helper Methods.
 
     /**
-     * ### randomFire
+     * ### destroyTempTimers
      *
      * Common handler for randomEmit, randomExec, randomDone
      *
@@ -26396,79 +26914,6 @@ if (!Array.prototype.indexOf) {
             if (t.status !== GameTimer.DESTROYED) that.destroyTimer(t);
         }
         that[timers] = [];
-    }
-
-    /**
-     * ### randomFire
-     *
-     * Common handler for randomEmit, randomExec, randomDone
-     *
-     * @param {string} method The name of the method invoking randomFire
-     * @param {string|function} hook The function to call or the event to emit
-     * @param {number} maxWait Optional. The max number of milliseconds
-     *   to wait before firing
-     * @param {boolean} emit TRUE, if it is an event to emit
-     * @param {object|function} ctx Optional. The context of execution for
-     *   the function
-     */
-    function randomFire(method, hook, maxWait, emit, ctx, args) {
-        var that;
-        var waitTime;
-        var callback;
-        var timerObj;
-        var tentativeName;
-
-        that = this;
-
-        if ('undefined' === typeof maxWait) {
-            maxWait = 6000;
-        }
-        else if ('number' !== typeof maxWait) {
-            throw new TypeError('Timer.' + method + ': maxWait must ' +
-                                'be number or undefined. Found: ' + maxWait);
-        }
-
-        waitTime = Math.random() * maxWait;
-
-        // Timeup callback: Emit.
-        if (emit) {
-            callback = function() {
-                that.destroyTimer(timerObj);
-                if (args) {
-                    that.node.emit.apply(that.node.events, [hook].concat(args));
-                }
-                else {
-                    that.node.emit(hook);
-                }
-            };
-        }
-        // Timeup callback: Exec.
-        else {
-            callback = function() {
-                that.destroyTimer(timerObj);
-                hook.apply(ctx, args);
-            };
-        }
-
-        tentativeName = method + '_' + hook + '_' + J.randomInt(0, 1000000);
-
-        // Create and run timer:
-        timerObj = this.createTimer({
-            milliseconds: waitTime,
-            timeup: callback,
-            name: J.uniqueKey(this.timers, tentativeName)
-        });
-
-        // TODO: check if this condition is ok.
-        if (this.node.game && this.node.game.isReady()) {
-            timerObj.start();
-        }
-        else {
-            // TODO: this is not enough. Does not cover all use cases.
-            this.node.once('PLAYING', function() {
-                timerObj.start();
-            });
-        }
     }
 
     /**
@@ -27442,7 +27887,7 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # Matcher
- * Copyright(c) 2017 Stefano Balietti
+ * Copyright(c) 2020 Stefano Balietti
  * MIT Licensed
  *
  * Class handling the creation of tournament schedules.
@@ -27884,6 +28329,19 @@ if (!Array.prototype.indexOf) {
     };
 
     /**
+     * ### Matcher.getMatches
+     *
+     * Returns the matches for current instance
+     *
+     * @return {array|null} The array of matches (NULL if not yet set)
+     *
+     * @see this.matches
+     */
+    Matcher.prototype.getMatches = function() {
+        return this.matches;
+    };
+
+    /**
      * ### Matcher.setIds
      *
      * Sets the ids to be used for the matches
@@ -28011,7 +28469,7 @@ if (!Array.prototype.indexOf) {
         var roles, rolesObj, idRolesObj, r1, r2;
 
         if (!J.isArray(this.matches) || !this.matches.length) {
-            throw new Error('Matcher.match: no matches found.');
+            throw new Error('Matcher.match: no matches found');
         }
 
         // Assign/generate ids if not done before.
@@ -29941,7 +30399,7 @@ if (!Array.prototype.indexOf) {
  *
  * Implementation of node.[say|set|get|done].
  *
- * Copyright(c) 2019 Stefano Balietti
+ * Copyright(c) 2020 Stefano Balietti
  * MIT Licensed
  */
 (function(exports, parent) {
@@ -30227,18 +30685,20 @@ if (!Array.prototype.indexOf) {
      *
      * All input parameters are passed along to `node.emit`.
      *
+     * @param {mixed} param Optional. A value or object to send to the server
+     *   in a set message.
+     *
      * @return {boolean} TRUE, if the method is authorized, FALSE otherwise
      *
      * @see NodeGameClient.emit
      * @emits DONE
      */
-    NGC.prototype.done = function() {
-        var that, game, doneCb, len, i;
-        var arg1, arg2, args, args2;
-        var stepTime, timeup;
-        var autoSet;
+    NGC.prototype.done = function(param) {
+        var that, game, doneCb;
+        var stepTime;
+        var args, o;
 
-        // Get step execution time.
+        // First, get step execution time.
         stepTime = this.timer.getTimeSince('step');
 
         game = this.game;
@@ -30248,7 +30708,19 @@ if (!Array.prototype.indexOf) {
             return false;
         }
 
-        len = arguments.length;
+        // Check if there are required widgets that are not ready.
+        // Widget steps update the done callback, so no need to check them.
+        if (!game.isWidgetStep()) {
+            if (this.widgets &&
+                this.widgets.isActionRequired({
+                    markAttempt: true,
+                    highlight: true
+                })) {
+
+                this.silly('node.done: there are widgets requiring action');
+                return false;
+            }
+        }
 
         // Evaluating `done` callback if any.
         doneCb = game.plot.getProperty(game.getCurrentGameStage(), 'done');
@@ -30256,59 +30728,14 @@ if (!Array.prototype.indexOf) {
         // A done callback can manipulate arguments, add new values to
         // send to server, or even halt the procedure if returning false.
         if (doneCb) {
-            switch(len) {
-            case 0:
-                args = doneCb.call(game);
-                break;
-            case 1:
-                args = doneCb.call(game, arguments[0]);
-                break;
-            case 2:
-                args = doneCb.call(game, arguments[0], arguments[1]);
-                break;
-            default:
-                args = new Array(len);
-                for (i = -1 ; ++i < len ; ) {
-                    args[i] = arguments[i];
-                }
-                args = doneCb.apply(game, args);
-            };
+            args = doneCb.call(game, param);
 
             // If a `done` callback returns false, exit.
-            if ('boolean' === typeof args) {
-                if (args === false) {
-                    this.silly('node.done: done callback returned false.');
-                    return false;
-                }
-                else {
-                    console.log('***');
-                    console.log('node.done: done callback returned true. ' +
-                                'For retro-compatibility the value is not ' +
-                                'processed and sent to server. If you wanted ' +
-                                'to return "true" return an array: [true]. ' +
-                                'In future releases any value ' +
-                                'different from false and undefined will be ' +
-                                'treated as a done argument and processed.');
-                    console.log('***');
-
-                    args = null;
-                }
-            }
-            // If a value is provided make it an array, if not already one.
-            else if ('undefined' !== typeof args &&
-                Object.prototype.toString.call(args) !== '[object Array]') {
-
-                args = [args];
+            if (args === false) {
+                this.silly('node.done: done callback returned false');
+                return false;
             }
         }
-
-        // Build set object (will be sent to server).
-        // Back-compatible checks.
-        if (game.timer && game.timer.isTimeup) {
-            timeup = game.timer.isTimeup();
-        }
-
-        autoSet = game.plot.getProperty(game.getCurrentGameStage(), 'autoSet');
 
         // Keep track that the game will be done (done is asynchronous)
         // to avoid calling `node.done` multiple times in the same stage.
@@ -30317,69 +30744,41 @@ if (!Array.prototype.indexOf) {
         // TODO: it is possible that DONE messages (in.set.DATA) are sent
         // to server before PLAYING is set. Is this OK?
 
-        // Args can be the original arguments array, or
-        // the one returned by the done callback.
-        // TODO: check if it safe to copy arguments by reference.
-        if (!args) args = arguments;
-        else len = args.length;
-        that = this;
-        // The arguments object must not be passed or leaked anywhere.
-        // Therefore, we recreate an args array here. We have a different
-        // timeout in a different branch for optimization.
-        switch(len) {
+        if (!args) args = param;
 
-        case 0:
-            if (autoSet) {
-                this.set(getSetObj(stepTime, timeup), 'SERVER', 'done');
+        if (game.plot.getProperty(game.getCurrentGameStage(), 'autoSet')) {
+
+            // Create object.
+            if ('object' === typeof args) {
+                o = args;
             }
-            setTimeout(function() { that.events.emit('DONE'); }, 0);
-            break;
-        case 1:
-            arg1 = args[0];
-            if (autoSet) {
-                this.set(getSetObj(stepTime, timeup, arg1), 'SERVER', 'done');
-            }
-            setTimeout(function() { that.events.emit('DONE', arg1); }, 0);
-            break;
-        case 2:
-            arg1 = args[0], arg2 = args[1];
-            // Send two setObjs.
-            if (autoSet) {
-                this.set(getSetObj(stepTime, timeup, arg1), 'SERVER', 'done');
-                this.set(getSetObj(stepTime, timeup, arg2), 'SERVER', 'done');
-            }
-            setTimeout(function() { that.events.emit('DONE', arg1, arg2); }, 0);
-            break;
-        default:
-            args2 = new Array(len+1);
-            args2[0] = 'DONE';
-            for (i = 0; i < len; i++) {
-                args2[i+1] = args[i];
-                if (autoSet) {
-                    this.set(getSetObj(stepTime, timeup, args2[i+1]),
-                             'SERVER', 'done');
+            else {
+                o = {};
+                if ('string' === typeof args || 'number' === typeof args) {
+                    o[args] = true;
                 }
             }
-            setTimeout(function() {
-                that.events.emit.apply(that.events, args2);
-            }, 0);
+
+            // Time and timeup.
+            if (!o.time) o.time = stepTime;
+            if (!o.timeup) o.timeup = game.timer.isTimeup();
+
+            // Add role and partner info.
+            if (game.role && !o.role) o.role = game.role;
+            if (game.partner && !o.partner) o.partner = game.partner;
+
+            // Mark done msg.
+            o.done = true;
+
+            // Send to server.
+            this.set(o, 'SERVER', 'done');
         }
+
+        that = this;
+        setTimeout(function() { that.events.emit('DONE', param); }, 0);
 
         return true;
     };
-
-    // ## Helper methods
-
-    function getSetObj(time, timeup, arg) {
-        var o;
-        o = { time: time , timeup: timeup };
-        if ('object' === typeof arg) J.mixin(o, arg);
-        else if ('string' === typeof arg || 'number' === typeof arg) {
-            o[arg] = true;
-        }
-        o.done = true;
-        return o;
-    }
 
 })(
     'undefined' != typeof node ? node : module.exports,
@@ -31403,7 +31802,7 @@ if (!Array.prototype.indexOf) {
             var step;
             if (!node.game.isSteppable()) {
                 node.warn('"' + CMD + gcommands.goto_step + '": game cannot ' +
-                          'be stepped now.');
+                          'be stepped now');
                 return;
             }
 
@@ -38590,7 +38989,7 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # Widget
- * Copyright(c) 2019 Stefano Balietti <ste@nodegame.org>
+ * Copyright(c) 2020 Stefano Balietti <ste@nodegame.org>
  * MIT Licensed
  *
  * Prototype of a widget class
@@ -38769,6 +39168,32 @@ if (!Array.prototype.indexOf) {
      */
     Widget.prototype.isDocked = function() {
         return !!this.docked;
+    };
+
+    /**
+     * ### Widget.isActionRequired
+     *
+     * Returns TRUE if widget if the widget does not required action from user
+     *
+     * If the widget does not have the `required` flag it returns FALSE,
+     * otherwise it invokes Widget.getValues and looks in the response for
+     * incorrect or missing values.
+     *
+     * @param {object} opts Optional. Options to pass to Widget.getValues.
+     *   Default: { markAttempt: false, highlight: false };
+     *
+     * @return {boolean} TRUE, if widget is currently docked
+     */
+    Widget.prototype.isActionRequired = function(opts) {
+        var values;
+        if (!this.required) return false;
+        opts = opts || {};
+        opts.markAttempt = opts.markAttempt || false;
+        opts.highlight = opts.highlight || false;
+        values = this.getValues(opts);
+        if (!values) return false; // Safety check.
+        return values.missValues === true || values.choice === null ||
+            values.isCorrect === false;
     };
 
     /**
@@ -39938,6 +40363,10 @@ if (!Array.prototype.indexOf) {
             unhighlighted: []
         };
 
+        // Required widgets require action from user, otherwise they will
+        // block node.done().
+        widget.required = !!(options.required || options.requiredChoice);
+
         // Fixed properties.
 
         // Widget Name.
@@ -40304,21 +40733,71 @@ if (!Array.prototype.indexOf) {
      *
      * @return {array} res List of destroyed widgets
      */
-    Widgets.prototype.garbageCollection = function() {
-        var w, i, fd, res;
-        res = [];
-        fd = W.getFrameDocument();
-        w = node.widgets.instances;
-        for (i = 0; i < w.length; i++) {
-            // Check if widget is not on page any more.
-            if (w[i].isAppended() &&
-                (fd && !fd.contains(w[i].panelDiv)) &&
-                !document.body.contains(w[i].panelDiv)) {
+    Widgets.prototype.garbageCollection = (function() {
 
-                res.push(w[i]);
-                w[i].destroy();
-                i--;
+        // Some IE were missing .contains, so we fallback gracefully.
+        function contains(target, widget) {
+            var parentNode;
+            if (target.contains) return target.contains(widget.panelDiv);
+            parentNode = widget.panelDiv.parentNode;
+            while (parentNode != null) {
+                if (parentNode == target) return true;
+                parentNode = parentNode.parentNode;
             }
+            return false;
+        }
+
+        return function() {
+            var w, i, fd, res;
+            res = [];
+            fd = W.getFrameDocument();
+            w = node.widgets.instances;
+            for (i = 0; i < w.length; i++) {
+                // Check if widget is not on page any more.
+                if (w[i].isAppended() &&
+                (fd && !contains(fd, w[i])) &&
+                !contains(document.body, w[i])) {
+
+                    res.push(w[i]);
+                    w[i].destroy();
+                    i--;
+                }
+            }
+            return res;
+        };
+    })();
+
+    /**
+     * ### Widgets.isActionRequired
+     *
+     * Returns TRUE, if any widget currently requires user action
+     *
+     * Loops trough all widgets that have the `required` flag.
+     *
+     * @param {object} opts Optional. Options to pass to Widget.getValues.
+     *   Default: { markAttempt: false, highlight: false };
+     *
+     * @return {boolean} TRUE, if any widget requires action
+     *
+     * @see Widget.isActionRequired
+     */
+    Widgets.prototype.isActionRequired = function(opts) {
+        var w, i, lastErrored, res;
+        w = node.widgets.instances;
+        res = false;
+        for (i = 0; i < w.length; i++) {
+            if (w[i].required) {
+                if (w[i].isActionRequired(opts)) {
+                    res = true;
+                    lastErrored = w[i];
+                }
+            }
+        }
+        // Scroll to error.
+        if (lastErrored && opts.highlight &&
+            'function' === typeof lastErrored.bodyDiv.scrollIntoView) {
+
+            lastErrored.bodyDiv.scrollIntoView({ behavior: 'smooth' });
         }
         return res;
     };
@@ -44816,11 +45295,14 @@ if (!Array.prototype.indexOf) {
         if ('undefined' === typeof opts.className) {
             this.className = ChoiceTable.className;
         }
-        else if (opts.className === false ||
-                 'string' === typeof opts.className ||
-                 J.isArray(opts.className)) {
-
-            this.className = opts.className;
+        else if (opts.className === false) {
+            this.className = false;
+        }
+        else if ('string' === typeof opts.className) {
+            this.className =  ChoiceTable.className + ' ' + opts.className;
+        }
+        else if ( J.isArray(opts.className)) {
+            this.className = [ChoiceTable.className].concat(opts.className);
         }
         else {
             throw new TypeError('ChoiceTable.init: opts.' +
@@ -45716,7 +46198,7 @@ if (!Array.prototype.indexOf) {
 
         // Value this.correctChoice can undefined, string or array.
         // If no correct choice is set, we simply ignore the correct param.
-        if (options.correct && 'undefined' !== typeof this.correctChoice) {
+        if (options.correct && this.correctChoice !== null) {
 
             // Make it an array (can be a string).
             correctChoice = J.isArray(this.correctChoice) ?
@@ -51298,8 +51780,6 @@ if (!Array.prototype.indexOf) {
 
     // ## DisconnectBox methods
     DisconnectBox.prototype.init = function(opts) {
-        var that;
-        that = this;
 
         if (opts.connectCb) {
             if ('function' !== typeof opts.connectCb) {
@@ -52091,7 +52571,7 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # EndScreen
- * Copyright(c) 2019 Stefano Balietti <ste@nodegame.org>
+ * Copyright(c) 2020 Stefano Balietti <ste@nodegame.org>
  * MIT Licensed
  *
  * Creates an interface to display final earnings, exit code, etc.
@@ -52107,29 +52587,26 @@ if (!Array.prototype.indexOf) {
 
     // ## Add Meta-data
 
-    EndScreen.version = '0.6.0';
+    EndScreen.version = '0.7.0';
     EndScreen.description = 'Game end screen. With end game message, ' +
                             'email form, and exit code.';
 
-    EndScreen.title = 'End Screen';
+    EndScreen.title = false;
     EndScreen.className = 'endscreen';
 
-    EndScreen.texts.headerMessage = 'Thank you for participating!';
-    EndScreen.texts.message = 'You have now completed this task ' +
-                               'and your data has been saved. ' +
-                               'Please go back to the Amazon Mechanical Turk ' +
-                               'web site and submit the HIT.';
-    EndScreen.texts.contactQuestion = 'Would you like to be contacted again' +
-                                       'for future experiments? If so, leave' +
-                                       'your email here and press submit: ';
-    EndScreen.texts.totalWin = 'Your total win:';
-    EndScreen.texts.exitCode = 'Your exit code:';
-    EndScreen.texts.errTotalWin = 'Error: invalid total win.';
-    EndScreen.texts.errExitCode = 'Error: invalid exit code.';
-    EndScreen.texts.copyButton = 'Copy';
-    EndScreen.texts.exitCopyMsg = 'Exit code copied to clipboard.';
-    EndScreen.texts.exitCopyError = 'Failed to copy exit code. Please copy it' +
-                                    ' manually.';
+    EndScreen.texts = {
+        headerMessage: 'Thank you for participating!',
+        message: 'You have now completed this task and your data has ' +
+                 'been saved. Please go back to the Amazon Mechanical Turk ' +
+                 'web site and submit the HIT.',
+        totalWin: 'Your total win:',
+        exitCode: 'Your exit code:',
+        errTotalWin: 'Error: invalid total win.',
+        errExitCode: 'Error: invalid exit code.',
+        copyButton: 'Copy',
+        exitCopyMsg: 'Exit code copied to clipboard.',
+        exitCopyError: 'Failed to copy exit code. Please copy it manually.'
+    };
 
     // ## Dependencies
 
@@ -52324,17 +52801,30 @@ if (!Array.prototype.indexOf) {
     }
 
     EndScreen.prototype.init = function(options) {
+
+
+
         if (this.showEmailForm && !this.emailForm) {
+            // TODO: nested properties are overwitten fully. Update.
             this.emailForm = node.widgets.get('EmailForm', J.mixin({
-                label: this.getText('contactQuestion'),
-                onsubmit: { send: true, emailOnly: true, updateUI: true },
-                storeRef: false
+                onsubmit: {
+                    send: true,
+                    emailOnly: true,
+                    updateUI: true
+                },
+                storeRef: false,
+                texts: {
+                    label: 'If you would like to be contacted for future ' +
+                        'studies, please enter your email (optional):',
+                    errString: 'Please enter a valid email and retry'
+                },
+                setMsg: true // Sends a set message for logic's db.
             }, options.email));
         }
 
         if (this.showFeedbackForm) {
             this.feedback = node.widgets.get('Feedback', J.mixin(
-                { storeRef: false },
+                { storeRef: false, minChars: 50, setMsg: true },
                 options.feedback));
         }
     };
@@ -57718,7 +58208,7 @@ if (!Array.prototype.indexOf) {
         // ### VisualStage.showPrevious
         //
         // If TRUE, the name of the previuos step is displayed.
-        this.showPrevious = true;
+        this.showPrevious = false;
 
         // ### VisualStage.showCurrent
         //
@@ -58379,7 +58869,8 @@ if (!Array.prototype.indexOf) {
      *
      * Restarts the timer with new options
      *
-     * @param {object} options Configuration object
+     * @param {object|number} options Configuration object or the number of
+     *     milliseconds
      *
      * @see VisualTimer.init
      * @see VisualTimer.start
@@ -58387,6 +58878,7 @@ if (!Array.prototype.indexOf) {
      */
     VisualTimer.prototype.restart = function(options) {
         this.stop();
+        if ('number' === typeof options) options = { milliseconds: options };
         this.init(options);
         this.start();
     };
