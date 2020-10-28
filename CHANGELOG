@@ -1,5 +1,8 @@
 # nodegame-server change log
 
+# 6.0.1
+- Built
+
 # 6.0.0
 - GameRoom:
     - updateWin method
