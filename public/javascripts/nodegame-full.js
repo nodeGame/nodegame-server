@@ -10340,7 +10340,7 @@ if (!Array.prototype.indexOf) {
     node.support = JSUS.compatibility();
 
     // Auto-Generated.
-    node.version = '5.7.0';
+    node.version = '6.0.0';
 
 })(window);
 
@@ -25749,11 +25749,10 @@ if (!Array.prototype.indexOf) {
     * Behavior changes depending on type of input parameter:
     *
     *   - number: only the ordinal position in the game stage is matched
-    *   - object|string: the stage and the step are matched
+    *   - object: the stage and the step are matched
     *
-    * @param {string|GameStage|number} stage The name of the step, its
-    *    ordinal position in the game stage, or its object
-    *    representation. If string, the object is resolved
+    * @param {GameStage|number} round The round number or its object
+    *    representation. If object, it is resolved
     *    with GamePlot.normalizeGameStage
     *
     * @return {boolean} TRUE if current step matches input parameter
@@ -25765,7 +25764,7 @@ if (!Array.prototype.indexOf) {
         r = this.getRound();
         if ('number' === typeof round) return round === r;
         round = this.plot.normalizeGameStage(round);
-        return !!(round && round.step === r);
+        return !!(round && round.round === r);
     };
 
     /**
