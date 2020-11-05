@@ -1,5 +1,8 @@
 # nodegame-server change log
 
+# 6.0.4 (current)
+- Built widgets RiskGauge and Slider fixes.
+
 # 6.0.3
 - Fixed broken build.
 
