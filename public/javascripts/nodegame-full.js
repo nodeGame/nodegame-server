@@ -53379,7 +53379,7 @@ if (!Array.prototype.indexOf) {
          * @see Feedback.getValues
          */
         if (!options.onsubmit) {
-            this.onsubmit = { feedbackOnly: true, say: true, updateUI: true };
+            this.onsubmit = { feedbackOnly: true, send: true, updateUI: true };
         }
         else if ('object' === typeof options.onsubmit) {
             this.onsubmit = options.onsubmit;
@@ -56029,8 +56029,9 @@ if (!Array.prototype.indexOf) {
 
 
         // Bomb box.
-
+        debugger
         // Pick bomb box id, if probability permits it, else set to -1.
+        // Resulting id is between 1 and totBoxes.
         bombBox = Math.random() >= probBomb ?
                   -1 : Math.ceil(Math.random() * this.totBoxes);
 
@@ -56190,7 +56191,9 @@ if (!Array.prototype.indexOf) {
                     isWinner = finalValue < bombBox;
                     // Update table.
                     if (bombBox > -1) {
-                        W.gid(getBoxId(bombBox)).style.background = '#fa0404';
+                        // Variable bombBox is between 1 and totBoxes.
+                        // Cells in table are 0-indexed.
+                        W.gid(getBoxId(bombBox-1)).style.background = '#fa0404';
                     }
                     // Hide slider and button
                     slider.hide();
@@ -56601,9 +56604,7 @@ if (!Array.prototype.indexOf) {
         }
 
         if (this.required && this.hint !== false) {
-            if ('undefined' === typeof this.hint) {
-                this.hint = 'Movement required';
-            }
+            if (!this.hint) this.hint = 'Movement required';
             this.hint += ' *';
         }
 
