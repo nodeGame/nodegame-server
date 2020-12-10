@@ -12532,12 +12532,12 @@ if (!Array.prototype.indexOf) {
     PlayerList.prototype.get = function(id) {
         var player;
         if ('string' !== typeof id) {
-            throw new TypeError('PlayerList.get: id must be string.');
+            throw new TypeError('PlayerList.get: id must be string');
 
         }
         player = this.id.get(id);
         if (!player) {
-            throw new Error('PlayerList.get: Player not found: ' + id + '.');
+            throw new Error('PlayerList.get: Player not found: ' + id);
         }
         return player;
     };
@@ -12561,7 +12561,7 @@ if (!Array.prototype.indexOf) {
         }
         player = this.id.remove(id);
         if (!player) {
-            throw new Error('PlayerList.remove: player not found: ' + id + '.');
+            throw new Error('PlayerList.remove: player not found: ' + id);
         }
         return player;
     };
@@ -12626,7 +12626,7 @@ if (!Array.prototype.indexOf) {
 
         if (!player) {
             throw new Error(
-                'PlayerList.updatePlayer: player not found: ' + id + '.');
+                'PlayerList.updatePlayer: player not found: ' + id);
         }
 
         return player;
@@ -24369,7 +24369,9 @@ if (!Array.prototype.indexOf) {
         curStep = this.getCurrentGameStage();
         curStageObj = this.plot.getStage(curStep);
         // We need to call getProperty because getStep does not mixin tmpCache.
-        curStepExitCb = this.plot.getProperty(curStep, 'exit');
+        // We do not lookup into the stage.
+        curStepExitCb = this.plot.getProperty(curStep, 'exit',
+                                              null, { stage: true });
 
         // Clear the cache of temporary changes to steps.
         this.plot.tmpCache.clear();
@@ -30716,7 +30718,7 @@ if (!Array.prototype.indexOf) {
                     highlight: true
                 })) {
 
-                this.silly('node.done: there are widgets requiring action');
+                this.warn('node.done: there are widgets requiring action');
                 return false;
             }
         }
@@ -40362,6 +40364,9 @@ if (!Array.prototype.indexOf) {
             unhighlighted: []
         };
 
+        // By default destoy widget on exit step.
+        widget.destroyOnExit = options.destroyOnExit !== false;
+        
         // Required widgets require action from user, otherwise they will
         // block node.done().
         widget.required = !!(options.required || options.requiredChoice);
