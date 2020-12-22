@@ -1,6 +1,6 @@
 /**
  * # loggers.js
- * Copyright(c) 2019 Stefano Balietti
+ * Copyright(c) 2020 Stefano Balietti
  * MIT Licensed
  *
  * Configuration file for Winston.js in nodegame-server
@@ -8,14 +8,12 @@
 
 module.exports = configure;
 
-var path = require('path');
-var winston = require('winston');
+const path = require('path');
+const winston = require('winston');
 
 // Variable loggers is winston.loggers.
 function configure(loggers, logDir) {
-    var msgLogger;
-    var logLevel;
-    logLevel = winston.level;
+    let logLevel = winston.level;
 
     // ServerNode.
     loggers.add('servernode', {
@@ -49,7 +47,7 @@ function configure(loggers, logDir) {
 
     // Messages.
     // Make custom levels and only File transports for messages.
-    msgLogger = loggers.add('messages');
+    let msgLogger = loggers.add('messages');
     msgLogger.remove(winston.transports.Console);
     msgLogger.add(winston.transports.File, {
         timestamp: true,

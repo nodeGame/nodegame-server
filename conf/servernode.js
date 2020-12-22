@@ -1,7 +1,7 @@
 /**
  * # servernode.js
  *
- * Copyright(c) 2019 Stefano Balietti
+ * Copyright(c) 2020 Stefano Balietti
  * MIT Licensed
  *
  * Configuration file for ServerNode in nodegame-server.
@@ -10,14 +10,11 @@
  */
 module.exports = configure;
 
-var path = require('path');
+const path = require('path');
 
 function configure(servernode) {
 
-    var rootDir;
-    var player, admin;
-
-    rootDir = servernode.rootDir;
+    let rootDir = servernode.rootDir;
     if (!rootDir) {
         servernode.logger.error('configure servernode: rootDir not found');
         return false;
@@ -46,6 +43,20 @@ function configure(servernode) {
         // Colors are repeated in the same order if there are more games
         // than colors.
         colors: [ 'teal', 'green', 'indigo', 'blue' ],
+
+        // Array containing cards for external games.
+        externalCards: [
+            // Format:
+            // {
+            //     name: "Game Name",
+            //     demo: "https://game.address",
+            //     url: "https://github.com/myproject",
+            //     description: "blah blah",
+            //     publication: "https://link.to.publication.com",
+            //     wiki: "https://wikipedia.com/blah",
+            //     icon: "ac_unit" // See https://materializecss.com/icons.html
+            // }
+        ],
 
         // Default alphabetical, or customize with an array of game names.
         // Games not listed here are excluded.
@@ -105,7 +116,7 @@ function configure(servernode) {
     // 2. Channels configuration.
 
     // AdminServer default options.
-    adminServer = {
+    let adminServer = {
 
         // A PLAYER_UPDATE / PCONNECT / PDISCONNECT message will be sent to
         // all clients connected to the PlayerServer endpoint when:
@@ -171,7 +182,7 @@ function configure(servernode) {
     };
 
     // PlayerServer default options.
-    playerServer = {
+    let playerServer = {
 
         // A PLAYER_UPDATE / PCONNECT / PDISCONNECT message will be sent to
         // all clients connected to the PlayerServer endpoint when:
