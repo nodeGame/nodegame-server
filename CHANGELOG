@@ -4,6 +4,7 @@
 - Built widgets RiskGauge and Slider fixes.
 - Built clients with 'exit' on stage fix.
 - Fixed error with loading games with aliases.
+- External cards in home page.
 
 # 6.0.3
 - Fixed broken build.
