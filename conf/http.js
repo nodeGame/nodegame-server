@@ -9,17 +9,15 @@ module.exports = configure;
 
 // ## Global scope
 
-var express = require('express'),
-    fs = require('fs'),
-    path = require('path'),
-    os = require('os'),
-    J = require('nodegame-client').JSUS;
+const express = require('express');
+const path = require('path');
+const J = require('nodegame-client').JSUS;
 
-var mime = require('express').static.mime;
+const mime = require('express').static.mime;
 
-var bodyParser = require('body-parser'),
-    cookieParser = require('cookie-parser'),
-    errorHandler = require('errorhandler');
+const bodyParser = require('body-parser');
+const cookieParser = require('cookie-parser');
+const errorHandler = require('errorhandler');
 
 // var session = require('cookie-session')({ secret: 'secret' });
 
@@ -31,14 +29,11 @@ var bodyParser = require('body-parser'),
  * @param {object} options The object containing the custom settings
  */
 function configure(app, servernode) {
-    var rootDir, publicDir;
-    var resourceManager;
-    var basepath;
 
-    rootDir = servernode.rootDir;
-    publicDir = path.join(rootDir, 'public');
-    basepath = servernode.basepath || '';
-    resourceManager = servernode.resourceManager;
+    let rootDir = servernode.rootDir;
+    let publicDir = path.join(rootDir, 'public');
+    let basepath = servernode.basepath || '';
+    let resourceManager = servernode.resourceManager;
 
     app.set('views', path.resolve(rootDir, 'views'));
     app.set('view engine', 'jade');
@@ -62,12 +57,13 @@ function configure(app, servernode) {
     app.use(bodyParser.urlencoded({ extended: true }));
 
     function sendFromPublic(type, req, res, headers) {
-        var file, mimeType, charset, filePath;
-        file = req.params[0];
+        let file = req.params[0];
         if (!file) return;
 
         // Build path in `public/`.
         file = path.join(type, file);
+
+        let mimeType, charset, filePath;
 
         // Build headers.
         if (!headers) {
@@ -138,16 +134,10 @@ function configure(app, servernode) {
     });
 
     app.get(basepath + '/', function(req, res, next) {
-        var q, games = [];
-
-        var gamesObj;
-        var i, j;
-        var colors;
-        var name, card, color, filteredGames;
 
         // Must be first.
         if (req.query) {
-            q = req.query.q;
+            let q = req.query.q;
             if (q) {
                 if (!servernode.enableInfoQuery) {
                     res.status(403).end();
@@ -248,11 +238,10 @@ function configure(app, servernode) {
             });
         }
         else {
-            colors = servernode.homePage.colors;
-            gamesObj = servernode.info.games;
-            listOfGames = J.keys(gamesObj);
+            let gamesObj = servernode.info.games;
+            let listOfGames = J.keys(gamesObj);
             // Remove aliases.
-            filteredGames = listOfGames.filter(function(name) {
+            let filteredGames = listOfGames.filter(function(name) {
                 return (!gamesObj[name].disabled && !gamesObj[name].errored &&
                         (!gamesObj[name].alias ||
                          gamesObj[name].alias.indexOf(name) === -1));
@@ -268,14 +257,18 @@ function configure(app, servernode) {
             else {
                 filteredGames.sort();
             }
-            i = 0;
-            for (j = 0; j < filteredGames.length; j++) {
-                name = filteredGames[j];
+
+            let games = [];
+            let colors = servernode.homePage.colors;
+
+            let i = 0;
+            for (let j = 0; j < filteredGames.length; j++) {
+                let name = filteredGames[j];
                 if (i >= colors.length) i = 0;
-                color = colors[i];
+                let color = colors[i];
                 // Mixout name and description from package.json
                 // if not in card, or if no card is defined.
-                card = J.mixout(gamesObj[name].info.card || {}, {
+                let card = J.mixout(gamesObj[name].info.card || {}, {
                     name: name.charAt(0).toUpperCase() + name.slice(1),
                     description: gamesObj[name].info.description
                 });
@@ -289,6 +282,14 @@ function configure(app, servernode) {
                     icon: card.icon
                 });
                 i++;
+            }
+            let externalCards = servernode.homePage.externalCards;
+            if (externalCards && externalCards.length) {
+                for (let j = 0; j < externalCards.length; j++) {
+                    externalCards[j].color = colors[i++];
+                    externalCards[j].external = true;
+                    games.push(externalCards[j]);
+                }
             }
             res.render('homepage', {
                 title: servernode.homePage.title,
