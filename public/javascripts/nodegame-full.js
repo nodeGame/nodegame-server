@@ -24733,7 +24733,8 @@ if (!Array.prototype.indexOf) {
             // Make the done callback to send results.
             widgetDone = function() {
                 var values, opts;
-                if (widget.checkValues !== false) {
+                // TODO: harmonize: required or checkValues?
+                if (widgetObj.required && widget.checkValues !== false) {
                     opts = { highlight: true, markAttempt: true };
                 }
                 else {
@@ -24746,7 +24747,7 @@ if (!Array.prototype.indexOf) {
 
                 // If it is not timeup, and user did not
                 // disabled it, check answers.
-                if (widget.checkValues !== false &&
+                if (widgetObj.required && widget.checkValues !== false &&
                     !node.game.timer.isTimeup()) {
 
                     // Widget must return some values (otherwise it
@@ -40305,7 +40306,7 @@ if (!Array.prototype.indexOf) {
 
         // Set ID.
         if ('undefined' !== typeof options.id) {
-            if ('number' === typeof options.id) options.id = '' + options.id;
+            if ('number' === typeof options.id) options.id += '';
             if ('string' === typeof options.id) {
                 widget.id = options.id;
             }
@@ -40366,7 +40367,7 @@ if (!Array.prototype.indexOf) {
 
         // By default destoy widget on exit step.
         widget.destroyOnExit = options.destroyOnExit !== false;
-        
+
         // Required widgets require action from user, otherwise they will
         // block node.done().
         widget.required = !!(options.required || options.requiredChoice);
@@ -46757,6 +46758,13 @@ if (!Array.prototype.indexOf) {
          */
         this.textarea = null;
 
+        /**
+        * ### ChoiceTableGroup.header
+        *
+        * Header to be displayed above the table
+        */
+        this.header = null;
+
         // Options passed to each individual item.
 
         /**
@@ -46881,7 +46889,7 @@ if (!Array.prototype.indexOf) {
         // Have a method in ChoiceTable?
 
         if (!this.id) {
-            throw new TypeError('ChoiceTableGroup.init: opts.id ' +
+            throw new TypeError('ChoiceTableGroup.init: id ' +
                                 'is missing.');
         }
 
@@ -46890,7 +46898,7 @@ if (!Array.prototype.indexOf) {
             tmp = 'H';
         }
         else if ('string' !== typeof opts.orientation) {
-            throw new TypeError('ChoiceTableGroup.init: opts.orientation ' +
+            throw new TypeError('ChoiceTableGroup.init: orientation ' +
                                 'must be string, or undefined. Found: ' +
                                 opts.orientation);
         }
@@ -46903,7 +46911,7 @@ if (!Array.prototype.indexOf) {
                 tmp = 'V';
             }
             else {
-                throw new Error('ChoiceTableGroup.init: opts.orientation ' +
+                throw new Error('ChoiceTableGroup.init: orientation ' +
                                 'is invalid: ' + tmp);
             }
         }
@@ -46935,7 +46943,7 @@ if (!Array.prototype.indexOf) {
             this.group = opts.group;
         }
         else if ('undefined' !== typeof opts.group) {
-            throw new TypeError('ChoiceTableGroup.init: opts.group must ' +
+            throw new TypeError('ChoiceTableGroup.init: group must ' +
                                 'be string, number or undefined. Found: ' +
                                 opts.group);
         }
@@ -46946,7 +46954,7 @@ if (!Array.prototype.indexOf) {
             this.groupOrder = opts.groupOrder;
         }
         else if ('undefined' !== typeof opts.group) {
-            throw new TypeError('ChoiceTableGroup.init: opts.groupOrder ' +
+            throw new TypeError('ChoiceTableGroup.init: groupOrder ' +
                                 'must be number or undefined. Found: ' +
                                 opts.groupOrder);
         }
@@ -46958,7 +46966,7 @@ if (!Array.prototype.indexOf) {
             };
         }
         else if ('undefined' !== typeof opts.listener) {
-            throw new TypeError('ChoiceTableGroup.init: opts.listener ' +
+            throw new TypeError('ChoiceTableGroup.init: listener ' +
                                 'must be function or undefined. Found: ' +
                                 opts.listener);
         }
@@ -46968,7 +46976,7 @@ if (!Array.prototype.indexOf) {
             this.onclick = opts.onclick;
         }
         else if ('undefined' !== typeof opts.onclick) {
-            throw new TypeError('ChoiceTableGroup.init: opts.onclick must ' +
+            throw new TypeError('ChoiceTableGroup.init: onclick must ' +
                                 'be function or undefined. Found: ' +
                                 opts.onclick);
         }
@@ -46978,7 +46986,7 @@ if (!Array.prototype.indexOf) {
             this.mainText = opts.mainText;
         }
         else if ('undefined' !== typeof opts.mainText) {
-            throw new TypeError('ChoiceTableGroup.init: opts.mainText ' +
+            throw new TypeError('ChoiceTableGroup.init: mainText ' +
                                 'must be string or undefined. Found: ' +
                                 opts.mainText);
         }
@@ -46988,7 +46996,7 @@ if (!Array.prototype.indexOf) {
             this.hint = opts.hint;
         }
         else if ('undefined' !== typeof opts.hint) {
-            throw new TypeError('ChoiceTableGroup.init: opts.hint must ' +
+            throw new TypeError('ChoiceTableGroup.init: hint must ' +
                                 'be a string, false, or undefined. Found: ' +
                                 opts.hint);
         }
@@ -47004,7 +47012,7 @@ if (!Array.prototype.indexOf) {
             this.timeFrom = opts.timeFrom;
         }
         else if ('undefined' !== typeof opts.timeFrom) {
-            throw new TypeError('ChoiceTableGroup.init: opts.timeFrom ' +
+            throw new TypeError('ChoiceTableGroup.init: timeFrom ' +
                                 'must be string, false, or undefined. Found: ' +
                                 opts.timeFrom);
         }
@@ -47019,7 +47027,7 @@ if (!Array.prototype.indexOf) {
             this.renderer = opts.renderer;
         }
         else if ('undefined' !== typeof opts.renderer) {
-            throw new TypeError('ChoiceTableGroup.init: opts.renderer ' +
+            throw new TypeError('ChoiceTableGroup.init: renderer ' +
                                 'must be function or undefined. Found: ' +
                                 opts.renderer);
         }
@@ -47040,7 +47048,7 @@ if (!Array.prototype.indexOf) {
             this.className = opts.className;
         }
         else {
-            throw new TypeError('ChoiceTableGroup.init: opts.' +
+            throw new TypeError('ChoiceTableGroup.init: ' +
                                 'className must be string, array, ' +
                                 'or undefined. Found: ' + opts.className);
         }
@@ -47058,7 +47066,7 @@ if (!Array.prototype.indexOf) {
         else if ('undefined' !== typeof opts.table &&
                  false !== opts.table) {
 
-            throw new TypeError('ChoiceTableGroup.init: opts.table ' +
+            throw new TypeError('ChoiceTableGroup.init: table ' +
                                 'must be object, false or undefined. ' +
                                 'Found: ' + opts.table);
         }
@@ -47067,6 +47075,20 @@ if (!Array.prototype.indexOf) {
 
         this.freeText = 'string' === typeof opts.freeText ?
             opts.freeText : !!opts.freeText;
+
+        if (opts.header) {
+            if (!J.isArray(opts.header) ||
+                opts.header.length !== opts.items.length - 1) {
+
+                throw new Error('ChoiceTableGroup.init: header ' +
+                                'must be an array of length ' +
+                                (opts.items.length - 1) +
+                                ' or undefined. Found: ' + opts.header);
+            }
+
+            this.header = opts.header;
+        }
+
 
         // Add the items.
         if ('undefined' !== typeof opts.items) this.setItems(opts.items);
@@ -47126,6 +47148,21 @@ if (!Array.prototype.indexOf) {
         H = this.orientation === 'H';
         i = -1, len = this.itemsSettings.length;
         if (H) {
+
+            if (this.header) {
+                tr = W.add('tr', this.table);
+                W.add('td', tr, {
+                    className: 'header'
+                });
+                for ( ; ++i < this.header.length ; ) {
+                    W.add('td', tr, {
+                        innerHTML: this.header[i],
+                        className: 'header'
+                    });
+                }
+                i = -1;
+            }
+
             for ( ; ++i < len ; ) {
                 // Get item.
                 ct = getChoiceTable(this, i);
