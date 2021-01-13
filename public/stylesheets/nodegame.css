@@ -185,6 +185,14 @@ p {
   padding: 40px;
 }
 
+/** Info Panel **/
+/*****************/
+
+#ng_info-panel {
+    margin: 0 auto;
+    max-width: 42em;
+}
+
 /* Handy classes */
 /*****************/
 .strong {
@@ -938,5 +946,3 @@ div.riskgauge .risk-info span {
 .slider-display-nochange {
     float: right;
 }
-
-/*# sourceMappingURL=nodegame.css.map */
