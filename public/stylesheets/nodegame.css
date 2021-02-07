@@ -185,6 +185,14 @@ p {
   padding: 40px;
 }
 
+/** Info Panel **/
+/*****************/
+
+#ng_info-panel {
+    margin: 0 auto;
+    max-width: 42em;
+}
+
 /* Handy classes */
 /*****************/
 .strong {
@@ -466,11 +474,14 @@ table.choicetable td.selected {
   color: #FFF;
   border: 1px solid #333 !important;
 }
+
+table.choicetable td.header,
 table.choicetable td.choicetable-left,
 table.choicetable td.choicetable-right {
   border: 0;
   background: inherit;
 }
+
 table.choicetable td.choicetable-left {
   padding-right: 15px;
   text-align: right;
@@ -479,6 +490,13 @@ table.choicetable td.choicetable-right {
   padding-left: 15px;
   text-align: left;
 }
+
+table.choicetable td.header {
+    font-weight: bold;
+    font-size: smaller;
+}
+
+table.choicetable td.header:hover,
 table.choicetable td.choicetable-left:hover,
 table.choicetable td.choicetable-right:hover {
   background: inherit;
@@ -494,6 +512,7 @@ table.clickable td:hover {
 table.clickable td:focus {
   background: #FFE;
 }
+
 
 /** CustomInput **/
 /*****************/
@@ -927,5 +946,3 @@ div.riskgauge .risk-info span {
 .slider-display-nochange {
     float: right;
 }
-
-/*# sourceMappingURL=nodegame.css.map */

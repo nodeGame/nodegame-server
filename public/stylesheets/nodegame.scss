@@ -208,6 +208,14 @@ p {
   padding: 40px;
 }
 
+/** Info Panel **/
+/*****************/
+
+#ng_info-panel {
+    margin: 0 auto;
+    max-width: $max-width-header;
+}
+
 
 /* Handy classes */
 /*****************/
@@ -234,7 +242,7 @@ p {
 }
 
 .centered {
-  max-width: 42em;
+  max-width: $max-width-header;
   width: 90%;
   margin: 0 auto;
 }
@@ -541,6 +549,7 @@ table.choicetable {
     border: 1px solid $forms_border_color !important;
   }
 
+  td.header,
   td.choicetable-left,
   td.choicetable-right {
     border: 0;
@@ -555,6 +564,11 @@ table.choicetable {
   td.choicetable-right {
     padding-left: 15px;
     text-align: left;
+  }
+
+  td.header {
+      font-weight: bold;
+      font-size: smaller;
   }
 
   td.choicetable-left:hover,
