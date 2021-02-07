@@ -46779,6 +46779,8 @@ if (!Array.prototype.indexOf) {
         * ### ChoiceTableGroup.header
         *
         * Header to be displayed above the table
+        *
+        * @experimental
         */
         this.header = null;
 
@@ -47211,6 +47213,7 @@ if (!Array.prototype.indexOf) {
         else {
 
             // Add new TR.
+            // TODO: rename, this is not the header as from options.
             tr = createTR(this, 'header');
 
             // Build all items first.
