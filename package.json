@@ -20,7 +20,7 @@
   ,   "cookie-session": "*"
   ,   "errorhandler": "*"
   ,   "archiver": "*"
-  ,   "socket.io": "2.3.0"
+  ,   "socket.io": "2.4.0"
   ,   "request": "2.88.0"
   ,   "phantomjs": ">=2.1.7"
   ,   "winston": "2.4.0"
