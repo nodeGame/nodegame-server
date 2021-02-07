@@ -10338,7 +10338,7 @@ if (!Array.prototype.indexOf) {
     node.support = JSUS.compatibility();
 
     // Auto-Generated.
-    node.version = '6.0.1';
+    node.version = '6.1.0';
 
 })(window);
 
@@ -40385,7 +40385,13 @@ if (!Array.prototype.indexOf) {
 
         // Required widgets require action from user, otherwise they will
         // block node.done().
-        widget.required = !!(options.required || options.requiredChoice);
+        if (options.required ||
+            options.requiredChoice ||
+            options.correctChoice) {
+
+            // Flag required is undefined, if not set to false explicitely.
+            widget.required = true;
+        }
 
         // Fixed properties.
 
@@ -44008,6 +44014,13 @@ if (!Array.prototype.indexOf) {
          * Textarea for free-text comment
          */
         this.textarea = null;
+
+        /**
+         * ### ChoiceManager.required
+         *
+         * TRUE if widget should be checked upon node.done.
+         */
+        this.required = null;
     }
 
     // ## ChoiceManager methods
@@ -44097,6 +44110,10 @@ if (!Array.prototype.indexOf) {
         this.freeText = 'string' === typeof options.freeText ?
             options.freeText : !!options.freeText;
 
+        // formsOptions.
+        if ('undefined' !== typeof options.required) {
+            this.required = !!options.required;
+        }
 
         // After all configuration options are evaluated, add forms.
 
@@ -44185,6 +44202,16 @@ if (!Array.prototype.indexOf) {
             }
             forms[i] = form;
             formsById[form.id] = forms[i];
+
+            if (form.required || form.requiredChoice || form.correctChoice) {
+                // False is set manually, otherwise undefined.
+                if (this.required === false) {
+                    throw new Error('ChoiceManager.setForms: required is ' +
+                                    'false, but form "' + form.id +
+                                    '" has required truthy');
+                }
+                this.required = true;
+            }
         }
         // Assigned verified forms.
         this.forms = forms;
