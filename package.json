@@ -27,10 +27,10 @@
   ,   "jsonwebtoken": "8.5.0"
   ,   "nodegame-monitor": "*"
   ,   "nodegame-game-template": "*"
-  ,   "JSUS": ">= 0.17.0"
-  ,   "NDDB": ">= 1.8.0"
+  ,   "JSUS": "^1.1.0",
+  ,   "NDDB": "^2.0.0",
   ,   "shelf.js": ">= 0.3.7"
-  ,   "commander": ">= 2.8.1"
+  ,   "commander": "^7.0.0"
   ,   "jade": "1.11.0"
   ,   "JSON": "1.0.0"
     }

@@ -1,10 +1,12 @@
 # nodegame-server change log
 
-# 6.0.4 (current)
+# 6.1.0 (current)
 - Built widgets RiskGauge and Slider fixes.
 - Built clients with 'exit' on stage fix.
 - Fixed error with loading games with aliases.
 - External cards in home page.
+- Updated package.json.
+- Updated CSS for InfoPanel.
 
 # 6.0.3
 - Fixed broken build.
