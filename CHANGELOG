@@ -1,5 +1,8 @@
 # nodegame-server change log
 
+# 6.1.1
+- Built widgets 6.1.1.
+
 # 6.1.0
 - WaitRoom "DISPATCH_TO_SAME_ROOM" creates one room per treatment.
 - Built widgets RiskGauge and Slider fixes.
