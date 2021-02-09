@@ -1,5 +1,11 @@
 # nodegame-server change log
 
+# 6.2.0 **current
+-  WaitRoom dispatch uses ROTATION_OFFSET to decide which treatment starts
+with option "treatment_rotate"
+- numberOfDispatches is passed as fourth parameter to the CHOSEN_TREATMENT
+function.
+
 # 6.1.1
 - Built widgets 6.1.1.
 
