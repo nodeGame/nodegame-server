@@ -32820,7 +32820,7 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # GameWindow
- * Copyright(c) 2019 Stefano Balietti <ste@nodegame.org>
+ * Copyright(c) 2020 Stefano Balietti <ste@nodegame.org>
  * MIT Licensed
  *
  * API to interface nodeGame with the browser window
@@ -35006,9 +35006,8 @@ if (!Array.prototype.indexOf) {
 
             func();
 
-            // Important. We need a timeout (2nd param), because some changes
-            // might take time to be reflected in the DOM.
-            W.adjustFrameHeight(0, 120);
+            adjustFrameHeightAfterLoad();
+
         };
 
         if (loadCache) reloadScripts(iframe, afterScripts);
@@ -35231,6 +35230,46 @@ if (!Array.prototype.indexOf) {
         catch(e) {
             that.directFrameDocumentAccess = false;
         }
+    }
+
+    /**
+     * ### adjustFrameHeightAfterLoad
+     *
+     * Adjusts the frame height after frame is loaded
+     *
+     * It waits 120ms or until all images are loaded.
+     *
+     * @see handleFrameLoad
+     */
+    function adjustFrameHeightAfterLoad() {
+
+        // Kudos:
+        // https://stackoverflow.com/questions/11071314/
+        // javascript-execute-after-all-images-have-loaded
+
+        var doc, imgs, len, counter, increment;
+        doc = W.getFrameDocument();
+        imgs = doc.images;
+        len = imgs.length;
+
+        // If there are no images, we wait a fixed 120 milliseconds.
+        if (!len) {
+            // Important. We need a timeout (2nd param), because some changes
+            // might take time to be reflected in the DOM.
+            W.adjustFrameHeight(0, 120);
+            return;
+        }
+
+        // Else we wait until all images are loaded.
+        counter = 0;
+        increment = function() {
+            if (++counter === len) W.adjustFrameHeight();
+        };
+
+        [].forEach.call(imgs, function(img) {
+            if (img.complete) increment();
+            else img.addEventListener('load', increment, false);
+        });
     }
 
     //Expose GameWindow prototype to the global object.
