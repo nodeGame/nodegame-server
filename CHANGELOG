@@ -1,5 +1,8 @@
 # nodegame-server change log
 
+# 6.2.1
+- Built with Window support for loaded images. 
+
 # 6.2.0
 -  WaitRoom dispatch uses ROTATION_OFFSET to decide which treatment starts
 with option "treatment_rotate"
