@@ -24751,9 +24751,12 @@ if (!Array.prototype.indexOf) {
                     // Widget must return some values (otherwise it
                     // is impossible to check if the values are OK).
                     if (values &&
-                        (values.missValues === true ||
-                        (values.missValues && values.missValues.length) ||
-                        values.choice === null ||
+                        // TODO: check whether it is fine to comment out
+                        // the checks on missValues. We should rely only
+                        // on isCorrect, but some widgets might be outdated.
+                        // (values.missValues === true ||
+                        // (values.missValues && values.missValues.length) ||
+                        (values.choice === null ||
                         values.isCorrect === false)) {
 
 
@@ -31662,7 +31665,7 @@ if (!Array.prototype.indexOf) {
             res = node.game.shouldStep(stageLevels.DONE);
             node.game.setStageLevel(stageLevels.DONE);
             // Step forward, if allowed.
-            if (res) node.game.step();
+            if (res) setTimeout(function() { node.game.step(); }, 0);
         }
 
         /**
@@ -33691,25 +33694,29 @@ if (!Array.prototype.indexOf) {
      *
      * @emit INFOPANEL_GENERATED
      */
-    GameWindow.prototype.generateInfoPanel = function(options, force) {
-        var infoPanelDiv, root;
+    GameWindow.prototype.generateInfoPanel = function(opts, force) {
+        var infoPanelDiv, root, btn;
+        opts = opts || {};
+
+        if (force) {
+            this.infoPanel.destroy();
+            this.infoPanel = null;
+        }
 
         if (this.infoPanel) {
-            if (!force) {
-                throw new Error('GameWindow.generateInfoPanel: info panel is ' +
-                                'already existing. Use force to regenerate.');
-            }
-            else {
-                this.infoPanel.destroy();
-                this.infoPanel = null;
-            }
-        }
-        options = options || {};
+            // if (!force) {
+            //     throw new Error('GameWindow.generateInfoPanel: info panel is ' +
+            //                     'already existing. Use force to regenerate.');
+            // }
 
-        this.infoPanel = new node.InfoPanel(options);
+        }
+        else {
+            this.infoPanel = new node.InfoPanel(opts);
+        }
+
         infoPanelDiv = this.infoPanel.infoPanelDiv;
 
-        root = options.root;
+        root = opts.root;
         if (root) {
             if (!J.isElement(root)) {
                 throw new Error('GameWindow.generateInfoPanel: root must be ' +
@@ -33725,6 +33732,36 @@ if (!Array.prototype.indexOf) {
         }
         else {
             document.body.appendChild(infoPanelDiv);
+        }
+
+        // Adds Toggle Button if not false.
+        if (opts.btn !== false) {
+            root = null;
+            if (!opts.btnRoot) {
+                if (this.headerElement) root = this.headerElement;
+            }
+            else {
+                if ('string' === typeof opts.btnRoot) {
+                    root = W.gid(opts.btnRoot);
+                }
+                else {
+                    root = opts.btnRoot;
+                }
+                if (!J.isElement(root)) {
+                    throw new Error('GameWindow.generateInfoPanel: btnRoot ' +
+                                    'did not resolve to a valid HTMLElement: ' +
+                                    opts.btnRoot);
+                }
+            }
+            if (root) {
+                btn = W.infoPanel.createToggleButton(opts.btnLabel);
+                root.appendChild(btn);
+            }
+        }
+
+        // Set inner HTML if specified.
+        if (opts.innerHTML) {
+            W.infoPanel.infoPanelDiv.innerHTML = opts.innerHTML;
         }
 
         // Emit event.
@@ -36366,6 +36403,15 @@ if (!Array.prototype.indexOf) {
         this._buttons = [];
 
         /**
+        * ### InfoPanel._buttons
+        *
+        * Reference to the last created toggle button
+        *
+        * @see InfoPanel.createToggleButton
+        */
+        this.toggleBtn = null;
+
+        /**
          * ### InfoPanel.className
          *
          * Class name of info panel
@@ -36562,6 +36608,10 @@ if (!Array.prototype.indexOf) {
         this.isVisible = true;
         // Must be at the end.
         W.adjustHeaderOffset(true);
+        // Scroll into view.
+        if ('function' === typeof this.infoPanelDiv.scrollIntoView) {
+            this.infoPanelDiv.scrollIntoView({ behavior: 'smooth' });
+        }
     };
 
     /**
@@ -36588,32 +36638,37 @@ if (!Array.prototype.indexOf) {
      * Creates an HTML button with a listener to toggle the InfoPanel
      *
      * Adds the button to the internal collection `_buttons`. All buttons
-     * are destroyed if the Info Panel is destroyed.
+     * are destroyed if the Info Panel is destroyed. Stores a reference to the
+     * last created button under `toggleBtn`.
+     *
+     * @param {string} label Optional. A text to be displayed on the button.
+     *    Default: 'Info'.
      *
      * @return {HTMLElement} button A button that toggles info panel
      *
      * @see InfoPanel._buttons
+     * @see InfoPanel.toggleBtn
      * @see InfoPanel.toggle
      */
-    InfoPanel.prototype.createToggleButton = function(buttonLabel) {
+    InfoPanel.prototype.createToggleButton = function(label) {
         var that, button;
 
-        buttonLabel = buttonLabel || 'Toggle Info Panel';
-        if ('string' !== typeof buttonLabel || buttonLabel.trim() === '') {
-            throw new Error('InfoPanel.createToggleButton: buttonLabel ' +
+        label = label || 'Info';
+        if ('string' !== typeof label || label.trim() === '') {
+            throw new Error('InfoPanel.createToggleButton: label ' +
                             'must be undefined or a non-empty string. Found: ' +
-                            buttonLabel);
+                            label);
         }
         button = document.createElement('button');
         button.className = 'btn btn-lg btn-warning';
-        button.innerHTML = buttonLabel ;
+        button.innerHTML = label ;
 
         that = this;
-        button.onclick = function() {
-            that.toggle();
-        };
+        button.onclick = function() { that.toggle(); };
 
+        // Store references.
         this._buttons.push(button);
+        this.toggleBtn = button;
 
         return button;
     };
@@ -39240,7 +39295,7 @@ if (!Array.prototype.indexOf) {
      * @param {object} opts Optional. Options to pass to Widget.getValues.
      *   Default: { markAttempt: false, highlight: false };
      *
-     * @return {boolean} TRUE, if widget is currently docked
+     * @return {boolean} TRUE, if action is required
      */
     Widget.prototype.isActionRequired = function(opts) {
         var values;
@@ -39250,8 +39305,8 @@ if (!Array.prototype.indexOf) {
         opts.highlight = opts.highlight || false;
         values = this.getValues(opts);
         if (!values) return false; // Safety check.
-        return values.missValues === true || values.choice === null ||
-            values.isCorrect === false;
+        // TODO: check removed: values.missValues === true ||
+        return values.choice === null || values.isCorrect === false;
     };
 
     /**
@@ -41070,8 +41125,9 @@ if (!Array.prototype.indexOf) {
 
         this.button.onclick = function() {
             var res;
+            that.disable();
             res = node.game.stepBack(that.stepOptions);
-            if (res) that.disable();
+            if (res === false) that.enable();
         };
 
         this.stepOptions = {
@@ -41174,11 +41230,16 @@ if (!Array.prototype.indexOf) {
     };
 
     BackButton.prototype.append = function() {
+        if (!node.game.getPreviousStep(1, this.stepOptions)) this.disable();
         this.bodyDiv.appendChild(this.button);
     };
 
     BackButton.prototype.listeners = function() {
         var that = this;
+
+        node.events.game.on('DONE', function() {
+            that.disable();
+        });
 
         // Locks the back button in case of a timeout.
         node.events.game.on('PLAYING', function() {
@@ -44151,7 +44212,6 @@ if (!Array.prototype.indexOf) {
         this.freeText = 'string' === typeof options.freeText ?
             options.freeText : !!options.freeText;
 
-        // formsOptions.
         if ('undefined' !== typeof options.required) {
             this.required = !!options.required;
         }
@@ -48391,7 +48451,7 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # CustomInput
- * Copyright(c) 2019 Stefano Balietti
+ * Copyright(c) 2020 Stefano Balietti
  * MIT Licensed
  *
  * Creates a configurable input form with validation
@@ -48406,7 +48466,7 @@ if (!Array.prototype.indexOf) {
 
     // ## Meta-data
 
-    CustomInput.version = '0.10.0';
+    CustomInput.version = '0.11.0';
     CustomInput.description = 'Creates a configurable input form';
 
     CustomInput.title = false;
@@ -48702,6 +48762,23 @@ if (!Array.prototype.indexOf) {
         this.validation = null;
 
         /**
+         * ### CustomInput.userValidation
+         *
+         * An additional validation executed after the main validation function
+         *
+         * Executes only if validation does not fail, takes as input the return
+         * value from the validation function which can be modified accordingly.
+         *
+         * ```javascript
+         *  {
+         *    value: 'validvalue',
+         *    err:   'This error occurred' // If invalid.
+         *  }
+         * ```
+         */
+        this.userValidation = null;
+
+        /**
          * ### CustomInput.validationSpeed
          *
          * How often (in milliseconds) the validation function is called
@@ -48715,7 +48792,7 @@ if (!Array.prototype.indexOf) {
          *
          * The function that postprocess the input after validation
          *
-         * The function returns the postprocessed valued
+         * The function returns the postprocessed value
          */
         this.postprocess = null;
 
@@ -48857,6 +48934,15 @@ if (!Array.prototype.indexOf) {
         this.orientation = tmp;
 
         this.requiredChoice = !!opts.requiredChoice;
+
+        if (opts.userValidation) {
+            if ('function' !== typeof opts.userValidation) {
+                throw new TypeError('CustomInput.init: userValidation must ' +
+                                    'be function or undefined. Found: ' +
+                                    opts.userValidation);
+            }
+            this.userValidation = opts.userValidation;
+        }
 
         if (opts.type) {
             if (!CustomInput.types[opts.type]) {
@@ -49418,7 +49504,7 @@ if (!Array.prototype.indexOf) {
 
             // US_Town,State, Zip Code
 
-            // TODO: add other types, e.g.int and email.
+            // TODO: add other types, e.g., email.
         }
 
         // Variable tmp contains a validation function, either from
@@ -49433,6 +49519,7 @@ if (!Array.prototype.indexOf) {
             else if (tmp) {
                 res = tmp(value);
             }
+            if (that.userValidation) that.userValidation(res);
             return res;
         };
 
@@ -49996,7 +50083,7 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # CustomInputGroup
- * Copyright(c) 2019 Stefano Balietti
+ * Copyright(c) 2021 Stefano Balietti
  * MIT Licensed
  *
  * Creates a table that groups together several custom input widgets
@@ -50013,7 +50100,7 @@ if (!Array.prototype.indexOf) {
 
     // ## Meta-data
 
-    CustomInputGroup.version = '0.1.0';
+    CustomInputGroup.version = '0.2.0';
     CustomInputGroup.description = 'Groups together and manages sets of ' +
         'CustomInput widgets.';
 
@@ -50171,6 +50258,15 @@ if (!Array.prototype.indexOf) {
          * The number of required choices.
          */
         this.requiredChoice = null;
+
+        /**
+         * ### ChoiceManager.required
+         *
+         * TRUE if widget should be checked upon node.done.
+         *
+         * TODO: Harmonize required and requiredChoice
+         */
+        this.required = null;
 
         /**
          * ### CustomInputGroup.orientation
@@ -50418,6 +50514,10 @@ if (!Array.prototype.indexOf) {
                                 'requiredChoice ' +
                                 'be number or boolean or undefined. Found: ' +
                                 opts.requiredChoice);
+        }
+
+        if ('undefined' !== typeof opts.required) {
+            this.required = !!opts.required;
         }
 
         // Set the group, if any.
@@ -50848,6 +50948,9 @@ if (!Array.prototype.indexOf) {
             isCorrect: true
         };
         if ('undefined' === typeof opts.highlight) opts.highlight = true;
+        // TODO: do we need markAttempt?
+        // if ('undefined' === typeof opts.markAttempt) opts.markAttempt = true;
+
         // Make sure reset is done only at the end.
         toReset = opts.reset;
         opts.reset = false;
@@ -50859,7 +50962,10 @@ if (!Array.prototype.indexOf) {
             // TODO is null or empty?
             if (res.items[input.id].value === "") {
                 res.missValues = true;
-                if (input.requiredChoice) {
+                // TODO: check do we need to check for correctChoice?
+                if (input.requiredChoice || input.required ||
+                    input.correctChoice) {
+
                     res.err = true;
                     res.isCorrect = false;
                 }
@@ -50876,7 +50982,11 @@ if (!Array.prototype.indexOf) {
 
         }
         else if (toReset) this.reset(toReset);
+        if (!res.isCorrect && opts.highlight) this.highlight();
+
+        // Restore opts.reset.
         opts.reset = toReset;
+        
         if (this.textarea) res.freetext = this.textarea.value;
         return res;
     };
@@ -51071,6 +51181,17 @@ if (!Array.prototype.indexOf) {
         that.itemsById[ci.id] = ci;
         that.items[idx] = ci;
         that.itemsMap[ci.id] = idx;
+
+        if (s.required || s.requiredChoice || s.correctChoice) {
+            // False is set manually, otherwise undefined.
+            if (that.required === false) {
+                throw new Error('CustomInputGroup.buildTable: required is ' +
+                                'false, but item "' + s.id +
+                                '" has required truthy');
+            }
+            that.required = true;
+        }
+
         return ci;
     }
 
@@ -52179,6 +52300,12 @@ if (!Array.prototype.indexOf) {
     };
 
     DoneButton.prototype.append = function() {
+        // If added in init, it must stay disabled until the step property
+        // of first step is evaluated.
+        if (!node.game.isReady()) {
+            this.disabled = true;
+            this.button.disabled = true;
+        }
         this.bodyDiv.appendChild(this.button);
     };
 
