@@ -191,7 +191,27 @@ p {
 #ng_info-panel {
     margin: 0 auto;
     max-width: 42em;
+    /* overflow: hidden; */ 
 }
+
+/* In progress */
+
+/* .slided-close {
+    height: 0px;
+    -webkit-transition:height, 2s linear;
+    -moz-transition: height, 2s linear;
+    -ms-transition: height, 2s linear;
+    -o-transition: height, 2s linear;
+    transition: height, 2s linear;
+}
+.slided-open {
+    max-height: 400px;
+    -webkit-transition:height, 2s linear;
+    -moz-transition: height, 2s linear;
+    -ms-transition: height, 2s linear;
+    -o-transition: height, 2s linear;
+    transition: height, 2s linear;
+} */
 
 /* Handy classes */
 /*****************/
@@ -218,9 +238,13 @@ p {
 
 .centered, .requirements, .waitingroom {
   max-width: 42em;
-  width: 90%;
   margin: 0 auto;
 }
+
+.requirements, .waitingroom {
+  width: 90%;
+}
+
 
 /** WIDGETS **/
 /*************/
@@ -289,6 +313,7 @@ p {
 .ng_header_position-horizontal-b .visualround .stagediv .content,
 .ng_header_position-horizontal-b .visualround .stepdiv .content {
   float: right;
+  display: flex;
 }
 .ng_header_position-horizontal-t .visualround .stepdiv,
 .ng_header_position-horizontal-b .visualround .stepdiv,
@@ -654,13 +679,24 @@ div.riskgauge .sep {
 /* Bomb */
 
 div.riskgauge .bomb-table {
-    margin-left: 10%;
-    margin-right: 10%;
+    margin-left: 20%;
+    margin-right: 20%;
 }
 div.riskgauge .bomb-box {
-    height: 30px;
+    height: 10px;
     background: black;
 }
+
+@media (min-width: 1900px) {
+    div.riskgauge .bomb-box {
+        height: 30px;
+    }
+    div.riskgauge .bomb-table {
+        margin-left: 10%;
+        margin-right: 10%;
+    }
+}
+
 div.riskgauge #bomb_result {
     font-weight: bold;
 }
