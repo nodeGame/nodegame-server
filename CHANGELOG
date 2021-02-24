@@ -1,5 +1,8 @@
 # nodegame-server change log
 
+# current
+- CSS: Bomb widget is adaptive to media query, VisualRound is more compact.
+
 # 6.2.2
 - Built with Window support for loaded images. 
 
