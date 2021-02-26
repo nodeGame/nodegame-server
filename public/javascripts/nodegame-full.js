@@ -50986,7 +50986,7 @@ if (!Array.prototype.indexOf) {
 
         // Restore opts.reset.
         opts.reset = toReset;
-        
+
         if (this.textarea) res.freetext = this.textarea.value;
         return res;
     };
@@ -55881,15 +55881,15 @@ if (!Array.prototype.indexOf) {
             str += 'Every box contains a prize of ' +
                     widget.boxValue + ' ' + widget.currency + ', but ';
             if (probBomb === 1) {
-                str += 'one box contains a <em>bomb</em>.';
+                str += 'one random box contains a <em>bomb</em>.';
             }
             else {
                 if (widget.revealProbBomb) {
                     str += 'with probability ' + probBomb +
-                    ' one of those boxes contains a <em>bomb</em>.';
+                    ' one random box contains a <em>bomb</em>.';
                 }
                 else {
-                    str += 'one of those boxes might contain a <em>bomb</em>.';
+                    str += 'one random box might contain a <em>bomb</em>.';
                 }
             }
             str += ' You must decide how many boxes you want to open.';
@@ -57014,7 +57014,7 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # SVOGauge
- * Copyright(c) 2019 Stefano Balietti
+ * Copyright(c) 2021 Stefano Balietti
  * MIT Licensed
  *
  * Displays an interface to measure users' social value orientation (S.V.O.)
