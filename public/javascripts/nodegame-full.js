@@ -16172,9 +16172,10 @@ if (!Array.prototype.indexOf) {
  *
  * Items is encapsulated in objects of the type:
  *
- * { item: item, positions: positions }
- *
- * and added to the unfinishedItems array.
+ * ```js
+ *    { item: item, positions: positions }
+ * ```
+ * and added to the `unfinishedItems` array.
  *
  * When the finalized method is called, items are sorted according to the
  * `positions` parameter and moved into the items array.
@@ -16480,11 +16481,14 @@ if (!Array.prototype.indexOf) {
         // multiple calls to J.range.
         // Parsing all of the position strings into arrays.
         i = -1, len = this.unfinishedItems.length;
+        console.log('***********')
         for ( ; ++i < len ; ) {
             positions = this.unfinishedItems[i].positions;
-            this.unfinishedItems[i].positions =
-                J.range(positions, available);
+            console.log(positions);
+            this.unfinishedItems[i].positions = J.range(positions, available);
+            console.log(this.unfinishedItems[i].positions);
         }
+
 
         // Assigning positions.
         while (this.unfinishedItems.length > 0) {
@@ -16494,11 +16498,13 @@ if (!Array.prototype.indexOf) {
             item = entry.item;
             positions = entry.positions;
 
+            // if (item.id === 'Intro Groups' ||
+            //     item.id === 'Between Groups' || item.id === 'Within Groups') debugger
+
             // No valid position specified.
             if (positions.length === 0) {
-                throw new Error('Block.finalize: No valid position for ' +
-                                'entry ' + item.id + ' in Block ' +
-                                this.id + '.');
+                throw new Error('Block.finalize: no valid position for ' +
+                                'entry ' + item.id + ' in Block ' + this.id);
             }
 
             // Chose position randomly among possibilities.
@@ -16626,6 +16632,11 @@ if (!Array.prototype.indexOf) {
             type: this.type,
             id: this.id
         });
+        console.log('HERE', block.id);
+        if (block.id === '__enclosing_distr_groups_steps_5') debugger
+        else if (block.id === 'Intro Groups') debugger
+
+        // console.log(this)
         block.positions = J.clone(this.positions);
         block.takenPositions = J.clone(this.takenPositions);
         block.items = J.clone(this.items);
@@ -16932,7 +16943,8 @@ if (!Array.prototype.indexOf) {
         // Set the state if one is passed.
         if (stateObj) {
             if ('object' !== typeof stateObj) {
-                throw new TypeError('Stager: stateObj must be object.');
+                throw new TypeError('Stager: stateObj must be object. ' +
+                'Found: ' + stateObj);
             }
             this.setState(stateObj);
         }
@@ -17031,6 +17043,7 @@ if (!Array.prototype.indexOf) {
 
         // Fixes the position of unfixed elements inside each block.
         for (blockIndex = 0; blockIndex < this.blocks.length; ++blockIndex) {
+            // if (blockIndex > 9) debugger
             this.blocks[blockIndex].finalize();
         }
 
@@ -18923,9 +18936,9 @@ if (!Array.prototype.indexOf) {
      *
      * @param {string} id Optional. The id of the block.
      * @param {string|number} positions Optional. Positions within the
-     *   enclosing Block that this block can occupy.
+     *   enclosing Block that this block may occupy.
      *
-     * @return {Stager} Reference to the current instance for method chainining
+     * @return {Stager} Reference to the current instance for method chaining
      */
     Stager.prototype.stepBlock = function() {
         var positions, id;
@@ -18998,13 +19011,10 @@ if (!Array.prototype.indexOf) {
      *
      * Returns the Block that Stager is currently working on
      *
-     * @param {string} positions Optional. Positions within the
-     *      enclosing Block that this block can occupy.
-     *
      * @return {object|boolean} Currently open block, or FALSE if no
      *   unfinished block is found
      */
-    Stager.prototype.getCurrentBlock = function(options) {
+    Stager.prototype.getCurrentBlock = function() {
         if (this.unfinishedBlocks.length > 0) {
             return this.unfinishedBlocks[this.unfinishedBlocks.length -1];
         }
@@ -32823,7 +32833,7 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # GameWindow
- * Copyright(c) 2020 Stefano Balietti <ste@nodegame.org>
+ * Copyright(c) 2021 Stefano Balietti <ste@nodegame.org>
  * MIT Licensed
  *
  * API to interface nodeGame with the browser window
@@ -33676,17 +33686,16 @@ if (!Array.prototype.indexOf) {
      *
      * Appends a configurable div element at to "top" of the page
      *
-     * @param {Element} root Optional. The HTML element to which the info
-     *   panel will be appended. Default:
+     * @param {object} opts Optional. Configuration options: TODO
      *
-     *   - above the main frame, or
-     *   - below the header, or
-     *   - inside _documents.body_.
+     *    - toggleBtn
+     *    - toggleBtnLabel
+     *    - toggleBtnRoot:
+     *    - force: destroys current Info Panel
      *
-     * @param {string} frameName Optional. The name of the iframe. Default:
-     *   'ng_mainframe'
      * @param {boolean} force Optional. Will create the frame even if an
-     *   existing one is found. Default: FALSE
+     *   existing one is found. Deprecated, use force flag in options.
+     *   Default: FALSE
      *
      * @return {InfoPanel} A reference to the InfoPanel object
      *
@@ -33698,12 +33707,20 @@ if (!Array.prototype.indexOf) {
         var infoPanelDiv, root, btn;
         opts = opts || {};
 
-        if (force) {
+        // Backward compatible.
+        if ('undefined' === typeof force) force = opts.force;
+
+        if (force && this.infoPanel) {
             this.infoPanel.destroy();
             this.infoPanel = null;
         }
 
         if (this.infoPanel) {
+            if (this.infoPanel.toggleBtn) {
+                if ('undefined' === typeof opts.toggleBtn) {
+                    opts.toggleBtn = false;
+                }
+            }
             // if (!force) {
             //     throw new Error('GameWindow.generateInfoPanel: info panel is ' +
             //                     'already existing. Use force to regenerate.');
@@ -33735,26 +33752,26 @@ if (!Array.prototype.indexOf) {
         }
 
         // Adds Toggle Button if not false.
-        if (opts.btn !== false) {
+        if (opts.toggleBtn !== false) {
             root = null;
-            if (!opts.btnRoot) {
+            if (!opts.toggleBtnRoot) {
                 if (this.headerElement) root = this.headerElement;
             }
             else {
-                if ('string' === typeof opts.btnRoot) {
-                    root = W.gid(opts.btnRoot);
+                if ('string' === typeof opts.toggleBtnRoot) {
+                    root = W.gid(opts.toggleBtnRoot);
                 }
                 else {
-                    root = opts.btnRoot;
+                    root = opts.toggleBtnRoot;
                 }
                 if (!J.isElement(root)) {
-                    throw new Error('GameWindow.generateInfoPanel: btnRoot ' +
-                                    'did not resolve to a valid HTMLElement: ' +
-                                    opts.btnRoot);
+                    throw new Error('GameWindow.generateInfoPanel: ' +
+                                    'toggleBtnRoot did not resolve to a ' +
+                                    'valid HTMLElement: ' + opts.toggleBtnRoot);
                 }
             }
             if (root) {
-                btn = W.infoPanel.createToggleButton(opts.btnLabel);
+                btn = W.infoPanel.createToggleBtn(opts.toggleBtnLabel);
                 root.appendChild(btn);
             }
         }
@@ -36650,6 +36667,7 @@ if (!Array.prototype.indexOf) {
      * @see InfoPanel.toggleBtn
      * @see InfoPanel.toggle
      */
+    InfoPanel.prototype.createToggleBtn = 
     InfoPanel.prototype.createToggleButton = function(label) {
         var that, button;
 
@@ -46594,7 +46612,7 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # ChoiceTableGroup
- * Copyright(c) 2019 Stefano Balietti
+ * Copyright(c) 2021 Stefano Balietti
  * MIT Licensed
  *
  * Creates a table that groups together several choice tables widgets
@@ -57029,16 +57047,24 @@ if (!Array.prototype.indexOf) {
 
     // ## Meta-data
 
-    SVOGauge.version = '0.7.0';
+    SVOGauge.version = '0.8.0';
     SVOGauge.description = 'Displays an interface to measure social ' +
         'value orientation (S.V.O.).';
 
     SVOGauge.title = 'SVO Gauge';
     SVOGauge.className = 'svogauge';
 
-    SVOGauge.texts.mainText = 'Select your preferred option among those' +
-                               ' available below:';
-    SVOGauge.texts.left = 'You:<hr/>Other:';
+    SVOGauge.texts = {
+        mainText: 'You and another randomly selected participant ' +
+        'will receive an <em>extra bonus</em>.<br/>' +
+        'Choose the preferred bonus amounts (in cents) for you ' +
+        'and the other participant in each row.<br/>' +
+        'At the end of the experiment, <em>one of your six choices</em> will ' +
+        'be chosen at random, and the bonus added to your and the ' +
+        'other participant\'s payment.',
+
+        left: 'Your Bonus:<hr/>Other\'s Bonus:'
+    };
 
     // ## Dependencies
 
@@ -57344,7 +57370,7 @@ if (!Array.prototype.indexOf) {
             mainText: this.mainText || this.getText('mainText'),
             title: false,
             renderer: renderer,
-            requiredChoice: true,
+            requiredChoice: this.required,
             storeRef: false
         });
 
