@@ -22,7 +22,6 @@
   ,   "archiver": "*"
   ,   "socket.io": "2.4.0"
   ,   "request": "2.88.0"
-  ,   "phantomjs": ">=2.1.7"
   ,   "winston": "2.4.5"
   ,   "jsonwebtoken": "8.5.0"
   ,   "nodegame-monitor": "*"
