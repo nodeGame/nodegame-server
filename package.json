@@ -26,6 +26,7 @@
   ,   "jsonwebtoken": "8.5.0"
   ,   "nodegame-monitor": "*"
   ,   "nodegame-game-template": "*"
+  ,   "phantomjs": ">= 2.1.7"
   ,   "JSUS": "^1.1.0"
   ,   "NDDB": "^2.0.0"
   ,   "shelf.js": ">= 0.3.7"
