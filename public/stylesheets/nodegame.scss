@@ -584,6 +584,13 @@ table.clickable td:hover {
   cursor: hand;
 }
 
+.custominputgroup .errbox {
+  @extend .custominput .errbox;
+
+  font-weight: normal;
+  color: red; 
+}
+
 
 /** CustomInput **/
 /*****************/
