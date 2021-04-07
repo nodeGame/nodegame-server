@@ -191,7 +191,7 @@ p {
 #ng_info-panel {
     margin: 0 auto;
     max-width: 42em;
-    /* overflow: hidden; */ 
+    /* overflow: hidden; */
 }
 
 /* In progress */
@@ -539,6 +539,19 @@ table.clickable td:focus {
 }
 
 
+/** ErorBox **/
+.choicetable .errbox,
+.custominput .errbox,
+.custominputgroup .errbox {
+  font-size: 14px;
+  margin-top: 5px;
+}
+
+.choicetable .errbox {
+  font-weight: normal;
+  color: red;
+}
+
 /** CustomInput **/
 /*****************/
 .custominput input {
@@ -555,12 +568,6 @@ table.clickable td:focus {
   font-weight: normal;
   margin-left: 8px;
   font-size: 14px;
-}
-
-.custominput .errbox,
-.custominputgroup .errbox {
-  font-size: 14px;
-  margin-top: 5px;
 }
 
 /** Mood **/
