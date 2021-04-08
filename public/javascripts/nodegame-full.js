@@ -10676,7 +10676,7 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # Stepping Rules
- * Copyright(c) 2017 Stefano Balietti
+ * Copyright(c) 2021 Stefano Balietti
  * MIT Licensed
  *
  * Collections of rules to determine whether the game should step forward.
@@ -10777,6 +10777,7 @@ if (!Array.prototype.indexOf) {
     exports.stepRules.OTHERS_SYNC_STAGE = function(stage, myStageLevel, pl,
                                                    game) {
 
+        var nSteps;
         if (!pl.size()) return false;
         stage = pl.first().stage;
         nSteps = game.plot.stepsToNextStage(stage);
@@ -19461,12 +19462,20 @@ if (!Array.prototype.indexOf) {
     Stager.prototype.stepBlock = function(id, positions) {
         var curBlock, err;
 
-        if ('string' !== typeof id || id.trim() === '') {
-            throw new TypeError('Stager.stepBlock: id must be a non-empty ' +
-                                'string. Found: ' + id);
+        if (arguments.length === 1) {
+            console.log('***deprecation warning: Stager.stepBlock will ' +
+                        'require two parameters in the next version.***');
+
+           positions = id;
         }
-        if (this.blocksIds[id]) {
-            throw new Error('Stager.stepBlock: non-unique id: ' + id);
+        else {
+            if ('string' !== typeof id || id.trim() === '') {
+                throw new TypeError('Stager.stepBlock: id must be a ' +
+                                    'non-empty string. Found: ' + id);
+            }
+            if (this.blocksIds[id]) {
+                throw new Error('Stager.stepBlock: non-unique id: ' + id);
+            }
         }
 
         // Check if a stage block can be added in this position.
@@ -19519,12 +19528,20 @@ if (!Array.prototype.indexOf) {
     Stager.prototype.stageBlock = function(id, positions) {
         var curBlock, err;
 
-        if ('string' !== typeof id || id.trim() === '') {
-            throw new TypeError('Stager.stageBlock: id must be a non-empty ' +
-                                'string. Found: ' + id);
+        if (arguments.length === 1) {
+            console.log('***deprecation warning: Stager.stageBlock will ' +
+                        'require two parameters in the next version.***');
+
+           positions = id;
         }
-        if (this.blocksIds[id]) {
-            throw new Error('Stager.stageBlock: non-unique id: ' + id);
+        else {
+            if ('string' !== typeof id || id.trim() === '') {
+                throw new TypeError('Stager.stageBlock: id must be a ' +
+                                    'non-empty string. Found: ' + id);
+            }
+            if (this.blocksIds[id]) {
+                throw new Error('Stager.stageBlock: non-unique id: ' + id);
+            }
         }
 
         // Check if a stage block can be added in this position.
@@ -20820,7 +20837,7 @@ if (!Array.prototype.indexOf) {
 
         socket = io.connect(url, options); //conf.io
 
-        socket.on('connect', function(msg) {
+        socket.on('connect', function() {
             node.info('socket.io connection open');
             node.socket.onConnect.call(node.socket);
             socket.on('message', function(msg) {
@@ -42362,7 +42379,7 @@ if (!Array.prototype.indexOf) {
 
     // ## Meta-data
 
-    Chat.version = '1.2.1';
+    Chat.version = '1.3.0';
     Chat.description = 'Offers a uni-/bi-directional communication interface ' +
         'between players, or between players and the server.';
 
@@ -42575,6 +42592,22 @@ if (!Array.prototype.indexOf) {
          * Once created
          */
         this.isTypingDivs = {};
+
+        /**
+         * ### Chat.preprocessMsg
+         *
+         * A function that process the msg before being displayed.
+         *
+         * Example:
+         *
+         * ```js
+         * function(data, code) {
+         *     data.msg += '!';
+         * }
+         * ```
+         */
+        this.preprocessMsg = null;
+
     }
 
     // ## Chat methods
@@ -42610,8 +42643,20 @@ if (!Array.prototype.indexOf) {
      */
     Chat.prototype.init = function(opts) {
         var tmp, i, rec, sender, that;
-
+        opts = opts || {};
         that = this;
+
+        // Receiver Only.
+        this.receiverOnly = !!opts.receiverOnly;
+
+        tmp = opts.preprocessMsg;
+        if ('function' === typeof tmp) {
+            this.preprocessMsg = tmp;
+        }
+        else if (tmp) {
+            throw new TypeError('Chat.init: preprocessMsg must be function ' +
+                                'or undefined. Found: ' + tmp);
+        }
 
         // Chat id.
         tmp = opts.chatEvent;
@@ -42840,6 +42885,20 @@ if (!Array.prototype.indexOf) {
         return c;
     };
 
+    Chat.prototype.renderMsg = function(data, code) {
+        var msg;
+        if ('function' === typeof this.preprocessMsg) {
+            this.preprocessMsg(data, code);
+        }
+        if ('function' === typeof data.msg) {
+            msg = data.msg(data, code);
+        }
+        else {
+            msg = data.msg;
+        }
+        return msg;
+    };
+
     /**
      * ### Chat.scrollToBottom
      *
@@ -42867,7 +42926,11 @@ if (!Array.prototype.indexOf) {
             }
             // Remove is typing sign, if any.
             that.clearIsTyping(msg.from);
-            that.writeMsg('incoming', { msg: msg.data, id: msg.from });
+            msg = {
+                msg: that.renderMsg(msg.data, 'incoming'),
+                id: msg.from
+            };
+            that.writeMsg('incoming', msg);
         });
 
         node.on.data(this.chatEvent + '_QUIT', function(msg) {
@@ -42927,7 +42990,7 @@ if (!Array.prototype.indexOf) {
         this.isTypingTimeouts[id] = setTimeout(function() {
             that.clearIsTyping(id);
             that.isTypingTimeouts[id] = null;
-        }, 5000);
+        }, 3000);
     };
 
     Chat.prototype.clearIsTyping = function(id) {
@@ -42956,7 +43019,7 @@ if (!Array.prototype.indexOf) {
      * @see Chat.chatDiv
      */
     Chat.prototype.handleMsg = function(msg) {
-        var from, args;
+        var from;
         from = msg.from;
         if (from === node.player.id || from === node.player.sid) {
             node.warn('Chat: your own message came back: ' + msg.id);
@@ -43000,11 +43063,20 @@ if (!Array.prototype.indexOf) {
         return out;
     };
 
-    // ### Chat.sendMsg
-    // Reads the textarea and delivers the msg to the server.
-    Chat.prototype.sendMsg = function(msg, opts) {
+    /* ### Chat.sendMsg
+     *
+     * Delivers a msg to the server
+     *
+     * If no options are specified, it reads the textarea.
+     *
+     * @param {object} opts Optional. Configutation options:
+     *   - msg: the msg to send. If undefined, it reads the value from textarea;
+     *          if function it executes it and uses the return value.
+     *   - recipients: array of recipients. Default: this.recipientsIds.
+     *   - silent: does not write the msg on the chat.
+     */
+    Chat.prototype.sendMsg = function(opts) {
         var to, ids, that;
-        opts = opts || {};
 
         // No msg sent.
         if (this.isDisabled()) {
@@ -43012,19 +43084,33 @@ if (!Array.prototype.indexOf) {
             return;
         }
 
-        if ('undefined' !== typeof msg) {
-            msg += '';
-            if ('string' !== typeof msg) {
-                throw new TypeError('Chat.sendMsg: msg must be string, ' +
-                                    'number, or undefined. Found: ' + msg);
+        if ('object' === typeof opts) {
+            if ('undefined' !== typeof opts.msg) {
+                if ('object' === typeof opts.msg) {
+                    throw new TypeError('Chat.sendMsg: opts.msg cannot be ' +
+                                        'object. Found: ' + opts.msg);
+                }
             }
         }
         else {
-            msg = this.readTextarea();
+            if ('undefined' === typeof opts) {
+                opts = { msg: this.readTextarea() };
+            }
+            else if ('string' === typeof opts || 'number' === typeof opts) {
+                opts = { msg: opts };
+            }
+            else {
+                throw new TypeError('Chat.sendMsg: opts must be string, ' +
+                                    'number, object, or undefined. Found: ' +
+                                     opts);
+            }
         }
 
+        // Calls preprocessMsg and if opts.msg is function, executes it.
+        opts.msg = this.renderMsg(opts, 'outgoing');
+
         // Move cursor at the beginning.
-        if (msg === '') {
+        if (opts.msg === '') {
             node.warn('Chat: message has no text, not sent.');
             return;
         }
@@ -43037,20 +43123,21 @@ if (!Array.prototype.indexOf) {
         // Make it a number if array of size 1, so it is faster.
         to = ids.length === 1 ? ids[0] : ids;
 
-        node.say(this.chatEvent, to, msg);
+        node.say(this.chatEvent, to, opts);
 
         if (!opts.silent) {
             that = this;
             // TODO: check the comment: // to not used now.
-            this.writeMsg('outgoing', { msg: msg });
+            this.writeMsg('outgoing', opts);
 
             // Make sure the cursor goes back to top.
             setTimeout(function() { that.textarea.value = ''; });
-            // Clear any typing timeout.
-            if (this.amTypingTimeout) {
-                clearTimeout(this.amTypingTimeout);
-                this.amTypingTimeout = null;
-            }
+        }
+
+        // Clear any typing timeout.
+        if (this.amTypingTimeout) {
+            clearTimeout(this.amTypingTimeout);
+            this.amTypingTimeout = null;
         }
     }
 
