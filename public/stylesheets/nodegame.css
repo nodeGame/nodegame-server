@@ -538,15 +538,12 @@ table.clickable td:focus {
   background: #FFE;
 }
 
-/** ErorBox **/
+/** ErrBox **/
 .choicetable .errbox,
 .custominput .errbox,
 .custominputgroup .errbox {
   font-size: 14px;
   margin-top: 5px;
-}
-
-.choicetable .errbox {
   font-weight: normal;
   color: red;
 }

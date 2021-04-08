@@ -586,9 +586,6 @@ table.clickable td:hover {
 
 .custominputgroup .errbox {
   @extend .custominput .errbox;
-
-  font-weight: normal;
-  color: red; 
 }
 
 
@@ -604,6 +601,8 @@ table.clickable td:hover {
 .custominput .errbox {
   font-size: 14px;
   margin-top: 5px;
+  font-weight: normal;
+  color: red; 
 }
 
 .custominput .panel-body {
