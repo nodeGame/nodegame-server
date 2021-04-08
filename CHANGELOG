@@ -1,7 +1,8 @@
 # nodegame-server change log
 
-# current
+# 6.3.0
 - CSS: Bomb widget is adaptive to media query, VisualRound is more compact.
+- Fixed renderTemplate bug when auth is on.
 
 # 6.2.2
 - Built with Window support for loaded images. 
