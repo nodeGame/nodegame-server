@@ -10338,7 +10338,7 @@ if (!Array.prototype.indexOf) {
     node.support = JSUS.compatibility();
 
     // Auto-Generated.
-    node.version = '6.1.0';
+    node.version = '6.2.0';
 
 })(window);
 
@@ -15693,7 +15693,7 @@ if (!Array.prototype.indexOf) {
      * @param {number|array} The value/s for the handler
      */
     SizeManager.prototype.setHandler = function(type, values) {
-        values = checkMinMaxExactParams('min', values, this.node);
+        values = checkMinMaxExactParams(type, values, this.node);
         this[type + 'Threshold'] = values[0];
         this[type + 'Cb'] = values[1];
         this[type + 'RecoveryCb'] = values[2];
@@ -15712,10 +15712,10 @@ if (!Array.prototype.indexOf) {
         var that;
         that = this;
         this.node.events.step.on('in.say.PCONNECT', function(p) {
-            that.changeHandler('pconnect', p);
+            that.changeHandler('pconnect', p.data);
         }, 'plManagerCon');
         this.node.events.step.on('in.say.PDISCONNECT', function(p) {
-            that.changeHandler('pdisconnect', p);
+            that.changeHandler('pdisconnect', p.data);
         }, 'plManagerDis');
     };
 
@@ -15773,10 +15773,10 @@ if (!Array.prototype.indexOf) {
         }
         else if (num !== '*' &&
                  ('number' !== typeof num || !isFinite(num) || num < 1)) {
+
             throw new TypeError('SizeManager.init: ' + name +
                                 'Players must be a finite number greater ' +
-                                'than 1 or one of the wildcards: *,@. Found: ' +
-                                num);
+                                'than 1 or a wildcard (*,@). Found: ' + num);
         }
 
         if (!cb) {
@@ -24195,7 +24195,7 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # Game
- * Copyright(c) 2020 Stefano Balietti <ste@nodegame.org>
+ * Copyright(c) 2021 Stefano Balietti <ste@nodegame.org>
  * MIT Licensed
  *
  * Handles the flow of the game
@@ -25471,13 +25471,19 @@ if (!Array.prototype.indexOf) {
             else {
                 // Duplicated as below.
                 this.execCallback(cb);
-                if (w) w.adjustFrameHeight(0, 120);
+                if (w) {
+                    w.adjustFrameHeight(0, 120);
+                    if (frame.scrollUp !== false) window.scrollTo(0,0);
+                }
             }
         }
         else {
             // Duplicated as above.
             this.execCallback(cb);
-            if (w) w.adjustFrameHeight(0, 120);
+            if (w) {
+                w.adjustFrameHeight(0, 120);
+                window.scrollTo(0, 0);
+            }
         }
     };
 
@@ -42379,7 +42385,7 @@ if (!Array.prototype.indexOf) {
 
     // ## Meta-data
 
-    Chat.version = '1.3.0';
+    Chat.version = '1.5.0';
     Chat.description = 'Offers a uni-/bi-directional communication interface ' +
         'between players, or between players and the server.';
 
@@ -42596,7 +42602,10 @@ if (!Array.prototype.indexOf) {
         /**
          * ### Chat.preprocessMsg
          *
-         * A function that process the msg before being displayed.
+         * A function that process the msg before being displayed
+         *
+         * It does not preprocess the initial message
+         * and "is typing" notifications.
          *
          * Example:
          *
@@ -42885,6 +42894,21 @@ if (!Array.prototype.indexOf) {
         return c;
     };
 
+    /**
+     * ### Chat.writeMsg
+     *
+     * It calls preprocess and renders a msg from data
+     *
+     * If msg is a function it executes it to render it.
+     *
+     * @param {object} data The content of the message
+     * @param {string} code A value indicating the the type of msg. Available:
+     *   'incoming', 'outgoing', and anything else.
+     *
+     * @return {string} msg The rendered msg
+     *
+     * @see Chat.chatDiv
+     */
     Chat.prototype.renderMsg = function(data, code) {
         var msg;
         if ('function' === typeof this.preprocessMsg) {
@@ -43131,7 +43155,9 @@ if (!Array.prototype.indexOf) {
             this.writeMsg('outgoing', opts);
 
             // Make sure the cursor goes back to top.
-            setTimeout(function() { that.textarea.value = ''; });
+            if (that.textarea) {
+                setTimeout(function() { that.textarea.value = ''; });
+            }
         }
 
         // Clear any typing timeout.
@@ -45850,7 +45876,7 @@ if (!Array.prototype.indexOf) {
         this.rightCell = null;
 
         /**
-         * ### CustomInput.errorBox
+         * ### ChoiceTable.errorBox
          *
          * An HTML element displayed when a validation error occurs
          */
@@ -46061,6 +46087,14 @@ if (!Array.prototype.indexOf) {
          * An object containing the list of disabled values
          */
         this.disabledChoices = {};
+
+
+        /**
+        * ### ChoiceTable.sameWidthCells
+        *
+        * If TRUE, cells have same width regardless of content
+        */
+        this.sameWidthCells = true;
     }
 
     // ## ChoiceTable methods
@@ -46375,19 +46409,6 @@ if (!Array.prototype.indexOf) {
         this.freeText = 'string' === typeof opts.freeText ?
             opts.freeText : !!opts.freeText;
 
-        // Add the choices.
-        if ('undefined' !== typeof opts.choices) {
-            this.setChoices(opts.choices);
-        }
-
-        // Add the correct choices.
-        if ('undefined' !== typeof opts.correctChoice) {
-            if (this.requiredChoice) {
-                throw new Error('ChoiceTable.init: cannot specify both ' +
-                                'opts requiredChoice and correctChoice');
-            }
-            this.setCorrectChoice(opts.correctChoice);
-        }
 
         // Add the correct choices.
         if ('undefined' !== typeof opts.choicesSetSize) {
@@ -46405,6 +46426,21 @@ if (!Array.prototype.indexOf) {
 
             this.choicesSetSize = opts.choicesSetSize;
         }
+
+        // Add the choices.
+        if ('undefined' !== typeof opts.choices) {
+            this.setChoices(opts.choices);
+        }
+
+        // Add the correct choices.
+        if ('undefined' !== typeof opts.correctChoice) {
+            if (this.requiredChoice) {
+                throw new Error('ChoiceTable.init: cannot specify both ' +
+                                'opts requiredChoice and correctChoice');
+            }
+            this.setCorrectChoice(opts.correctChoice);
+        }
+
 
         // Add the correct choices.
         if ('undefined' !== typeof opts.disabledChoices) {
@@ -46424,6 +46460,10 @@ if (!Array.prototype.indexOf) {
                     }
                 })();
             }
+        }
+
+        if ('undefined' === typeof opts.sameWidthCells) {
+            this.sameWidthCells = !!opts.sameWidthCells;
         }
     };
 
@@ -46700,9 +46740,17 @@ if (!Array.prototype.indexOf) {
      * @see ChoiceTable.choicesCells
      */
     ChoiceTable.prototype.renderChoice = function(choice, idx) {
-        var td, shortValue, value;
+        var td, shortValue, value, width;
         td = document.createElement('td');
         if (this.tabbable) J.makeTabbable(td);
+
+        // Forces equal width.
+        if (this.sameWidthCells) {
+            width = this.left ? 70 : 100;
+            if (this.right) width = width - 30;
+            width = width / (this.choicesSetSize || this.choices.length);
+            td.style.width = width.toFixed(2) + '%';
+        }
 
         // Use custom renderer.
         if (this.renderer) {
@@ -46874,7 +46922,9 @@ if (!Array.prototype.indexOf) {
      * @see ChoiceTable.errorBox
      */
     ChoiceTable.prototype.setError = function(err) {
-        this.errorBox.innerHTML = err || '';
+        // TODO: the errorBox is added only if .append() is called.
+        // However, ChoiceTableGroup use the table without calling .append().
+        if (this.errorBox) this.errorBox.innerHTML = err || '';
         if (err) this.highlight();
         else this.unhighlight();
     };
@@ -47521,7 +47571,7 @@ if (!Array.prototype.indexOf) {
 
     // ## Meta-data
 
-    ChoiceTableGroup.version = '1.7.0';
+    ChoiceTableGroup.version = '1.8.0';
     ChoiceTableGroup.description = 'Groups together and manages sets of ' +
         'ChoiceTable widgets.';
 
@@ -47530,9 +47580,14 @@ if (!Array.prototype.indexOf) {
 
     ChoiceTableGroup.separator = '::';
 
-    ChoiceTableGroup.texts.autoHint = function(w) {
-        if (w.requiredChoice) return '*';
-        else return false;
+    ChoiceTableGroup.texts = {
+
+        autoHint: function(w) {
+            if (w.requiredChoice) return '*';
+            else return false;
+        },
+
+        error: 'Selection required.'
     };
 
     // ## Dependencies
@@ -47693,6 +47748,13 @@ if (!Array.prototype.indexOf) {
          * @see Feedback.texts.autoHint
          */
         this.hint = null;
+
+        /**
+         * ### ChoiceTableGroup.errorBox
+         *
+         * An HTML element displayed when a validation error occurs
+         */
+        this.errorBox = null;
 
         /**
          * ### ChoiceTableGroup.items
@@ -48364,6 +48426,8 @@ if (!Array.prototype.indexOf) {
             this.bodyDiv.appendChild(this.table);
         }
 
+        this.errorBox = W.append('div', this.bodyDiv, { className: 'errbox' });
+
         // Creates a free-text textarea, possibly with placeholder text.
         if (this.freeText) {
             this.textarea = document.createElement('textarea');
@@ -48532,6 +48596,7 @@ if (!Array.prototype.indexOf) {
         if (!this.table || this.highlighted !== true) return;
         this.table.style.border = '';
         this.highlighted = false;
+        this.setError();
         this.emit('unhighlighted');
     };
 
@@ -48586,12 +48651,34 @@ if (!Array.prototype.indexOf) {
                 toHighlight = true;
             }
         }
-        if (opts.highlight && toHighlight) this.highlight();
-        else if (toReset) this.reset(toReset);
+        if (opts.highlight && toHighlight) {
+            this.setError(this.getText('error'));
+        }
+        else if (toReset) {
+            this.reset(toReset);
+        }
         opts.reset = toReset;
         if (this.textarea) obj.freetext = this.textarea.value;
         return obj;
     };
+
+
+    /**
+     * ### ChoiceTableGroup.setError
+     *
+     * Set the error msg inside the errorBox and call highlight
+     *
+     * @param {string} The error msg (can contain HTML)
+     *
+     * @see ChoiceTableGroup.highlight
+     * @see ChoiceTableGroup.errorBox
+     */
+    ChoiceTableGroup.prototype.setError = function(err) {
+        this.errorBox.innerHTML = err || '';
+        if (err) this.highlight();
+        else this.unhighlight();
+    };
+
 
     /**
      * ### ChoiceTableGroup.setValues
@@ -49361,7 +49448,7 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # CustomInput
- * Copyright(c) 2020 Stefano Balietti
+ * Copyright(c) 2021 Stefano Balietti
  * MIT Licensed
  *
  * Creates a configurable input form with validation
@@ -49376,7 +49463,7 @@ if (!Array.prototype.indexOf) {
 
     // ## Meta-data
 
-    CustomInput.version = '0.11.0';
+    CustomInput.version = '0.12.0';
     CustomInput.description = 'Creates a configurable input form';
 
     CustomInput.title = false;
@@ -49541,7 +49628,7 @@ if (!Array.prototype.indexOf) {
                     res = '(Must be before ' + w.params.max + ')';
                 }
             }
-            return w.requiredChoice ? ((res || '') + ' *') : (res || false);
+            return w.required ? ((res || '') + ' *') : (res || false);
         },
         numericErr: function(w) {
             var str, p;
@@ -49756,8 +49843,19 @@ if (!Array.prototype.indexOf) {
          * If TRUE, the input form cannot be left empty
          *
          * Default: TRUE
+         *
+         * @deprecated Use CustomInput.required
          */
         this.requiredChoice = null;
+
+        /**
+         * ### CustomInput.required
+         *
+         * If TRUE, the input form cannot be left empty
+         *
+         * Default: TRUE
+         */
+        this.required = null;
 
         /**
          * ### CustomInput.timeBegin
@@ -49843,7 +49941,22 @@ if (!Array.prototype.indexOf) {
         }
         this.orientation = tmp;
 
-        this.requiredChoice = !!opts.requiredChoice;
+        // Backward compatible checks.
+        // Option required will be used in the future.
+        if ('undefined' !== typeof opts.required) {
+            this.required = this.requiredChoice = !!opts.required;
+        }
+        if ('undefined' !== typeof opts.requiredChoice) {
+            if (!!this.required !== !!opts.requiredChoice) {
+                throw new TypeError('CustomInput.init: required and ' +
+                                    'requiredChoice are incompatible. Option ' +
+                                    'requiredChoice will be deprecated.');
+            }
+            this.required = this.requiredChoice = !!opts.required;
+        }
+        if ('undefined' === typeof this.required) {
+            this.required = this.requiredChoice = !!opts.required;
+        }
 
         if (opts.userValidation) {
             if ('function' !== typeof opts.userValidation) {
@@ -50300,7 +50413,7 @@ if (!Array.prototype.indexOf) {
                         }
                         this.params.minItems = tmp;
                     }
-                    else if (this.requiredChoice) {
+                    else if (this.required) {
                         this.params.minItems = 1;
                     }
                     if ('undefined' !== typeof opts.maxItems) {
@@ -50424,7 +50537,7 @@ if (!Array.prototype.indexOf) {
             var res;
             res = { value: value };
             if (value.trim() === '') {
-                if (that.requiredChoice) res.err = that.getText('emptyErr');
+                if (that.required) res.err = that.getText('emptyErr');
             }
             else if (tmp) {
                 res = tmp(value);
@@ -50543,7 +50656,7 @@ if (!Array.prototype.indexOf) {
                                     'undefined. Found: ' + opts.hint);
             }
             this.hint = opts.hint;
-            if (this.requiredChoice) this.hint += ' *';
+            if (this.required) this.hint += ' *';
         }
         else {
             this.hint = this.getText('autoHint');
@@ -53325,7 +53438,7 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # EmailForm
- * Copyright(c) 2019 Stefano Balietti <ste@nodegame.org>
+ * Copyright(c) 2021 Stefano Balietti <ste@nodegame.org>
  * MIT Licensed
  *
  * Displays a form to input email
@@ -53340,50 +53453,47 @@ if (!Array.prototype.indexOf) {
 
     // ## Meta-data
 
-    EmailForm.version = '0.12.0';
+    EmailForm.version = '0.13.0';
     EmailForm.description = 'Displays a configurable email form.';
 
-    EmailForm.title = 'Email';
+    EmailForm.title = false;
     EmailForm.className = 'emailform';
 
-    EmailForm.texts.label = 'Enter your email:';
-    EmailForm.texts.errString = 'Not a valid email address, ' +
-        'please correct it and submit it again.';
-
-    // ## Dependencies
-
-    EmailForm.dependencies = { JSUS: {} };
+    EmailForm.texts = {
+        label: 'Enter your email:',
+        errString: 'Not a valid email address, ' +
+                   'please correct it and submit it again.',
+        sent: 'Sent!'
+    };
 
     /**
      * ## EmailForm constructor
      *
-     * `EmailForm` sends a feedback message to the server
-     *
      * @param {object} options configuration option
      */
-    function EmailForm(options) {
+    function EmailForm(opts) {
 
         /**
          * ### EmailForm.onsubmit
          *
          * Options passed to `getValues` when the submit button is pressed
          *
-         * @see Feedback.getValues
+         * @see EmailForm.getValues
          */
-        if (!options.onsubmit) {
+        if (!opts.onsubmit) {
             this.onsubmit = {
                 emailOnly: true,
                 send: true,
                 updateUI: true
             };
         }
-        else if ('object' === typeof options.onsubmit) {
-            this.onsubmit = options.onsubmit;
+        else if ('object' === typeof opts.onsubmit) {
+            this.onsubmit = opts.onsubmit;
         }
         else {
-            throw new TypeError('EmailForm constructor: options.onsubmit ' +
-                                'must be string or object. Found: ' +
-                                options.onsubmit);
+            throw new TypeError('EmailForm constructor: opts.onsubmit ' +
+                                'must be object or undefined. Found: ' +
+                                opts.onsubmit);
         }
 
         /**
@@ -53395,7 +53505,7 @@ if (!Array.prototype.indexOf) {
          *
          * @see EmailForm.createForm
          */
-        this._email = options.email || null;
+        this._email = opts.email || null;
 
         /**
          * ### EmailForm.attempts
@@ -53439,7 +53549,17 @@ if (!Array.prototype.indexOf) {
          *
          * Default: FALSE
          */
-        this.setMsg = !!options.setMsg || false;
+        this.setMsg = !!opts.setMsg || false;
+
+        /**
+         * ### EmailForm.showSubmitBtn
+         *
+         * If TRUE, a set message is sent instead of a data msg
+         *
+         * Default: FALSE
+         */
+        this.showSubmitBtn = 'undefined' === typeof opts.showSubmitBtn ?
+            true : !!opts.showSubmitBtn;
     }
 
     // ## EmailForm methods
@@ -53461,31 +53581,34 @@ if (!Array.prototype.indexOf) {
         inputElement.setAttribute('placeholder', 'Email');
         inputElement.className = 'emailform-input form-control';
 
-        buttonElement = document.createElement('input');
-        buttonElement.setAttribute('type', 'submit');
-        buttonElement.setAttribute('value', 'Submit email');
-        buttonElement.className = 'btn btn-lg btn-primary ' +
-            'emailform-submit';
-
         formElement.appendChild(labelElement);
         formElement.appendChild(inputElement);
-        formElement.appendChild(buttonElement);
-
-        // Add listeners on input form.
-        J.addEvent(formElement, 'submit', function(event) {
-            event.preventDefault();
-            that.getValues(that.onsubmit);
-        }, true);
-        J.addEvent(formElement, 'input', function() {
-            if (!that.timeInput) that.timeInput = J.now();
-            if (that.isHighlighted()) that.unhighlight();
-        }, true);
-
 
         // Store references.
         this.formElement = formElement;
         this.inputElement = inputElement;
-        this.buttonElement = buttonElement;
+
+        if (this.showSubmitBtn) {
+            buttonElement = document.createElement('input');
+            buttonElement.setAttribute('type', 'submit');
+            buttonElement.setAttribute('value', 'Submit email');
+            buttonElement.className = 'btn btn-lg btn-primary ' +
+            'emailform-submit';
+            formElement.appendChild(buttonElement);
+
+            // Add listeners on input form.
+            J.addEvent(formElement, 'submit', function(event) {
+                event.preventDefault();
+                that.getValues(that.onsubmit);
+            }, true);
+            J.addEvent(formElement, 'input', function() {
+                if (!that.timeInput) that.timeInput = J.now();
+                if (that.isHighlighted()) that.unhighlight();
+            }, true);
+
+            // Store reference.
+            this.buttonElement = buttonElement;
+        }
 
         // If a value was previously set, insert it in the form.
         if (this._email) this.formElement.value = this._email;
@@ -53517,7 +53640,7 @@ if (!Array.prototype.indexOf) {
             if (this.inputElement) this.inputElement.disabled = true;
             if (this.buttonElement) {
                 this.buttonElement.disabled = true;
-                this.buttonElement.value = 'Sent!';
+                this.buttonElement.value = this.getText('sent');
             }
         }
         else {
@@ -53620,8 +53743,9 @@ if (!Array.prototype.indexOf) {
                 email: email,
                 attempts: this.attempts,
             };
-            if (opts.markAttempt) email.isCorrect = res;
         }
+
+        if (opts.markAttempt) email.isCorrect = res;
 
         if (res === false) {
             if (opts.updateUI || opts.highlight) this.highlight();
@@ -56816,7 +56940,8 @@ if (!Array.prototype.indexOf) {
         },
 
         bomb_sliderHint:
-            'Move the slider below to change the number of boxes to open.',
+            'Move the slider to choose the number of boxes to open, ' +
+            'then click "Open Boxes"',
 
         bomb_boxValue: 'Prize per box: ',
 
@@ -57250,12 +57375,6 @@ if (!Array.prototype.indexOf) {
                                that.getText('bomb_mainText', probBomb)
                 });
 
-                // Table.
-                nRows = Math.ceil(that.totBoxes / that.boxesInRow);
-                W.add('div', that.bodyDiv, {
-                    innerHTML: makeTable(nRows, that.boxesInRow, that.totBoxes)
-                });
-
                 // Slider.
                 slider = node.widgets.add('Slider', that.bodyDiv, {
                     min: 0,
@@ -57267,6 +57386,7 @@ if (!Array.prototype.indexOf) {
                     displayNoChange: false,
                     type: 'flat',
                     required: true,
+                    panel: false,
                     // texts: {
                     //     currentValue: that.getText('sliderValue')
                     // },
@@ -57308,6 +57428,12 @@ if (!Array.prototype.indexOf) {
                     },
                     storeRef: false,
                     width: '100%'
+                });
+
+                // Table.
+                nRows = Math.ceil(that.totBoxes / that.boxesInRow);
+                W.add('div', that.bodyDiv, {
+                    innerHTML: makeTable(nRows, that.boxesInRow, that.totBoxes)
                 });
 
                 // Info div.
@@ -58258,7 +58384,7 @@ if (!Array.prototype.indexOf) {
         if (this.mainText) {
             mainText = this.mainText;
         }
-        else if ('undefined' === typeof this.mainText) {
+        else if (this.mainText !== false) {
             mainText = this.getText('mainText');
         }
         gauge = node.widgets.get('ChoiceTableGroup', {
@@ -59365,7 +59491,7 @@ if (!Array.prototype.indexOf) {
 
     // ## Meta-data
 
-    VisualStage.version = '0.9.0';
+    VisualStage.version = '0.10.0';
     VisualStage.description =
         'Displays the name of the current, previous and next step of the game.';
 
@@ -59618,6 +59744,10 @@ if (!Array.prototype.indexOf) {
                 if (this.capitalize) name = capitalize(name);
             }
         }
+
+        // If function, executes it.
+        if ('function' === typeof name) name = name.call(node.game);
+
         if (this.showRounds) {
             round = getRound(gameStage, curStage, mod);
             if (round) name += ' ' + round;
