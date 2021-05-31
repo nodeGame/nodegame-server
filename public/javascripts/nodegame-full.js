@@ -14911,7 +14911,7 @@ if (!Array.prototype.indexOf) {
  *
  * Push players to advance to next step, otherwise disconnects them.
  *
- * Copyright(c) 2020 Stefano Balietti
+ * Copyright(c) 2021 Stefano Balietti
  * MIT Licensed
  */
 (function(exports, parent) {
@@ -14922,7 +14922,6 @@ if (!Array.prototype.indexOf) {
     exports.PushManager = PushManager;
 
     var GameStage = parent.GameStage;
-    var J = parent.JSUS;
 
     var DONE = parent.constants.stageLevels.DONE;
     var PUSH_STEP = parent.constants.gamecommands.push_step;
@@ -15033,7 +15032,7 @@ if (!Array.prototype.indexOf) {
             conf = {};
         }
         else if ('object' !== typeof conf) {
-            throw new TypError('PushManager.startTimer: conf must be ' +
+            throw new TypeError('PushManager.startTimer: conf must be ' +
                                'object, TRUE, or undefined. Found: ' + conf);
         }
 
@@ -15176,7 +15175,6 @@ if (!Array.prototype.indexOf) {
      *   wait before checking again the stage of a client. Default 0.
      */
     function checkIfPushWorked(node, p, stage, milliseconds) {
-        var stage;
 
         node.info('push-manager: received reply from ' + p.id);
 
@@ -24172,9 +24170,14 @@ if (!Array.prototype.indexOf) {
             }
         }
 
+        if ('undefined' === typeof opts.header &&
+            'undefined' === typeof opts.headers) {
+
+            opts.header = 'all';
+        }
+
         // Flatten.
         if (opts.flatten) {
-            if ('undefined' === typeof opts.headers) opts.headers = 'all';
             opts.preprocess = function(item, current) {
                 var s;
                 s = item.stage.stage + '.' + item.stage.step +
@@ -42015,17 +42018,22 @@ if (!Array.prototype.indexOf) {
         // Locks the back button in case of a timeout.
         node.events.game.on('PLAYING', function() {
             var prop, step;
-            step = node.game.getPreviousStep(1, that.stepOptions);
-            // It might be enabled already, but we do it again.
-            if (step) that.enable();
+
             // Check options.
+            step = node.game.getPreviousStep(1, that.stepOptions);
             prop = node.game.getProperty('backbutton');
+
             if (!step || prop === false ||
                 (prop && prop.enableOnPlaying === false)) {
 
                 // It might be disabled already, but we do it again.
                 that.disable();
             }
+            else {
+                // It might be enabled already, but we do it again.
+                if (step) that.enable();
+            }
+
             if ('string' === typeof prop) that.button.value = prop;
             else if (prop && prop.text) that.button.value = prop.text;
         });
@@ -45504,6 +45512,9 @@ if (!Array.prototype.indexOf) {
             }
             obj._scrolledIntoView = true;
             obj.isCorrect = false;
+            // Adjust frame heights because of error msgs.
+            // TODO: error msgs should not change the height.
+            W.adjustFrameHeight();
         }
         // if (obj.missValues.length) obj.isCorrect = false;
         if (this.textarea) obj.freetext = this.textarea.value;
@@ -53958,6 +53969,8 @@ if (!Array.prototype.indexOf) {
          * The currency displayed after totalWin
          *
          * Default: 'USD'
+         *
+         * // TODO: deprecate and rename to currency.
          */
          this.totalWinCurrency = 'USD';
 
@@ -54270,13 +54283,20 @@ if (!Array.prototype.indexOf) {
                 }
             }
 
+            preWin = '';
+            if ('undefined' !== typeof data.basePay) {
+                preWin = data.basePay + ' + ' + data.bonus;
+            }
+
             if (data.partials) {
                 if (!J.isArray(data.partials)) {
                     node.err('EndScreen error, invalid partials win: ' +
                              data.partials);
                 }
                 else {
-                    preWin = data.partials.join(' + ');
+                    // If there is a basePay we already have a preWin.
+                    if (preWin !== '') preWin += ' + ';
+                    preWin += data.partials.join(' + ');
                 }
             }
 
@@ -54304,10 +54324,12 @@ if (!Array.prototype.indexOf) {
                         err = true;
                     }
                 }
-                if (!err) totalWin = preWin + ' = ' + totalWin;
             }
 
-            if (!err) totalWin += ' ' + this.totalWinCurrency;
+            if (!err) {
+                totalWin = preWin + ' = ' + totalWin;
+                totalWin += ' ' + this.totalWinCurrency;
+            }
         }
 
         exitCode = data.exit;
