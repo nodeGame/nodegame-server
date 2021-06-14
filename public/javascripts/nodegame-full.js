@@ -1093,9 +1093,7 @@ if (!Array.prototype.indexOf) {
         var start = 0;
         var limit = S;
         var extracted = [];
-        if (!self) {
-            limit = S-1;
-        }
+        if (!self) limit = S-1;
 
         for (i=0; i < N; i++) {
             do {
@@ -5330,6 +5328,8 @@ if (!Array.prototype.indexOf) {
      * encoded by `PARSE.stringify`
      *
      * @param {string} str The string to decode
+     * @param {function} cb Optional. A callback to apply to each decoded item
+     *
      * @return {mixed} The decoded value
      *
      * @see JSON.parse
@@ -5344,6 +5344,8 @@ if (!Array.prototype.indexOf) {
             len_nan = PARSE.marker_nan.length,
             len_inf = PARSE.marker_inf.length,
             len_minus_inf = PARSE.marker_minus_inf.length;
+
+        var customCb;
 
         function walker(o) {
             var i;
@@ -5386,12 +5388,15 @@ if (!Array.prototype.indexOf) {
 
                     return -Infinity;
                 }
-
             }
+
+            if (customCb) customCb(value);
+
             return value;
         }
 
-        return function(str) {
+        return function(str, cb) {
+            customCb = cb;
             return walker(JSON.parse(str));
         };
 
@@ -5920,6 +5925,8 @@ if (!Array.prototype.indexOf) {
         options = options || {};
 
         // ## Public properties.
+
+        this.name = options.name || 'nddb';
 
         // ### nddbid
         // A global index of all objects.
@@ -6957,25 +6964,28 @@ if (!Array.prototype.indexOf) {
     /**
      * ### NDDB.stringify
      *
-     * Returns a machine-readable representation of the database
+     * Stringifies the items in the database in an expanded JSON format
      *
-     * Cyclic objects are decycled.
+     * Cyclic objects are decycled, functions, null, undefined, are kept.
      *
      * Evaluates pending queries with `fetch`.
      *
-     * @param {boolean} TRUE, if compressed
+     * @param {boolean} compress Optional. If TRUE, JSON is pretty-printed
+     * @param {boolean} enclose Optional. If TRUE, items are enclosed in an
+     *   array so that they can be read with a require statement.
      *
      * @return {string} out A machine-readable representation of the database
      *
      * @see JSUS.stringify
      */
-    NDDB.prototype.stringify = function(compressed) {
+    NDDB.prototype.stringify = function(compress, enclose) {
         var db, spaces, out;
         var item, i, len;
-        if (!this.size()) return '[]';
-        compressed = ('undefined' === typeof compressed) ? true : compressed;
-        spaces = compressed ? 0 : 4;
-        out = '[';
+        enclose = 'undefined' === typeof enclose ? true: enclose;
+        if (!this.size()) return enclose ? '[]' : '';
+        compress = ('undefined' === typeof compress) ? true : compress;
+        spaces = compress ? 0 : 4;
+        out = enclose ? '[' : '';
         db = this.fetch();
         i = -1, len = db.length;
         for ( ; ++i < len ; ) {
@@ -6984,7 +6994,7 @@ if (!Array.prototype.indexOf) {
             out += J.stringify(item, spaces);
             if (i !== len-1) out += ', ';
         }
-        out += ']';
+        if (enclose) out += ']';
         return out;
     };
 
@@ -7200,6 +7210,7 @@ if (!Array.prototype.indexOf) {
             this.throwErr('TypeError', 'view', 'idx is reserved word: ' + idx);
         }
         if ('undefined' === typeof func) {
+            // View checks for undefined later.
             func = function(item) { return item[idx]; };
         }
         else if ('function' !== typeof func) {
@@ -7209,8 +7220,9 @@ if (!Array.prototype.indexOf) {
         // Create a copy of the current settings, without the views and hooks
         // functions, else we create an infinite loop in the constructor or
         // hooks are executed multiple times.
-        settings = this.cloneSettings( { V: true, hooks: true } );
         this.__V[idx] = func;
+        settings = this.cloneSettings( { V: true, hooks: true} );
+        settings.name = idx;
         this[idx] = new NDDB(settings);
         // Reference to this instance.
         this[idx].__parentDb = this;
@@ -7254,7 +7266,7 @@ if (!Array.prototype.indexOf) {
             this.throwErr('TypeError', 'hash', 'func must be function or ' +
                           'undefined. Found: ' + func);
         }
-        this[idx] = {};
+        this[idx] = {}; // new NDDBHash();
         this.__H[idx] = func;
 
     };
@@ -7436,6 +7448,7 @@ if (!Array.prototype.indexOf) {
                     continue;
                 }
                 //this.__V[idx] = func, this[idx] = new this.constructor();
+
                 // TODO: When is the view not already created? Check!
                 if (!this[key]) {
                     // Create a copy of the current settings,
@@ -7443,6 +7456,9 @@ if (!Array.prototype.indexOf) {
                     // we establish an infinite loop in the
                     // constructor, and the hooks.
                     settings = this.cloneSettings({ V: true, hooks: true });
+                    settings.name = key;
+                    console.log('saving...', this.name, this.size());
+
                     this[key] = new NDDB(settings);
                     // Reference to this instance.
                     this[key].__parentDb = this;
@@ -7486,6 +7502,7 @@ if (!Array.prototype.indexOf) {
                     // we create an infinite loop at first insert,
                     // and the hooks (should be called only on main db).
                     settings = this.cloneSettings({ H: true, hooks: true });
+                    settings.name = hash;
                     this[key][hash] = new NDDB(settings);
                     // Reference to this instance.
                     this[key][hash].__parentDb = this;
@@ -9662,7 +9679,6 @@ if (!Array.prototype.indexOf) {
      */
     NDDB.prototype.addDefaultFormats = null;
 
-
     // ## Helper Methods
 
     /**
@@ -10119,6 +10135,31 @@ if (!Array.prototype.indexOf) {
     NDDBHashtray.prototype.clear = function() {
         this.resolve = {};
     };
+
+
+    // Inheriting from NDDB.
+
+    // function NDDBHash(conf) {
+    //
+    //     var len = 0;
+    //
+    //     this.__add = function(key, nddb) {
+    //         this[key] = nddb;
+    //
+    //         if (conf) nddb.init(conf);
+    //
+    //         len++;
+    //     };
+    //
+    //     this.__size = function() { return len; };
+    //
+    // }
+
+
+
+
+
+
 
     /**
      * # NDDBIndex
@@ -24008,7 +24049,7 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # GameDB
- * Copyright(c) 2020 Stefano Balietti
+ * Copyright(c) 2021 Stefano Balietti
  * MIT Licensed
  *
  * Provides a simple, lightweight NO-SQL database for nodeGame
@@ -24051,12 +24092,25 @@ if (!Array.prototype.indexOf) {
         var that;
         that = this;
         options = options || {};
-        options.name = options.name || 'gamedb';
+        options.name = options.name || 'memory';
 
         if (!options.update) options.update = {};
 
         // Auto build indexes by default.
         options.update.indexes = true;
+
+        // TODO: move on server-side only.
+        options.defaultCSVHeader = [
+            'session', 'treatment', 'player', 'stage', 'step', 'timestamp',
+            'time', 'timeup'
+        ];
+
+        // Experimental. TODO.
+        options.skipCSVKeys = {
+            isCorrect: true,
+            id: true,
+            done: true
+        };
 
         NDDB.call(this, options, db);
 
@@ -24081,9 +24135,23 @@ if (!Array.prototype.indexOf) {
 
         this.view('done');
 
-        this.on('save', function(options, info) {
-            if (info.format === 'csv') decorateCSVSaveOptions(that, options);
+        // TODO: move on server-side only.
+        this.on('save', function(opts, info) {
+            if (opts.append) opts.flags = 'a';
+            if (info.format === 'csv') decorateCSVSaveOptions(that, opts);
         }, true);
+
+        this.stepView = function(step) {
+            return this.view(step, function(item) {
+                if (that.node.game.isStep(step, item.stage)) return true;
+            });
+        };
+
+        this.stageView = function(stage) {
+            return this.view(stage, function(item) {
+                if (that.node.game.isStage(stage, item.stage)) return true;
+            });
+        };
 
         this.node = this.__shared.node;
     }
@@ -24113,6 +24181,8 @@ if (!Array.prototype.indexOf) {
 
         o.session = this.node.nodename;
 
+        o.treatment = this.node.game.settings.treatmentName;
+
         this.insert(o);
     };
 
@@ -24136,8 +24206,6 @@ if (!Array.prototype.indexOf) {
         plot = that.node.game.plot;
 
         if (!opts.adapter) opts.adapter = {};
-
-        if (opts.append) opts.flags = 'a';
 
         if (split) {
             if ('undefined' === typeof opts.adapter.stage) {
@@ -24170,14 +24238,15 @@ if (!Array.prototype.indexOf) {
             }
         }
 
-        if ('undefined' === typeof opts.header &&
-            'undefined' === typeof opts.headers) {
-
-            opts.header = 'all';
-        }
-
         // Flatten.
         if (opts.flatten) {
+
+            if ('undefined' === typeof opts.header &&
+                'undefined' === typeof opts.headers) {
+
+                opts.header = that.defaultCSVHeader || 'all';
+            }
+
             opts.preprocess = function(item, current) {
                 var s;
                 s = item.stage.stage + '.' + item.stage.step +
@@ -26559,7 +26628,7 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # Timer
- * Copyright(c) 2020 Stefano Balietti
+ * Copyright(c) 2021 Stefano Balietti
  * MIT Licensed
  *
  * Timing-related utility functions
@@ -27013,14 +27082,11 @@ if (!Array.prototype.indexOf) {
      * @see GameTimer
      */
     Timer.prototype.setTimeout = function(timeup, milliseconds, validity) {
-        var t;
-        t = this.createTimer({
+        return this.createTimer({
             milliseconds: milliseconds || 1,
             timeup: timeup,
             validity: validity
-        });
-        t.start();
-        return t;
+        }).start();
     };
 
     /**
@@ -27737,6 +27803,8 @@ if (!Array.prototype.indexOf) {
      *
      * @param {object} options Optional. Configuration object
      *
+     * @return {GameTimer} The game timer instance for chaining
+     *
      * @see GameTimer.addHook
      */
     GameTimer.prototype.init = function(options) {
@@ -27825,6 +27893,8 @@ if (!Array.prototype.indexOf) {
         if (checkInitialized(this) === null) {
             this.status = GameTimer.INITIALIZED;
         }
+
+        return this;
     };
 
 
@@ -27837,6 +27907,8 @@ if (!Array.prototype.indexOf) {
      * otherwise it is called as a function.
      *
      * @param {mixed} h The hook to fire (object, function, or string)
+     *
+     * @return {GameTimer} The game timer instance for chaining
      */
     GameTimer.prototype.fire = function(h) {
         var hook, ctx;
@@ -27857,6 +27929,8 @@ if (!Array.prototype.indexOf) {
             throw new TypeError('GameTimer.fire: h must be function, string ' +
                                 'or object. Found: ' + h);
         }
+
+        return this;
     };
 
     /**
@@ -27870,6 +27944,8 @@ if (!Array.prototype.indexOf) {
      *
      * When the timer expires the timeup event is fired, and the
      * timer is stopped
+     *
+     * @return {GameTimer} The game timer instance for chaining
      *
      * @see GameTimer.status
      * @see GameTimer.timeup
@@ -27892,7 +27968,7 @@ if (!Array.prototype.indexOf) {
 
         if (this.startPaused) {
             this.pause();
-            return;
+            return this;
         }
 
         // Remember time of start (used by this.pause to compute remaining time)
@@ -27904,7 +27980,7 @@ if (!Array.prototype.indexOf) {
                 this.options.milliseconds <= 0) {
 
             this.doTimeup();
-            return;
+            return this;
         }
 
         this.updateRemaining = this.update;
@@ -27915,6 +27991,8 @@ if (!Array.prototype.indexOf) {
         this.timerId = setInterval(function() {
             updateCallback(that);
         }, this.update);
+
+        return this;
     };
 
     /**
@@ -27925,14 +28003,14 @@ if (!Array.prototype.indexOf) {
      * The first parameter can be a string, a function, or an object
      * containing an hook property.
      *
-     * @params {string|function|object} hook The hook (string or function),
+     * @param {string|function|object} hook The hook (string or function),
      *   or an object containing a `hook` property (others: `ctx` and `name`)
-     * @params {object} ctx The context wherein the hook is called.
+     * @param {object} ctx The context wherein the hook is called.
      *   Default: node.game
-     * @params {string} name The name of the hook. Default: a random name
+     * @param {string} name The name of the hook. Default: a random name
      *   starting with 'timerHook'
      *
-     * @returns {string} The name of the hook
+     * @return {string} The name of the hook
      */
     GameTimer.prototype.addHook = function(hook, ctx, name) {
         checkDestroyed(this, 'addHook');
@@ -27955,10 +28033,11 @@ if (!Array.prototype.indexOf) {
         }
         this.hookNames[name] = true;
         this.hooks.push({hook: hook, ctx: ctx, name: name});
+
         return name;
     };
 
-    /*
+    /**
      * ### GameTimer.removeHook
      *
      * Removes a hook by its name
@@ -27988,6 +28067,8 @@ if (!Array.prototype.indexOf) {
      *
      * If the timer was running, clear the interval and sets the
      * status property to `GameTimer.PAUSED`.
+     *
+     * @return {GameTimer} The game timer instance for chaining
      */
     GameTimer.prototype.pause = function() {
         var timestamp;
@@ -28013,7 +28094,7 @@ if (!Array.prototype.indexOf) {
         }
         else if (this.status === GameTimer.STOPPED) {
             // If the timer was explicitly stopped, we ignore the pause:
-            return;
+            return this;
         }
         else if (!this.isPaused()) {
             // pause() was called before start(); remember it:
@@ -28022,6 +28103,8 @@ if (!Array.prototype.indexOf) {
         else {
             throw new Error('GameTimer.pause: timer was already paused');
         }
+
+        return this;
     };
 
     /**
@@ -28030,6 +28113,8 @@ if (!Array.prototype.indexOf) {
      * Resumes a paused timer
      *
      * If the timer was paused, restarts it with the current configuration
+     *
+     * @return {GameTimer} The game timer instance for chaining
      *
      * @see GameTimer.restart
      */
@@ -28040,7 +28125,7 @@ if (!Array.prototype.indexOf) {
         // Don't start if the initialization is incomplete (invalid state):
         if (this.status === GameTimer.UNINITIALIZED) {
             this.startPaused = false;
-            return;
+            return this;
         }
 
         if (!this.isPaused() && !this.startPaused) {
@@ -28066,6 +28151,8 @@ if (!Array.prototype.indexOf) {
                 that.status = GameTimer.RUNNING;
             }
         }, this.updateRemaining);
+
+        return this;
     };
 
     /**
@@ -28076,6 +28163,8 @@ if (!Array.prototype.indexOf) {
      * If the timer was paused or running, clear the interval, sets the
      * status property to `GameTimer.STOPPED`, and reset the time passed
      * and time left properties
+     *
+     * @return {GameTimer} The game timer instance for chaining
      */
     GameTimer.prototype.stop = function() {
         checkDestroyed(this, 'stop');
@@ -28094,6 +28183,8 @@ if (!Array.prototype.indexOf) {
         this.startPaused = null;
         this.updateRemaining = 0;
         this.updateStart = 0;
+
+        return this;
     };
 
     /**
@@ -28107,6 +28198,8 @@ if (!Array.prototype.indexOf) {
      *
      * Does **not** change properties: eventEmitterName, and
      * stagerSync.
+     *
+     * @return {GameTimer} The game timer instance for chaining
      */
     GameTimer.prototype.reset = function() {
         checkDestroyed(this, 'reset');
@@ -28117,6 +28210,8 @@ if (!Array.prototype.indexOf) {
         this.timeup = 'TIMEUP';
         this.hooks = [];
         this.hookNames = {};
+
+        return this;
     };
 
     /**
@@ -28129,13 +28224,15 @@ if (!Array.prototype.indexOf) {
      *
      * @param {object} options Optional. A configuration object
      *
+     * @return {GameTimer} The game timer instance for chaining
+     *
      * @see GameTimer.init
      */
     GameTimer.prototype.restart = function(options) {
         checkDestroyed(this, 'restart');
         if (!this.isStopped()) this.stop();
         this.init(options);
-        this.start();
+        return this.start();
     };
 
     /**
@@ -28144,6 +28241,8 @@ if (!Array.prototype.indexOf) {
      * Returns whether timer is running
      *
      * Running means either LOADING or RUNNING.
+     *
+     * @return {boolean} TRUE if timer is running
      */
     GameTimer.prototype.isRunning = function() {
         checkDestroyed(this, 'isRunning');
@@ -28157,25 +28256,23 @@ if (!Array.prototype.indexOf) {
      *
      * Stopped means either UNINITIALIZED, INITIALIZED or STOPPED.
      *
+     * @return {boolean} TRUE if timer is stopped
+     *
      * @see GameTimer.isPaused
      */
     GameTimer.prototype.isStopped = function() {
         checkDestroyed(this, 'isStopped');
-        if (this.status === GameTimer.UNINITIALIZED ||
+        return (this.status === GameTimer.UNINITIALIZED ||
             this.status === GameTimer.INITIALIZED ||
-            this.status === GameTimer.STOPPED) {
-
-            return true;
-        }
-        else {
-            return false;
-        }
+            this.status === GameTimer.STOPPED);
     };
 
     /**
      * ### GameTimer.isPaused
      *
      * Returns whether timer is paused
+     *
+     * @return {boolean} TRUE if timer is paused
      */
     GameTimer.prototype.isPaused = function() {
         checkDestroyed(this, 'isPaused');
@@ -28264,6 +28361,8 @@ if (!Array.prototype.indexOf) {
      * It will call timeup even if the game is paused/stopped,
      * but not if timeup was already called.
      *
+     * @return {GameTimer} The game timer instance for chaning
+     *
      * @see GameTimer.isTimeup
      * @see GameTimer.stop
      * @see GameTimer.fire
@@ -28273,7 +28372,7 @@ if (!Array.prototype.indexOf) {
         if (this.isTimeup()) return;
         if (!this.isStopped()) this.stop();
         this._timeup = true;
-        this.fire(this.timeup);
+        return this.fire(this.timeup);
     };
 
     // TODO: improve.
@@ -28422,9 +28521,8 @@ if (!Array.prototype.indexOf) {
             that.doTimeup();
             return false;
         }
-        else {
-            return true;
-        }
+
+        return true;
     }
 
     /**
@@ -31534,7 +31632,9 @@ if (!Array.prototype.indexOf) {
 
             // Time and timeup.
             if (!o.time) o.time = stepTime;
-            if (!o.timeup) o.timeup = game.timer.isTimeup();
+            if ('undefined' === typeof o.timeup) {
+                o.timeup = game.timer.isTimeup();
+            }
 
             // Add role and partner info.
             if (game.role && !o.role) o.role = game.role;
@@ -32473,10 +32573,21 @@ if (!Array.prototype.indexOf) {
          * @emit PLAYING
          */
         this.events.ng.on('LOADED', function() {
+            var frame;
             node.game.setStageLevel(constants.stageLevels.LOADED);
             if (node.socket.shouldClearBuffer()) {
                 node.socket.clearBuffer();
             }
+
+            // Make the frame visibile (if any).
+            // The Window hides it with every new load, so that if the page
+            // is manipulated in the step callback, the user still sees it
+            // appearing all at once.
+            if (node.window) {
+                frame = node.window.getFrame();
+                if (frame) frame.style.visibility = '';
+            }
+
             if (node.game.shouldEmitPlaying()) {
                 node.emit('PLAYING');
             }
@@ -33215,14 +33326,14 @@ if (!Array.prototype.indexOf) {
         });
 
         // ### node.on.data
-        this.alias('done', ['in.say.DATA', 'in.set.DATA'], function(text, cb) {
-            if ('string' !== typeof text || text === '') {
-                throw new TypeError('node.on.data: text must be a non-empty ' +
-                                    'string. Found: ' + text);
-            }
+        this.alias('done', 'in.set.DATA', function(step, cb) {
             return function(msg) {
-                if (msg.text === text) cb.call(that.game, msg);
-                else return false;
+                if (!msg.data || !msg.data.done ||
+                    !that.game.isStep(step, msg.stage)) {
+
+                    return false;
+                }
+                cb.call(that.game, msg);
             };
         });
 
@@ -35367,6 +35478,13 @@ if (!Array.prototype.indexOf) {
         // Keep track of nested call to loadFrame.
         updateAreLoading(this, 1);
 
+        // Hide iframe content while loading.
+        // This way if the page is manipulated in the step callback,
+        // the user still sees it appearing all at once.
+        // The iframe visibility is reset by nodegame-client listener
+        // on LOADED (avoiding registering two listeners this way.)
+        iframe.style.visibility = 'hidden';
+
         // Add the onLoad event listener:
         if (!loadCache || !frameReady) {
             onLoad(iframe, function() {
@@ -36551,7 +36669,7 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # listeners
- * Copyright(c) 2015 Stefano Balietti
+ * Copyright(c) 2021 Stefano Balietti
  * MIT Licensed
  *
  * GameWindow listeners
@@ -36562,22 +36680,22 @@ if (!Array.prototype.indexOf) {
 
     "use strict";
 
-    var J = node.JSUS;
+    // var J = node.JSUS;
 
-    function getElement(idOrObj, prefix) {
-        var el;
-        if ('string' === typeof idOrObj) {
-            el = W.getElementById(idOrObj);
-        }
-        else if (J.isElement(idOrObj)) {
-            el = idOrObj;
-        }
-        else {
-            throw new TypeError(prefix + ': idOrObj must be string ' +
-                                ' or HTML Element.');
-        }
-        return el;
-    }
+    // function getElement(idOrObj, prefix) {
+    //     var el;
+    //     if ('string' === typeof idOrObj) {
+    //         el = W.getElementById(idOrObj);
+    //     }
+    //     else if (J.isElement(idOrObj)) {
+    //         el = idOrObj;
+    //     }
+    //     else {
+    //         throw new TypeError(prefix + ': idOrObj must be string ' +
+    //                             ' or HTML Element.');
+    //     }
+    //     return el;
+    // }
 
     var GameWindow = node.GameWindow;
 
