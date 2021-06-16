@@ -7457,7 +7457,7 @@ if (!Array.prototype.indexOf) {
                     // constructor, and the hooks.
                     settings = this.cloneSettings({ V: true, hooks: true });
                     settings.name = key;
-                    console.log('saving...', this.name, this.size());
+                    // console.log('saving...', this.name, this.size());
 
                     this[key] = new NDDB(settings);
                     // Reference to this instance.
@@ -9732,6 +9732,9 @@ if (!Array.prototype.indexOf) {
         res = this.emit('insert', o, this.db.length);
         // Stop inserting elements if one callback returned FALSE.
         if (res === false) return false;
+        // Replace element with return value if object.
+
+
         this.db.push(o);
         if (doUpdate) {
             this._indexIt(o, (this.db.length-1));
@@ -24249,8 +24252,12 @@ if (!Array.prototype.indexOf) {
 
             opts.preprocess = function(item, current) {
                 var s;
-                s = item.stage.stage + '.' + item.stage.step +
-                '.' + item.stage.round;
+                // s = item.stage.stage + '.' + item.stage.step +
+                // '.' + item.stage.round;
+                s = that.node.game.plot.getStage(item.stage).id;
+                s += '.' + that.node.game.plot.getStep(item.stage).id;
+                s += '.' + item.stage.round;
+                that.node.game.plot.getStage()
                 if (item.time) item['time_' + s] = item.time;
                 if (item.timeup) item['timeup_' + s] = item.timeup;
                 if (item.timestamp) item['timestamp_' + s] = item.timestamp;
@@ -31640,6 +31647,9 @@ if (!Array.prototype.indexOf) {
             if (game.role && !o.role) o.role = game.role;
             if (game.partner && !o.partner) o.partner = game.partner;
 
+            o.stepId = game.getStepId();
+            o.stageId = game.getStageId();
+
             // Mark done msg.
             o.done = true;
 
@@ -33327,9 +33337,13 @@ if (!Array.prototype.indexOf) {
 
         // ### node.on.data
         this.alias('done', 'in.set.DATA', function(step, cb) {
+            if ('undefined' === typeof cb && 'function' === typeof step) {
+                cb = step;
+                step = null;
+            }
             return function(msg) {
                 if (!msg.data || !msg.data.done ||
-                    !that.game.isStep(step, msg.stage)) {
+                    (step && !that.game.isStep(step, msg.stage))) {
 
                     return false;
                 }
@@ -48963,6 +48977,9 @@ if (!Array.prototype.indexOf) {
         if ('string' === typeof s) {
             s = { id: s };
         }
+        else if (J.isArray(s)) {
+            s = { id: s[0], left: s[1] };
+        }
         else if ('object' !== typeof s) {
             throw new TypeError('ChoiceTableGroup.buildTable: item must be ' +
                                 'string or object. Found: ' + s);
@@ -54061,7 +54078,6 @@ if (!Array.prototype.indexOf) {
 
     // Checked when the widget is created.
     EndScreen.dependencies = {
-        JSUS: {},
         Feedback: {},
         EmailForm: {}
     };
