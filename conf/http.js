@@ -15,7 +15,7 @@ const J = require('nodegame-client').JSUS;
 
 const mime = require('express').static.mime;
 
-const bodyParser = require('body-parser');
+// const bodyParser = require('body-parser');
 const cookieParser = require('cookie-parser');
 const errorHandler = require('errorhandler');
 
@@ -53,8 +53,11 @@ function configure(app, servernode) {
 
     app.use(cookieParser());
     // app.use(bodyParser());
-    app.use(bodyParser.json());
-    app.use(bodyParser.urlencoded({ extended: true }));
+    // app.use(bodyParser.json());
+    // app.use(bodyParser.urlencoded({ extended: true }));
+
+    app.use(express.json());
+    app.use(express.urlencoded({ extended: true }));
 
     function sendFromPublic(type, req, res, headers) {
         let file = req.params[0];
