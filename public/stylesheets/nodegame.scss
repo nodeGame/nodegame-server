@@ -602,7 +602,7 @@ table.clickable td:hover {
   font-size: 14px;
   margin-top: 5px;
   font-weight: normal;
-  color: red; 
+  color: red;
 }
 
 .custominput .panel-body {
@@ -832,6 +832,7 @@ div.riskgauge {
   right: 10px;
   margin-left: 20px;
   box-shadow: $shadow;
+  z-index: 100;
 }
 
 
