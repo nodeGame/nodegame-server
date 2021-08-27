@@ -415,6 +415,13 @@ p {
 /** Custom Input Group **/
 /************************/
 
+.custominputgroup {
+
+  .custominputgroup-maintext {
+      margin: 20px 0 0 20px !important;
+  }
+}
+
 .custominputgroup-maintext {
   @extend .choicetable-maintext;
 
@@ -506,6 +513,7 @@ div.choicetable div.panel-heading {
   padding: 0;
   display: block;
   text-align: left;
+  margin-bottom: 0px !important;
 
   .choicetable-hint {
     margin-left: 10px;
@@ -533,6 +541,8 @@ textarea.choicetable-freetext {
 table.choicetable {
 
   width: 100%;
+  border-collapse: separate;
+  border-spacing: 20px
 
   td {
     word-wrap: break-word;
@@ -541,6 +551,8 @@ table.choicetable {
     padding: 5px;
     width: 40px;
     background: white;
+    font-weight: normal;
+    padding-left: 10px;
   }
 
   td.selected {
@@ -554,6 +566,12 @@ table.choicetable {
   td.choicetable-right {
     border: 0;
     background: inherit;
+  }
+
+  td.choicetable-left,
+  td.choicetable-right {
+      width: 200px !important;
+      font-weight: bold !important;
   }
 
   td.choicetable-left {
@@ -584,21 +602,56 @@ table.clickable td:hover {
   cursor: hand;
 }
 
+table.choicetable-vertical td {
+    text-align: left !important;
+}
+
+/* More space between the text of the question and the choices. */
+dt.question,
+.custominput input {
+    margin-top: 20px !important;
+}
+
+/* More space between the text of the question and the choices. */
+dt.question:first-of-type {
+    margin-top: 20px !important;
+}
+
+table.choicetable td,
+.custominput input {
+    border-radius: 5px;
+    border-color: #999;
+}
+
+.choicetable tr td {
+    font-weight: normal !important;
+    font-size: smaller;
+    padding: 8px !important;
+}
+
 .custominputgroup .errbox {
   @extend .custominput .errbox;
 }
 
+/* ChoiceTableGroup */
+
+/* Speaces between choices in tables */
+table.choicetablegroup {
+    text-align: center !important;
+    border-collapse: separate;
+    border-spacing: 5px 12px !important;
+}
 
 /** CustomInput **/
 /*****************/
 
 .custominput input {
   padding: 5px;
-  border-radius: 0;
-  border: 1px solid $forms_border_color;
+  margin-left: 20px;
 }
 
 .custominput .errbox {
+  margin-left: 20px;
   font-size: 14px;
   margin-top: 5px;
   font-weight: normal;
@@ -664,6 +717,12 @@ div.moodgauge {
     td.choicetable-right {
       width: 100px;
     }
+
+    td.choicetable-right, td.choicetable-left {
+      width: 100px;
+      font-weight: normal !important;
+    }
+
   }
 }
 

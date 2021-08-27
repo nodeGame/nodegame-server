@@ -391,8 +391,6 @@ p {
 .feedback-textarea {
   padding: 5px;
   font-size: 16px;
-  /* width: 98%;
-  border: 1px solid #CCC; */
 }
 
 /** Custom Input Group **/
@@ -400,6 +398,10 @@ p {
 
 .custominputgroup td {
     vertical-align: top;
+}
+
+.custominputgroup .custominput-maintext {
+    margin: 20px 0 0 20px !important;
 }
 
 /** Requirements **/
@@ -460,6 +462,9 @@ div.choicetable div.panel-heading {
   padding: 0;
   display: block;
   text-align: left;
+  /* maybe only choicetable-maintext */
+  margin-bottom: 0px !important;
+
 }
 .choicetable-maintext .choicetable-hint, .choicetable-maintext .custominput-hint, .custominput-maintext .choicetable-hint, .custominput-maintext .custominput-hint, .feedback-maintext .choicetable-hint, .feedback-maintext .custominput-hint, .choicetable-maintext .feedback-hint, .custominput-maintext .feedback-hint, .feedback-maintext .feedback-hint, .custominputgroup-maintext .custominputgroup-hint, .slider-maintext .slider-hint, .contentbox-maintext .contentbox-hint {
   margin-left: 10px;
@@ -485,6 +490,8 @@ textarea.choicetable-freetext {
 
 table.choicetable {
   width: 100%;
+  border-collapse: separate;
+  border-spacing: 20px
 }
 table.choicetable td {
   word-wrap: break-word;
@@ -493,6 +500,8 @@ table.choicetable td {
   padding: 5px;
   width: 40px;
   background: white;
+  font-weight: normal;
+  padding-left: 10px;
 }
 table.choicetable td.selected {
   background: #333 !important;
@@ -505,6 +514,12 @@ table.choicetable td.choicetable-left,
 table.choicetable td.choicetable-right {
   border: 0;
   background: inherit;
+}
+
+table.choicetable td.choicetable-left,
+table.choicetable td.choicetable-right {
+    width: 200px !important;
+    font-weight: bold !important;
 }
 
 table.choicetable td.choicetable-left {
@@ -538,10 +553,48 @@ table.clickable td:focus {
   background: #FFE;
 }
 
+table.choicetable-vertical td {
+    text-align: left !important;
+}
+
+/* More space between the text of the question and the choices. */
+dt.question,
+.custominput input {
+    margin-top: 20px !important;
+}
+
+/* More space between the text of the question and the choices. */
+dt.question:first-of-type {
+    margin-top: 20px !important;
+}
+
+/* ChoiceTableGroup */
+
+/* Speaces between choices in tables */
+table.choicetablegroup {
+    text-align: center !important;
+    border-collapse: separate;
+    border-spacing: 5px 12px !important;
+}
+
+table.choicetable td,
+.custominput input {
+    border-radius: 5px;
+    border: 1px solid #999;
+}
+
+.choicetable tr td {
+    font-weight: normal !important;
+    font-size: smaller;
+    padding: 8px !important;
+}
+
 /** ErrBox **/
+
 .choicetable .errbox,
 .custominput .errbox,
 .custominputgroup .errbox {
+  margin-left: 20px;
   font-size: 14px;
   margin-top: 5px;
   font-weight: normal;
@@ -552,8 +605,7 @@ table.clickable td:focus {
 /*****************/
 .custominput input {
   padding: 5px;
-  border-radius: 0;
-  border: 1px solid #333;
+  margin-left: 20px;
 }
 
 .custominput .panel-body {
@@ -595,6 +647,7 @@ div.moodgauge table.choicetable td {
 }
 div.moodgauge table.choicetable td.choicetable-left {
   min-width: 260px !important;
+  font-weight: normal !important;
 }
 div.moodgauge table.choicetable span.emotion {
   font-weight: bold;
@@ -602,6 +655,7 @@ div.moodgauge table.choicetable span.emotion {
 }
 div.moodgauge table.choicetable td.choicetable-right {
   width: 100px;
+  font-weight: normal !important;
 }
 
 /** RiskGauge **/

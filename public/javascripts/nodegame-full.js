@@ -4984,7 +4984,7 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # TIME
- * Copyright(c) 2017 Stefano Balietti
+ * Copyright(c) 2021 Stefano Balietti
  * MIT Licensed
  *
  * Collection of static functions related to the generation,
@@ -4996,28 +4996,34 @@ if (!Array.prototype.indexOf) {
 
     function TIME() {}
 
+    function pad(number) {
+        return (number < 10) ? '0' + number : number;
+    }
+
+    function _getTime(ms) {
+        var d, res;
+        d = new Date();
+        res = pad(d.getHours()) + ':' + pad(d.getMinutes()) + ':' +
+              pad(d.getSeconds());
+        if (ms) res += ':' + pad(d.getMilliseconds());
+        return res;
+    }
+
     // Polyfill for Date.toISOString (IE7, IE8, IE9)
     // Kudos: https://developer.mozilla.org/en-US/docs/Web/
     // JavaScript/Reference/Global_Objects/Date/toISOString
     if (!Date.prototype.toISOString) {
-        (function() {
 
-            function pad(number) {
-                return (number < 10) ? '0' + number : number;
-            }
-
-            Date.prototype.toISOString = function() {
-                var ms = (this.getUTCMilliseconds() / 1000).toFixed(3);
-                return this.getUTCFullYear() +
-                    '-' + pad(this.getUTCMonth() + 1) +
-                    '-' + pad(this.getUTCDate()) +
-                    'T' + pad(this.getUTCHours()) +
-                    ':' + pad(this.getUTCMinutes()) +
-                    ':' + pad(this.getUTCSeconds()) +
-                    '.' + ms.slice(2, 5) + 'Z';
-            };
-
-        }());
+        Date.prototype.toISOString = function() {
+            var ms = (this.getUTCMilliseconds() / 1000).toFixed(3);
+            return this.getUTCFullYear() +
+                '-' + pad(this.getUTCMonth() + 1) +
+                '-' + pad(this.getUTCDate()) +
+                'T' + pad(this.getUTCHours()) +
+                ':' + pad(this.getUTCMinutes()) +
+                ':' + pad(this.getUTCSeconds()) +
+                '.' + ms.slice(2, 5) + 'Z';
+        };
     }
 
     /**
@@ -5049,9 +5055,7 @@ if (!Array.prototype.indexOf) {
      * @see TIME.getTimeM
      */
     TIME.getTime = function() {
-        var d;
-        d = new Date();
-        return d.getHours() + ':' + d.getMinutes() + ':' + d.getSeconds();
+        return _getTime();
     };
 
     /**
@@ -5068,10 +5072,7 @@ if (!Array.prototype.indexOf) {
      * @see TIME.getTime
      */
     TIME.getTimeM = function() {
-        var d;
-        d = new Date();
-        return d.getHours() + ':' + d.getMinutes() + ':' + d.getSeconds() +
-            ':' + d.getMilliseconds();
+        return _getTime(true);
     };
 
     /**
@@ -5104,7 +5105,6 @@ if (!Array.prototype.indexOf) {
         result[1] = Math.floor(days);
         return result;
     };
-
 
     /**
      * ## TIME.now
@@ -10968,12 +10968,22 @@ if (!Array.prototype.indexOf) {
         that = this;
         if (!J.isNodeJS()) {
             window.onerror = function(msg, url, lineno, colno, error) {
+                var str;
                 msg = node.game.getCurrentGameStage().toString() +
                     '@' + J.getTime() + '> ' +
                     url + ' ' + lineno + ',' + colno + ': ' + msg;
                 if (error) msg + ' - ' + JSON.stringify(error);
                 that.lastError = msg;
                 node.err(msg);
+                if (node.debug) {
+                    W.init({ waitScreen: true });
+                    str = '<strong>DEBUG mode: client-side error ' +
+                          'detected.</strong><br/><br/>';
+                    str += msg;
+                    str += '</br></br><em style="font-size: smaller">' +
+                    'This message will not be shown in production mode.</em>';
+                    W.lockScreen(str);
+                }
                 return !node.debug;
             };
         }
@@ -41810,8 +41820,13 @@ if (!Array.prototype.indexOf) {
         if (options.highlighted || w._highlighted) w.highlight();
         if (options.disabled || w._disabled) w.disable();
 
-        // Make sure the distance from the right side is correct.
-        if (w.docked) setRightStyle(w);
+        if (w.docked) {
+            // Make sure the distance from the right side is correct.
+            setRightStyle(w);
+        }
+        else if (!w.isHidden() && !w.isCollapsed()) {
+            W.adjustFrameHeight(undefined, 150);
+        }
 
         // Store reference of last appended widget (.get method set storeRef).
         if (w.storeRef !== false) this.lastAppended = w;
@@ -47048,7 +47063,7 @@ if (!Array.prototype.indexOf) {
         if (this.tabbable) J.makeTabbable(td);
 
         // Forces equal width.
-        if (this.sameWidthCells) {
+        if (this.sameWidthCells && this.orientation === 'H') {
             width = this.left ? 70 : 100;
             if (this.right) width = width - 30;
             width = width / (this.choicesSetSize || this.choices.length);
@@ -55663,6 +55678,198 @@ if (!Array.prototype.indexOf) {
 })(node);
 
 /**
+ * # GroupMalleability
+ * Copyright(c) 2021 Stefano Balietti
+ * MIT Licensed
+ *
+ * Displays an interface to measure users' perception of group malleability.
+ *
+ * www.nodegame.org
+ */
+(function(node) {
+
+    "use strict";
+
+    node.widgets.register('GroupMalleability', GroupMalleability);
+
+    // ## Meta-data
+
+    GroupMalleability.version = '0.1.0';
+    GroupMalleability.description = 'Displays an interface to measure ' +
+        'perception for group malleability.';
+
+    GroupMalleability.title = 'Group Malleability';
+    GroupMalleability.className = 'group-malleability';
+
+
+    var items = [
+        'As hard as it is to admit, it is impossible to change the ' +
+            'central characteristics of nationalities and groups.',
+        'Groups that are characterized by extreme and violent traits ' +
+            'will never change as these traits are inherently ingrained ' +
+            'in their nature.',
+        'Groups can sometimes change their outward behavior, but can ' +
+            'never change who they really are.',
+        'Every nationality or group has a fixed set of beliefs and ' +
+            'values that cannot be changed.',
+        'Social and political processes can lead to changes in a ' +
+            'group\'s values and morality.'
+    ];
+
+    var choices = [ 1,2,3,4,5,6,7 ];
+
+    var header = [
+        'Strongly Oppose',
+        'Somewhat Oppose',
+        'Slightly Oppose',
+        'Neutral',
+        'Slightly Favor',
+        'Somewhat Favor',
+        'Strongly Favor'
+    ];
+
+    GroupMalleability.texts = {
+
+        mainText:
+            'Show how much you favor or oppose each idea below by ' +
+            'selecting a number from 1 to 7 on the scale below. <em>You ' +
+            'can work quickly, your first feeling is generally best.</em>'
+    };
+
+    // ## Dependencies
+
+    GroupMalleability.dependencies = {};
+
+    /**
+     * ## GroupMalleability constructor
+     *
+     * Creates a new instance of GroupMalleability
+     *
+     * @param {object} options Optional. Configuration options
+     * which is forwarded to GroupMalleability.init.
+     *
+     * @see GroupMalleability.init
+     */
+    function GroupMalleability() {
+
+        /**
+         * ## GroupMalleability.ct
+         *
+         * The ChoiceTableGroup widget containing the items
+         */
+        this.ctg = null;
+
+        /**
+         * ## GroupMalleability.choices
+         *
+         * The numerical scale used
+         */
+        this.choices = choices;
+
+        /**
+         * ## GroupMalleability.header
+         *
+         * The categorical scale used
+         */
+        this.header = header;
+
+        /**
+         * ### GroupMalleability.mainText
+         *
+         * A text preceeding the GroupMalleability scale
+         */
+        this.mainText = null;
+    }
+
+    // ## GroupMalleability methods.
+
+    /**
+     * ### GroupMalleability.init
+     *
+     * Initializes the widget
+     *
+     * @param {object} opts Optional. Configuration options.
+     */
+    GroupMalleability.prototype.init = function(opts) {
+        opts = opts || {};
+
+        if (opts.choices) {
+            if (!J.isArray(opts.choices) || opts.choices.length < 2) {
+                throw new Error('GroupMalleability.init: choices must be an ' +
+                                'array of length > 1 or undefined. Found: ' +
+                                opts.choices);
+            }
+            this.choices = opts.choices;
+        }
+
+        if (opts.header) {
+            if (!J.isArray(opts.header) ||
+                opts.header.length !== this.choices.length) {
+
+                throw new Error('GroupMalleability.init: header must be an ' +
+                                'array of length equal to the number of ' +
+                                'choices or undefined. Found: ' + opts.header);
+            }
+            this.header = opts.header;
+        }
+
+        if (opts.mainText) {
+            if ('string' !== typeof opts.mainText && opts.mainText !== false) {
+                throw new Error('GroupMalleability.init: mainText must be ' +
+                                'string, false, or undefined. Found: ' +
+                                opts.mainText);
+            }
+            this.mainText = opts.mainText;
+        }
+        else if (opts.mainText !== false) {
+             this.mainText = this.getText('mainText');
+        }
+    };
+
+    GroupMalleability.prototype.append = function() {
+        this.ctg = node.widgets.add('ChoiceTableGroup', this.panelDiv, {
+            id: this.id || 'groupmalleability_choicetable',
+            items: items.map(function(item, i) {
+                return [('GM_' + (i+1)), item ];
+            }),
+            choices: this.choices,
+            mainText: this.mainText,
+            title: false,
+            panel: false,
+            requiredChoice: this.required,
+            header: this.header
+        });
+    };
+
+    GroupMalleability.prototype.getValues = function(opts) {
+        opts = opts || {};
+        return this.ctg.getValues(opts);
+    };
+
+    GroupMalleability.prototype.setValues = function(opts) {
+        opts = opts || {};
+        return this.ctg.setValues(opts);
+    };
+
+    GroupMalleability.prototype.enable = function(opts) {
+        return this.ctg.enable(opts);
+    };
+
+    GroupMalleability.prototype.disable = function(opts) {
+        return this.ctg.disable(opts);
+    };
+
+    GroupMalleability.prototype.highlight = function(opts) {
+        return this.ctg.highlight(opts);
+    };
+
+    GroupMalleability.prototype.unhighlight = function(opts) {
+        return this.ctg.unhighlight(opts);
+    };
+
+})(node);
+
+/**
  * # LanguageSelector
  * Copyright(c) 2017 Stefano Balietti <ste@nodegame.org>
  * MIT Licensed
@@ -57924,6 +58131,321 @@ if (!Array.prototype.indexOf) {
         out += '</table><br>';
         return out;
     }
+
+})(node);
+
+/**
+ * # SDO
+ * Copyright(c) 2021 Stefano Balietti
+ * MIT Licensed
+ *
+ * Displays an interface to measure users' social dominance orientation (S.D.O.)
+ *
+ * www.nodegame.org
+ */
+(function(node) {
+
+    "use strict";
+
+    node.widgets.register('SDO', SDO);
+
+    // ## Meta-data
+
+    SDO.version = '0.3.0';
+    SDO.description = 'Displays an interface to measure Social ' +
+        'Dominance Orientation (S.D.O.).';
+
+    SDO.title = 'SDO';
+    SDO.className = 'SDO';
+
+
+    var scales = {
+
+        SDO7: [
+            // Dominance Sub-Scale.
+            'Some groups of people must be kept in their place.',
+            'It\'s probably a good thing that certain groups are at the top and other groups are at the bottom.',
+            'An ideal society requires some groups to be on top and others to be on the bottom.',
+            'Some groups of people are simply inferior to other groups.',
+            // Reverse-scored:
+            'Groups at the bottom are just as deserving as groups at the top.',
+            'No one group should dominate in society.',
+            'Groups at the bottom should not have to stay in their place.',
+            'Group dominance is a poor principle.',
+
+            // Anti-Egalitarianism Sub-Scale.
+            'We should not push for group equality.',
+            'We shouldn\'t try to guarantee that every group has the same quality of life.',
+            'It is unjust to try to make groups equal.',
+            'Group equality should not be our primary goal.',
+            // Reverse-scored:
+            'We should work to give all groups an equal chance to succeed.',
+            'We should do what we can to equalize conditions for different groups.',
+            'No matter how much effort it takes, we ought to strive to ensure that all groups have the same chance in life.',
+            'Group equality should be our ideal.'
+        ],
+
+        SDO16: [
+            'Some groups of people are simply inferior to other groups.',
+            'In getting what you want, it is sometimes necessary to use force against other groups.',
+            'It\'s OK if some groups have more of a chance in life than others.',
+            'To get ahead in life, it is sometimes necessary to step on other groups.',
+            'If certain groups stayed in their place, we would have fewer problems.',
+            'It\'s probably a good thing that certain groups are at the top and other groups are at the bottom.',
+            'Inferior groups should stay in their place.',
+            'Sometimes other groups must be kept in their place.',
+
+            'It would be good if groups could be equal.',
+            'Group equality should be our ideal.',
+            'All groups should be given an equal chance in life.',
+            'We should do what we can to equalize conditions for different groups.',
+            'Increased social equality is beneficial to society.',
+            'We would have fewer problems if we treated people more equally.',
+            'We should strive to make incomes as equal as possible.',
+            'No group should dominate in society.'
+        ]
+    };
+
+    scales.SDO7s = [
+        scales.SDO7[2], scales.SDO7[3], scales.SDO7[5], scales.SDO7[6],
+        scales.SDO7[11], scales.SDO7[10], scales.SDO7[13], scales.SDO7[12]
+    ];
+
+    // var choices = [
+    //     '1 ' + '<hr/>' + 'Strongly Oppose',
+    //     '2 ' + '<hr/>' + 'Somewhat Oppose',
+    //     '3 ' + '<hr/>' + 'Slightly Oppose',
+    //     '4 ' + '<hr/>' + 'Neutral',
+    //     '5 ' + '<hr/>' + 'Slightly Favor',
+    //     '6 ' + '<hr/>' + 'Somewhat Favor',
+    //     '7 ' + '<hr/>' + 'Strongly Favor'
+    // ];
+
+    var choices = [ 1,2,3,4,5,6,7 ];
+
+    var header = [
+        'Strongly Oppose',
+        'Somewhat Oppose',
+        'Slightly Oppose',
+        'Neutral',
+        'Slightly Favor',
+        'Somewhat Favor',
+        'Strongly Favor'
+    ];
+
+    SDO.texts = {
+
+        mainText: 'Show how much you favor or oppose each idea below by ' +
+                  'selecting a number from 1 to 7 on the scale below. <em>You ' +
+                  'can work quickly, your first feeling is generally best.</em>',
+
+        // SDO7_proDom_1: 'Some groups of people must be kept in their place.',
+        // SDO7_proDom_2: 'It\'s probably a good thing that certain groups are at the top and other groups are at the bottom.',
+        // SDO7_proDom_3: 'An ideal society requires some groups to be on top and others to be on the bottom.',
+        // SDO7_proDom_4: 'Some groups of people are simply inferior to other groups.',
+        //
+        // // Reverse-scored:
+        // SDO7_conDom_1: 'Groups at the bottom are just as deserving as groups at the top.',
+        // SDO7_conDom_2: 'No one group should dominate in society.',
+        // SDO7_conDom_3: 'Groups at the bottom should not have to stay in their place.',
+        // SDO7_conDom_4: 'Group dominance is a poor principle.',
+        //
+        // SDO7_antiegal_1: 'We should not push for group equality.',
+        // SDO7_antiegal_2: 'We shouldn\'t try to guarantee that every group has the same quality of life.',
+        // SDO7_antiegal_3: 'It is unjust to try to make groups equal.',
+        // SDO7_antiegal_4: 'Group equality should not be our primary goal.',
+        //
+        // // Reverse-scored:
+        // SDO7_egal_1: 'We should work to give all groups an equal chance to succeed.',
+        // SDO7_egal_2: 'We should do what we can to equalize conditions for different groups.',
+        // SDO7_egal_3: 'No matter how much effort it takes, we ought to strive to ensure that all groups have the same chance in life.',
+        // SDO7_egal_4: 'Group equality should be our ideal.',
+        //
+        // SDO16_proDom_1: 'Some groups of people are simply inferior to other groups.',
+        // SDO16_proDom_2: 'In getting what you want, it is sometimes necessary to use force against other groups.',
+        // SDO16_proDom_3: 'It\'s OK if some groups have more of a chance in life than others.',
+        // SDO16_proDom_4: 'To get ahead in life, it is sometimes necessary to step on other groups.',
+        // SDO16_proDom_5: 'If certain groups stayed in their place, we would have fewer problems.',
+        // SDO16_proDom_6: 'It\'s probably a good thing that certain groups are at the top and other groups are at the bottom.',
+        // SDO16_proDom_7: 'Inferior groups should stay in their place.',
+        // SDO16_proDom_8: 'Sometimes other groups must be kept in their place.',
+        //
+        // // Reverse-scored:
+        // SDO16_conDom_1: 'It would be good if groups could be equal.',
+        // SDO16_conDom_2: 'Group equality should be our ideal.',
+        // SDO16_conDom_3: 'All groups should be given an equal chance in life.',
+        // SDO16_conDom_4: 'We should do what we can to equalize conditions for different groups.',
+        // SDO16_conDom_5: 'Increased social equality is beneficial to society.',
+        // SDO16_conDom_6: 'We would have fewer problems if we treated people more equally.',
+        // SDO16_conDom_7: 'We should strive to make incomes as equal as possible.',
+        // SDO16_conDom_8: 'No group should dominate in society.'
+    };
+
+    // ## Dependencies
+
+    SDO.dependencies = {};
+
+    /**
+     * ## SDO constructor
+     *
+     * Creates a new instance of SDO
+     *
+     * @param {object} options Optional. Configuration options
+     * which is forwarded to SDO.init.
+     *
+     * @see SDO.init
+     */
+    function SDO() {
+
+        /**
+         * ## SDO.sdo
+         *
+         * The ChoiceTableGroup widget containing the items
+         */
+        this.sdo = null;
+
+        /**
+         * ## SDO.scale
+         *
+         * The scale used to measure SDO
+         *
+         * Available methods: SDO16, SDO7, SDO7s (default).
+         *
+         * References:
+         *
+         * SDO7
+         * Ho et al. (2015). "The nature of social dominance orientation:
+         * Theorizing and measuring preferences for intergroup inequality
+         * using the new SDO₇ scale".
+         * Journal of Personality and Social Psychology. 109 (6): 1003–1028.
+         *
+         * SDO16
+         * Sidanius and Pratto (1999). Social Dominance: An Intergroup
+         * Theory of Social Hierarchy and Oppression.
+         * Cambridge: Cambridge University Press.
+         */
+        this.scale = 'SDO7s';
+
+        /**
+         * ## SDO.choices
+         *
+         * The numerical scale used
+         */
+        this.choices = choices;
+
+        /**
+         * ## SDO.header
+         *
+         * The categorical scale used
+         */
+        this.header = header;
+
+        /**
+         * ### SDO.mainText
+         *
+         * A text preceeding the SDO scale
+         */
+        this.mainText = null;
+    }
+
+    // ## SDO methods.
+
+    /**
+     * ### SDO.init
+     *
+     * Initializes the widget
+     *
+     * @param {object} opts Optional. Configuration options.
+     */
+    SDO.prototype.init = function(opts) {
+        opts = opts || {};
+
+        if (opts.scale) {
+            if (opts.scale !== 'SDO16' &&
+                opts.scale !== 'SDO7' && opts.scale !== 'SDO7s') {
+
+                throw new Error('SDO.init: scale must be SDO16, SDO7, SDO7s ' +
+                                'or undefined. Found: ' + opts.scale);
+            }
+
+            this.scale = opts.scale;
+        }
+
+        if (opts.choices) {
+            if (!J.isArray(opts.choices) || opts.choices.length < 2) {
+                throw new Error('SDO.init: choices must be an array ' +
+                                'of length > 1 or undefined. Found: ' +
+                                opts.choices);
+            }
+            this.choices = opts.choices;
+        }
+
+        if (opts.header) {
+            if (!J.isArray(opts.header) ||
+                opts.header.length !== this.choices.length) {
+
+                throw new Error('SDO.init: header must be an array ' +
+                                'of length equal to the number of choices ' +
+                                'or undefined. Found: ' + opts.header);
+            }
+            this.header = opts.header;
+        }
+
+        if (opts.mainText) {
+            if ('string' !== typeof opts.mainText && opts.mainText !== false) {
+                throw new Error('SDO.init: mainText must be string, ' +
+                                'false, or undefined. Found: ' + opts.mainText);
+            }
+            this.mainText = opts.mainText;
+        }
+    };
+
+    SDO.prototype.append = function() {
+        this.sdo = node.widgets.add('ChoiceTableGroup', this.panelDiv, {
+            id: this.id || 'SDO_choicetable',
+            items: this.getItems(this.scale),
+            choices: this.choices,
+            mainText: (this.mainText || this.getText('mainText')),
+            title: false,
+            panel: false,
+            requiredChoice: this.required,
+            header: this.header
+        });
+    };
+
+    SDO.prototype.getItems = function() {
+        // E.g., ID: SDO7_1.
+        var s = this.scale;
+        return scales[s].map(function(item, idx) {
+            return [ s + '_' + (idx+1), item ];
+        });
+    };
+
+    SDO.prototype.getValues = function(opts) {
+        opts = opts || {};
+        return this.sdo.getValues(opts);
+    };
+
+    SDO.prototype.setValues = function(opts) {
+        opts = opts || {};
+        return this.sdo.setValues(opts);
+    };
+
+    SDO.prototype.enable = function(opts) {
+        return this.sdo.enable(opts);
+    };
+
+    SDO.prototype.disable = function(opts) {
+        return this.sdo.disable(opts);
+    };
+
+    SDO.prototype.highlight = function(opts) {
+        return this.sdo.highlight(opts);
+    };
+
+    SDO.prototype.unhighlight = function(opts) {
+        return this.sdo.unhighlight(opts);
+    };
 
 })(node);
 
