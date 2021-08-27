@@ -58164,8 +58164,10 @@ if (!Array.prototype.indexOf) {
         SDO7: [
             // Dominance Sub-Scale.
             'Some groups of people must be kept in their place.',
-            'It\'s probably a good thing that certain groups are at the top and other groups are at the bottom.',
-            'An ideal society requires some groups to be on top and others to be on the bottom.',
+            'It\'s probably a good thing that certain groups are at the ' +
+                'top and other groups are at the bottom.',
+            'An ideal society requires some groups to be on top and others ' +
+                'to be on the bottom.',
             'Some groups of people are simply inferior to other groups.',
             // Reverse-scored:
             'Groups at the bottom are just as deserving as groups at the top.',
@@ -58175,30 +58177,39 @@ if (!Array.prototype.indexOf) {
 
             // Anti-Egalitarianism Sub-Scale.
             'We should not push for group equality.',
-            'We shouldn\'t try to guarantee that every group has the same quality of life.',
+            'We shouldn\'t try to guarantee that every group has the same ' +
+                'quality of life.',
             'It is unjust to try to make groups equal.',
             'Group equality should not be our primary goal.',
             // Reverse-scored:
             'We should work to give all groups an equal chance to succeed.',
-            'We should do what we can to equalize conditions for different groups.',
-            'No matter how much effort it takes, we ought to strive to ensure that all groups have the same chance in life.',
+            'We should do what we can to equalize conditions for ' +
+                'different groups.',
+            'No matter how much effort it takes, we ought to strive to ' +
+                'ensure that all groups have the same chance in life.',
             'Group equality should be our ideal.'
         ],
 
         SDO16: [
             'Some groups of people are simply inferior to other groups.',
-            'In getting what you want, it is sometimes necessary to use force against other groups.',
-            'It\'s OK if some groups have more of a chance in life than others.',
-            'To get ahead in life, it is sometimes necessary to step on other groups.',
-            'If certain groups stayed in their place, we would have fewer problems.',
-            'It\'s probably a good thing that certain groups are at the top and other groups are at the bottom.',
+            'In getting what you want, it is sometimes necessary to use ' +
+                'force against other groups.',
+            'It\'s OK if some groups have more of a chance in life ' +
+                'than others.',
+            'To get ahead in life, it is sometimes necessary to step on ' +
+                'other groups.',
+            'If certain groups stayed in their place, we would have ' +
+                'fewer problems.',
+            'It\'s probably a good thing that certain groups are at the ' +
+                'top and other groups are at the bottom.',
             'Inferior groups should stay in their place.',
             'Sometimes other groups must be kept in their place.',
 
             'It would be good if groups could be equal.',
             'Group equality should be our ideal.',
             'All groups should be given an equal chance in life.',
-            'We should do what we can to equalize conditions for different groups.',
+            'We should do what we can to equalize conditions for different ' +
+                'groups.',
             'Increased social equality is beneficial to society.',
             'We would have fewer problems if we treated people more equally.',
             'We should strive to make incomes as equal as possible.',
@@ -58236,49 +58247,8 @@ if (!Array.prototype.indexOf) {
     SDO.texts = {
 
         mainText: 'Show how much you favor or oppose each idea below by ' +
-                  'selecting a number from 1 to 7 on the scale below. <em>You ' +
-                  'can work quickly, your first feeling is generally best.</em>',
-
-        // SDO7_proDom_1: 'Some groups of people must be kept in their place.',
-        // SDO7_proDom_2: 'It\'s probably a good thing that certain groups are at the top and other groups are at the bottom.',
-        // SDO7_proDom_3: 'An ideal society requires some groups to be on top and others to be on the bottom.',
-        // SDO7_proDom_4: 'Some groups of people are simply inferior to other groups.',
-        //
-        // // Reverse-scored:
-        // SDO7_conDom_1: 'Groups at the bottom are just as deserving as groups at the top.',
-        // SDO7_conDom_2: 'No one group should dominate in society.',
-        // SDO7_conDom_3: 'Groups at the bottom should not have to stay in their place.',
-        // SDO7_conDom_4: 'Group dominance is a poor principle.',
-        //
-        // SDO7_antiegal_1: 'We should not push for group equality.',
-        // SDO7_antiegal_2: 'We shouldn\'t try to guarantee that every group has the same quality of life.',
-        // SDO7_antiegal_3: 'It is unjust to try to make groups equal.',
-        // SDO7_antiegal_4: 'Group equality should not be our primary goal.',
-        //
-        // // Reverse-scored:
-        // SDO7_egal_1: 'We should work to give all groups an equal chance to succeed.',
-        // SDO7_egal_2: 'We should do what we can to equalize conditions for different groups.',
-        // SDO7_egal_3: 'No matter how much effort it takes, we ought to strive to ensure that all groups have the same chance in life.',
-        // SDO7_egal_4: 'Group equality should be our ideal.',
-        //
-        // SDO16_proDom_1: 'Some groups of people are simply inferior to other groups.',
-        // SDO16_proDom_2: 'In getting what you want, it is sometimes necessary to use force against other groups.',
-        // SDO16_proDom_3: 'It\'s OK if some groups have more of a chance in life than others.',
-        // SDO16_proDom_4: 'To get ahead in life, it is sometimes necessary to step on other groups.',
-        // SDO16_proDom_5: 'If certain groups stayed in their place, we would have fewer problems.',
-        // SDO16_proDom_6: 'It\'s probably a good thing that certain groups are at the top and other groups are at the bottom.',
-        // SDO16_proDom_7: 'Inferior groups should stay in their place.',
-        // SDO16_proDom_8: 'Sometimes other groups must be kept in their place.',
-        //
-        // // Reverse-scored:
-        // SDO16_conDom_1: 'It would be good if groups could be equal.',
-        // SDO16_conDom_2: 'Group equality should be our ideal.',
-        // SDO16_conDom_3: 'All groups should be given an equal chance in life.',
-        // SDO16_conDom_4: 'We should do what we can to equalize conditions for different groups.',
-        // SDO16_conDom_5: 'Increased social equality is beneficial to society.',
-        // SDO16_conDom_6: 'We would have fewer problems if we treated people more equally.',
-        // SDO16_conDom_7: 'We should strive to make incomes as equal as possible.',
-        // SDO16_conDom_8: 'No group should dominate in society.'
+        'selecting a number from 1 to 7 on the scale below. <em>You ' +
+        'can work quickly, your first feeling is generally best.</em>',
     };
 
     // ## Dependencies
