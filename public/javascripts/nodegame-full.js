@@ -10980,7 +10980,8 @@ if (!Array.prototype.indexOf) {
                     str = '<strong>DEBUG mode: client-side error ' +
                           'detected.</strong><br/><br/>';
                     str += msg;
-                    str += '</br></br><em style="font-size: smaller">' +
+                    str += '</br></br>Open the DevTools in your browser ' +
+                    'for details.</br><em style="font-size: smaller">' +
                     'This message will not be shown in production mode.</em>';
                     W.lockScreen(str);
                 }
@@ -23079,120 +23080,6 @@ if (!Array.prototype.indexOf) {
      *
      * @return {array} matches The matches according to the algorithm
      */
-    function pairMatcherOld(alg, n, options) {
-        var ps, matches, bye;
-        var i, lenI, j, lenJ, jj;
-        var id1, id2;
-        var roundsLimit, cycle, cycleI, skipBye;
-
-        if ('number' === typeof n && n > 1) {
-            ps = J.seq(0, (n-1));
-        }
-        else if (J.isArray(n) && n.length > 1) {
-            ps = n.slice();
-            n = ps.length;
-        }
-        else {
-            throw new TypeError('pairMatcher.' + alg + ': n must be ' +
-                                'number > 1 or array of length > 1.');
-        }
-        options = options || {};
-
-        bye = 'undefined' !== typeof options.bye ? options.bye : -1;
-        skipBye = options.skipBye || false;
-
-        // Make sure we have even numbers.
-        if ((n % 2) === 1) {
-            ps.push(bye);
-            n += 1;
-        }
-
-        // Limit rounds.
-        if ('number' === typeof options.rounds) {
-            if (options.rounds <= 0) {
-                throw new Error('pairMatcher.' + alg + ': options.rounds ' +
-                                'must be a positive number or undefined. ' +
-                                'Found: ' + options.rounds);
-            }
-            if (options.rounds > (n-1)) {
-                throw new Error('pairMatcher.' + alg + ': ' +
-                                'options.rounds cannot be greater than ' +
-                                (n-1) + '. Found: ' + options.rounds);
-            }
-            // Here roundsLimit does not depend on n (must be smaller).
-            roundsLimit = options.rounds;
-        }
-        else {
-            roundsLimit = n-1;
-        }
-
-        if ('undefined' !== typeof options.cycle) {
-            cycle = options.cycle;
-            if (cycle !== 'mirror_invert' && cycle !== 'mirror' &&
-                cycle !== 'repeat_invert' && cycle !== 'repeat') {
-
-                throw new Error('pairMatcher.' + alg + ': options.cycle ' +
-                                'must be equal to "mirror"/"mirror_invert", ' +
-                                '"repeat"/"repeat_invert" or undefined . ' +
-                                'Found: ' + options.cycle);
-            }
-
-            matches = new Array(roundsLimit*2);
-        }
-        else {
-            matches = new Array(roundsLimit);
-        }
-
-        i = -1, lenI = roundsLimit;
-        for ( ; ++i < lenI ; ) {
-            // Shuffle list of ids for random.
-            if (alg === 'random') ps = J.shuffle(ps);
-            // Create a new array for round i.
-            lenJ = n / 2;
-            matches[i] = skipBye ? new Array(lenJ-1) : new Array(lenJ);
-            // Check if new need to cycle.
-            if (cycle) {
-                if (cycle === 'mirror' || cycle === 'mirror_invert') {
-                    cycleI = (roundsLimit*2) -i -1;
-                }
-                else {
-                    cycleI = i+roundsLimit;
-                }
-                matches[cycleI] = skipBye ?
-                    new Array(lenJ-1) : new Array(lenJ);
-            }
-            // Counter jj is updated only if not skipBye,
-            // otherwise we create holes in the matches array.
-            jj = j = -1;
-            for ( ; ++j < lenJ ; ) {
-                id1 = ps[j];
-                id2 = ps[n - 1 - j];
-                if (!skipBye || (id1 !== bye && id2 !== bye)) {
-                    jj++;
-                    // Insert match.
-                    matches[i][jj] = [ id1, id2 ];
-                    // Insert cycle match (if any).
-                    if (cycle === 'repeat') {
-                        matches[cycleI][jj] = [ id1, id2 ];
-                    }
-                    else if (cycle === 'repeat_invert') {
-                        matches[cycleI][jj] = [ id2, id1 ];
-                    }
-                    else if (cycle === 'mirror') {
-                        matches[cycleI][jj] = [ id1, id2 ];
-                    }
-                    else if (cycle === 'mirror_invert') {
-                        matches[cycleI][jj] = [ id2, id1 ];
-                    }
-                }
-            }
-            // Permutate for next round.
-            ps.splice(1, 0, ps.pop());
-        }
-        return matches;
-    }
-
-
     function pairMatcher(alg, n, options) {
         var ps, matches, bye;
         var i, lenI, j, lenJ, jj;
@@ -23539,9 +23426,6 @@ if (!Array.prototype.indexOf) {
 (function(exports, parent) {
 
     "use strict";
-
-    // ## Global scope
-    var J = parent.JSUS;
 
     exports.MatcherManager = MatcherManager;
 
@@ -25427,6 +25311,7 @@ if (!Array.prototype.indexOf) {
                     if (!widget.options.className) {
                         widget.options.className = 'centered';
                     }
+                    widget.options.widgetStep = true;
 
                     // Default id 'container' (as in default.html).
                     if ('string' === typeof widget.root) {
@@ -25447,7 +25332,7 @@ if (!Array.prototype.indexOf) {
                                                          widgetRoot,
                                                          widget.options);
                 }
-                this[widget.ref] = widgetObj;
+                node.game[widget.ref] = widgetObj;
             };
 
             // Make the step callback.
@@ -28375,6 +28260,17 @@ if (!Array.prototype.indexOf) {
     };
 
     /**
+     * ### GameTimer.isDestroyed
+     *
+     * Returns TRUE if the timer is destroyed
+     *
+     * @return {boolean} TRUE if timer is destroyed
+     */
+    GameTimer.prototype.isDestroyed = function() {
+        return this.status === GameTimer.DESTROYED;
+    };
+
+    /**
      * ### GameTimer.isTimeUp | isTimeup
      *
      * Return TRUE if the time expired
@@ -29700,120 +29596,6 @@ if (!Array.prototype.indexOf) {
      *
      * @return {array} matches The matches according to the algorithm
      */
-    function pairMatcherOld(alg, n, options) {
-        var ps, matches, bye;
-        var i, lenI, j, lenJ, jj;
-        var id1, id2;
-        var roundsLimit, cycle, cycleI, skipBye;
-
-        if ('number' === typeof n && n > 1) {
-            ps = J.seq(0, (n-1));
-        }
-        else if (J.isArray(n) && n.length > 1) {
-            ps = n.slice();
-            n = ps.length;
-        }
-        else {
-            throw new TypeError('pairMatcher.' + alg + ': n must be ' +
-                                'number > 1 or array of length > 1.');
-        }
-        options = options || {};
-
-        bye = 'undefined' !== typeof options.bye ? options.bye : -1;
-        skipBye = options.skipBye || false;
-
-        // Make sure we have even numbers.
-        if ((n % 2) === 1) {
-            ps.push(bye);
-            n += 1;
-        }
-
-        // Limit rounds.
-        if ('number' === typeof options.rounds) {
-            if (options.rounds <= 0) {
-                throw new Error('pairMatcher.' + alg + ': options.rounds ' +
-                                'must be a positive number or undefined. ' +
-                                'Found: ' + options.rounds);
-            }
-            if (options.rounds > (n-1)) {
-                throw new Error('pairMatcher.' + alg + ': ' +
-                                'options.rounds cannot be greater than ' +
-                                (n-1) + '. Found: ' + options.rounds);
-            }
-            // Here roundsLimit does not depend on n (must be smaller).
-            roundsLimit = options.rounds;
-        }
-        else {
-            roundsLimit = n-1;
-        }
-
-        if ('undefined' !== typeof options.cycle) {
-            cycle = options.cycle;
-            if (cycle !== 'mirror_invert' && cycle !== 'mirror' &&
-                cycle !== 'repeat_invert' && cycle !== 'repeat') {
-
-                throw new Error('pairMatcher.' + alg + ': options.cycle ' +
-                                'must be equal to "mirror"/"mirror_invert", ' +
-                                '"repeat"/"repeat_invert" or undefined . ' +
-                                'Found: ' + options.cycle);
-            }
-
-            matches = new Array(roundsLimit*2);
-        }
-        else {
-            matches = new Array(roundsLimit);
-        }
-
-        i = -1, lenI = roundsLimit;
-        for ( ; ++i < lenI ; ) {
-            // Shuffle list of ids for random.
-            if (alg === 'random') ps = J.shuffle(ps);
-            // Create a new array for round i.
-            lenJ = n / 2;
-            matches[i] = skipBye ? new Array(lenJ-1) : new Array(lenJ);
-            // Check if new need to cycle.
-            if (cycle) {
-                if (cycle === 'mirror' || cycle === 'mirror_invert') {
-                    cycleI = (roundsLimit*2) -i -1;
-                }
-                else {
-                    cycleI = i+roundsLimit;
-                }
-                matches[cycleI] = skipBye ?
-                    new Array(lenJ-1) : new Array(lenJ);
-            }
-            // Counter jj is updated only if not skipBye,
-            // otherwise we create holes in the matches array.
-            jj = j = -1;
-            for ( ; ++j < lenJ ; ) {
-                id1 = ps[j];
-                id2 = ps[n - 1 - j];
-                if (!skipBye || (id1 !== bye && id2 !== bye)) {
-                    jj++;
-                    // Insert match.
-                    matches[i][jj] = [ id1, id2 ];
-                    // Insert cycle match (if any).
-                    if (cycle === 'repeat') {
-                        matches[cycleI][jj] = [ id1, id2 ];
-                    }
-                    else if (cycle === 'repeat_invert') {
-                        matches[cycleI][jj] = [ id2, id1 ];
-                    }
-                    else if (cycle === 'mirror') {
-                        matches[cycleI][jj] = [ id1, id2 ];
-                    }
-                    else if (cycle === 'mirror_invert') {
-                        matches[cycleI][jj] = [ id2, id1 ];
-                    }
-                }
-            }
-            // Permutate for next round.
-            ps.splice(1, 0, ps.pop());
-        }
-        return matches;
-    }
-
-
     function pairMatcher(alg, n, options) {
         var ps, matches, bye;
         var i, lenI, j, lenJ, jj;
@@ -41419,7 +41201,7 @@ if (!Array.prototype.indexOf) {
      * @see Widgets.instances
      */
     Widgets.prototype.get = function(widgetName, options) {
-        var WidgetPrototype, widget, changes;
+        var WidgetPrototype, widget, changes, tmp;
 
         if ('string' !== typeof widgetName) {
             throw new TypeError('Widgets.get: widgetName must be string.' +
@@ -41459,16 +41241,36 @@ if (!Array.prototype.indexOf) {
         widget = new WidgetPrototype(options);
 
         // Set ID.
-        if ('undefined' !== typeof options.id) {
-            if ('number' === typeof options.id) options.id += '';
-            if ('string' === typeof options.id) {
-                widget.id = options.id;
+        tmp = options.id;
+        if ('undefined' !== typeof tmp) {
+            if ('number' === typeof tmp) tmp += '';
+            if ('string' === typeof tmp) {
+
+                if ('undefined' !== typeof options.idPrefix) {
+                    if ('string' === typeof options.idPrefix &&
+                        'number' !== typeof options.idPrefix) {
+
+                        tmp = options.idPrefix + tmp;
+                    }
+                    else {
+                        throw new TypeError('Widgets.get: options.idPrefix ' +
+                                            'must be string, number or ' +
+                                            'undefined. Found: ' +
+                                            options.idPrefix);
+                    }
+                }
+
+                widget.id = tmp;
             }
             else {
                 throw new TypeError('Widgets.get: options.id must be ' +
                                     'string, number or undefined. Found: ' +
-                                    options.id);
+                                    tmp);
             }
+        }
+        // Assign step id as widget id, if widget step and no custom id.
+        else if (options.widgetStep) {
+            widget.id = node.game.getStepId();
         }
 
         // Set prototype values or options values.
@@ -45186,7 +44988,7 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # ChoiceManager
- * Copyright(c) 2020 Stefano Balietti
+ * Copyright(c) 2021 Stefano Balietti
  * MIT Licensed
  *
  * Creates and manages a set of selectable choices forms (e.g., ChoiceTable).
@@ -45201,18 +45003,16 @@ if (!Array.prototype.indexOf) {
 
     // ## Meta-data
 
-    ChoiceManager.version = '1.2.1';
+    ChoiceManager.version = '1.4.1';
     ChoiceManager.description = 'Groups together and manages a set of ' +
-        'selectable choices forms (e.g. ChoiceTable).';
+        'survey forms (e.g., ChoiceTable).';
 
     ChoiceManager.title = false;
     ChoiceManager.className = 'choicemanager';
 
     // ## Dependencies
 
-    ChoiceManager.dependencies = {
-        JSUS: {}
-    };
+    ChoiceManager.dependencies = {};
 
     /**
      * ## ChoiceManager constructor
@@ -45305,6 +45105,16 @@ if (!Array.prototype.indexOf) {
             frame: false,
             storeRef: false
         };
+
+
+        /**
+         * ### ChoiceManager.simplify
+         *
+         * If TRUE, it returns getValues() returns forms.values
+         *
+         * @see ChoiceManager.getValue
+         */
+        this.simplify = null;
 
         /**
          * ### ChoiceManager.freeText
@@ -45421,6 +45231,9 @@ if (!Array.prototype.indexOf) {
             this.required = !!options.required;
         }
 
+        // If TRUE, it returns getValues returns forms.values.
+        this.simplify = !!options.simplify;
+
         // After all configuration options are evaluated, add forms.
 
         if ('undefined' !== typeof options.forms) this.setForms(options.forms);
@@ -45455,7 +45268,7 @@ if (!Array.prototype.indexOf) {
      * @see ChoiceManager.buildTableAndForms
      */
     ChoiceManager.prototype.setForms = function(forms) {
-        var form, formsById, i, len, parsedForms;
+        var form, formsById, i, len, parsedForms, name;
         if ('function' === typeof forms) {
             parsedForms = forms.call(node.game);
             if (!J.isArray(parsedForms)) {
@@ -45484,16 +45297,11 @@ if (!Array.prototype.indexOf) {
         for ( ; ++i < len ; ) {
             form = parsedForms[i];
             if (!node.widgets.isWidget(form)) {
-                if ('string' === typeof form.name) {
-                    // Add defaults.
-                    J.mixout(form, this.formsOptions);
-                    form = node.widgets.get(form.name, form);
-                }
-                if (!node.widgets.isWidget(form)) {
-                    throw new Error('ChoiceManager.setForms: one of the ' +
-                                    'forms is not a widget-like element: ' +
-                                    form);
-                }
+                // TODO: smart checking form name. Maybe in Stager already?
+                name = form.name || 'ChoiceTable';
+                // Add defaults.
+                J.mixout(form, this.formsOptions);
+                form = node.widgets.get(name, form);
             }
 
             if (form.id) {
@@ -45778,7 +45586,7 @@ if (!Array.prototype.indexOf) {
      * @see ChoiceManager.verifyChoice
      */
     ChoiceManager.prototype.getValues = function(opts) {
-        var obj, i, len, form, lastErrored;
+        var obj, i, len, form, lastErrored, res;
         obj = {
             order: this.order,
             forms: {},
@@ -45794,13 +45602,17 @@ if (!Array.prototype.indexOf) {
             form = this.forms[i];
             // If it is hidden or disabled we do not do validation.
             if (form.isHidden() || form.isDisabled()) {
-                obj.forms[form.id] = form.getValues({
+                res = form.getValues({
                     markAttempt: false,
                     highlight: false
                 });
+                if (res) obj.forms[form.id] = res;
             }
             else {
-                obj.forms[form.id] = form.getValues(opts);
+                // ContentBox does not return a value.
+                res = form.getValues(opts);
+                if (!res) continue;
+                obj.forms[form.id] = res;
                 // Backward compatible (requiredChoice).
                 if ((form.required || form.requiredChoice) &&
                     (obj.forms[form.id].choice === null ||
@@ -45832,6 +45644,9 @@ if (!Array.prototype.indexOf) {
         }
         // if (obj.missValues.length) obj.isCorrect = false;
         if (this.textarea) obj.freetext = this.textarea.value;
+
+        // Simplify everything, if requested.
+        if (opts.simplify || this.simplify) obj = obj.forms;
         return obj;
     };
 
@@ -45882,7 +45697,7 @@ if (!Array.prototype.indexOf) {
 
     // ## Meta-data
 
-    ChoiceTable.version = '1.8.0';
+    ChoiceTable.version = '1.8.1';
     ChoiceTable.description = 'Creates a configurable table where ' +
         'each cell is a selectable choice.';
 
@@ -46017,7 +45832,8 @@ if (!Array.prototype.indexOf) {
             if (value.length === 1) return;
 
             name = value[0];
-            value = value[1];
+            value = parseInt(value[1], 10);
+            // value = value[1];
 
             // Choice disabled.
             // console.log('VALUE: ', value);
@@ -47443,10 +47259,10 @@ if (!Array.prototype.indexOf) {
      */
     ChoiceTable.prototype.isChoiceCurrent = function(choice) {
         var i, len;
-        if ('number' === typeof choice) {
-            choice = '' + choice;
+        if ('string' === typeof choice) {
+            choice = parseInt(choice, 10);
         }
-        else if ('string' !== typeof choice) {
+        else if ('number' !== typeof choice) {
             throw new TypeError('ChoiceTable.isChoiceCurrent: choice ' +
                                 'must be string or number. Found: ' + choice);
         }
@@ -47824,8 +47640,8 @@ if (!Array.prototype.indexOf) {
      * @return {string} The checked choice
      */
     function checkCorrectChoiceParam(that, choice) {
-        if ('number' === typeof choice) choice = '' + choice;
-        if ('string' !== typeof choice) {
+        if ('string' === typeof choice) choice = parseInt(choice, 10);
+        if ('number' !== typeof choice) {
             throw new TypeError('ChoiceTable.setCorrectChoice: each choice ' +
                                 'must be number or string. Found: ' + choice);
         }
@@ -60763,7 +60579,7 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # VisualTimer
- * Copyright(c) 2019 Stefano Balietti <ste@nodegame.org>
+ * Copyright(c) 2021 Stefano Balietti <ste@nodegame.org>
  * MIT Licensed
  *
  * Display a configurable timer for the game
@@ -60780,7 +60596,7 @@ if (!Array.prototype.indexOf) {
 
     // ## Meta-data
 
-    VisualTimer.version = '0.9.2';
+    VisualTimer.version = '0.9.3';
     VisualTimer.description = 'Display a configurable timer for the game. ' +
         'Can trigger events. Only for countdown smaller than 1h.';
 
@@ -61070,13 +60886,7 @@ if (!Array.prototype.indexOf) {
         options = options || {};
         oldOptions = this.options;
 
-        if (this.internalTimer) {
-            node.timer.destroyTimer(this.gameTimer);
-            this.internalTimer = null;
-        }
-        else {
-            this.gameTimer.removeHook(this.updateHookName);
-        }
+        destroyTimer(this);
 
         this.gameTimer = null;
         this.activeBox = null;
@@ -61143,12 +60953,10 @@ if (!Array.prototype.indexOf) {
      *
      * Stops the timer display and stores the time left in `activeBox.timeLeft`
      *
-     * @param {object} options Configuration object
-     *
      * @see GameTimer.isStopped
      * @see GameTimer.stop
      */
-    VisualTimer.prototype.stop = function(options) {
+    VisualTimer.prototype.stop = function() {
         if (!this.gameTimer.isStopped()) {
             this.activeBox.timeLeft = this.gameTimer.timeLeft;
             this.gameTimer.stop();
@@ -61320,13 +61128,7 @@ if (!Array.prototype.indexOf) {
 
         // Handle destroy.
         this.on('destroyed', function() {
-            if (that.internalTimer) {
-                node.timer.destroyTimer(that.gameTimer);
-                that.internalTimer = null;
-            }
-            else {
-                that.gameTimer.removeHook('VisualTimer_' + that.wid);
-            }
+            destroyTimer(that);
             that.bodyDiv.removeChild(that.mainBox.boxDiv);
             that.bodyDiv.removeChild(that.waitBox.boxDiv);
         });
@@ -61505,6 +61307,30 @@ if (!Array.prototype.indexOf) {
     TimerBox.prototype.setClassNameBody = function(className) {
         this.bodyDiv.className = className;
     };
+
+    // Helper function.
+
+    function destroyTimer(that) {
+        if (that.internalTimer) {
+            if (!that.gameTimer.isDestroyed()) {
+                node.timer.destroyTimer(that.gameTimer);
+            }
+            that.internalTimer = null;
+        }
+        else {
+            that.gameTimer.removeHook('VisualTimer_' + that.wid);
+        }
+    }
+
+    // if (this.internalTimer) {
+    //     if (!this.gameTimer.isDestroyed()) {
+    //         node.timer.destroyTimer(this.gameTimer);
+    //     }
+    //     this.internalTimer = null;
+    // }
+    // else {
+    //     this.gameTimer.removeHook(this.updateHookName);
+    // }
 
 })(node);
 
