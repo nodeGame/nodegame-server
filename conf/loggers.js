@@ -15,6 +15,7 @@ const winston = require('winston');
 function configure(loggers, logDir) {
     let logLevel = winston.level;
 
+
     // ServerNode.
     loggers.add('servernode', {
         transports: [
