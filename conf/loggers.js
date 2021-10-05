@@ -1,6 +1,6 @@
 /**
  * # loggers.js
- * Copyright(c) 2020 Stefano Balietti
+ * Copyright(c) 2021 Stefano Balietti
  * MIT Licensed
  *
  * Configuration file for Winston.js in nodegame-server
@@ -17,44 +17,52 @@ function configure(loggers, logDir) {
 
     // ServerNode.
     loggers.add('servernode', {
-        console: {
-            level: logLevel,
-            colorize: true
-        },
-        file: {
-            level: logLevel,
-            timestamp: true,
-            filename: path.join(logDir, 'servernode.log'),
-            maxsize: 1000000,
-            maxFiles: 10
-        }
+        transports: [
+            new winston.transports.Console({
+                level: logLevel,
+                colorize: true
+            }),
+            new winston.transports.File({
+                level: logLevel,
+                timestamp: true,
+                filename: path.join(logDir, 'servernode.log'),
+                maxsize: 1000000,
+                maxFiles: 10
+            })
+        ]
+
     });
 
     // Channel.
     loggers.add('channel', {
-        console: {
-            level: logLevel,
-            colorize: true,
-        },
-        file: {
-            level: logLevel,
-            timestamp: true,
-            filename: path.join(logDir, 'channels.log'),
-            maxsize: 1000000,
-            maxFiles: 10
-        }
+        transports: [
+            new winston.transports.Console({
+                level: logLevel,
+                colorize: true,
+            }),
+            new winston.transports.File({
+                level: logLevel,
+                timestamp: true,
+                filename: path.join(logDir, 'channels.log'),
+                maxsize: 1000000,
+                maxFiles: 10
+            })
+       ]
     });
 
     // Messages.
     // Make custom levels and only File transports for messages.
-    let msgLogger = loggers.add('messages');
-    msgLogger.remove(winston.transports.Console);
-    msgLogger.add(winston.transports.File, {
-        timestamp: true,
-        maxsize: 1000000,
-        filename: path.join(logDir, 'messages.log')
+    let msgLogger = loggers.add('messages', {
+        transports: [
+            new winston.transports.File({
+                timestamp: true,
+                maxsize: 1000000,
+                filename: path.join(logDir, 'messages.log')
+            })
+        ]
     });
 
+    // Removed in winston v3.
     // Do not change, or logging might be affected.
     // Logger.js hardcodes the values for speed.
     msgLogger.setLevels({
@@ -79,15 +87,17 @@ function configure(loggers, logDir) {
 
     // Clients.
     loggers.add('clients', {
-        console: {
-            level: logLevel,
-            colorize: true,
-        },
-        file: {
-            level: 'silly',
-            timestamp: true,
-            filename: path.join(logDir, 'clients.log')
-        }
+        transports: [
+            new winston.transports.Console({
+                level: logLevel,
+                colorize: true,
+            }),
+            new winston.transports.File({
+                level: 'silly',
+                timestamp: true,
+                filename: path.join(logDir, 'clients.log')
+            })
+       ]
     });
 
     return true;
