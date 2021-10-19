@@ -67,10 +67,27 @@ function configure(loggers, logDir) {
 
     // Messages.
     // Make custom levels and only File transports for messages.
-    let msgLogger = loggers.add('messages', {
+    loggers.add('messages', {
+        levels: {
+            // Log none.
+            none: 0,
+            // All DATA msgs.
+            data: 1,
+            // All SET and DATA msgs.
+            set: 3,
+            // All SET, GET and DATA msgs.
+            get: 5,
+            // All SETUP, SET, GET and DATA msgs.
+            setup: 7,
+            // All messages, but **not** PLAYER_UPDATE, SERVERCOMMAND and ALERT.
+            game: 9,
+            // All messages.
+            all: 11
+        },
         format: format.errors({ stack: true }),
         transports: [
             new transports.File({
+                level: 'all',
                 timestamp: true,
                 maxsize: 1000000,
                 filename: path.join(logDir, 'messages.log')
