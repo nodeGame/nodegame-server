@@ -1,5 +1,12 @@
 # nodegame-server change log
 
+# 7.0.0
+- Minified nodegame-full.min.js with terser.
+- Upgraded: Winston3, Socket.IO 4, Bootstrap 5 (partial support).
+- Dropped: PhantomJS
+- REMOTE_DISPATCH option for waiting room.
+
+
 # 6.3.0
 - CSS: Bomb widget is adaptive to media query, VisualRound is more compact.
 - Fixed renderTemplate bug when auth is on.
