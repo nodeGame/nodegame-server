@@ -5,7 +5,10 @@
 - Upgraded: Winston3, Socket.IO 4, Bootstrap 5 (partial support).
 - Dropped: PhantomJS
 - REMOTE_DISPATCH option for waiting room.
-
+- JWT Cookies are parsed only if auth or noAuthCookie is on.
+- New CSS styles for survey.
+- New authorization mode: 'external'.
+- GameRoom.computeBonus: showBonus, headerAdd, and prolific options.
 
 # 6.3.0
 - CSS: Bomb widget is adaptive to media query, VisualRound is more compact.
