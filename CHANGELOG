@@ -1,5 +1,8 @@
 # nodegame-server change log
 
+# 7.0.2
+- Minified CSS with cssnano.
+
 # 7.0.0
 - Minified nodegame-full.min.js with terser.
 - Upgraded: Winston3, Socket.IO 4, Bootstrap 5 (partial support).
