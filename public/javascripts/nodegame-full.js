@@ -25295,9 +25295,11 @@ if (!Array.prototype.indexOf) {
                     widget.ref = J.uniqueKey(this, widget.ref);
                 }
             }
-
+debugger
             // Add options, if missing.
-            if (!widget.options) widget.options = {};
+            // User can specify the options in a nested object, or flat them
+            // down in case there are no conflicts.
+            if (!widget.options) widget.options = widget;
 
             // Make main callback to get/append the widget.
             widgetCb = function() {
