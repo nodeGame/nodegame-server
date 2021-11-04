@@ -25295,7 +25295,7 @@ if (!Array.prototype.indexOf) {
                     widget.ref = J.uniqueKey(this, widget.ref);
                 }
             }
-debugger
+
             // Add options, if missing.
             // User can specify the options in a nested object, or flat them
             // down in case there are no conflicts.
@@ -45656,6 +45656,7 @@ debugger
             res = obj;
             obj = obj.forms;
             if (res.isCorrect === false) obj.isCorrect = false;
+            if (res.freetext) obj.freetext = res.freetext;
         }
         return obj;
     };
@@ -49173,9 +49174,9 @@ debugger
 
         this.consent = opts.consent || node.game.settings.CONSENT;
 
-        if ('object' !== typeof this.consent) {
-            throw new TypeError('Consent: consent must be object. Found: ' +
-                                this.consent);
+        if (this.consent && 'object' !== typeof this.consent) {
+            throw new TypeError('Consent: consent must be object or ' +
+                                'undefined. Found: ' + this.consent);
         }
 
         this.showPrint = opts.showPrint === false ? false : true;
@@ -49201,6 +49202,9 @@ debugger
 
     Consent.prototype.append = function() {
         var consent, html;
+        // Hide not agreed div.
+        W.hide('notAgreed');
+
         consent = W.gid('consent');
         html = '';
 
@@ -49233,12 +49237,15 @@ debugger
             var a, na, p, id;
 
             // Replace all texts.
-            for (p in consent) {
-                if (consent.hasOwnProperty(p)) {
-                    // Making lower-case and replacing underscores with dashes.
-                    id = p.toLowerCase();
-                    id = id.replace(new RegExp("_", 'g'), "-");
-                    W.setInnerHTML(id, consent[p]);
+            if (consent) {
+                for (p in consent) {
+                    if (consent.hasOwnProperty(p)) {
+                        // Making lower-case and replacing underscore
+                        // s with dashes.
+                        id = p.toLowerCase();
+                        id = id.replace(new RegExp("_", 'g'), "-");
+                        W.setInnerHTML(id, consent[p]);
+                    }
                 }
             }
 
@@ -59038,9 +59045,7 @@ debugger
 
     // ## Dependencies
 
-    SVOGauge.dependencies = {
-        JSUS: {}
-    };
+    SVOGauge.dependencies = {};
 
     /**
      * ## SVOGauge constructor
