@@ -42073,56 +42073,56 @@ if (!Array.prototype.indexOf) {
      *
      * @param {object} options Optional. Configuration options
      */
-    BackButton.prototype.init = function(options) {
+    BackButton.prototype.init = function(opts) {
         var tmp;
-        options = options || {};
+        opts = opts || {};
 
         //Button
-        if ('undefined' === typeof options.id) {
+        if ('undefined' === typeof opts.id) {
             tmp = BackButton.className;
         }
-        else if ('string' === typeof options.id) {
-            tmp = options.id;
+        else if ('string' === typeof opts.id) {
+            tmp = opts.id;
         }
-        else if (false === options.id) {
+        else if (false === opts.id) {
             tmp = '';
         }
         else {
-            throw new TypeError('BackButton.init: options.id must ' +
+            throw new TypeError('BackButton.init: opts.id must ' +
                                 'be string, false, or undefined. Found: ' +
-                                options.id);
+                                opts.id);
         }
         this.button.id = tmp;
 
-        if ('undefined' === typeof options.className) {
+        if ('undefined' === typeof opts.className) {
             tmp  = 'btn btn-lg btn-secondary';
         }
-        else if (options.className === false) {
+        else if (opts.className === false) {
             tmp = '';
         }
-        else if ('string' === typeof options.className) {
-            tmp = options.className;
+        else if ('string' === typeof opts.className) {
+            tmp = opts.className;
         }
-        else if (J.isArray(options.className)) {
-            tmp = options.className.join(' ');
+        else if (J.isArray(opts.className)) {
+            tmp = opts.className.join(' ');
         }
         else  {
-            throw new TypeError('BackButton.init: options.className must ' +
+            throw new TypeError('BackButton.init: opts.className must ' +
                                 'be string, array, or undefined. Found: ' +
-                                options.className);
+                                opts.className);
         }
         this.button.className = tmp;
 
         // Button text.
-        this.button.value = 'string' === typeof options.text ?
-            options.text : this.getText('back');
+        this.button.value = 'string' === typeof opts.text ?
+            opts.text : this.getText('back');
 
         this.stepOptions.acrossStages =
-            'undefined' === typeof options.acrossStages ?
-            false : !!options.acrossStages;
+            'undefined' === typeof opts.acrossStages ?
+            false : !!opts.acrossStages;
         this.stepOptions.acrossRounds =
-            'undefined' === typeof options.acrossRounds ?
-            true : !!options.acrossRounds;
+            'undefined' === typeof opts.acrossRounds ?
+            true : !!opts.acrossRounds;
     };
 
     BackButton.prototype.append = function() {
