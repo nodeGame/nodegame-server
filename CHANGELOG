@@ -1,5 +1,8 @@
 # nodegame-server change log
 
+# 7.0.3
+- New build: NDDB computes indexes by default, widgets improvements.
+
 # 7.0.2
 - Minified CSS with cssnano.
 
