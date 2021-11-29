@@ -23,12 +23,20 @@ function configure(loggers, logDir) {
         return `${timestamp} ${level}: ${message}`;
     });
 
+    // const msgFormatter = format.printf((info) => {
+    //     let { timestamp, level, message } = info;
+    //     message = stack || message;
+    //     return `${timestamp} ${level}: ${message}`;
+    // });
+
     let consoleFormat = format.combine(format.colorize(), format.simple(),
                                        format.timestamp(), logFormatter);
 
+    let msgFormat = format.combine(format.simple());
+
     // ServerNode.
     loggers.add('servernode', {
-        // format: format.errors({ stack: true }),
+        format: winston.format.simple(),
         transports: [
             new transports.Console({
                 level: logLevel,
@@ -36,6 +44,7 @@ function configure(loggers, logDir) {
                 format: consoleFormat
             }),
             new transports.File({
+                format: winston.format.simple(),
                 level: logLevel,
                 timestamp: true,
                 filename: path.join(logDir, 'servernode.log'),
@@ -48,7 +57,8 @@ function configure(loggers, logDir) {
 
     // Channel.
     loggers.add('channel', {
-        format: format.errors({ stack: true }),
+        // format: winston.format.simple(),
+        // format: format.errors({ stack: true }),
         transports: [
             new transports.Console({
                 level: logLevel,
@@ -56,6 +66,7 @@ function configure(loggers, logDir) {
                 format: consoleFormat
             }),
             new transports.File({
+                format: winston.format.simple(),
                 level: logLevel,
                 timestamp: true,
                 filename: path.join(logDir, 'channels.log'),
@@ -84,20 +95,20 @@ function configure(loggers, logDir) {
             // All messages.
             all: 11
         },
-        format: format.errors({ stack: true }),
         transports: [
             new transports.File({
                 level: 'all',
                 timestamp: true,
                 maxsize: 1000000,
-                filename: path.join(logDir, 'messages.log')
+                filename: path.join(logDir, 'messages.log'),
+                format: msgFormat
             })
         ]
     });
 
     // Clients.
     loggers.add('clients', {
-        format: format.errors({ stack: true }),
+        // format: format.errors({ stack: true }),
         transports: [
             new transports.Console({
                 level: logLevel,
@@ -105,6 +116,8 @@ function configure(loggers, logDir) {
                 format: consoleFormat
             }),
             new transports.File({
+                // format: consoleFormat,
+                format: winston.format.simple(),
                 level: 'silly',
                 timestamp: true,
                 filename: path.join(logDir, 'clients.log')

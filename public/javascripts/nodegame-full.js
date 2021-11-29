@@ -45009,7 +45009,7 @@ if (!Array.prototype.indexOf) {
 
     // ## Meta-data
 
-    ChoiceManager.version = '1.4.1';
+    ChoiceManager.version = '1.5.1';
     ChoiceManager.description = 'Groups together and manages a set of ' +
         'survey forms (e.g., ChoiceTable).';
 
@@ -45141,9 +45141,32 @@ if (!Array.prototype.indexOf) {
         /**
          * ### ChoiceManager.required
          *
-         * TRUE if widget should be checked upon node.done.
+         * If TRUE, the widget is checked upon node.done.
          */
         this.required = null;
+
+        /**
+         * ### ChoiceManager.oneByOne
+         *
+         * If, TRUE the widget displays only one form at the time
+         *
+         * Calling node.done will display the next form.
+         */
+        this.oneByOne = null;
+
+        /**
+         * ### ChoiceManager.oneByOneCounter
+         *
+         * Index the currently displayed form if oneByOne is TRUE
+         */
+        this.oneByOneCounter = 0;
+
+        /**
+         * ### ChoiceManager.oneByOneResults
+         *
+         * Contains partial results from forms if OneByOne is true
+         */
+        this.oneByOneResults = {};
     }
 
     // ## ChoiceManager methods
@@ -45240,6 +45263,9 @@ if (!Array.prototype.indexOf) {
         // If TRUE, it returns getValues returns forms.values.
         this.simplify = !!options.simplify;
 
+        // If TRUE, forms are displayed one by one.
+        this.oneByOne = !!options.oneByOne;
+
         // After all configuration options are evaluated, add forms.
 
         if ('undefined' !== typeof options.forms) this.setForms(options.forms);
@@ -45307,6 +45333,12 @@ if (!Array.prototype.indexOf) {
                 name = form.name || 'ChoiceTable';
                 // Add defaults.
                 J.mixout(form, this.formsOptions);
+
+                // Display forms one by one.
+                if (this.oneByOne && this.oneByOneCounter !== i) {
+                    form.hidden = true;
+                }
+
                 form = node.widgets.get(name, form);
             }
 
@@ -45603,39 +45635,61 @@ if (!Array.prototype.indexOf) {
         if ('undefined' === typeof opts.markAttempt) opts.markAttempt = true;
         if ('undefined' === typeof opts.highlight) opts.highlight = true;
         if (opts.markAttempt) obj.isCorrect = true;
-        i = -1, len = this.forms.length;
-        for ( ; ++i < len ; ) {
-            form = this.forms[i];
-            // If it is hidden or disabled we do not do validation.
-            if (form.isHidden() || form.isDisabled()) {
-                res = form.getValues({
-                    markAttempt: false,
-                    highlight: false
-                });
-                if (res) obj.forms[form.id] = res;
-            }
-            else {
-                // ContentBox does not return a value.
+
+        len = this.forms.length;
+
+        // Only one form displayed.
+        if (this.oneByOne) {
+
+            // Evaluate one-by-one and store partial results.
+            if (this.oneByOneCounter < (len-1)) {
+                form = this.forms[this.oneByOneCounter];
                 res = form.getValues(opts);
-                if (!res) continue;
-                obj.forms[form.id] = res;
-                // Backward compatible (requiredChoice).
-                if ((form.required || form.requiredChoice) &&
-                    (obj.forms[form.id].choice === null ||
-                     (form.selectMultiple &&
-                      !obj.forms[form.id].choice.length))) {
+                if (res) {
+                    this.oneByOneResults[form.id] = res;
+                    lastErrored = checkFormResult(res, form, opts);
 
-                    obj.missValues.push(form.id);
-                    lastErrored = form;
+                    if (!lastErrored) {
+                        this.forms[this.oneByOneCounter].hide();
+                        this.oneByOneCounter++;
+                        this.forms[this.oneByOneCounter].show();
+                        W.adjustFrameHeight();
+                        // Prevent stepping.
+                        obj.isCorrect = false;
+                    }
                 }
-                if (opts.markAttempt &&
-                    obj.forms[form.id].isCorrect === false) {
+            }
+            // All one-by-one pages executed.
+            else {
+                // Copy all partial results in the obj returning the
+                obj.forms = this.oneByOneResults;
+            }
 
-                    // obj.isCorrect = false;
-                    lastErrored = form;
+        }
+        // All forms on the page.
+        else {
+            i = -1;
+            for ( ; ++i < len ; ) {
+                form = this.forms[i];
+                // If it is hidden or disabled we do not do validation.
+                if (form.isHidden() || form.isDisabled()) {
+                    res = form.getValues({
+                        markAttempt: false,
+                        highlight: false
+                    });
+                    if (res) obj.forms[form.id] = res;
+                }
+                else {
+                    // ContentBox does not return a value.
+                    res = form.getValues(opts);
+                    if (!res) continue;
+                    obj.forms[form.id] = res;
+
+                    lastErrored = checkFormResult(res, form, opts, obj);
                 }
             }
         }
+
         if (lastErrored) {
             if (opts.highlight &&
                 'function' === typeof lastErrored.bodyDiv.scrollIntoView) {
@@ -45686,6 +45740,24 @@ if (!Array.prototype.indexOf) {
     };
 
     // ## Helper methods.
+
+    function checkFormResult(res, form, opts, out) {
+        var err;
+        // Backward compatible (requiredChoice).
+        if ((form.required || form.requiredChoice) &&
+            (res.choice === null ||
+            (form.selectMultiple && !res.choice.length))) {
+
+            if (out) out.missValues.push(form.id);
+            err = form;
+        }
+        if (opts.markAttempt && res.isCorrect === false) {
+            // out.isCorrect = false;
+            err = form;
+        }
+
+        return err;
+    }
 
 // In progress.
 //     const createOnClick = (choice, question) => {
@@ -53907,7 +53979,7 @@ if (!Array.prototype.indexOf) {
 
     // Meta-data.
 
-    Dropdown.version = '0.1.0';
+    Dropdown.version = '0.3.0';
     Dropdown.description = 'Creates a configurable dropdown menu.';
 
     Dropdown.texts = {
@@ -53959,11 +54031,11 @@ if (!Array.prototype.indexOf) {
         this.labelText = null;
 
         /**
-         * ### Dropdown.placeHolder
+         * ### Dropdown.placeholder
          *
-         * A placeHolder text for the input
+         * A placeholder text for the input
          */
-        this.placeHolder = null;
+        this.placeholder = null;
 
         /**
          * ### Dropdown.choices
@@ -54030,8 +54102,6 @@ if (!Array.prototype.indexOf) {
 
             // Call onchange, if any.
             if (that.onchange) {
-
-
                 that.onchange(that.currentChoice, that);
             }
 
@@ -54191,14 +54261,14 @@ if (!Array.prototype.indexOf) {
                 options.labelText);
         }
 
-        // Set the placeHolder text, if any.
-        if ('string' === typeof options.placeHolder) {
-            this.placeHolder = options.placeHolder;
+        // Set the placeholder text, if any.
+        if ('string' === typeof options.placeholder) {
+            this.placeholder = options.placeholder;
         }
-        else if ('undefined' !== typeof options.placeHolder) {
-            throw new TypeError('Dropdown.init: options.placeHolder must ' +
+        else if ('undefined' !== typeof options.placeholder) {
+            throw new TypeError('Dropdown.init: options.placeholder must ' +
                 'be string or undefined. Found: ' +
-                options.placeHolder);
+                options.placeholder);
         }
 
         // Add the choices.
@@ -54242,8 +54312,6 @@ if (!Array.prototype.indexOf) {
                 'be boolean or undefined. Found: ' +
                 options.fixedChoice);
         }
-
-
 
         if ("undefined" === typeof options.tag ||
             "datalist" === options.tag ||
@@ -54307,19 +54375,17 @@ if (!Array.prototype.indexOf) {
 
             tmp = J.isInt(options.valiadtionSpeed, 0, undefined, true);
             if (tmp === false) {
-                throw new TypeError('Dropdownn.init: validationSpeed must a non-negative ' +
-                    'number or undefined. Found: ' +
+                throw new TypeError('Dropdownn.init: validationSpeed must ' +
+                    ' a non-negative number or undefined. Found: ' +
                     options.validationSpeed);
             }
             this.validationSpeed = tmp;
         }
 
-
     }
 
     // Implements the Widget.append method.
     Dropdown.prototype.append = function () {
-
         if (W.gid(this.id)) {
             throw new Error('Dropdown.append: id is not unique: ' + this.id);
         }
@@ -54344,26 +54410,22 @@ if (!Array.prototype.indexOf) {
 
 
     Dropdown.prototype.setChoices = function (choices, append) {
-        var tag = this.tag;
-        var option = this.option;
-        var placeHolder = this.placeHolder;
-        var order = this.order;
+        var tag, option, order;
+        var select, datalist, input, create;
+        var i, len, value, name;
 
         // TODO validate choices.
         this.choices = choices;
 
         if (!append) return;
 
-        var create = false;
+        create = false;
         if (this.menu) this.menu.innerHTML = '';
         else create = true;
 
         if (create) {
             tag = this.tag;
             if (tag === "datalist" || "undefined" === typeof tag) {
-
-                var datalist = this.datalist;
-                var input = this.input;
 
                 datalist = W.get('datalist');
                 datalist.id = "dropdown";
@@ -54372,56 +54434,66 @@ if (!Array.prototype.indexOf) {
                 input.setAttribute('list', datalist.id);
                 input.id = this.id;
                 input.autocomplete = "off";
-                if (placeHolder) { input.placeholder = placeHolder; }
-                if (this.inputWidth) input.style.width = this.inputWidth;
+
                 this.bodyDiv.appendChild(input);
                 this.bodyDiv.appendChild(datalist);
                 this.menu = input;
 
             }
-            else if (tag === "select") {
-
-                var select = this.select;
+            else {
 
                 select = W.get('select');
                 select.id = this.id;
-                if (this.inputWidth) select.style.width = this.inputWidth;
-                if (placeHolder) {
-                    option = W.get('option');
-                    option.value = "";
-                    option.innerHTML = placeHolder;
-                    option.setAttribute("disabled", "");
-                    option.setAttribute("selected", "");
-                    option.setAttribute("hidden", "");
-                    select.appendChild(option);
-                }
 
                 this.bodyDiv.appendChild(select);
                 this.menu = select;
             }
         }
-        var len = choices.length;
-        order = J.seq(0, len - 1);
-        if (this.shuffleChoices) order = J.shuffle(order);
 
-        for (var i = 0; i < len; i++) {
+        // Set width.
+        if (this.inputWidth) this.menu.style.width = this.inputWidth;
 
-            option = W.get('option');
-            option.value = choices[order[i]];
-            option.innerHTML = choices[order[i]];
-
-            if (tag === "datalist" || "undefined" === typeof tag) {
-
-                datalist.appendChild(option);
+        // Adding placeholder.
+        if (this.placeholder) {
+            if (tag === "datalist") {
+                this.menu.placeholder = this.placeholder;
             }
-            else if (tag === "select") {
-
-                select.appendChild(option);
+            else {
+                option = W.get('option', {
+                    value: '',
+                    innerHTML: this.placeholder
+                });
+                // option.setAttribute("disabled", "");
+                // option.setAttribute("selected", "");
+                // option.setAttribute("hidden", "");
+                this.menu.appendChild(option);
             }
         }
 
+        // Adding all options.
+        len = choices.length;
+        order = J.seq(0, len - 1);
+        if (this.shuffleChoices) order = J.shuffle(order);
+        for (i = 0; i < len; i++) {
+            option = W.get('option');
+            value = name = choices[order[i]];
+            if ('object' === typeof value) {
+                if ('undefined' !== typeof value.value) {
+                    name = value.name;
+                    value = value.value;
+                }
+                else if (J.isArray(value)) {
+                    name = value[1];
+                    value = value[0];
+                }
+            }
+            option.value = value;
+            option.innerHTML = name;
+            this.menu.appendChild(option);
+        }
+
         this.enable();
-    }
+    };
 
     /**
      * ### Dropdown.verifyChoice
@@ -54445,17 +54517,16 @@ if (!Array.prototype.indexOf) {
         var that = this;
         var correct = this.correctChoice;
         var current = this.currentChoice;
+        var correctOptions;
         var res = { value: '' };
 
 
         if (this.tag === "select" && this.numberOfChanges === 0) {
-
             current = this.currentChoice = this.menu.value;
-
         }
 
         if (this.requiredChoice) {
-            res.value = current !== null;
+            res.value = current !== null && current !== this.placeholder;
         }
 
         // If no correct choice is set return null.
@@ -54467,7 +54538,7 @@ if (!Array.prototype.indexOf) {
             res.value = current === this.choices[correct];
         }
         if (J.isArray(correct)) {
-            var correctOptions = correct.map(function (x) {
+            correctOptions = correct.map(function (x) {
                 return that.choices[x];
             });
             res.value = correctOptions.indexOf(current) >= 0;
@@ -54477,19 +54548,13 @@ if (!Array.prototype.indexOf) {
             if (this.choices.indexOf(current) < 0) res.value = false;
         }
 
-        if (this.validation) {
-            if (undefined === typeof res) {
-                throw new TypeError('something');
-            }
-
-            this.validation(this.currentChoice, res);
-        }
+        if (this.validation) this.validation(this.currentChoice, res);
 
         return res;
     };
 
     /**
-     * ### ChoiceTable.setError
+     * ### Dropdown.setError
      *
      * Set the error msg inside the errorBox
      *
@@ -54499,7 +54564,7 @@ if (!Array.prototype.indexOf) {
      */
     Dropdown.prototype.setError = function (err) {
         // TODO: the errorBox is added only if .append() is called.
-        // However, ChoiceTableGroup use the table without calling .append().
+        // However, DropdownGroup use the table without calling .append().
         if (this.errorBox) this.errorBox.innerHTML = err || '';
         if (err) this.highlight();
         else this.unhighlight();
@@ -54534,7 +54599,6 @@ if (!Array.prototype.indexOf) {
      * @see Dropdown.highlighted
      */
     Dropdown.prototype.unhighlight = function () {
-
         if (this.highlighted !== true) return;
         this.menu.style.border = '';
         this.highlighted = false;
@@ -54585,7 +54649,7 @@ if (!Array.prototype.indexOf) {
     };
 
     /**
-     * ### ChoiceTable.listeners
+     * ### Dropdown.listeners
      *
      * Implements Widget.listeners
      *
@@ -54605,30 +54669,26 @@ if (!Array.prototype.indexOf) {
     };
 
     /**
-     * ### ChoiceTable.disable
+     * ### Dropdown.disable
      *
-     * Disables clicking on the table and removes CSS 'clicklable' class
+     * Enables the dropdown menu
      */
     Dropdown.prototype.disable = function () {
         if (this.disabled === true) return;
         this.disabled = true;
-        if (this.menu) {
-            this.menu.removeEventListener('change', this.listener);
-        }
+        if (this.menu) this.menu.removeEventListener('change', this.listener);
         this.emit('disabled');
     };
 
     /**
-     * ### ChoiceTable.enable
+     * ### Dropdown.enable
      *
-     * Enables clicking on the table and adds CSS 'clicklable' class
-     *
-     * @return {function} cb The event listener function
+     * Enables the dropdown menu
      */
     Dropdown.prototype.enable = function () {
         if (this.disabled === false) return;
         if (!this.menu) {
-            throw new Error('Dropdown.enable: menu is not defined');
+            throw new Error('Dropdown.enable: dropdown menu not found.');
         }
         this.disabled = false;
         this.menu.addEventListener('change', this.listener);
@@ -55075,7 +55135,7 @@ if (!Array.prototype.indexOf) {
 
     // ## Add Meta-data
 
-    EndScreen.version = '0.7.2';
+    EndScreen.version = '0.8.0';
     EndScreen.description = 'Game end screen. With end game message, ' +
                             'email form, and exit code.';
 
@@ -55331,6 +55391,7 @@ if (!Array.prototype.indexOf) {
         var totalWinElement, totalWinParaElement, totalWinInputElement;
         var exitCodeElement, exitCodeParaElement, exitCodeInputElement;
         var exitCodeBtn, exitCodeGroup;
+        var basePay;
         var that = this;
 
         endScreenElement = document.createElement('div');
@@ -55397,6 +55458,11 @@ if (!Array.prototype.indexOf) {
             this.exitCodeInputElement = exitCodeInputElement;
         }
 
+        basePay = node.game.settings.BASE_PAY;
+        if ('undefined' !== typeof basePay) {
+            this.updateDisplay({ basePay: basePay, total: basePay });
+        }
+
         if (this.showEmailForm) {
             node.widgets.append(this.emailForm, endScreenElement, {
                 title: false,
@@ -55432,7 +55498,8 @@ if (!Array.prototype.indexOf) {
             document.execCommand('copy', false);
             inp.remove();
             alert(this.getText('exitCopyMsg'));
-        } catch (err) {
+        }
+        catch (err) {
             alert(this.getText('exitCopyError'));
         }
     };
@@ -55475,7 +55542,6 @@ if (!Array.prototype.indexOf) {
 
             if ('undefined' !== typeof data.basePay) {
                 preWin = data.basePay;
-
             }
 
             if ('undefined' !== typeof data.bonus &&
