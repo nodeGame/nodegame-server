@@ -45009,7 +45009,7 @@ if (!Array.prototype.indexOf) {
 
     // ## Meta-data
 
-    ChoiceManager.version = '1.5.1';
+    ChoiceManager.version = '1.4.1';
     ChoiceManager.description = 'Groups together and manages a set of ' +
         'survey forms (e.g., ChoiceTable).';
 
@@ -45141,32 +45141,9 @@ if (!Array.prototype.indexOf) {
         /**
          * ### ChoiceManager.required
          *
-         * If TRUE, the widget is checked upon node.done.
+         * TRUE if widget should be checked upon node.done.
          */
         this.required = null;
-
-        /**
-         * ### ChoiceManager.oneByOne
-         *
-         * If, TRUE the widget displays only one form at the time
-         *
-         * Calling node.done will display the next form.
-         */
-        this.oneByOne = null;
-
-        /**
-         * ### ChoiceManager.oneByOneCounter
-         *
-         * Index the currently displayed form if oneByOne is TRUE
-         */
-        this.oneByOneCounter = 0;
-
-        /**
-         * ### ChoiceManager.oneByOneResults
-         *
-         * Contains partial results from forms if OneByOne is true
-         */
-        this.oneByOneResults = {};
     }
 
     // ## ChoiceManager methods
@@ -45263,9 +45240,6 @@ if (!Array.prototype.indexOf) {
         // If TRUE, it returns getValues returns forms.values.
         this.simplify = !!options.simplify;
 
-        // If TRUE, forms are displayed one by one.
-        this.oneByOne = !!options.oneByOne;
-
         // After all configuration options are evaluated, add forms.
 
         if ('undefined' !== typeof options.forms) this.setForms(options.forms);
@@ -45333,12 +45307,6 @@ if (!Array.prototype.indexOf) {
                 name = form.name || 'ChoiceTable';
                 // Add defaults.
                 J.mixout(form, this.formsOptions);
-
-                // Display forms one by one.
-                if (this.oneByOne && this.oneByOneCounter !== i) {
-                    form.hidden = true;
-                }
-
                 form = node.widgets.get(name, form);
             }
 
@@ -45635,61 +45603,39 @@ if (!Array.prototype.indexOf) {
         if ('undefined' === typeof opts.markAttempt) opts.markAttempt = true;
         if ('undefined' === typeof opts.highlight) opts.highlight = true;
         if (opts.markAttempt) obj.isCorrect = true;
-
-        len = this.forms.length;
-
-        // Only one form displayed.
-        if (this.oneByOne) {
-
-            // Evaluate one-by-one and store partial results.
-            if (this.oneByOneCounter < (len-1)) {
-                form = this.forms[this.oneByOneCounter];
-                res = form.getValues(opts);
-                if (res) {
-                    this.oneByOneResults[form.id] = res;
-                    lastErrored = checkFormResult(res, form, opts);
-
-                    if (!lastErrored) {
-                        this.forms[this.oneByOneCounter].hide();
-                        this.oneByOneCounter++;
-                        this.forms[this.oneByOneCounter].show();
-                        W.adjustFrameHeight();
-                        // Prevent stepping.
-                        obj.isCorrect = false;
-                    }
-                }
+        i = -1, len = this.forms.length;
+        for ( ; ++i < len ; ) {
+            form = this.forms[i];
+            // If it is hidden or disabled we do not do validation.
+            if (form.isHidden() || form.isDisabled()) {
+                res = form.getValues({
+                    markAttempt: false,
+                    highlight: false
+                });
+                if (res) obj.forms[form.id] = res;
             }
-            // All one-by-one pages executed.
             else {
-                // Copy all partial results in the obj returning the
-                obj.forms = this.oneByOneResults;
-            }
+                // ContentBox does not return a value.
+                res = form.getValues(opts);
+                if (!res) continue;
+                obj.forms[form.id] = res;
+                // Backward compatible (requiredChoice).
+                if ((form.required || form.requiredChoice) &&
+                    (obj.forms[form.id].choice === null ||
+                     (form.selectMultiple &&
+                      !obj.forms[form.id].choice.length))) {
 
-        }
-        // All forms on the page.
-        else {
-            i = -1;
-            for ( ; ++i < len ; ) {
-                form = this.forms[i];
-                // If it is hidden or disabled we do not do validation.
-                if (form.isHidden() || form.isDisabled()) {
-                    res = form.getValues({
-                        markAttempt: false,
-                        highlight: false
-                    });
-                    if (res) obj.forms[form.id] = res;
+                    obj.missValues.push(form.id);
+                    lastErrored = form;
                 }
-                else {
-                    // ContentBox does not return a value.
-                    res = form.getValues(opts);
-                    if (!res) continue;
-                    obj.forms[form.id] = res;
+                if (opts.markAttempt &&
+                    obj.forms[form.id].isCorrect === false) {
 
-                    lastErrored = checkFormResult(res, form, opts, obj);
+                    // obj.isCorrect = false;
+                    lastErrored = form;
                 }
             }
         }
-
         if (lastErrored) {
             if (opts.highlight &&
                 'function' === typeof lastErrored.bodyDiv.scrollIntoView) {
@@ -45740,24 +45686,6 @@ if (!Array.prototype.indexOf) {
     };
 
     // ## Helper methods.
-
-    function checkFormResult(res, form, opts, out) {
-        var err;
-        // Backward compatible (requiredChoice).
-        if ((form.required || form.requiredChoice) &&
-            (res.choice === null ||
-            (form.selectMultiple && !res.choice.length))) {
-
-            if (out) out.missValues.push(form.id);
-            err = form;
-        }
-        if (opts.markAttempt && res.isCorrect === false) {
-            // out.isCorrect = false;
-            err = form;
-        }
-
-        return err;
-    }
 
 // In progress.
 //     const createOnClick = (choice, question) => {
@@ -54386,6 +54314,7 @@ if (!Array.prototype.indexOf) {
 
     // Implements the Widget.append method.
     Dropdown.prototype.append = function () {
+
         if (W.gid(this.id)) {
             throw new Error('Dropdown.append: id is not unique: ' + this.id);
         }
@@ -54412,7 +54341,7 @@ if (!Array.prototype.indexOf) {
     Dropdown.prototype.setChoices = function (choices, append) {
         var tag, option, order;
         var select, datalist, input, create;
-        var i, len, value, name;
+        var i, len;
 
         // TODO validate choices.
         this.choices = choices;
@@ -54459,13 +54388,12 @@ if (!Array.prototype.indexOf) {
                 this.menu.placeholder = this.placeholder;
             }
             else {
-                option = W.get('option', {
-                    value: '',
-                    innerHTML: this.placeholder
-                });
-                // option.setAttribute("disabled", "");
-                // option.setAttribute("selected", "");
-                // option.setAttribute("hidden", "");
+                option = W.get('option');
+                option.value = "";
+                option.innerHTML = this.placeholder;
+                option.setAttribute("disabled", "");
+                option.setAttribute("selected", "");
+                option.setAttribute("hidden", "");
                 this.menu.appendChild(option);
             }
         }
@@ -54476,24 +54404,13 @@ if (!Array.prototype.indexOf) {
         if (this.shuffleChoices) order = J.shuffle(order);
         for (i = 0; i < len; i++) {
             option = W.get('option');
-            value = name = choices[order[i]];
-            if ('object' === typeof value) {
-                if ('undefined' !== typeof value.value) {
-                    name = value.name;
-                    value = value.value;
-                }
-                else if (J.isArray(value)) {
-                    name = value[1];
-                    value = value[0];
-                }
-            }
-            option.value = value;
-            option.innerHTML = name;
+            option.value = choices[order[i]];
+            option.innerHTML = choices[order[i]];
             this.menu.appendChild(option);
         }
 
         this.enable();
-    };
+    }
 
     /**
      * ### Dropdown.verifyChoice
@@ -55135,7 +55052,7 @@ if (!Array.prototype.indexOf) {
 
     // ## Add Meta-data
 
-    EndScreen.version = '0.8.0';
+    EndScreen.version = '0.7.2';
     EndScreen.description = 'Game end screen. With end game message, ' +
                             'email form, and exit code.';
 
@@ -55391,7 +55308,6 @@ if (!Array.prototype.indexOf) {
         var totalWinElement, totalWinParaElement, totalWinInputElement;
         var exitCodeElement, exitCodeParaElement, exitCodeInputElement;
         var exitCodeBtn, exitCodeGroup;
-        var basePay;
         var that = this;
 
         endScreenElement = document.createElement('div');
@@ -55458,11 +55374,6 @@ if (!Array.prototype.indexOf) {
             this.exitCodeInputElement = exitCodeInputElement;
         }
 
-        basePay = node.game.settings.BASE_PAY;
-        if ('undefined' !== typeof basePay) {
-            this.updateDisplay({ basePay: basePay, total: basePay });
-        }
-
         if (this.showEmailForm) {
             node.widgets.append(this.emailForm, endScreenElement, {
                 title: false,
@@ -55498,8 +55409,7 @@ if (!Array.prototype.indexOf) {
             document.execCommand('copy', false);
             inp.remove();
             alert(this.getText('exitCopyMsg'));
-        }
-        catch (err) {
+        } catch (err) {
             alert(this.getText('exitCopyError'));
         }
     };
@@ -55542,6 +55452,7 @@ if (!Array.prototype.indexOf) {
 
             if ('undefined' !== typeof data.basePay) {
                 preWin = data.basePay;
+
             }
 
             if ('undefined' !== typeof data.bonus &&
@@ -63230,7 +63141,7 @@ if (!Array.prototype.indexOf) {
     WaitingRoom.prototype.stopTimer = function() {
         if (this.timer) {
             node.info('waiting room: STOPPING TIMER');
-            this.timer.destroy();
+            this.timer.stop();
         }
     };
 
