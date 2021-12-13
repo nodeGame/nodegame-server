@@ -45817,13 +45817,11 @@ if (!Array.prototype.indexOf) {
     };
 
     /**
-     * ### ChoiceManager.setValues
+     * ### ChoiceManager.next
      *
      * Sets values for forms in manager as specified by the options
      *
-     * @param {object} options Optional. Options specifying how to set
-     *   the values. If no parameter is specified, random values will
-     *   be set.
+     * @return {boolean} FALSE, if there is not another visualization.
      */
     ChoiceManager.prototype.next = function() {
         var form, conditional, failsafe;
@@ -45832,7 +45830,8 @@ if (!Array.prototype.indexOf) {
             throw new Error('ChoiceManager.next: no forms found.');
         }
         form = this.forms[this.oneByOneCounter];
-        if (!form || form.next()) return false;
+        if (!form) return false;
+        if (form.next()) return true;
         if (this.oneByOneCounter >= (this.forms.length-1)) return false;
         form.hide();
 
@@ -45846,6 +45845,8 @@ if (!Array.prototype.indexOf) {
         W.adjustFrameHeight();
 
         node.emit('WIDGET_NEXT', this);
+
+        return true;
     };
 
     ChoiceManager.prototype.prev = function() {
@@ -45891,8 +45892,14 @@ if (!Array.prototype.indexOf) {
             for (c in f) {
                 if (f.hasOwnProperty(c)) {
                     form = that.formsById[c];
+                    if (!form) continue;
                     // No multiple choice allowed.
-                    if (form && form.currentChoice !== f[c]) return false;
+                    if (J.isArray(f[c])) {
+                        if (!J.inArray(form.currentChoice, f[c])) return false;
+                    }
+                    else if (form.currentChoice !== f[c]) {
+                        return false;
+                    }
                 }
             }
         }
