@@ -25352,9 +25352,10 @@ if (!Array.prototype.indexOf) {
 
             // Make the done callback to send results.
             widgetDone = function() {
-                var values, opts;
+                var values, opts, req;
+                req = widgetObj.required || widgetObj.requiredChoice;
                 // TODO: harmonize: required or checkValues?
-                if (widgetObj.required && widget.checkValues !== false) {
+                if (req && widget.checkValues !== false) {
                     opts = { highlight: true, markAttempt: true };
                 }
                 else {
@@ -25367,7 +25368,7 @@ if (!Array.prototype.indexOf) {
 
                 // If it is not timeup, and user did not
                 // disabled it, check answers.
-                if (widgetObj.required && widget.checkValues !== false &&
+                if (req && widget.checkValues !== false &&
                     !node.game.timer.isTimeup()) {
 
                     // Widget must return some values (otherwise it
@@ -39916,7 +39917,7 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # Widget
- * Copyright(c) 2020 Stefano Balietti <ste@nodegame.org>
+ * Copyright(c) 2021 Stefano Balietti <ste@nodegame.org>
  * MIT Licensed
  *
  * Prototype of a widget class
@@ -40817,6 +40818,28 @@ if (!Array.prototype.indexOf) {
         throw new Error(errMsg);
     };
 
+    /**
+     * ### Widget.next
+     *
+     * Updates the widget with the next visualization within the same step
+     *
+     * @param {boolean} FALSE if there is no next visualization.
+     *
+     * @see Widget.prev
+     */
+    Widget.prototype.next = function() { return false; };
+
+    /**
+     * ### Widget.prev
+     *
+     * Updates the widget with the previous visualization within the same step
+     *
+     * @param {boolean} FALSE if there is no prev visualization.
+     *
+     * @see Widget.next
+     */
+    Widget.prototype.prev = function() { return false; };
+
     // ## Helper methods.
 
     /**
@@ -40842,11 +40865,12 @@ if (!Array.prototype.indexOf) {
      */
     function strGetter(that, name, collection, method, param) {
         var res;
-        if (!that.constructor[collection].hasOwnProperty(name)) {
-            throw new Error(method + ': name not found: ' + name);
-        }
         res = 'undefined' !== typeof that[collection][name] ?
             that[collection][name] : that.constructor[collection][name];
+        if ('undefined' === typeof res) {
+            throw new Error(method + ': name not found: ' + name);
+        }
+
         if ('function' === typeof res) {
             res = res(that, param);
             if ('string' !== typeof res && res !== false) {
@@ -40997,18 +41021,18 @@ if (!Array.prototype.indexOf) {
          * Container of appended widget instances
          *
          * @see Widgets.append
-         * @see Widgets.lastAppended
+         * @see Widgets.last
          */
         this.instances = [];
 
         /**
-         * ### Widgets.lastAppended
+        * ### Widgets.last|lastAppended
          *
          * Reference to lastAppended widget
          *
          * @see Widgets.append
          */
-        this.lastAppended = null;
+        this.last = this.lastAppended = null;
 
         /**
          * ### Widgets.docked
@@ -41447,11 +41471,11 @@ if (!Array.prototype.indexOf) {
                     }
                 }
                 // Remove from lastAppended.
-                if (node.widgets.lastAppended &&
-                    node.widgets.lastAppended.wid === this.wid) {
+                if (node.widgets.last &&
+                    node.widgets.last.wid === this.wid) {
 
-                    node.warn('node.widgets.lastAppended destroyed.');
-                    node.widgets.lastAppended = null;
+                    node.warn('node.widgets.last destroyed.');
+                    node.widgets.lastAppended = node.widgets.last = null;
                 }
             }
 
@@ -41640,7 +41664,7 @@ if (!Array.prototype.indexOf) {
         }
 
         // Store reference of last appended widget (.get method set storeRef).
-        if (w.storeRef !== false) this.lastAppended = w;
+        if (w.storeRef !== false) this.lastAppended = this.last = w;
 
         return w;
     };
@@ -41693,7 +41717,7 @@ if (!Array.prototype.indexOf) {
         for ( ; ++i < len ; ) {
             this.instances[0].destroy();
         }
-        this.lastAppended = null;
+        this.lastAppended = this.last = null;
         if (this.instances.length) {
             node.warn('node.widgets.destroyAll: some widgets could ' +
                       'not be destroyed.');
@@ -41972,19 +41996,13 @@ if (!Array.prototype.indexOf) {
 
     // ## Meta-data
 
-    BackButton.version = '0.4.0';
+    BackButton.version = '0.5.0';
     BackButton.description = 'Creates a button that if ' +
         'pressed goes to the previous step.';
 
     BackButton.title = false;
     BackButton.className = 'backbutton';
     BackButton.texts.back = 'Back';
-
-    // ## Dependencies
-
-    BackButton.dependencies = {
-        JSUS: {}
-    };
 
     /**
      * ## BackButton constructor
@@ -42022,6 +42040,11 @@ if (!Array.prototype.indexOf) {
         this.button.onclick = function() {
             var res;
             that.disable();
+            if (that.onclick && false === that.onclick()) return;
+            if (node.game.isWidgetStep()) {
+                // Widget has a next visualization in the same step.
+                if (node.widgets.last.prev() !== false) return;
+            }
             res = node.game.stepBack(that.stepOptions);
             if (res === false) that.enable();
         };
@@ -42050,6 +42073,18 @@ if (!Array.prototype.indexOf) {
             // ## @api: private.
             noZeroStep: true
         };
+
+
+        /**
+         * #### BackButton.onclick
+         *
+         * A callback function executed when the button is clicked
+         *
+         * If the function returns FALSE, the procedure is aborted.
+         *
+         * Default: TRUE
+         */
+        this.onclick = null;
     }
 
     // ## BackButton methods
@@ -42123,6 +42158,8 @@ if (!Array.prototype.indexOf) {
         this.stepOptions.acrossRounds =
             'undefined' === typeof opts.acrossRounds ?
             true : !!opts.acrossRounds;
+
+        setOnClick(this, opts.onclick);
     };
 
     BackButton.prototype.append = function() {
@@ -42145,19 +42182,30 @@ if (!Array.prototype.indexOf) {
             step = node.game.getPreviousStep(1, that.stepOptions);
             prop = node.game.getProperty('backbutton');
 
-            if (!step || prop === false ||
-                (prop && prop.enableOnPlaying === false)) {
+            if (prop !== true &&
+                (!step || prop === false ||
+                (prop && prop.enableOnPlaying === false))) {
 
                 // It might be disabled already, but we do it again.
                 that.disable();
             }
             else {
                 // It might be enabled already, but we do it again.
-                if (step) that.enable();
+                if (prop === true || step) that.enable();
             }
 
             if ('string' === typeof prop) that.button.value = prop;
             else if (prop && prop.text) that.button.value = prop.text;
+
+            if (prop) {
+                setOnClick(that, prop.onclick, true);
+                if (prop.enable) that.enable();
+            }
+        });
+
+        // Catch those events.
+        node.events.game.on('WIDGET_NEXT', function() {
+            that.enable();
         });
     };
 
@@ -42178,6 +42226,22 @@ if (!Array.prototype.indexOf) {
     BackButton.prototype.enable = function() {
         this.button.disabled = false;
     };
+
+    // ## Helper functions.
+
+    // Checks and sets the onclick function.
+    function setOnClick(that, onclick, step) {
+        var str;
+        if ('undefined' !== typeof onclick) {
+            if ('function' !== typeof onclick && onclick !== null) {
+                str = 'BackButton.init';
+                if (step) str += ' (step property)';
+                throw new TypeError(str + ': onclick must be function, null,' +
+                                    ' or undefined. Found: ' + onclick);
+            }
+            that.onclick = onclick;
+        }
+    }
 
 })(node);
 
@@ -45009,7 +45073,7 @@ if (!Array.prototype.indexOf) {
 
     // ## Meta-data
 
-    ChoiceManager.version = '1.5.1';
+    ChoiceManager.version = '1.6.0';
     ChoiceManager.description = 'Groups together and manages a set of ' +
         'survey forms (e.g., ChoiceTable).';
 
@@ -45167,6 +45231,13 @@ if (!Array.prototype.indexOf) {
          * Contains partial results from forms if OneByOne is true
          */
         this.oneByOneResults = {};
+
+        /**
+         * ### ChoiceManager.conditionals
+         *
+         * Contains conditions to display or hide forms based on other forms
+         */
+        this.conditionals = {};
     }
 
     // ## ChoiceManager methods
@@ -45339,7 +45410,12 @@ if (!Array.prototype.indexOf) {
                     form.hidden = true;
                 }
 
+                if (form.conditional) {
+                    this.conditionals[form.id] = form.conditional;
+                }
+
                 form = node.widgets.get(name, form);
+
             }
 
             if (form.id) {
@@ -45685,7 +45761,8 @@ if (!Array.prototype.indexOf) {
                     if (!res) continue;
                     obj.forms[form.id] = res;
 
-                    lastErrored = checkFormResult(res, form, opts, obj);
+                    res = checkFormResult(res, form, opts, obj);
+                    if (res) lastErrored = res;
                 }
             }
         }
@@ -45739,6 +45816,54 @@ if (!Array.prototype.indexOf) {
         if (this.textarea) this.textarea.value = J.randomString(100, '!Aa0');
     };
 
+    /**
+     * ### ChoiceManager.setValues
+     *
+     * Sets values for forms in manager as specified by the options
+     *
+     * @param {object} options Optional. Options specifying how to set
+     *   the values. If no parameter is specified, random values will
+     *   be set.
+     */
+    ChoiceManager.prototype.next = function() {
+        var form, conditional, failsafe;
+        if (!this.oneByOne) return false;
+        if (!this.forms || !this.forms.length) {
+            throw new Error('ChoiceManager.next: no forms found.');
+        }
+        form = this.forms[this.oneByOneCounter];
+        if (!form || form.next()) return false;
+        if (this.oneByOneCounter >= (this.forms.length-1)) return false;
+        form.hide();
+
+        failsafe = 500;
+        while (form && !conditional && this.oneByOneCounter < failsafe) {
+            form = this.forms[++this.oneByOneCounter];
+            if (!form) return false;
+            conditional = checkConditional(this, form.id);
+        }
+        form.show();
+        W.adjustFrameHeight();
+
+        node.emit('WIDGET_NEXT', this);
+    };
+
+    ChoiceManager.prototype.prev = function() {
+        var form;
+        if (!this.oneByOne) return false;
+        if (!this.forms || !this.forms.length) {
+            throw new Error('ChoiceManager.prev: no forms found.');
+        }
+        form = this.forms[this.oneByOneCounter];
+        if (form.prev()) return true;
+        if (this.oneByOneCounter <= 1) return false;
+        form.hide();
+        this.oneByOneCounter--;
+        this.forms[this.oneByOneCounter].show();
+        W.adjustFrameHeight();
+        node.emit('WIDGET_PREV', this);
+    };
+
     // ## Helper methods.
 
     function checkFormResult(res, form, opts, out) {
@@ -45757,6 +45882,21 @@ if (!Array.prototype.indexOf) {
         }
 
         return err;
+    }
+
+    function checkConditional(that, id) {
+        var f, c, form;
+        f = that.conditionals[id];
+        if (f) {
+            for (c in f) {
+                if (f.hasOwnProperty(c)) {
+                    form = that.formsById[c];
+                    // No multiple choice allowed.
+                    if (form && form.currentChoice !== f[c]) return false;
+                }
+            }
+        }
+        return true;
     }
 
 // In progress.
@@ -45798,7 +45938,7 @@ if (!Array.prototype.indexOf) {
 
     // ## Meta-data
 
-    ChoiceTable.version = '1.8.1';
+    ChoiceTable.version = '1.10.0';
     ChoiceTable.description = 'Creates a configurable table where ' +
         'each cell is a selectable choice.';
 
@@ -45838,6 +45978,7 @@ if (!Array.prototype.indexOf) {
             if (w.requiredChoice) res += ' *';
             return res;
         },
+
         error: function(w, value) {
             if (value !== null &&
                 ('number' === typeof w.correctChoice ||
@@ -45846,17 +45987,15 @@ if (!Array.prototype.indexOf) {
                 return 'Not correct, try again.';
             }
             return 'Selection required.';
-        }
-        // correct: 'Correct.'
+        },
+
+        other: 'Other',
+
+        customInput: 'Please specify.'
+
     };
 
     ChoiceTable.separator = '::';
-
-    // ## Dependencies
-
-    ChoiceTable.dependencies = {
-        JSUS: {}
-    };
 
     /**
      * ## ChoiceTable constructor
@@ -45901,8 +46040,8 @@ if (!Array.prototype.indexOf) {
          * @see ChoiceTable.onclick
          */
         this.listener = function(e) {
-            var name, value, td, tr;
-            var i, len, removed;
+            var name, value, td;
+            var i, len, removed, other;
 
             e = e || window.event;
             td = e.target || e.srcElement;
@@ -45946,6 +46085,19 @@ if (!Array.prototype.indexOf) {
 
             // One more click.
             that.numberOfClicks++;
+
+            len = that.choices.length;
+
+            if (that.customInput) {
+                // Is "Other" currently selected?
+                other = value === (len - 1);
+                if (that.customInput.isHidden()) {
+                    if (other) that.customInput.show();
+                }
+                else {
+                    if (other) that.customInput.hide();
+                }
+            }
 
             // Click on an already selected choice.
             if (that.isChoiceCurrent(value)) {
@@ -46008,6 +46160,8 @@ if (!Array.prototype.indexOf) {
                 value = parseInt(value, 10);
                 that.onclick.call(that, value, removed, td);
             }
+
+            if (that.doneOnClick) node.done();
         };
 
         /**
@@ -46341,6 +46495,59 @@ if (!Array.prototype.indexOf) {
         * If TRUE, cells have same width regardless of content
         */
         this.sameWidthCells = true;
+
+        /**
+        * ### ChoiceTable.other
+        *
+        * If TRUE, adds an "Other" choice as last choice
+        *
+        * Accepted values:
+        * - true: adds "Other" choice as last choice.
+        * - 'CustomInput':  adds "Other" choice AND a CustomInput widget below
+        *   the choicetable (initially hidden).
+        * - object: as previous, but it also allows for custom options for the
+        *   custom input
+        *
+        * @see ChoiceTable.customInput
+        */
+        this.other = null;
+
+        /**
+        * ### ChoiceTable.customInput
+        *
+        * The customInput widget
+        *
+        * @see ChoiceTable.other
+        */
+        this.customInput = null;
+
+        /**
+        * ### ChoiceTable.doneOnClick
+        *
+        * If TRUE, node.done() will be invoked after the first click
+        */
+        this.doneOnClick = null;
+
+        /**
+        * ### ChoiceTable.solution
+        *
+        * Additional information to be displayed after a selection is confirmed
+        */
+        this.solution = null;
+
+        /**
+        * ### ChoiceTable.solutionDisplayed
+        *
+        * TRUE, if the solution is currently displayed
+        */
+        this.solutionDisplayed = false;
+
+        /**
+        * ### ChoiceTable.solutionDiv
+        *
+        * The <div> element containing the solution
+        */
+        this.solutionDiv = null;
     }
 
     // ## ChoiceTable methods
@@ -46673,6 +46880,11 @@ if (!Array.prototype.indexOf) {
             this.choicesSetSize = opts.choicesSetSize;
         }
 
+        // Add other.
+        if ('undefined' !== typeof opts.other) {
+            this.other = opts.other;
+        }
+
         // Add the choices.
         if ('undefined' !== typeof opts.choices) {
             this.setChoices(opts.choices);
@@ -46691,9 +46903,9 @@ if (!Array.prototype.indexOf) {
         // Add the correct choices.
         if ('undefined' !== typeof opts.disabledChoices) {
             if (!J.isArray(opts.disabledChoices)) {
-                throw new Error('ChoiceTable.init: disabledChoices must be ' +
-                                'undefined or array. Found: ' +
-                                opts.disabledChoices);
+                throw new TypeError('ChoiceTable.init: disabledChoices ' +
+                                    'must be undefined or array. Found: ' +
+                                    opts.disabledChoices);
             }
 
             // TODO: check if values of disabled choices are correct?
@@ -46708,8 +46920,21 @@ if (!Array.prototype.indexOf) {
             }
         }
 
-        if ('undefined' === typeof opts.sameWidthCells) {
+        if ('undefined' !== typeof opts.sameWidthCells) {
             this.sameWidthCells = !!opts.sameWidthCells;
+        }
+
+        if ('undefined' !== typeof opts.doneOnClick) {
+            this.doneOnClick = !!opts.doneOnClick;
+        }
+
+        tmp = opts.solution;
+        if ('undefined' !== typeof tmp) {
+            if ('string' !== typeof tmp && 'function' !== typeof tmp) {
+                throw new TypeError('ChoiceTable.init: solution must be ' +
+                                    'string or undefined. Found: ' + tmp);
+            }
+            this.solution = tmp;
         }
     };
 
@@ -46766,6 +46991,11 @@ if (!Array.prototype.indexOf) {
         // Save the order in which the choices will be added.
         this.order = J.seq(0, len-1);
         if (this.shuffleChoices) this.order = J.shuffle(this.order);
+
+        if (this.other) {
+          this.choices[len] = this.getText('other');
+          this.order[len] = len
+        }
 
         // Build the table and choices at once (faster).
         if (this.table) this.buildTableAndChoices();
@@ -47145,6 +47375,11 @@ if (!Array.prototype.indexOf) {
 
         this.errorBox = W.append('div', this.bodyDiv, { className: 'errbox' });
 
+        this.setCustomInput(this.other, this.bodyDiv);
+
+        if (this.solution) {
+            this.solutionDiv = W.append('div', this.bodyDiv);
+        }
 
         // Creates a free-text textarea, possibly with placeholder text.
         if (this.freeText) {
@@ -47158,6 +47393,28 @@ if (!Array.prototype.indexOf) {
             // Append textarea.
             this.bodyDiv.appendChild(this.textarea);
         }
+    };
+
+    /**
+     * ### ChoiceTable.setCustomInput
+     *
+     * Set Custom Input widget.
+     *
+     */
+    ChoiceTable.prototype.setCustomInput = function(other, root) {
+        var opts;
+        if (other === null || 'boolean' === typeof other) return;
+        opts = {
+            id: 'other' + this.id,
+            mainText: this.getText('customInput'),
+            requiredChoice: this.requiredChoice
+        }
+        // other is the string 'CustomInput' or a conf object.
+        if ('object' === typeof other) J.mixin(opts, other);
+        // Force initially hidden.
+        opts.hidden = true;
+        this.customInput = node.widgets.append('CustomInput', root, opts);
+
     };
 
     /**
@@ -47212,6 +47469,7 @@ if (!Array.prototype.indexOf) {
             // Remove listener to make cells clickable with the keyboard.
             if (this.tabbable) J.makeClickable(this.table, false);
         }
+        if (this.customInput) this.customInput.disable();
         this.emit('disabled');
     };
 
@@ -47232,6 +47490,7 @@ if (!Array.prototype.indexOf) {
         this.table.addEventListener('click', this.listener);
         // Add listener to make cells clickable with the keyboard.
         if (this.tabbable) J.makeClickable(this.table);
+        if (this.customInput) this.customInput.enable();
         this.emit('enabled');
     };
 
@@ -47256,9 +47515,24 @@ if (!Array.prototype.indexOf) {
      * @see ChoiceTable.attempts
      * @see ChoiceTable.setCorrectChoice
      */
-    ChoiceTable.prototype.verifyChoice = function(markAttempt) {
+     ChoiceTable.prototype.verifyChoice = function(markAttempt) {
         var i, len, j, lenJ, c, clone, found;
-        var correctChoice;
+        var correctChoice, ci, ciCorrect;
+
+        // Mark attempt by default.
+        markAttempt = 'undefined' === typeof markAttempt ? true : markAttempt;
+        if (markAttempt) this.attempts.push(this.currentChoice);
+
+         // Custom input to check.
+         ci = this.customInput && !this.customInput.isHidden();
+         if (ci) {
+             ciCorrect = this.customInput.getValues({
+                 markAttempt: markAttempt
+             }).isCorrect;
+             if (ciCorrect === false) return false;
+             // Set it to null so it is returned correctly, later below.
+             if ('undefined' === typeof ciCorrect) ciCorrect = null;
+         }
 
         // Check the number of choices.
         if (this.requiredChoice !== null) {
@@ -47266,40 +47540,40 @@ if (!Array.prototype.indexOf) {
             else return this.currentChoice.length >= this.requiredChoice;
         }
 
-        // If no correct choice is set return null.
-        if ('undefined' === typeof this.correctChoice) return null;
-        // Mark attempt by default.
-        markAttempt = 'undefined' === typeof markAttempt ? true : markAttempt;
-        if (markAttempt) this.attempts.push(this.currentChoice);
-        if (!this.selectMultiple) {
-            return this.currentChoice === this.correctChoice;
-        }
-        else {
-            // Make it an array (can be a string).
-            correctChoice = J.isArray(this.correctChoice) ?
-                this.correctChoice : [this.correctChoice];
+        correctChoice = this.correctChoice;
+        // If no correct choice is set return null or ciCorrect (true|null).
+        if (null === correctChoice) return ci ? ciCorrect : null;
 
-            len = correctChoice.length;
-            lenJ = this.currentChoice.length;
-            // Quick check.
-            if (len !== lenJ) return false;
-            // Check every item.
-            i = -1;
-            clone = this.currentChoice.slice(0);
-            for ( ; ++i < len ; ) {
-                found = false;
-                c = correctChoice[i];
-                j = -1;
-                for ( ; ++j < lenJ ; ) {
-                    if (clone[j] === c) {
-                        found = true;
-                        break;
-                    }
+        // Only one choice allowed, ci is correct,
+        // otherwise we would have returned already.
+        if (!this.selectMultiple) return this.currentChoice === correctChoice;
+
+        // Multiple selections allowed.
+
+        // Make it an array (can be a string).
+        if (J.isArray(correctChoice)) correctChoice = [correctChoice];
+
+        len = correctChoice.length;
+        lenJ = this.currentChoice.length;
+        // Quick check.
+        if (len !== lenJ) return false;
+        // Check every item.
+        i = -1;
+        clone = this.currentChoice.slice(0);
+        for ( ; ++i < len ; ) {
+            found = false;
+            c = correctChoice[i];
+            j = -1;
+            for ( ; ++j < lenJ ; ) {
+                if (clone[j] === c) {
+                    found = true;
+                    break;
                 }
-                if (!found) return false;
             }
-            return true;
+            if (!found) return false;
         }
+        return true;
+
     };
 
     /**
@@ -47405,18 +47679,26 @@ if (!Array.prototype.indexOf) {
      *
      * Highlights the choice table
      *
-     * @param {string} The style for the table's border.
+     * @param {string|obj} opts Optional. If string is the 'border'
+     *   option for backward compatibilityThe style for the table's border.
      *   Default '3px solid red'
      *
      * @see ChoiceTable.highlighted
      */
-    ChoiceTable.prototype.highlight = function(border) {
+    ChoiceTable.prototype.highlight = function(opts) {
+        var border, ci;
+        opts = opts || {};
+        // Backward compatible.
+        if ('string' === typeof opts) opts = { border: opts };
+        border = opts.border;
         if (border && 'string' !== typeof border) {
             throw new TypeError('ChoiceTable.highlight: border must be ' +
                                 'string or undefined. Found: ' + border);
         }
         if (!this.table || this.highlighted) return;
         this.table.style.border = border || '3px solid red';
+        ci = this.customInput;
+        if (opts.customInput !== false && ci && !ci.isHidden()) ci.highlight();
         this.highlighted = true;
         this.emit('highlighted', border);
     };
@@ -47428,9 +47710,14 @@ if (!Array.prototype.indexOf) {
      *
      * @see ChoiceTable.highlighted
      */
-    ChoiceTable.prototype.unhighlight = function() {
+    ChoiceTable.prototype.unhighlight = function(opts) {
+        var ci;
         if (!this.table || this.highlighted !== true) return;
         this.table.style.border = '';
+        ci = this.customInput;
+        if (opts.customInput !== false && ci && !ci.isHidden()) {
+            ci.unhighlight();
+        }
         this.highlighted = false;
         this.setError();
         this.emit('unhighlighted');
@@ -47464,7 +47751,10 @@ if (!Array.prototype.indexOf) {
      * @see ChoiceTable.reset
      */
     ChoiceTable.prototype.getValues = function(opts) {
-        var obj, resetOpts, i, len;
+        var obj, resetOpts, i, len, ci, ciCorrect;
+        var that;
+
+        that = this;
         opts = opts || {};
         obj = {
             id: this.id,
@@ -47482,20 +47772,21 @@ if (!Array.prototype.indexOf) {
         // Option getValue backward compatible.
         if (opts.addValue !== false && opts.getValue !== false) {
             if (!this.selectMultiple) {
-                obj.value = getValueFromChoice(this.choices[obj.choice]);
+                obj.value = getValueFromChoice(that,this.choices[obj.choice]);
             }
             else {
                 len = obj.choice.length;
                 obj.value = new Array(len);
                 if (len === 1) {
                     obj.value[0] =
-                        getValueFromChoice(this.choices[obj.choice[0]]);
+                        getValueFromChoice(that,this.choices[obj.choice[0]]);
                 }
                 else {
                     i = -1;
                     for ( ; ++i < len ; ) {
                         obj.value[i] =
-                            getValueFromChoice(this.choices[obj.choice[i]]);
+                            getValueFromChoice(that,
+                                               this.choices[obj.choice[i]]);
                     }
                     if (opts.sortValue !== false) obj.value.sort();
                 }
@@ -47508,18 +47799,42 @@ if (!Array.prototype.indexOf) {
         if (this.groupOrder === 0 || this.groupOrder) {
             obj.groupOrder = this.groupOrder;
         }
-        if (null !== this.correctChoice || null !== this.requiredChoice) {
+
+        ci = this.customInput;
+        if (null !== this.correctChoice || null !== this.requiredChoice ||
+            (ci && !ci.isHidden())) {
+
             obj.isCorrect = this.verifyChoice(opts.markAttempt);
             obj.attempts = this.attempts;
-            if (!obj.isCorrect && opts.highlight) this.highlight();
+            if (!obj.isCorrect && opts.highlight) this.highlight({
+                // If errored, it is already highlighted
+                customInput: false
+            });
         }
+
         if (this.textarea) obj.freetext = this.textarea.value;
+
         if (obj.isCorrect === false) {
-            this.setError(this.getText('error', obj.value));
+            // If there is an error on CI, we just highlight CI.
+            // However, there could be an error also on the choice table,
+            // e.g., not enough options selected. It will be catched
+            // at next click.
+            // TODO: change verifyChoice to say where the error is coming from.
+            if (ci) {
+                ciCorrect = ci.getValues({
+                    markAttempt: false
+                }).isCorrect;
+            }
+            if (ci && !ciCorrect && !ci.isHidden()) {
+                this.unhighlight({ customInput: false });
+            }
+            else {
+                this.setError(this.getText('error', obj.value));
+            }
         }
         else if (opts.reset) {
-            resetOpts = 'object' !== typeof opts.reset ? {} : opts.reset;
-            this.reset(resetOpts);
+             resetOpts = 'object' !== typeof opts.reset ? {} : opts.reset;
+             this.reset(resetOpts);
         }
         return obj;
     };
@@ -47641,6 +47956,9 @@ if (!Array.prototype.indexOf) {
 
         // Make a random comment.
         if (this.textarea) this.textarea.value = J.randomString(100, '!Aa0');
+        if (this.custominput && !this.custominput.isHidden()) {
+            this.custominput.setValues();
+        }
     };
 
     /**
@@ -47681,6 +47999,7 @@ if (!Array.prototype.indexOf) {
         if (this.isHighlighted()) this.unhighlight();
 
         if (options.shuffleChoices) this.shuffle();
+        if (this.customInput) this.customInput.reset();
     };
 
     /**
@@ -47695,8 +48014,15 @@ if (!Array.prototype.indexOf) {
         var parentTR;
 
         H = this.orientation === 'H';
-        order = J.shuffle(this.order);
-        i = -1, len = order.length;
+        len = this.order.length;
+        if (this.other) {
+            order = J.shuffle(this.order.slice(0,-1));
+            order.push(this.order[len - 1]);
+        }
+        else {
+            order = J.shuffle(this.order);
+        }
+        i = -1;
         choicesValues = {};
         choicesCells = new Array(len);
 
@@ -47727,6 +48053,40 @@ if (!Array.prototype.indexOf) {
         this.order = order;
         this.choicesCells = choicesCells;
         this.choicesValues = choicesValues;
+    };
+
+    /**
+     * ### ChoiceManager.setValues
+     *
+     * Sets values for forms in manager as specified by the options
+     *
+     * @param {object} options Optional. Options specifying how to set
+     *   the values. If no parameter is specified, random values will
+     *   be set.
+     */
+    ChoiceTable.prototype.next = function() {
+        var sol;
+        if (!this.solution || this.solutionDisplayed) return false;
+        this.solutionDisplayed = true;
+        sol = this.solution;
+        if ('function' === typeof sol) {
+            sol = this.solution(this.verifyChoice(false), this);
+        }
+        this.solutionDiv.innerHTML = sol;
+        this.disable();
+        W.adjustFrameHeight();
+        node.emit('WIDGET_NEXT', this);
+        return true;
+    };
+
+    ChoiceTable.prototype.prev = function() {
+        if (!this.solutionDisplayed) return false;
+        this.solutionDisplayed = false;
+        this.solutionDiv.innerHTML = '';
+        this.enable();
+        W.adjustFrameHeight();
+        node.emit('WIDGET_NEXT', this);
+        return true;
     };
 
     // ## Helper methods.
@@ -47803,7 +48163,10 @@ if (!Array.prototype.indexOf) {
      * @see ChoiceTable.getValues
      * @see ChoiceTable.renderChoice
      */
-    function getValueFromChoice(choice, display) {
+    function getValueFromChoice(that, choice, display) {
+        if (choice === that.getText('other') && that.customInput) {
+          return that.customInput.getValues().value;
+        }
         if ('string' === typeof choice || 'number' === typeof choice) {
             return choice;
         }
@@ -51377,7 +51740,6 @@ if (!Array.prototype.indexOf) {
      *
      * @return {mixed} The value in the input
      *
-     * @see CustomInput.verifyChoice
      * @see CustomInput.reset
      */
     CustomInput.prototype.getValues = function(opts) {
@@ -53698,12 +54060,6 @@ if (!Array.prototype.indexOf) {
     DoneButton.className = 'donebutton';
     DoneButton.texts.done = 'Done';
 
-    // ## Dependencies
-
-    DoneButton.dependencies = {
-        JSUS: {}
-    };
-
     /**
      * ## DoneButton constructor
      *
@@ -53739,6 +54095,10 @@ if (!Array.prototype.indexOf) {
 
         this.button.onclick = function() {
             if (that.onclick && false === that.onclick()) return;
+            if (node.game.isWidgetStep()) {
+                // Widget has a next visualization in the same step.
+                if (node.widgets.last.next() !== false) return;
+            }
             if (node.done()) that.disable();
         };
 
@@ -53847,14 +54207,7 @@ if (!Array.prototype.indexOf) {
                                 'be number or undefined. Found: ' + tmp);
         }
 
-        tmp = opts.onclick;
-        if (tmp) {
-            if ('function' !== typeof tmp) {
-                throw new TypeError('DoneButton.init: onclick must function ' +
-                                    'or undefined. Found: ' + tmp);
-            }
-            this.onclick = tmp;
-        }
+        setOnClick(this, opts.onclick);
     };
 
     DoneButton.prototype.append = function() {
@@ -53907,6 +54260,8 @@ if (!Array.prototype.indexOf) {
             }
             if ('string' === typeof prop) that.button.value = prop;
             else if (prop && prop.text) that.button.value = prop.text;
+
+            if (prop) setOnClick(this, prop.onclick, true);
         });
 
         if (this.disableOnDisconnect) {
@@ -53970,6 +54325,23 @@ if (!Array.prototype.indexOf) {
         this.button.disabled = false;
         this.emit('enabled', opts);
     };
+
+
+    // ## Helper functions.
+
+    // Checks and sets the onclick function.
+    function setOnClick(that, onclick, step) {
+        var str;
+        if ('undefined' !== typeof onclick) {
+            if ('function' !== typeof onclick && onclick !== null) {
+                str = 'DoneButton.init';
+                if (step) str += ' (step property)';
+                throw new TypeError(str + ': onclick must be function, null,' +
+                                    ' or undefined. Found: ' + onclick);
+            }
+            that.onclick = onclick;
+        }
+    }
 
 })(node);
 
@@ -58604,10 +58976,6 @@ if (!Array.prototype.indexOf) {
     // Backward compatibility.
     RiskGauge.texts.mainText = RiskGauge.texts.holt_laury_mainText;
 
-    // ## Dependencies
-    RiskGauge.dependencies = {
-        JSUS: {}
-    };
 
     /**
      * ## RiskGauge constructor
@@ -58960,6 +59328,15 @@ if (!Array.prototype.indexOf) {
         this.withPrize = 'undefined' === typeof opts.withPrize ?
                          true : !!opts.withPrize;
 
+        this.onopen = null;
+        if (opts.onopen) {
+            if ('function' !== typeof opts.onopen) {
+                throw new TypeError('Bomb: onopen must be function or ' +
+                                    'undefined. Found: ' + opts.onopen);
+            }
+            this.onopen = opts.onopen;
+        }
+
         // Bomb box.
         // Pick bomb box id, if probability permits it, else set to -1.
         // Resulting id is between 1 and totBoxes.
@@ -59020,7 +59397,8 @@ if (!Array.prototype.indexOf) {
                 // Main text.
                 W.add('div', that.bodyDiv, {
                     innerHTML: that.mainText ||
-                               that.getText('bomb_mainText', probBomb)
+                               that.getText('bomb_mainText', probBomb),
+                    className: 'bomb-maintext'
                 });
 
                 // Slider.
@@ -59138,6 +59516,8 @@ if (!Array.prototype.indexOf) {
                     cl = 'bomb_' + (isWinner ? 'won' : 'lost');
                     bombResult.innerHTML = that.getText(cl);
                     bombResult.className += (' ' + cl);
+
+                    if (that.onopen) that.onopen(isWinner, that);
                 };
             }
         };
