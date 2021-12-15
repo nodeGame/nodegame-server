@@ -47558,7 +47558,7 @@ if (!Array.prototype.indexOf) {
         // Multiple selections allowed.
 
         // Make it an array (can be a string).
-        if (J.isArray(correctChoice)) correctChoice = [correctChoice];
+        if (!J.isArray(correctChoice)) correctChoice = [correctChoice];
 
         len = correctChoice.length;
         lenJ = this.currentChoice.length;
