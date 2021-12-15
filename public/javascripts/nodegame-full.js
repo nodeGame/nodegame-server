@@ -25426,9 +25426,11 @@ if (!Array.prototype.indexOf) {
             // Make the exit callback (destroy widget by default).
             if (widget.destroyOnExit !== false) {
                 widgetExit = function() {
-                    this[widget.ref].destroy();
+                    // It can happen with a gotoStep remote command.
+                    if (!node.game[widget.ref]) return;
+                    node.game[widget.ref].destroy();
                     // Remove node.game reference.
-                    this[widget.ref] = null;
+                    node.game[widget.ref] = null;
                 };
                 // We are skipping the stage.exit property.
                 exitCb = this.plot.getProperty(step, 'exit',
@@ -55110,9 +55112,11 @@ if (!Array.prototype.indexOf) {
             opts = { values: opts };
         }
         else if (opts && 'undefined' === typeof opts.values) {
-            opts.values = J.randomInt(this.choices.length) -1;
+            // TODO: merge other options if they are used by selectChoice.
+            opts = { values: J.randomInt(this.choices.length) -1 };
         }
 
+        // If other options are used (rather than values) change TODO above.
         this.selectChoice(opts.values);
 
     };
