@@ -42003,6 +42003,7 @@ if (!Array.prototype.indexOf) {
         'pressed goes to the previous step.';
 
     BackButton.title = false;
+    BackButton.panel = false;
     BackButton.className = 'backbutton';
     BackButton.texts.back = 'Back';
 
@@ -45075,7 +45076,7 @@ if (!Array.prototype.indexOf) {
 
     // ## Meta-data
 
-    ChoiceManager.version = '1.6.0';
+    ChoiceManager.version = '1.7.0';
     ChoiceManager.description = 'Groups together and manages a set of ' +
         'survey forms (e.g., ChoiceTable).';
 
@@ -45240,6 +45241,21 @@ if (!Array.prototype.indexOf) {
          * Contains conditions to display or hide forms based on other forms
          */
         this.conditionals = {};
+
+        /**
+         * ### ChoiceManager.nextBtn
+         *
+         * Button to go to the next visualization/step
+         */
+        this.nextBtn = null;
+
+        /**
+         * ### ChoiceManager.backBtn
+         *
+         * Button to go to the previous visualization/step
+         */
+        this.backBtn = null;
+
     }
 
     // ## ChoiceManager methods
@@ -45338,6 +45354,12 @@ if (!Array.prototype.indexOf) {
 
         // If TRUE, forms are displayed one by one.
         this.oneByOne = !!options.oneByOne;
+
+        // If TRUE, a next button is added at the bottom.
+        this.nextBtn = !!options.nextBtn;
+
+        // If TRUE, a back button is added at the bottom.
+        this.backBtn = !!options.backBtn;
 
         // After all configuration options are evaluated, add forms.
 
@@ -45477,6 +45499,8 @@ if (!Array.prototype.indexOf) {
     };
 
     ChoiceManager.prototype.append = function() {
+        var div;
+
         // Id must be unique.
         if (W.getElementById(this.id)) {
             throw new Error('ChoiceManager.append: id is not ' +
@@ -45508,6 +45532,21 @@ if (!Array.prototype.indexOf) {
             this.textarea.className = ChoiceManager.className + '-freetext';
             // Append textarea.
             this.bodyDiv.appendChild(this.textarea);
+        }
+
+        if (this.backBtn || this.nextBtn) {
+            div = W.append('div', this.bodyDiv);
+            div.className = 'choicemanager-buttons';
+
+            if (this.backBtn) {
+                this.backBtn = node.widgets.append('BackButton', div);
+            }
+
+            if (this.nextBtn) {
+                this.nextBtn = node.widgets.append('DoneButton', div, {
+                    text: 'Next'
+                });
+            }
         }
     };
 
@@ -54067,6 +54106,7 @@ if (!Array.prototype.indexOf) {
         'pressed emits node.done().';
 
     DoneButton.title = false;
+    DoneButton.panel = false;
     DoneButton.className = 'donebutton';
     DoneButton.texts.done = 'Done';
 
