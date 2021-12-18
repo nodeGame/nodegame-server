@@ -45085,7 +45085,9 @@ if (!Array.prototype.indexOf) {
 
     // ## Dependencies
 
-    ChoiceManager.dependencies = {};
+    ChoiceManager.dependencies = {
+        BackButton: {}, DoneButton: {}
+    };
 
     /**
      * ## ChoiceManager constructor
@@ -45243,11 +45245,11 @@ if (!Array.prototype.indexOf) {
         this.conditionals = {};
 
         /**
-         * ### ChoiceManager.nextBtn
+         * ### ChoiceManager.doneBtn
          *
          * Button to go to the next visualization/step
          */
-        this.nextBtn = null;
+        this.doneBtn = null;
 
         /**
          * ### ChoiceManager.backBtn
@@ -45355,11 +45357,13 @@ if (!Array.prototype.indexOf) {
         // If TRUE, forms are displayed one by one.
         this.oneByOne = !!options.oneByOne;
 
-        // If TRUE, a next button is added at the bottom.
-        this.nextBtn = !!options.nextBtn;
+        // If truthy, a next button is added at the bottom. If object, it
+        // is passed as conf object to DoneButton.
+        this.doneBtn = options.doneBtn;
 
-        // If TRUE, a back button is added at the bottom.
-        this.backBtn = !!options.backBtn;
+        // If truthy, a back button is added at the bottom. If object, it
+        // is passed as conf object to BackButton.
+        this.backBtn = options.backBtn;
 
         // After all configuration options are evaluated, add forms.
 
@@ -45499,7 +45503,7 @@ if (!Array.prototype.indexOf) {
     };
 
     ChoiceManager.prototype.append = function() {
-        var div;
+        var div, opts;
 
         // Id must be unique.
         if (W.getElementById(this.id)) {
@@ -45534,18 +45538,22 @@ if (!Array.prototype.indexOf) {
             this.bodyDiv.appendChild(this.textarea);
         }
 
-        if (this.backBtn || this.nextBtn) {
+        if (this.backBtn || this.doneBtn) {
             div = W.append('div', this.bodyDiv);
             div.className = 'choicemanager-buttons';
 
             if (this.backBtn) {
-                this.backBtn = node.widgets.append('BackButton', div);
+                opts = this.backBtn;
+                if ('string' === typeof opts) opts = { text: opts };
+                else opts = J.mixin({ text: 'Back' }, opts);
+                this.backBtn = node.widgets.append('BackButton', div, opts);
             }
 
-            if (this.nextBtn) {
-                this.nextBtn = node.widgets.append('DoneButton', div, {
-                    text: 'Next'
-                });
+            if (this.doneBtn) {
+                opts = this.doneBtn;
+                if ('string' === typeof opts) opts = { text: opts };
+                opts = J.mixin({ text: 'Next' }, opts);
+                this.doneBtn = node.widgets.append('DoneButton', div, opts);
             }
         }
     };
@@ -45874,6 +45882,12 @@ if (!Array.prototype.indexOf) {
         if (!form) return false;
         if (form.next()) return true;
         if (this.oneByOneCounter >= (this.forms.length-1)) return false;
+        // if ('undefined' !== typeof $) {
+        //     $(form.panelDiv).fadeOut();
+        // }
+        // else {
+        //     form.hide();
+        // }
         form.hide();
 
         failsafe = 500;
@@ -45882,7 +45896,14 @@ if (!Array.prototype.indexOf) {
             if (!form) return false;
             conditional = checkConditional(this, form.id);
         }
-        form.show();
+
+        if ('undefined' !== typeof $) {
+            $(form.panelDiv).fadeIn();
+            form.hidden = false; // for nodeGame.
+        }
+        else {
+            form.show();
+        }
         W.adjustFrameHeight();
 
         node.emit('WIDGET_NEXT', this);
@@ -48270,7 +48291,7 @@ if (!Array.prototype.indexOf) {
     // ## Dependencies
 
     ChoiceTableGroup.dependencies = {
-        JSUS: {}
+        ChoiceTable: {}
     };
 
     /**
@@ -60454,10 +60475,6 @@ if (!Array.prototype.indexOf) {
 
         left: 'Your Bonus:<hr/>Other\'s Bonus:'
     };
-
-    // ## Dependencies
-
-    SVOGauge.dependencies = {};
 
     /**
      * ## SVOGauge constructor
