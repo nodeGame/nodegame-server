@@ -42046,7 +42046,10 @@ if (!Array.prototype.indexOf) {
             if (that.onclick && false === that.onclick()) return;
             if (node.game.isWidgetStep()) {
                 // Widget has a next visualization in the same step.
-                if (node.widgets.last.prev() !== false) return;
+                if (node.widgets.last.prev() !== false) {
+                    that.enable();
+                    return;
+                }
             }
             res = node.game.stepBack(that.stepOptions);
             if (res === false) that.enable();
@@ -45919,7 +45922,7 @@ if (!Array.prototype.indexOf) {
         }
         form = this.forms[this.oneByOneCounter];
         if (form.prev()) return true;
-        if (this.oneByOneCounter <= 1) return false;
+        if (this.oneByOneCounter <= 0) return false;
         form.hide();
         this.oneByOneCounter--;
         this.forms[this.oneByOneCounter].show();
