@@ -45915,19 +45915,35 @@ if (!Array.prototype.indexOf) {
     };
 
     ChoiceManager.prototype.prev = function() {
-        var form;
+        var form, conditional, failsafe;
         if (!this.oneByOne) return false;
         if (!this.forms || !this.forms.length) {
             throw new Error('ChoiceManager.prev: no forms found.');
         }
         form = this.forms[this.oneByOneCounter];
+        if (!form) return false;
         if (form.prev()) return true;
         if (this.oneByOneCounter <= 0) return false;
         form.hide();
-        this.oneByOneCounter--;
-        this.forms[this.oneByOneCounter].show();
+
+        failsafe = 500;
+        while (form && !conditional && this.oneByOneCounter < failsafe) {
+            form = this.forms[--this.oneByOneCounter];
+            if (!form) return false;
+            conditional = checkConditional(this, form.id);
+        }
+
+        if ('undefined' !== typeof $) {
+            $(form.panelDiv).fadeIn();
+            form.hidden = false; // for nodeGame.
+        }
+        else {
+            form.show();
+        }
         W.adjustFrameHeight();
         node.emit('WIDGET_PREV', this);
+
+        return true;
     };
 
     // ## Helper methods.
@@ -54524,7 +54540,7 @@ if (!Array.prototype.indexOf) {
             e = e || window.event;
             menu = e.target || e.srcElement;
 
-            that.currentChoice = menu.value;
+            that.currentChoice = parseInt(menu.value, 10);
             if (that.currentChoice.length === 0) that.currentChoice = null;
 
             // Relative time.
@@ -54555,7 +54571,7 @@ if (!Array.prototype.indexOf) {
 
             // Call onchange, if any.
             if (that.onchange) {
-                that.onchange(that.currentChoice, that);
+                that.onchange(that.currentChoice, menu, that);
             }
 
         };
