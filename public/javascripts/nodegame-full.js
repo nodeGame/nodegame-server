@@ -45576,16 +45576,6 @@ if (!Array.prototype.indexOf) {
     ChoiceManager.prototype.addForm = function(form, scrollIntoView, idx) {
         var name;
 
-        if (form.required || form.requiredChoice || form.correctChoice) {
-            // False is set manually, otherwise undefined.
-            if (this.required === false) {
-                throw new Error('ChoiceManager.setForms: required is ' +
-                                'false, but form "' + form.id +
-                                '" has required truthy');
-            }
-            this.required = true;
-        }
-
         if ('undefined' === typeof idx) idx = this.forms.length;
         if ('undefined' === typeof scrollIntoView) scrollIntoView = true;
 
@@ -45594,6 +45584,16 @@ if (!Array.prototype.indexOf) {
             name = form.name || 'ChoiceTable';
             // Add defaults.
             J.mixout(form, this.formsOptions);
+
+            if (form.required || form.requiredChoice || form.correctChoice) {
+                // False is set manually, otherwise undefined.
+                if (this.required === false) {
+                    throw new Error('ChoiceManager.setForms: required is ' +
+                                    'false, but form "' + form.id +
+                                    '" has required truthy');
+                }
+                this.required = true;
+            }
 
             // Display forms one by one.
             if (this.oneByOne && this.oneByOneCounter !== idx) {
