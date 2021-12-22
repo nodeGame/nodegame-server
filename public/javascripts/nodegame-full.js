@@ -40258,10 +40258,26 @@ if (!Array.prototype.indexOf) {
      * @see Widget.hide
      * @see Widget.toggle
      */
-    Widget.prototype.show = function(display) {
+    Widget.prototype.show = function(opts) {
         if (this.panelDiv && this.panelDiv.style.display === 'none') {
-            this.panelDiv.style.display = display || '';
+            // Backward compatible.
+            opts = opts || {};
+            if ('string' === typeof opts) opts = { display: opts };
+            this.panelDiv.style.display = opts.display || '';
             this.hidden = false;
+
+            W.adjustFrameHeight();
+            if (opts.scrollIntoView !== false) {
+                // Scroll into the slider.
+                if ('function' === typeof this.bodyDiv.scrollIntoView) {
+                    this.bodyDiv.scrollIntoView({ behavior: 'smooth' });
+                }
+                else if (window.scrollTo) {
+                    // Scroll to bottom of page.
+                    window.scrollTo(0, document.body.scrollHeight);
+                }
+            }
+
             this.emit('shown');
         }
     };
