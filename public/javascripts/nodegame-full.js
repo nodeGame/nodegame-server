@@ -60556,7 +60556,8 @@ if (!Array.prototype.indexOf) {
     };
 
     Slider.prototype.setValues = function(opts) {
-        opts = opts || {};
+        if ('undefined' === typeof opts) opts = {};
+        else if ('number' === typeof opts) opts = { value: opts };
         this.slider.value = opts.value;
         this.slider.oninput();
     };
