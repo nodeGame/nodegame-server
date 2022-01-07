@@ -45080,7 +45080,7 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # ChoiceManager
- * Copyright(c) 2021 Stefano Balietti
+ * Copyright(c) 2022 Stefano Balietti
  * MIT Licensed
  *
  * Creates and manages a set of selectable choices forms (e.g., ChoiceTable).
@@ -45926,14 +45926,10 @@ if (!Array.prototype.indexOf) {
         }
         form = this.forms[this.oneByOneCounter];
         if (!form) return false;
+
         if (form.next()) return true;
         if (this.oneByOneCounter >= (this.forms.length-1)) return false;
-        // if ('undefined' !== typeof $) {
-        //     $(form.panelDiv).fadeOut();
-        // }
-        // else {
-        //     form.hide();
-        // }
+
         form.hide();
 
         failsafe = 500;
@@ -45987,6 +45983,12 @@ if (!Array.prototype.indexOf) {
         node.emit('WIDGET_PREV', this);
 
         return true;
+    };
+
+    // TODO: better to have .getForms({ hidden: false }); or similar
+    ChoiceManager.prototype.getVisibleForms = function() {
+        if (this.oneByOne) return [this.forms[this.oneByOneCounter]];
+        return this.forms.map(function(f) { if (!f.isHidden()) return f; });
     };
 
     // ## Helper methods.
@@ -46671,6 +46673,12 @@ if (!Array.prototype.indexOf) {
         * ### ChoiceTable.solution
         *
         * Additional information to be displayed after a selection is confirmed
+        *
+        * If no answer is provided and the next method is triggered, the
+        * solution is displayed only if solutionNoChoice is TRUE
+        *
+        * @see ChoiceTable.solutionNoChoice
+        * @see ChoiceTable.next
         */
         this.solution = null;
 
@@ -46680,6 +46688,13 @@ if (!Array.prototype.indexOf) {
         * TRUE, if the solution is currently displayed
         */
         this.solutionDisplayed = false;
+
+        /**
+        * ### ChoiceTable.solutionNoChoice
+        *
+        * TRUE, he solution is displayed upon trigger even with no choice
+        */
+        this.solutionNoChoice = false;
 
         /**
         * ### ChoiceTable.solutionDiv
@@ -47116,7 +47131,7 @@ if (!Array.prototype.indexOf) {
      * @see ChoiceTable.buildTableAndChoices
      */
     ChoiceTable.prototype.setChoices = function(choices) {
-        var len;
+        var len, idxOther;
         if (!J.isArray(choices)) {
             throw new TypeError('ChoiceTable.setChoices: choices ' +
                                 'must be array');
@@ -47124,6 +47139,9 @@ if (!Array.prototype.indexOf) {
         if (!choices.length) {
             throw new Error('ChoiceTable.setChoices: choices array is empty');
         }
+        // Check and drop previous "other" choices.
+        idxOther = choices.indexOf(this.getText('other'));
+        if (this.other && idxOther >= 0) choices.splice(idxOther, 1);
         this.choices = choices;
         len = choices.length;
 
@@ -47132,8 +47150,8 @@ if (!Array.prototype.indexOf) {
         if (this.shuffleChoices) this.order = J.shuffle(this.order);
 
         if (this.other) {
-          this.choices[len] = this.getText('other');
-          this.order[len] = len
+            this.choices[len] = this.getText('other');
+            this.order[len] = len
         }
 
         // Build the table and choices at once (faster).
@@ -48206,9 +48224,12 @@ if (!Array.prototype.indexOf) {
      */
     ChoiceTable.prototype.next = function() {
         var sol;
-        if (!this.solution || this.solutionDisplayed) return false;
-        this.solutionDisplayed = true;
         sol = this.solution;
+        // No solution or solution already displayed.
+        if (!sol || this.solutionDisplayed) return false;
+        // Solution, but no answer provided.
+        if (sol && !this.isChoiceDone() && !this.solutionNoChoice) return false;
+        this.solutionDisplayed = true;
         if ('function' === typeof sol) {
             sol = this.solution(this.verifyChoice(false), this);
         }
@@ -48225,9 +48246,25 @@ if (!Array.prototype.indexOf) {
         this.solutionDiv.innerHTML = '';
         this.enable();
         W.adjustFrameHeight();
-        node.emit('WIDGET_NEXT', this);
+        node.emit('WIDGET_PREV', this);
         return true;
     };
+
+    ChoiceTable.prototype.isChoiceDone = function(complete) {
+        var cho, mul, len;
+        cho = this.currentChoice;
+        mul = this.selectMultiple;
+        // Single choice.
+        if ((!complete || !mul) && cho) return true;
+        // Multiple choices.
+        if (J.isArray(cho)) len = cho.length;
+        if (mul === true && len === this.choices.length) return true;
+        if ('number' === typeof mul && len === mul) return true;
+        // Not done.
+        return false;
+    };
+
+
 
     // ## Helper methods.
 
@@ -49692,7 +49729,7 @@ if (!Array.prototype.indexOf) {
 
     // ## Meta-data
 
-    Consent.version = '0.3.0';
+    Consent.version = '0.4.0';
     Consent.description = 'Displays a configurable consent form.';
 
     Consent.title = false;
@@ -49813,9 +49850,9 @@ if (!Array.prototype.indexOf) {
         html += '<strong>' + this.getText('consentTerms') + '</strong><br/>';
 
         // Buttons.
-        html += '<div style="margin-top: 20px;">' +
+        html += '<div style="margin-top: 30px; text-align: center;">' +
         '<button class="btn btn-lg btn-info" id="agree" ' +
-        'style="margin-right: 30px">' + this.getText('agree') +
+        'style="margin: 0px 30px">' + this.getText('agree') +
         '</button><button class="btn btn-lg btn-danger" id="notAgree">' +
         this.getText('notAgree') + '</button></div>';
 
@@ -55218,7 +55255,7 @@ if (!Array.prototype.indexOf) {
         if (!this.choices || !this.choices.length) {
             throw new Error('Dropdown.setValues: no choices found.');
         }
-        opts = opts || {};
+        if ('undefined' === typeof opts) opts = {};
 
         // TODO: this code is duplicated from ChoiceTable.
         if (opts.correct && this.correctChoice !== null) {
@@ -56146,7 +56183,9 @@ if (!Array.prototype.indexOf) {
 
         basePay = node.game.settings.BASE_PAY;
         if ('undefined' !== typeof basePay) {
-            this.updateDisplay({ basePay: basePay, total: basePay });
+            this.updateDisplay({
+                basePay: basePay, total: basePay, exitCode: ''
+            });
         }
 
         if (this.showEmailForm) {
@@ -63141,7 +63180,7 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # WaitingRoom
- * Copyright(c) 2019 Stefano Balietti <ste@nodegame.org>
+ * Copyright(c) 2022 Stefano Balietti <ste@nodegame.org>
  * MIT Licensed
  *
  * Displays the number of connected/required players to start a game
@@ -63155,7 +63194,7 @@ if (!Array.prototype.indexOf) {
     node.widgets.register('WaitingRoom', WaitingRoom);
     // ## Meta-data
 
-    WaitingRoom.version = '1.3.0';
+    WaitingRoom.version = '1.4.0';
     WaitingRoom.description = 'Displays a waiting room for clients.';
 
     WaitingRoom.title = 'Waiting Room';
@@ -63294,7 +63333,6 @@ if (!Array.prototype.indexOf) {
 
         // #### defaultTreatments
         defaultTreatments: 'Defaults:'
-
 
     };
 
@@ -63480,6 +63518,20 @@ if (!Array.prototype.indexOf) {
          */
         this.selectedTreatment = null;
 
+
+        /**
+         * ### WaitingRoom.addDefaultTreatments
+         *
+         * If TRUE, after the user defined treatments, it adds default ones
+         *
+         * It has effect only if WaitingRoom.selectTreatmentOption is TRUE.
+         *
+         * Default: TRUE
+         *
+         * @see WaitingRoom.selectTreatmentOption
+         */
+        this.addDefaultTreatments = null;
+
     }
 
     // ## WaitingRoom methods
@@ -63504,7 +63556,8 @@ if (!Array.prototype.indexOf) {
      * @param {object} conf Configuration object.
      */
     WaitingRoom.prototype.init = function(conf) {
-        var that = this;
+        var t, that;
+        that = this;
 
         if ('object' !== typeof conf) {
             throw new TypeError('WaitingRoom.init: conf must be object. ' +
@@ -63593,12 +63646,34 @@ if (!Array.prototype.indexOf) {
         else this.playWithBotOption = false;
         if (conf.selectTreatmentOption) this.selectTreatmentOption = true;
         else this.selectTreatmentOption = false;
+        if ('undefined' === typeof conf.addDefaultTreatments) {
+            this.addDefaultTreatments = !!conf.addDefaultTreatments;
+        }
+        else {
+            this.addDefaultTreatments = true;
+        }
+
+        // Button for bots and treatments.
+        if (conf.queryStringDispatch) {
+            this.queryStringTreatmentVariable = 'lang';
+            t = J.getQueryString(this.queryStringTreatmentVariable);
+
+            if (t) {
+                if (!conf.availableTreatments[t]) {
+                    alert('Unknown t', t);
+                }
+                else {
+                    node.say('PLAYWITHBOT', 'SERVER', t);
+                    return;
+                }
+            }
+        }
 
 
         // Display Exec Mode.
         this.displayExecMode();
 
-        // Button for bots and treatments.
+
 
         if (this.playWithBotOption && !document.getElementById('bot_btn')) {
             // Closure to create button group.
@@ -63673,17 +63748,21 @@ if (!Array.prototype.indexOf) {
                                 else ul.appendChild(li);
                             }
                         }
-                        li = document.createElement('li');
-                        li.role = 'separator';
-                        li.className = 'divider';
-                        ul.appendChild(li);
-                        li = document.createElement('li');
-                        li.innerHTML = w.getText('defaultTreatments');
-                        li.className = 'dropdown-header';
-                        ul.appendChild(li);
-                        ul.appendChild(liT1);
-                        ul.appendChild(liT2);
-                        ul.appendChild(liT3);
+
+                        if (w.addDefaultTreatments !== false) {
+                            li = document.createElement('li');
+                            li.role = 'separator';
+                            li.className = 'divider';
+                            ul.appendChild(li);
+                            li = document.createElement('li');
+                            li.innerHTML = w.getText('defaultTreatments');
+                            li.className = 'dropdown-header';
+                            ul.appendChild(li);
+                            ul.appendChild(liT1);
+                            ul.appendChild(liT2);
+                            ul.appendChild(liT3);
+                        }
+
                     }
 
                     btnGroupTreatments.appendChild(btnTreatment);
