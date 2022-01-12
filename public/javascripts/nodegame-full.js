@@ -49836,6 +49836,10 @@ if (!Array.prototype.indexOf) {
         W.hide('notAgreed');
 
         consent = W.gid('consent');
+        if (!consent) {
+            throw new Error('Consent.append: the page does not contain an ' +
+                            'element with id "consent"');
+        }
         html = '';
 
         // Print.
@@ -51565,9 +51569,9 @@ if (!Array.prototype.indexOf) {
                 if (that.required) res.err = that.getText('emptyErr');
             }
             else if (tmp) {
-                res = tmp(value);
+                res = tmp.call(this, value);
             }
-            if (that.userValidation) that.userValidation(res);
+            if (that.userValidation) that.userValidation.call(this, res);
             return res;
         };
 
@@ -63673,136 +63677,247 @@ if (!Array.prototype.indexOf) {
         // Display Exec Mode.
         this.displayExecMode();
 
-
+        // if (this.playWithBotOption && !document.getElementById('bot_btn')) {
+        //     // Closure to create button group.
+        //     (function(w) {
+        //         var btnGroup = document.createElement('div');
+        //         btnGroup.role = 'group';
+        //         btnGroup['aria-label'] = 'Play Buttons';
+        //         btnGroup.className = 'btn-group';
+        //
+        //         var playBotBtn = document.createElement('input');
+        //         playBotBtn.className = 'btn btn-primary btn-lg';
+        //         playBotBtn.value = w.getText('playBot');
+        //         playBotBtn.id = 'bot_btn';
+        //         playBotBtn.type = 'button';
+        //         playBotBtn.onclick = function() {
+        //             w.playBotBtn.value = w.getText('connectingBots');
+        //             w.playBotBtn.disabled = true;
+        //             node.say('PLAYWITHBOT', 'SERVER', w.selectedTreatment);
+        //             setTimeout(function() {
+        //                 w.playBotBtn.value = w.getText('playBot');
+        //                 w.playBotBtn.disabled = false;
+        //             }, 5000);
+        //         };
+        //
+        //         btnGroup.appendChild(playBotBtn);
+        //
+        //         // Store reference in widget.
+        //         w.playBotBtn = playBotBtn;
+        //
+        //         if (w.selectTreatmentOption) {
+        //
+        //             var btnGroupTreatments = document.createElement('div');
+        //             btnGroupTreatments.role = 'group';
+        //             btnGroupTreatments['aria-label'] = 'Select Treatment';
+        //             btnGroupTreatments.className = 'btn-group';
+        //
+        //             var btnTreatment = document.createElement('button');
+        //             btnTreatment.className = 'btn btn-default btn-lg ' +
+        //                 'dropdown-toggle';
+        //             btnTreatment['data-toggle'] = 'dropdown';
+        //             btnTreatment['aria-haspopup'] = 'true';
+        //             btnTreatment['aria-expanded'] = 'false';
+        //             btnTreatment.innerHTML = w.getText('selectTreatment');
+        //
+        //             var span = document.createElement('span');
+        //             span.className = 'caret';
+        //
+        //             btnTreatment.appendChild(span);
+        //
+        //             var ul = document.createElement('ul');
+        //             ul.className = 'dropdown-menu';
+        //             ul.style['text-align'] = 'left';
+        //
+        //             var li, a, t, liT1, liT2, liT3;
+        //             if (conf.availableTreatments) {
+        //                 li = document.createElement('li');
+        //                 li.innerHTML = w.getText('gameTreatments');
+        //                 li.className = 'dropdown-header';
+        //                 ul.appendChild(li);
+        //                 for (t in conf.availableTreatments) {
+        //                     if (conf.availableTreatments.hasOwnProperty(t)) {
+        //                         li = document.createElement('li');
+        //                         li.id = t;
+        //                         a = document.createElement('a');
+        //                         a.href = '#';
+        //                         a.innerHTML = '<strong>' + t + '</strong>: ' +
+        //                             conf.availableTreatments[t];
+        //                         li.appendChild(a);
+        //                         if (t === 'treatment_latin_square') liT3 = li;
+        //                         else if (t === 'treatment_rotate') liT1 = li;
+        //                         else if (t === 'treatment_random') liT2 = li;
+        //                         else ul.appendChild(li);
+        //                     }
+        //                 }
+        //
+        //                 if (w.addDefaultTreatments !== false) {
+        //                     li = document.createElement('li');
+        //                     li.role = 'separator';
+        //                     li.className = 'divider';
+        //                     ul.appendChild(li);
+        //                     li = document.createElement('li');
+        //                     li.innerHTML = w.getText('defaultTreatments');
+        //                     li.className = 'dropdown-header';
+        //                     ul.appendChild(li);
+        //                     ul.appendChild(liT1);
+        //                     ul.appendChild(liT2);
+        //                     ul.appendChild(liT3);
+        //                 }
+        //
+        //             }
+        //
+        //             btnGroupTreatments.appendChild(btnTreatment);
+        //             btnGroupTreatments.appendChild(ul);
+        //
+        //             btnGroup.appendChild(btnGroupTreatments);
+        //
+        //             // We are not using bootstrap js files
+        //             // and we redo the job manually here.
+        //             btnTreatment.onclick = function() {
+        //                 // When '' is hidden by bootstrap class.
+        //                 if (ul.style.display === '') {
+        //                     ul.style.display = 'block';
+        //                 }
+        //                 else {
+        //                     ul.style.display = '';
+        //                 }
+        //             };
+        //
+        //             ul.onclick = function(eventData) {
+        //                 var t;
+        //                 t = eventData.target;
+        //                 // When '' is hidden by bootstrap class.
+        //                 ul.style.display = '';
+        //                 t = t.parentNode.id;
+        //                 // Clicked on description?
+        //                 if (!t) t = eventData.target.parentNode.parentNode.id;
+        //                 // Nothing relevant clicked (e.g., header).
+        //                 if (!t) return;
+        //                 btnTreatment.innerHTML = t + ' ';
+        //                 btnTreatment.appendChild(span);
+        //                 w.selectedTreatment = t;
+        //             };
+        //
+        //             // Store Reference in widget.
+        //             w.treatmentBtn = btnTreatment;
+        //         }
+        //         // Append button group.
+        //         w.bodyDiv.appendChild(document.createElement('br'));
+        //         w.bodyDiv.appendChild(btnGroup);
+        //
+        //     })(this);
+        // }
 
         if (this.playWithBotOption && !document.getElementById('bot_btn')) {
             // Closure to create button group.
             (function(w) {
-                var btnGroup = document.createElement('div');
-                btnGroup.role = 'group';
-                btnGroup['aria-label'] = 'Play Buttons';
-                btnGroup.className = 'btn-group';
-
-                var playBotBtn = document.createElement('input');
-                playBotBtn.className = 'btn btn-primary btn-lg';
-                playBotBtn.value = w.getText('playBot');
-                playBotBtn.id = 'bot_btn';
-                playBotBtn.type = 'button';
-                playBotBtn.onclick = function() {
-                    w.playBotBtn.value = w.getText('connectingBots');
-                    w.playBotBtn.disabled = true;
-                    node.say('PLAYWITHBOT', 'SERVER', w.selectedTreatment);
-                    setTimeout(function() {
-                        w.playBotBtn.value = w.getText('playBot');
-                        w.playBotBtn.disabled = false;
-                    }, 5000);
-                };
-
-                btnGroup.appendChild(playBotBtn);
-
-                // Store reference in widget.
-                w.playBotBtn = playBotBtn;
+                // var btnGroup = document.createElement('div');
+                // btnGroup.role = 'group';
+                // btnGroup['aria-label'] = 'Play Buttons';
+                // btnGroup.className = 'btn-group';
+                //
+                // var playBotBtn = document.createElement('input');
+                // playBotBtn.className = 'btn btn-primary btn-lg';
+                // playBotBtn.value = w.getText('playBot');
+                // playBotBtn.id = 'bot_btn';
+                // playBotBtn.type = 'button';
+                // playBotBtn.onclick = function() {
+                //     w.playBotBtn.value = w.getText('connectingBots');
+                //     w.playBotBtn.disabled = true;
+                //     node.say('PLAYWITHBOT', 'SERVER', w.selectedTreatment);
+                //     setTimeout(function() {
+                //         w.playBotBtn.value = w.getText('playBot');
+                //         w.playBotBtn.disabled = false;
+                //     }, 5000);
+                // };
+                //
+                // btnGroup.appendChild(playBotBtn);
+                //
+                // // Store reference in widget.
+                // w.playBotBtn = playBotBtn;
 
                 if (w.selectTreatmentOption) {
 
-                    var btnGroupTreatments = document.createElement('div');
-                    btnGroupTreatments.role = 'group';
-                    btnGroupTreatments['aria-label'] = 'Select Treatment';
-                    btnGroupTreatments.className = 'btn-group';
 
-                    var btnTreatment = document.createElement('button');
-                    btnTreatment.className = 'btn btn-default btn-lg ' +
-                        'dropdown-toggle';
-                    btnTreatment['data-toggle'] = 'dropdown';
-                    btnTreatment['aria-haspopup'] = 'true';
-                    btnTreatment['aria-expanded'] = 'false';
-                    btnTreatment.innerHTML = w.getText('selectTreatment');
+                    var flexBox = W.add('div', w.panelDiv);
+                    flexBox.style.display = 'flex';
+                    flexBox.style['flex-wrap'] = 'wrap';
+                    flexBox.style['column-gap'] = '20px';
+                    flexBox.style['justify-content'] = 'space-between';
+                    flexBox.style['margin'] = '100px';
 
-                    var span = document.createElement('span');
-                    span.className = 'caret';
-
-                    btnTreatment.appendChild(span);
-
-                    var ul = document.createElement('ul');
-                    ul.className = 'dropdown-menu';
-                    ul.style['text-align'] = 'left';
-
-                    var li, a, t, liT1, liT2, liT3;
+                    var li, a, t, liT1, liT2, liT3, display, counter;
+                    counter = 0;
                     if (conf.availableTreatments) {
-                        li = document.createElement('li');
-                        li.innerHTML = w.getText('gameTreatments');
-                        li.className = 'dropdown-header';
-                        ul.appendChild(li);
+debugger
                         for (t in conf.availableTreatments) {
                             if (conf.availableTreatments.hasOwnProperty(t)) {
-                                li = document.createElement('li');
-                                li.id = t;
+                                li = document.createElement('div');
+                                li.style.flex = '200px';
+                                // li.style.display = 'flex';
                                 a = document.createElement('a');
+                                a.className = 'btn-default btn-large round btn-icon';
                                 a.href = '#';
-                                a.innerHTML = '<strong>' + t + '</strong>: ' +
-                                    conf.availableTreatments[t];
+                                if (w.treatmentDisplayCb) {
+                                    display = w.treatmentDisplayCb(t, conf.availableTreatments[t], ++counter, w);
+                                }
+                                else {
+                                    display = '<strong>' + t + '</strong>: ' +
+                                        conf.availableTreatments[t];
+                                }
+                                a.innerHTML = display;
+                                a.id = t;
                                 li.appendChild(a);
+
+                                a.onclick = function() {
+                                    var t;
+                                    t = this.id;
+                                    // Clicked on description?
+                                    // btnTreatment.innerHTML = t + ' ';
+                                    w.selectedTreatment = t;
+                                    node.say('PLAYWITHBOT', 'SERVER', w.selectedTreatment);
+                                };
+
                                 if (t === 'treatment_latin_square') liT3 = li;
                                 else if (t === 'treatment_rotate') liT1 = li;
                                 else if (t === 'treatment_random') liT2 = li;
-                                else ul.appendChild(li);
+                                else flexBox.appendChild(li);
+
                             }
                         }
 
                         if (w.addDefaultTreatments !== false) {
-                            li = document.createElement('li');
-                            li.role = 'separator';
-                            li.className = 'divider';
-                            ul.appendChild(li);
-                            li = document.createElement('li');
-                            li.innerHTML = w.getText('defaultTreatments');
-                            li.className = 'dropdown-header';
-                            ul.appendChild(li);
-                            ul.appendChild(liT1);
-                            ul.appendChild(liT2);
-                            ul.appendChild(liT3);
+                            flexBox.appendChild(liT1);
+                            flexBox.appendChild(liT2);
+                            flexBox.appendChild(liT3);
                         }
-
                     }
 
-                    btnGroupTreatments.appendChild(btnTreatment);
-                    btnGroupTreatments.appendChild(ul);
+                   //  var btnGroupTreatments = document.createElement('div');
+                   // btnGroupTreatments.role = 'group';
+                   // btnGroupTreatments['aria-label'] = 'Select Treatment';
+                   // btnGroupTreatments.className = 'btn-group';
+                   //
+                   // var btnTreatment = document.createElement('button');
+                   // btnTreatment.className = 'btn btn-default btn-lg ' +
+                   //     'dropdown-toggle';
+                   // btnTreatment['data-toggle'] = 'dropdown';
+                   // btnTreatment['aria-haspopup'] = 'true';
+                   // btnTreatment['aria-expanded'] = 'false';
+                   // btnTreatment.innerHTML = w.getText('selectTreatment');
+                   //
+                   //  btnGroupTreatments.appendChild(btnTreatment);
 
-                    btnGroup.appendChild(btnGroupTreatments);
+                    // btnGroup.appendChild(btnGroupTreatments);
 
-                    // We are not using bootstrap js files
-                    // and we redo the job manually here.
-                    btnTreatment.onclick = function() {
-                        // When '' is hidden by bootstrap class.
-                        if (ul.style.display === '') {
-                            ul.style.display = 'block';
-                        }
-                        else {
-                            ul.style.display = '';
-                        }
-                    };
-
-                    ul.onclick = function(eventData) {
-                        var t;
-                        t = eventData.target;
-                        // When '' is hidden by bootstrap class.
-                        ul.style.display = '';
-                        t = t.parentNode.id;
-                        // Clicked on description?
-                        if (!t) t = eventData.target.parentNode.parentNode.id;
-                        // Nothing relevant clicked (e.g., header).
-                        if (!t) return;
-                        btnTreatment.innerHTML = t + ' ';
-                        btnTreatment.appendChild(span);
-                        w.selectedTreatment = t;
-                    };
 
                     // Store Reference in widget.
-                    w.treatmentBtn = btnTreatment;
+                    // w.treatmentBtn = btnTreatment;
                 }
                 // Append button group.
-                w.bodyDiv.appendChild(document.createElement('br'));
-                w.bodyDiv.appendChild(btnGroup);
+                // w.bodyDiv.appendChild(document.createElement('br'));
+                // w.bodyDiv.appendChild(btnGroup);
 
             })(this);
         }
