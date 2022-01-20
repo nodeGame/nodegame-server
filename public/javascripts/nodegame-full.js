@@ -37942,24 +37942,25 @@ if (!Array.prototype.indexOf) {
      *   and a method stop, that clears the interval
      */
     GameWindow.prototype.getLoadingDots = function(len, id) {
-        var spanDots, i, limit, intervalId;
+        var spanDots, counter, intervalId;
         if (len & len < 0) {
             throw new Error('GameWindow.getLoadingDots: len cannot be < 0. ' +
                             'Found: ' + len);
         }
-        len = len || 5;
         spanDots = document.createElement('span');
         spanDots.id = id || 'span_dots';
-        limit = '';
-        for (i = 0; i < len; i++) {
-            limit = limit + '.';
-        }
         // Refreshing the dots...
+        counter = 0;
+        len = len || 5;
+        // So the height does not change.
+        spanDots.innerHTML = '&nbsp;';
         intervalId = setInterval(function() {
-            if (spanDots.innerHTML !== limit) {
+            if (counter < len) {
+                counter++;
                 spanDots.innerHTML = spanDots.innerHTML + '.';
             }
             else {
+                counter = 0;
                 spanDots.innerHTML = '.';
             }
         }, 1000);
@@ -38164,13 +38165,15 @@ if (!Array.prototype.indexOf) {
         // Only process strings or numbers.
         if ('string' !== typeof search && 'number' !== typeof search) {
             throw new TypeError('GameWindow.setInnerHTML: search must be ' +
-                                'string or number. Found: ' + search);
+                                'string or number. Found: ' + search +
+                                " (replace = " + replace + ")");
         }
 
         // Only process strings or numbers.
         if ('string' !== typeof replace && 'number' !== typeof replace) {
             throw new TypeError('GameWindow.setInnerHTML: replace must be ' +
-                                'string or number. Found: ' + replace);
+                                'string or number. Found: ' + replace +
+                                " (search = " + search + ")");
         }
 
         if ('undefined' === typeof mod) {
@@ -38179,12 +38182,14 @@ if (!Array.prototype.indexOf) {
         else if ('string' === typeof mod) {
             if (mod !== 'g' && mod !== 'id' && mod !== 'className') {
                 throw new Error('GameWindow.setInnerHTML: invalid ' +
-                                'mod value: ' + mod);
+                                'mod value: ' + mod  +
+                                " (search = " + search + ")");
             }
         }
         else {
             throw new TypeError('GameWindow.setInnerHTML: mod must be ' +
-                                'string or undefined. Found: ' + mod);
+                                'string or undefined. Found: ' + mod  +
+                                " (search = " + search + ")");
         }
 
         if (mod === 'id' || mod === 'g') {
@@ -42237,7 +42242,10 @@ if (!Array.prototype.indexOf) {
      * Disables the back button
      */
     BackButton.prototype.disable = function() {
-        this.button.disabled = 'disabled';
+        if (this.disabled) return;
+        this.disabled = true;
+        this.button.disabled = true;
+        this.emit('disabled');
     };
 
     /**
@@ -42246,7 +42254,10 @@ if (!Array.prototype.indexOf) {
      * Enables the back button
      */
     BackButton.prototype.enable = function() {
+        if (!this.disabled) return;
+        this.disabled = false;
         this.button.disabled = false;
+        this.emit('enabled');
     };
 
     // ## Helper functions.
@@ -45919,7 +45930,7 @@ if (!Array.prototype.indexOf) {
      * @return {boolean} FALSE, if there is not another visualization.
      */
     ChoiceManager.prototype.next = function() {
-        var form, conditional, failsafe;
+        var form, conditional, failsafe, that;
         if (!this.oneByOne) return false;
         if (!this.forms || !this.forms.length) {
             throw new Error('ChoiceManager.next: no forms found.');
@@ -45931,6 +45942,8 @@ if (!Array.prototype.indexOf) {
         if (this.oneByOneCounter >= (this.forms.length-1)) return false;
 
         form.hide();
+        if (this.backBtn) this.backBtn.disable();
+        if (this.doneBtn) this.doneBtn.disable();
 
         failsafe = 500;
         while (form && !conditional && this.oneByOneCounter < failsafe) {
@@ -45946,6 +45959,14 @@ if (!Array.prototype.indexOf) {
         else {
             form.show();
         }
+        that = this;
+        setTimeout(function() {
+            if (node.game.isPaused()) return;
+            if (that.backBtn) that.backBtn.enable();
+            if (that.doneBtn) that.doneBtn.enable();
+        }, 250);
+
+
         W.adjustFrameHeight();
 
         node.emit('WIDGET_NEXT', this);
@@ -46227,21 +46248,21 @@ if (!Array.prototype.indexOf) {
             // One more click.
             that.numberOfClicks++;
 
+            removed = that.isChoiceCurrent(value);
             len = that.choices.length;
 
             if (that.customInput) {
                 // Is "Other" currently selected?
-                other = value === (len - 1);
-                if (that.customInput.isHidden()) {
-                    if (other) that.customInput.show();
+                if (value === (len - 1) && !removed) {
+                    that.customInput.show();
                 }
                 else {
-                    if (other) that.customInput.hide();
+                    that.customInput.hide();
                 }
             }
 
             // Click on an already selected choice.
-            if (that.isChoiceCurrent(value)) {
+            if (removed) {
                 that.unsetCurrentChoice(value);
                 J.removeClass(td, 'selected');
 
@@ -46258,7 +46279,6 @@ if (!Array.prototype.indexOf) {
                 else {
                     that.selected = null;
                 }
-                removed = true;
             }
             // Click on a new choice.
             else {
@@ -48241,6 +48261,7 @@ if (!Array.prototype.indexOf) {
     };
 
     ChoiceTable.prototype.prev = function() {
+        return false;
         if (!this.solutionDisplayed) return false;
         this.solutionDisplayed = false;
         this.solutionDiv.innerHTML = '';
@@ -48251,11 +48272,14 @@ if (!Array.prototype.indexOf) {
     };
 
     ChoiceTable.prototype.isChoiceDone = function(complete) {
-        var cho, mul, len;
+        var cho, mul, len, ci;
+        ci = this.customInput;
         cho = this.currentChoice;
         mul = this.selectMultiple;
+        // Selected "Other, Specify"
+        if (ci && this.isChoiceCurrent(this.choices.length-1)) return false;
         // Single choice.
-        if ((!complete || !mul) && cho) return true;
+        if ((!complete || !mul) && null !== cho) return true;
         // Multiple choices.
         if (J.isArray(cho)) len = cho.length;
         if (mul === true && len === this.choices.length) return true;
@@ -63843,12 +63867,12 @@ if (!Array.prototype.indexOf) {
                 if (w.selectTreatmentOption) {
 
 
-                    var flexBox = W.add('div', w.panelDiv);
+                    var flexBox = W.add('div', w.bodyDiv);
                     flexBox.style.display = 'flex';
                     flexBox.style['flex-wrap'] = 'wrap';
                     flexBox.style['column-gap'] = '20px';
                     flexBox.style['justify-content'] = 'space-between';
-                    flexBox.style['margin'] = '0 100px 30px 150px';
+                    flexBox.style['margin'] = '50px 100px 30px 150px';
                     flexBox.style['text-align'] = 'center';
 
                     var li, a, t, liT1, liT2, liT3, display, counter;
