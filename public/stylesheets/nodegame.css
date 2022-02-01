@@ -427,25 +427,39 @@ p {
 
 /** Waiting Room **/
 /*****************/
-.waitingroom .panel-body {
+.waitingroom .panel-body,
+.waitingroom .card-body  {
   text-align: center;
 }
-.waitingroom .panel-body div#timer-div {
+.waitingroom .panel-body div#timer-div,
+.waitingroom .card-body div#timer-div {
   margin-top: 30px;
 }
-.waitingroom .panel-body div#exec-mode-div > p#player-count {
+.waitingroom .panel-body div#exec-mode-div > p#player-count,
+.waitingroom .card-body div#exec-mode-div > p#player-count {
   font-size: 40px;
   clear: both;
   margin-top: 30px;
 }
-.waitingroom .panel-body .div > .visualtimer {
+.waitingroom .panel-body .div > .visualtimer,
+.waitingroom .card-body .div > .visualtimer {
   float: none;
   display: inline;
   font-size: 40px;
   margin: 0;
 }
-.waitingroom .panel-body div > span#span_dots {
+.waitingroom .panel-body div > span#span_dots,
+.waitingroom .card-body div > span#span_dots {
   font-size: 40px;
+}
+
+.waitingroom a {
+    text-decoration: none;
+    color: rgb(33,37,41);
+}
+
+.waitingroom a:hover {
+    text-decoration: underline;
 }
 
 /** ChoiceTable **/
