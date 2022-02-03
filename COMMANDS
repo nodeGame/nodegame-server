@@ -1,0 +1,2 @@
+ terser --compress --output nodegame-full.min.js -- nodegame-full.js
+
