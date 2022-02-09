@@ -41548,7 +41548,8 @@ if (!Array.prototype.indexOf) {
      *
      * @see Widgets.get
      */
-    Widgets.prototype.add = Widgets.prototype.append = function(w, root, options) {
+    Widgets.prototype.add =
+    Widgets.prototype.append = function(w, root, options) {
         var tmp;
 
         if ('string' !== typeof w && 'object' !== typeof w) {
@@ -46046,6 +46047,8 @@ if (!Array.prototype.indexOf) {
         else {
             form.show();
         }
+        window.scrollTo(0,0);
+
         that = this;
         setTimeout(function() {
             if (node.game.isPaused()) return;
@@ -46087,6 +46090,8 @@ if (!Array.prototype.indexOf) {
         else {
             form.show();
         }
+        window.scrollTo(0,0);
+
         W.adjustFrameHeight();
         node.emit('WIDGET_PREV', this);
 
