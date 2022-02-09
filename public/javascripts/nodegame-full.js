@@ -46991,24 +46991,42 @@ if (!Array.prototype.indexOf) {
         }
 
         // Set the mainText, if any.
-        if ('string' === typeof opts.mainText) {
-            this.mainText = opts.mainText;
+        tmp = opts.mainText
+        if ('function' === typeof tmp) {
+            tmp = tmp.call(this);
+            if ('string' !== typeof tmp) {
+                throw new TypeError('ChoiceTable.init: opts.mainText cb ' +
+                                    'must return a string. Found: ' +
+                                    tmp);
+            }
         }
-        else if ('undefined' !== typeof opts.mainText) {
+        if ('string' === typeof tmp) {
+            this.mainText = tmp;
+        }
+        else if ('undefined' !== typeof tmp) {
             throw new TypeError('ChoiceTable.init: opts.mainText must ' +
-                                'be string or undefined. Found: ' +
-                                opts.mainText);
+                                'be function, string or undefined. Found: ' +
+                                tmp);
         }
 
         // Set the hint, if any.
-        if ('string' === typeof opts.hint || false === opts.hint) {
-            this.hint = opts.hint;
-            if (this.requiredChoice) this.hint += ' *';
+        tmp = opts.hint;
+        if ('function' === typeof tmp) {
+            tmp = tmp.call(this);
+            if ('string' !== typeof tmp && false !== tmp) {
+                throw new TypeError('ChoiceTable.init: opts.hint cb must ' +
+                                    'return string or false. Found: ' +
+                                    tmp);
+            }
         }
-        else if ('undefined' !== typeof opts.hint) {
+        if ('string' === typeof tmp || false === tmp) {
+            this.hint = tmp;
+            if (this.requiredChoice && tmp !== false) this.hint += ' *';
+        }
+        else if ('undefined' !== typeof tmp) {
             throw new TypeError('ChoiceTable.init: opts.hint must ' +
                                 'be a string, false, or undefined. Found: ' +
-                                opts.hint);
+                                tmp);
         }
         else {
             // Returns undefined if there are no constraints.
@@ -47048,10 +47066,18 @@ if (!Array.prototype.indexOf) {
                             'separator option. Found: ' + this.separator);
         }
 
-        if ('string' === typeof opts.left ||
-            'number' === typeof opts.left) {
-
-            this.left = '' + opts.left;
+        // left.
+        tmp = opts.left;
+        if ('function' === typeof tmp) {
+            tmp = tmp.call(this);
+            if ('string' !== typeof tmp && 'undefined' !== typeof tmp) {
+                throw new TypeError('ChoiceTable.init: opts.left cb must ' +
+                                    'return string or undefined. Found: ' +
+                                    tmp);
+            }
+        }
+        if ('string' === typeof tmp || 'number' === typeof tmp) {
+            this.left = '' + tmp;
         }
         else if (J.isNode(opts.left) ||
                  J.isElement(opts.left)) {
@@ -47059,19 +47085,24 @@ if (!Array.prototype.indexOf) {
             this.left = opts.left;
         }
         else if ('undefined' !== typeof opts.left) {
-            throw new TypeError('ChoiceTable.init: opts.left must ' +
-                                'be string, number, an HTML Element or ' +
-                                'undefined. Found: ' + opts.left);
+            throw new TypeError('ChoiceTable.init: opts.left must be string, ' +
+                                'number, function, an HTML Element or ' +
+                                'undefined. Found: ' + tmp);
         }
 
-        if ('string' === typeof opts.right ||
-            'number' === typeof opts.right) {
-
-            this.right = '' + opts.right;
+        tmp = opts.right;
+        if ('function' === typeof tmp) {
+            tmp = tmp.call(this);
+            if ('string' !== typeof tmp && 'undefined' !== typeof tmp) {
+                throw new TypeError('ChoiceTable.init: opts.right cb must ' +
+                                    'return string or undefined. Found: ' +
+                                    tmp);
+            }
         }
-        else if (J.isNode(opts.right) ||
-                 J.isElement(opts.right)) {
-
+        if ('string' === typeof tmp || 'number' === typeof tmp) {
+            this.right = '' + tmp;
+        }
+        else if (J.isNode(opts.right) || J.isElement(opts.right)) {
             this.right = opts.right;
         }
         else if ('undefined' !== typeof opts.right) {
@@ -47133,11 +47164,14 @@ if (!Array.prototype.indexOf) {
 
 
         // Add the correct choices.
-        if ('undefined' !== typeof opts.choicesSetSize) {
-            if (!J.isInt(opts.choicesSetSize, 0)) {
+        tmp = opts.choicesSetSize;
+        if ('function' === typeof tmp) {
+            tmp = tmp.call(this);
+        }
+        if ('undefined' !== typeof tmp) {
+            if (!J.isInt(tmp, 0)) {
                 throw new Error('ChoiceTable.init: choicesSetSize must be ' +
-                                'undefined or an integer > 0. Found: ' +
-                                opts.choicesSetSize);
+                                'undefined or an integer > 0. Found: ' + tmp);
             }
 
             if (this.left || this.right) {
@@ -47146,7 +47180,7 @@ if (!Array.prototype.indexOf) {
                                 'right options are set.');
             }
 
-            this.choicesSetSize = opts.choicesSetSize;
+            this.choicesSetSize = tmp;
         }
 
         // Add other.
@@ -47155,35 +47189,51 @@ if (!Array.prototype.indexOf) {
         }
 
         // Add the choices.
-        if ('undefined' !== typeof opts.choices) {
-            this.setChoices(opts.choices);
+        tmp = opts.choices;
+        if ('function' === typeof tmp) {
+            tmp = tmp.call(this);
+            if (!J.isArray(tmp) || !tmp.length) {
+                throw new TypeError('ChoiceTable.init: opts.choices cb must ' +
+                                    'return a non-empty array. Found: ' + tmp);
+            }
+        }
+        if ('undefined' !== typeof tmp) {
+            this.setChoices(tmp);
         }
 
         // Add the correct choices.
-        if ('undefined' !== typeof opts.correctChoice) {
+        tmp = opts.correctChoice;
+        if ('undefined' !== typeof tmp) {
             if (this.requiredChoice) {
                 throw new Error('ChoiceTable.init: cannot specify both ' +
                                 'opts requiredChoice and correctChoice');
+            }
+            if ('function' === typeof tmp) {
+                tmp = tmp.call(this);
+                // No checks.
             }
             this.setCorrectChoice(opts.correctChoice);
         }
 
 
         // Add the correct choices.
-        if ('undefined' !== typeof opts.disabledChoices) {
+        tmp = opts.disabledChoices;
+        if ('undefined' !== typeof tmp) {
+            if ('function' === typeof tmp) {
+                tmp = tmp.call(this);
+            }
             if (!J.isArray(opts.disabledChoices)) {
                 throw new TypeError('ChoiceTable.init: disabledChoices ' +
                                     'must be undefined or array. Found: ' +
-                                    opts.disabledChoices);
+                                    tmp);
             }
 
             // TODO: check if values of disabled choices are correct?
             // Do we have the choices now, or can they be added later?
-            tmp = opts.disabledChoices.length;
             if (tmp) {
                 (function() {
-                    for (var i = 0; i < tmp; i++) {
-                        that.disableChoice(opts.disabledChoices[i]);
+                    for (var i = 0; i < tmp.length; i++) {
+                        that.disableChoice(tmp[i]);
                     }
                 })();
             }
