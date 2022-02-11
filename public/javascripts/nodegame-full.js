@@ -46297,21 +46297,26 @@ if (!Array.prototype.indexOf) {
          * @see ChoiceTable.onclick
          */
         this.listener = function(e) {
-            var name, value, td;
+            var name, value, td, ci;
             var i, len, removed, other;
 
             e = e || window.event;
             td = e.target || e.srcElement;
 
             // See if it is a clickable choice.
-            if ('undefined' === typeof that.choicesIds[td.id]) {
+            ci = that.choicesIds;
+            if ('undefined' === typeof ci[td.id]) {
                 // It might be a nested element, try the parent.
                 td = td.parentNode;
                 if (!td) return;
-                if ('undefined' === typeof that.choicesIds[td.id]) {
+                if ('undefined' === typeof ci[td.id]) {
                     td = td.parentNode;
-                    if (!td || 'undefined' === typeof that.choicesIds[td.id]) {
-                        return;
+                    if (!td) return;
+                    if ('undefined' === typeof ci[td.id]) {
+                        td = td.parentNode;
+                        if (!td || 'undefined' === typeof ci[td.id]) {
+                            return;
+                        }
                     }
                 }
             }
