@@ -31620,7 +31620,7 @@ if (!Array.prototype.indexOf) {
     NGC.prototype.remoteCommand = function(command, to, options) {
         var msg;
         if ('string' !== typeof command) {
-            throw new TypeError('node.remoteCommand: command must be string');
+            throw new TypeError('node.remoteCommand: command must be string.');
         }
         if (!node.constants.gamecommands[command]) {
             throw new Error('node.remoteCommand: unknown command: ' +
@@ -37721,7 +37721,7 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # extra
- * Copyright(c) 2019 Stefano Balietti
+ * Copyright(c) 2022 Stefano Balietti
  * MIT Licensed
  *
  * GameWindow extras
@@ -38145,8 +38145,13 @@ if (!Array.prototype.indexOf) {
 
     };
 
+    GameWindow.prototype.setInnerHTML = function(search, replace, mod) {
+        // console.log('***deprecated: use W.html instead of W.setInnerHTML');
+        this.html(search, replace, mod);
+    };
+
     /**
-     * ### GameWindow.setInnerHTML
+     * ### GameWindow.html
      *
      * Replaces the innerHTML of the element with matching id or class name
      *
@@ -38159,7 +38164,7 @@ if (!Array.prototype.indexOf) {
      *    - 'className': replaces all elements with same class name
      *    - 'g': replaces globally, both by id and className
      */
-    GameWindow.prototype.setInnerHTML = function(search, replace, mod) {
+    GameWindow.prototype.html = function(search, replace, mod) {
         var el, i, len;
 
         // Only process strings or numbers.
@@ -45837,36 +45842,39 @@ if (!Array.prototype.indexOf) {
 
         len = this.forms.length;
 
+        // TODO: we could save the results when #next() is called or
+        // have an option to get the values of current form or a specific form.
+        // The code below is a old and created before #next() was created.
         // Only one form displayed.
-        if (this.oneByOne) {
-
-            // Evaluate one-by-one and store partial results.
-            if (this.oneByOneCounter < (len-1)) {
-                form = this.forms[this.oneByOneCounter];
-                res = form.getValues(opts);
-                if (res) {
-                    this.oneByOneResults[form.id] = res;
-                    lastErrored = checkFormResult(res, form, opts);
-
-                    if (!lastErrored) {
-                        this.forms[this.oneByOneCounter].hide();
-                        this.oneByOneCounter++;
-                        this.forms[this.oneByOneCounter].show();
-                        W.adjustFrameHeight();
-                        // Prevent stepping.
-                        obj.isCorrect = false;
-                    }
-                }
-            }
-            // All one-by-one pages executed.
-            else {
-                // Copy all partial results in the obj returning the
-                obj.forms = this.oneByOneResults;
-            }
-
-        }
+        // if (this.oneByOne) {
+        //
+        //     // Evaluate one-by-one and store partial results.
+        //     if (this.oneByOneCounter < (len-1)) {
+        //         form = this.forms[this.oneByOneCounter];
+        //         res = form.getValues(opts);
+        //         if (res) {
+        //             this.oneByOneResults[form.id] = res;
+        //             lastErrored = checkFormResult(res, form, opts);
+        //
+        //             if (!lastErrored) {
+        //                 this.forms[this.oneByOneCounter].hide();
+        //                 this.oneByOneCounter++;
+        //                 this.forms[this.oneByOneCounter].show();
+        //                 W.adjustFrameHeight();
+        //                 // Prevent stepping.
+        //                 obj.isCorrect = false;
+        //             }
+        //         }
+        //     }
+        //     // All one-by-one pages executed.
+        //     else {
+        //         // Copy all partial results in the obj returning the
+        //         obj.forms = this.oneByOneResults;
+        //     }
+        //
+        // }
         // All forms on the page.
-        else {
+        // else {
             i = -1;
             for ( ; ++i < len ; ) {
                 form = this.forms[i];
@@ -45888,7 +45896,7 @@ if (!Array.prototype.indexOf) {
                     if (res) lastErrored = res;
                 }
             }
-        }
+        // }
 
         if (lastErrored) {
             if (opts.highlight &&
