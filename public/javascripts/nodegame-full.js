@@ -32391,12 +32391,15 @@ if (!Array.prototype.indexOf) {
         /**
          * ## in.say.SESSION
          *
-         * Forces disconnection
+         * Incoming session data from another client
          */
         node.events.ng.on( IN + say + 'SESSION', function(msg) {
-            console.log('SESSION!!!!!!!!!!!!');
-            console.log(msg.data);
-            if (msg.data) node.game.session(msg.data.name, msg.data.value);
+            if (msg.data) {
+                node.game.session(msg.data.name, msg.data.value, {
+                    from: msg.from,
+                    to: false
+                });
+            }
         });
 
         /**
