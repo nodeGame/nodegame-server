@@ -41685,7 +41685,7 @@ if (!Array.prototype.indexOf) {
      * Finally, a reference to the widget is added in `Widgets.instances`.
      *
      * @param {string} widgetName The name of the widget to load
-     * @param {object} options Optional. Configuration options, will be
+     * @param {object} opts Optional. Configuration options, will be
      *    mixed out with attributes in the `defaults` property
      *    of the widget prototype.
      *
@@ -41694,26 +41694,25 @@ if (!Array.prototype.indexOf) {
      * @see Widgets.append
      * @see Widgets.instances
      */
-    Widgets.prototype.get = function(widgetName, options) {
+    Widgets.prototype.get = function(widgetName, opts) {
         var WidgetPrototype, widget, changes, tmp;
 
         if ('string' !== typeof widgetName) {
             throw new TypeError('Widgets.get: widgetName must be string.' +
                                'Found: ' + widgetName);
         }
-        if (!options) {
-            options = {};
-        }
-        else if ('object' !== typeof options) {
-            throw new TypeError('Widgets.get: ' + widgetName + ' options ' +
+        if (!opts) opts = {};
+
+        else if ('object' !== typeof opts) {
+            throw new TypeError('Widgets.get: ' + widgetName + ' opts ' +
                                 'must be object or undefined. Found: ' +
-                                options);
+                                opts);
         }
-        if (options.storeRef === false) {
-            if (options.docked === true) {
-                throw new TypeError('Widgets.get: '  + widgetName +
-                                    'options.storeRef cannot be false ' +
-                                    'if options.docked is true.');
+        if (opts.storeRef === false) {
+            if (opts.docked === true) {
+                throw new TypeError('Widgets.get: ' + widgetName +
+                                    'opts.storeRef cannot be false ' +
+                                    'if opts.docked is true.');
             }
         }
 
@@ -41732,44 +41731,44 @@ if (!Array.prototype.indexOf) {
         }
 
         // Create widget.
-        widget = new WidgetPrototype(options);
+        widget = new WidgetPrototype(opts);
 
         // Set ID.
-        tmp = options.id;
+        tmp = opts.id;
         if ('undefined' !== typeof tmp) {
             if ('number' === typeof tmp) tmp += '';
             if ('string' === typeof tmp) {
 
-                if ('undefined' !== typeof options.idPrefix) {
-                    if ('string' === typeof options.idPrefix &&
-                        'number' !== typeof options.idPrefix) {
+                if ('undefined' !== typeof opts.idPrefix) {
+                    if ('string' === typeof opts.idPrefix &&
+                        'number' !== typeof opts.idPrefix) {
 
-                        tmp = options.idPrefix + tmp;
+                        tmp = opts.idPrefix + tmp;
                     }
                     else {
-                        throw new TypeError('Widgets.get: options.idPrefix ' +
+                        throw new TypeError('Widgets.get: opts.idPrefix ' +
                                             'must be string, number or ' +
                                             'undefined. Found: ' +
-                                            options.idPrefix);
+                                            opts.idPrefix);
                     }
                 }
 
                 widget.id = tmp;
             }
             else {
-                throw new TypeError('Widgets.get: options.id must be ' +
+                throw new TypeError('Widgets.get: opts.id must be ' +
                                     'string, number or undefined. Found: ' +
                                     tmp);
             }
         }
         // Assign step id as widget id, if widget step and no custom id.
-        else if (options.widgetStep) {
+        else if (opts.widgetStep) {
             widget.id = node.game.getStepId();
         }
 
-        // Set prototype values or options values.
-        if ('undefined' !== typeof options.title) {
-            widget.title = options.title;
+        // Set prototype values or opts values.
+        if ('undefined' !== typeof opts.title) {
+            widget.title = opts.title;
         }
         else if ('undefined' !== typeof WidgetPrototype.title) {
             widget.title = WidgetPrototype.title;
@@ -41777,33 +41776,33 @@ if (!Array.prototype.indexOf) {
         else {
             widget.title = '&nbsp;';
         }
-        widget.panel = 'undefined' === typeof options.panel ?
-            WidgetPrototype.panel : options.panel;
-        widget.footer = 'undefined' === typeof options.footer ?
-            WidgetPrototype.footer : options.footer;
+        widget.panel = 'undefined' === typeof opts.panel ?
+            WidgetPrototype.panel : opts.panel;
+        widget.footer = 'undefined' === typeof opts.footer ?
+            WidgetPrototype.footer : opts.footer;
         widget.className = WidgetPrototype.className;
-        if (J.isArray(options.className)) {
-            widget.className += ' ' + options.className.join(' ');
+        if (J.isArray(opts.className)) {
+            widget.className += ' ' + opts.className.join(' ');
         }
-        else if ('string' === typeof options.className) {
-            widget.className += ' ' + options.className;
+        else if ('string' === typeof opts.className) {
+            widget.className += ' ' + opts.className;
         }
-        else if ('undefined' !== typeof options.className) {
+        else if ('undefined' !== typeof opts.className) {
             throw new TypeError('Widgets.get: className must be array, ' +
                                 'string, or undefined. Found: ' +
-                                options.className);
+                                opts.className);
         }
-        widget.context = 'undefined' === typeof options.context ?
-            WidgetPrototype.context : options.context;
-        widget.sounds = 'undefined' === typeof options.sounds ?
-            WidgetPrototype.sounds : options.sounds;
-        widget.texts = 'undefined' === typeof options.texts ?
-            WidgetPrototype.texts : options.texts;
-        widget.collapsible = options.collapsible || false;
-        widget.closable = options.closable || false;
+        widget.context = 'undefined' === typeof opts.context ?
+            WidgetPrototype.context : opts.context;
+        widget.sounds = 'undefined' === typeof opts.sounds ?
+            WidgetPrototype.sounds : opts.sounds;
+        widget.texts = 'undefined' === typeof opts.texts ?
+            WidgetPrototype.texts : opts.texts;
+        widget.collapsible = opts.collapsible || false;
+        widget.closable = opts.closable || false;
         widget.collapseTarget =
-            options.collapseTarget || this.collapseTarget || null;
-        widget.info = options.info || false;
+            opts.collapseTarget || this.collapseTarget || null;
+        widget.info = opts.info || false;
 
         widget.hooks = {
             hidden: [],
@@ -41818,13 +41817,16 @@ if (!Array.prototype.indexOf) {
         };
 
         // By default destroy widget on exit step.
-        widget.destroyOnExit = options.destroyOnExit !== false;
+        widget.destroyOnExit = opts.destroyOnExit !== false;
 
         // Required widgets require action from user, otherwise they will
         // block node.done().
-        if (options.required ||
-            options.requiredChoice ||
-            'undefined' !== typeof options.correctChoice) {
+        if (opts.required === false) {
+            widget.required = false;
+        }
+        else if (opts.required || opts.requiredChoice ||
+            ('undefined' !== typeof opts.correctChoice &&
+             opts.correctChoice !== false)) {
 
             // Flag required is undefined, if not set to false explicitely.
             widget.required = true;
@@ -41847,41 +41849,41 @@ if (!Array.prototype.indexOf) {
 
         // Properties that will modify the UI of the widget once appended.
 
-        if (options.bootstrap5) widget._bootstrap5 = true;
-        if (options.disabled) widget._disabled = true;
-        if (options.highlighted) widget._highlighted = true;
-        if (options.collapsed) widget._collapsed = true;
-        if (options.hidden) widget._hidden = true;
-        if (options.docked) widget._docked = true;
+        if (opts.bootstrap5) widget._bootstrap5 = true;
+        if (opts.disabled) widget._disabled = true;
+        if (opts.highlighted) widget._highlighted = true;
+        if (opts.collapsed) widget._collapsed = true;
+        if (opts.hidden) widget._hidden = true;
+        if (opts.docked) widget._docked = true;
 
         // Call init.
-        widget.init(options);
+        widget.init(opts);
 
         // Call listeners.
-        if (options.listeners !== false) {
+        if (opts.listeners !== false) {
 
             // TODO: future versions should pass the right event listener
             // to the listeners method. However, the problem is that it
             // does not have `on.data` methods, those are aliases.
 
-         //  if ('undefined' === typeof options.listeners) {
+         //  if ('undefined' === typeof opts.listeners) {
          //      ee = node.getCurrentEventEmitter();
          //  }
-         //  else if ('string' === typeof options.listeners) {
-         //      if (options.listeners !== 'game' &&
-         //          options.listeners !== 'stage' &&
-         //          options.listeners !== 'step') {
+         //  else if ('string' === typeof opts.listeners) {
+         //      if (opts.listeners !== 'game' &&
+         //          opts.listeners !== 'stage' &&
+         //          opts.listeners !== 'step') {
          //
          //          throw new Error('Widget.get: widget ' + widgetName +
          //                          ' has invalid value for option ' +
-         //                          'listeners: ' + options.listeners);
+         //                          'listeners: ' + opts.listeners);
          //      }
-         //      ee = node.events[options.listeners];
+         //      ee = node.events[opts.listeners];
          //  }
          //  else {
          //      throw new Error('Widget.get: widget ' + widgetName +
-         //                      ' options.listeners must be false, string ' +
-         //                      'or undefined. Found: ' + options.listeners);
+         //                      ' opts.listeners must be false, string ' +
+         //                      'or undefined. Found: ' + opts.listeners);
          //  }
 
             // Start recording changes.
@@ -41959,7 +41961,7 @@ if (!Array.prototype.indexOf) {
         };
 
         // Store widget instance (e.g., used for destruction).
-        if (options.storeRef !== false) this.instances.push(widget);
+        if (opts.storeRef !== false) this.instances.push(widget);
         else widget.storeRef = false;
 
         return widget;
@@ -46051,7 +46053,14 @@ if (!Array.prototype.indexOf) {
             // Add defaults.
             J.mixout(form, this.formsOptions);
 
-            if (form.required || form.requiredChoice || form.correctChoice) {
+            // By default correctChoice means required.
+            // However, it is possible to add required = false and correctChoice
+            // truthy, for instance if there is a solution to display.
+            if ((form.required !== false && form.requiredChoice !== false) &&
+                (form.required || form.requiredChoice ||
+                ('undefined' !== typeof form.correctChoice &&
+                form.correctChoice !== false))) {
+
                 // False is set manually, otherwise undefined.
                 if (this.required === false) {
                     throw new Error('ChoiceManager.setForms: required is ' +
@@ -46265,7 +46274,7 @@ if (!Array.prototype.indexOf) {
      * @see ChoiceManager.verifyChoice
      */
     ChoiceManager.prototype.getValues = function(opts) {
-        var obj, i, len, form, lastErrored, res;
+        var obj, i, len, form, lastErrored, res, toCheck;
         obj = {
             order: this.order,
             forms: {},
@@ -46278,6 +46287,10 @@ if (!Array.prototype.indexOf) {
         if (opts.markAttempt) obj.isCorrect = true;
 
         len = this.forms.length;
+
+
+        // TODO: with oneByOne forms are hidden and validation is skipped, but
+        // for last form. If empty it fails and it stops.
 
         // TODO: we could save the results when #next() is called or
         // have an option to get the values of current form or a specific form.
@@ -46315,15 +46328,14 @@ if (!Array.prototype.indexOf) {
             i = -1;
             for ( ; ++i < len ; ) {
                 form = this.forms[i];
+
+                // Not one-by-one because there could be many hidden.
                 // If it is hidden or disabled we do not do validation.
-                if (form.isHidden() || form.isDisabled()) {
-                    res = form.getValues({
-                        markAttempt: false,
-                        highlight: false
-                    });
-                    if (res) obj.forms[form.id] = res;
-                }
-                else {
+
+                if (this.oneByOne) toCheck = form._shown && form.required;
+                else toCheck = !(form.isDisabled() || form.isHidden());
+
+                if (toCheck) {
                     // ContentBox does not return a value.
                     res = form.getValues(opts);
                     if (!res) continue;
@@ -46331,6 +46343,13 @@ if (!Array.prototype.indexOf) {
 
                     res = checkFormResult(res, form, opts, obj);
                     if (res) lastErrored = res;
+                }
+                else {
+                    res = form.getValues({
+                        markAttempt: false,
+                        highlight: false
+                    });
+                    if (res) obj.forms[form.id] = res;
                 }
             }
         // }
@@ -46436,6 +46455,9 @@ if (!Array.prototype.indexOf) {
                   placeholder: 'Type your email', type: 'email' }
             ];
         }
+        else {
+            forms = opts.forms;
+        }
 
         // Change from options to array linking to honeypot inputs.
         this.honeypot = [];
@@ -46484,6 +46506,9 @@ if (!Array.prototype.indexOf) {
             if (!form) return false;
             conditional = checkConditional(this, form.id);
         }
+
+        // TODO: make this property a reserved keyword.
+        form._shown = true;
 
         if ('undefined' !== typeof $) {
             $(form.panelDiv).fadeIn();
@@ -48574,8 +48599,9 @@ if (!Array.prototype.indexOf) {
         }
 
         ci = this.customInput;
-        if (null !== this.correctChoice || null !== this.requiredChoice ||
-            (ci && !ci.isHidden())) {
+        if (this.required !== false &&
+            (null !== this.correctChoice || null !== this.requiredChoice ||
+            (ci && !ci.isHidden()))) {
 
             obj.isCorrect = this.verifyChoice(opts.markAttempt);
             obj.attempts = this.attempts;
