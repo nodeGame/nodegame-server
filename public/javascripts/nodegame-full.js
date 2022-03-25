@@ -46289,9 +46289,6 @@ if (!Array.prototype.indexOf) {
         len = this.forms.length;
 
 
-        // TODO: with oneByOne forms are hidden and validation is skipped, but
-        // for last form. If empty it fails and it stops.
-
         // TODO: we could save the results when #next() is called or
         // have an option to get the values of current form or a specific form.
         // The code below is a old and created before #next() was created.
@@ -51608,7 +51605,7 @@ if (!Array.prototype.indexOf) {
      * @param {object} opts Configuration options
      */
     CustomInput.prototype.init = function(opts) {
-        var tmp, that, e, isText, setValues;
+        var tmp, val, that, e, isText, setValues;
         that = this;
         e = 'CustomInput.init: ';
 
@@ -51675,102 +51672,102 @@ if (!Array.prototype.indexOf) {
                                     'or undefined. Found: ' +
                                     opts.validation);
             }
-            tmp = opts.validation;
+            val = opts.validation;
         }
-        else {
-            // Add default validations based on type.
+        // Add default validations based on type.
 
-            if (this.type === 'number' || this.type === 'float' ||
-                this.type === 'int' || this.type === 'text') {
+        if (this.type === 'number' || this.type === 'float' ||
+            this.type === 'int' || this.type === 'text') {
 
-                isText = this.type === 'text';
+            isText = this.type === 'text';
 
-                // Greater than.
-                if ('undefined' !== typeof opts.min) {
-                    tmp = J.isNumber(opts.min);
-                    if (false === tmp) {
-                        throw new TypeError(e + 'min must be number or ' +
-                                            'undefined. Found: ' + opts.min);
-                    }
-                    this.params.lower = opts.min;
-                    this.params.leq = true;
+            // Greater than.
+            if ('undefined' !== typeof opts.min) {
+                tmp = J.isNumber(opts.min);
+                if (false === tmp) {
+                    throw new TypeError(e + 'min must be number or ' +
+                                        'undefined. Found: ' + opts.min);
                 }
-                // Less than.
-                if ('undefined' !== typeof opts.max) {
-                    tmp = J.isNumber(opts.max);
-                    if (false === tmp) {
-                        throw new TypeError(e + 'max must be number or ' +
-                                            'undefined. Found: ' + opts.max);
+                this.params.lower = opts.min;
+                this.params.leq = true;
+            }
+            // Less than.
+            if ('undefined' !== typeof opts.max) {
+                tmp = J.isNumber(opts.max);
+                if (false === tmp) {
+                    throw new TypeError(e + 'max must be number or ' +
+                                        'undefined. Found: ' + opts.max);
+                }
+                this.params.upper = opts.max;
+                this.params.ueq = true;
+            }
+
+            if (opts.strictlyGreater) this.params.leq = false;
+            if (opts.strictlyLess) this.params.ueq = false;
+
+            // Checks on both min and max.
+            if ('undefined' !== typeof this.params.lower &&
+                'undefined' !== typeof this.params.upper) {
+
+                if (this.params.lower > this.params.upper) {
+                    throw new TypeError(e + 'min cannot be greater ' +
+                                        'than max. Found: ' +
+                                        opts.min + '> ' + opts.max);
+                }
+                // Exact length.
+                if (this.params.lower === this.params.upper) {
+                    if (!this.params.leq || !this.params.ueq) {
+
+                        throw new TypeError(e + 'min cannot be equal to ' +
+                                            'max when strictlyGreater or ' +
+                                            'strictlyLess are set. ' +
+                                            'Found: ' + opts.min);
                     }
-                    this.params.upper = opts.max;
-                    this.params.ueq = true;
+                    if (this.type === 'int' || this.type === 'text') {
+                        if (J.isFloat(this.params.lower)) {
+
+
+                            throw new TypeError(e + 'min cannot be a ' +
+                                                'floating point number ' +
+                                                'and equal to ' +
+                                                'max, when type ' +
+                                                'is not "float". Found: ' +
+                                                opts.min);
+                        }
+                    }
+                    // Store this to create better error strings.
+                    this.params.exactly = true;
+                }
+                else {
+                    // Store this to create better error strings.
+                    this.params.between = true;
+                }
+            }
+
+            // Checks for text only.
+            if (isText) {
+
+                this.params.noNumbers = opts.noNumbers;
+
+                if ('undefined' !== typeof this.params.lower) {
+                    if (this.params.lower < 0) {
+                        throw new TypeError(e + 'min cannot be negative ' +
+                                            'when type is "text". Found: ' +
+                                            this.params.lower);
+                    }
+                    if (!this.params.leq) this.params.lower++;
+                }
+                if ('undefined' !== typeof this.params.upper) {
+                    if (this.params.upper < 0) {
+                        throw new TypeError(e + 'max cannot be negative ' +
+                                            'when type is "text". Found: ' +
+                                            this.params.upper);
+                    }
+                    if (!this.params.ueq) this.params.upper--;
                 }
 
-                if (opts.strictlyGreater) this.params.leq = false;
-                if (opts.strictlyLess) this.params.ueq = false;
-
-                // Checks on both min and max.
-                if ('undefined' !== typeof this.params.lower &&
-                    'undefined' !== typeof this.params.upper) {
-
-                    if (this.params.lower > this.params.upper) {
-                        throw new TypeError(e + 'min cannot be greater ' +
-                                            'than max. Found: ' +
-                                            opts.min + '> ' + opts.max);
-                    }
-                    // Exact length.
-                    if (this.params.lower === this.params.upper) {
-                        if (!this.params.leq || !this.params.ueq) {
-
-                            throw new TypeError(e + 'min cannot be equal to ' +
-                                                'max when strictlyGreater or ' +
-                                                'strictlyLess are set. ' +
-                                                'Found: ' + opts.min);
-                        }
-                        if (this.type === 'int' || this.type === 'text') {
-                            if (J.isFloat(this.params.lower)) {
-
-
-                                throw new TypeError(e + 'min cannot be a ' +
-                                                    'floating point number ' +
-                                                    'and equal to ' +
-                                                    'max, when type ' +
-                                                    'is not "float". Found: ' +
-                                                    opts.min);
-                            }
-                        }
-                        // Store this to create better error strings.
-                        this.params.exactly = true;
-                    }
-                    else {
-                        // Store this to create better error strings.
-                        this.params.between = true;
-                    }
-                }
-
-                // Checks for text only.
-                if (isText) {
-
-                    this.params.noNumbers = opts.noNumbers;
-
-                    if ('undefined' !== typeof this.params.lower) {
-                        if (this.params.lower < 0) {
-                            throw new TypeError(e + 'min cannot be negative ' +
-                                                'when type is "text". Found: ' +
-                                                this.params.lower);
-                        }
-                        if (!this.params.leq) this.params.lower++;
-                    }
-                    if ('undefined' !== typeof this.params.upper) {
-                        if (this.params.upper < 0) {
-                            throw new TypeError(e + 'max cannot be negative ' +
-                                                'when type is "text". Found: ' +
-                                                this.params.upper);
-                        }
-                        if (!this.params.ueq) this.params.upper--;
-                    }
-
-                    tmp = function(value) {
+                if (!val) {
+                    val = function(value) {
                         var len, p, out, err;
                         p = that.params;
                         len = value.length;
@@ -51784,9 +51781,9 @@ if (!Array.prototype.indexOf) {
                             }
                             else {
                                 if (('undefined' !== typeof p.lower &&
-                                     len < p.lower) ||
-                                    ('undefined' !== typeof p.upper &&
-                                     len > p.upper)) {
+                                len < p.lower) ||
+                                ('undefined' !== typeof p.upper &&
+                                len > p.upper)) {
 
                                     err = true;
                                 }
@@ -51796,18 +51793,20 @@ if (!Array.prototype.indexOf) {
                         if (err) out.err = err;
                         return out;
                     };
-
-                    setValues = function() {
-                        var a, b;
-                        a = 'undefined' !== typeof that.params.lower ?
-                            (that.params.lower + 1) : 5;
-                        b = 'undefined' !== typeof that.params.upper ?
-                            that.params.upper : (a + 5);
-                        return J.randomString(J.randomInt(a, b));
-                    };
                 }
-                else {
-                    tmp = (function() {
+
+                setValues = function() {
+                    var a, b;
+                    a = 'undefined' !== typeof that.params.lower ?
+                        (that.params.lower + 1) : 5;
+                    b = 'undefined' !== typeof that.params.upper ?
+                        that.params.upper : (a + 5);
+                    return J.randomString(J.randomInt(a, b));
+                };
+            }
+            else {
+                if (!val) {
+                    val = (function() {
                         var cb;
                         if (that.type === 'float') cb = J.isFloat;
                         else if (that.type === 'int') cb = J.isInt;
@@ -51823,95 +51822,97 @@ if (!Array.prototype.indexOf) {
                             };
                         };
                     })();
-
-                    setValues = function() {
-                        var p, a, b;
-                        p = that.params;
-                        if (that.type === 'float') return J.random();
-                        a = 0;
-                        if ('undefined' !== typeof p.lower) {
-                            a = p.leq ? (p.lower - 1) : p.lower;
-                        }
-                        if ('undefined' !== typeof p.upper) {
-                            b = p.ueq ? p.upper : (p.upper - 1);
-                        }
-                        else {
-                            b = 100 + a;
-                        }
-                        return J.randomInt(a, b);
-                    };
                 }
 
-                // Preset inputWidth.
-                if (this.params.upper) {
-                    if (this.params.upper < 10) this.inputWidth = '100px';
-                    else if (this.params.upper < 20) this.inputWidth = '200px';
-                }
-
+                setValues = function() {
+                    var p, a, b;
+                    p = that.params;
+                    if (that.type === 'float') return J.random();
+                    a = 0;
+                    if ('undefined' !== typeof p.lower) {
+                        a = p.leq ? (p.lower - 1) : p.lower;
+                    }
+                    if ('undefined' !== typeof p.upper) {
+                        b = p.ueq ? p.upper : (p.upper - 1);
+                    }
+                    else {
+                        b = 100 + a;
+                    }
+                    return J.randomInt(a, b);
+                };
             }
-            else if (this.type === 'date') {
-                if ('undefined' !== typeof opts.format) {
-                    // TODO: use regex.
-                    if (opts.format !== 'mm-dd-yy' &&
-                        opts.format !== 'dd-mm-yy' &&
-                        opts.format !== 'mm-dd-yyyy' &&
-                        opts.format !== 'dd-mm-yyyy' &&
-                        opts.format !== 'mm.dd.yy' &&
-                        opts.format !== 'dd.mm.yy' &&
-                        opts.format !== 'mm.dd.yyyy' &&
-                        opts.format !== 'dd.mm.yyyy' &&
-                        opts.format !== 'mm/dd/yy' &&
-                        opts.format !== 'dd/mm/yy' &&
-                        opts.format !== 'mm/dd/yyyy' &&
-                        opts.format !== 'dd/mm/yyyy') {
 
-                        throw new Error(e + 'date format is invalid. Found: ' +
-                                        opts.format);
-                    }
-                    this.params.format = opts.format;
+            // Preset inputWidth.
+            if (this.params.upper) {
+                if (this.params.upper < 10) this.inputWidth = '100px';
+                else if (this.params.upper < 20) this.inputWidth = '200px';
+            }
+
+        }
+        else if (this.type === 'date') {
+            if ('undefined' !== typeof opts.format) {
+                // TODO: use regex.
+                if (opts.format !== 'mm-dd-yy' &&
+                    opts.format !== 'dd-mm-yy' &&
+                    opts.format !== 'mm-dd-yyyy' &&
+                    opts.format !== 'dd-mm-yyyy' &&
+                    opts.format !== 'mm.dd.yy' &&
+                    opts.format !== 'dd.mm.yy' &&
+                    opts.format !== 'mm.dd.yyyy' &&
+                    opts.format !== 'dd.mm.yyyy' &&
+                    opts.format !== 'mm/dd/yy' &&
+                    opts.format !== 'dd/mm/yy' &&
+                    opts.format !== 'mm/dd/yyyy' &&
+                    opts.format !== 'dd/mm/yyyy') {
+
+                    throw new Error(e + 'date format is invalid. Found: ' +
+                                    opts.format);
                 }
-                else {
-                    this.params.format = 'mm/dd/yyyy';
+                this.params.format = opts.format;
+            }
+            else {
+                this.params.format = 'mm/dd/yyyy';
+            }
+
+            this.params.sep = this.params.format.charAt(2);
+            tmp = this.params.format.split(this.params.sep);
+            this.params.yearDigits = tmp[2].length;
+            this.params.dayPos = tmp[0].charAt(0) === 'd' ? 0 : 1;
+            this.params.monthPos =  this.params.dayPos ? 0 : 1;
+            this.params.dateLen = tmp[2].length + 6;
+            if (opts.minDate) {
+                tmp = getParsedDate(opts.minDate, this.params);
+                if (!tmp) {
+                    throw new Error(e + 'minDate must be a Date object. ' +
+                                    'Found: ' + opts.minDate);
                 }
-
-                this.params.sep = this.params.format.charAt(2);
-                tmp = this.params.format.split(this.params.sep);
-                this.params.yearDigits = tmp[2].length;
-                this.params.dayPos = tmp[0].charAt(0) === 'd' ? 0 : 1;
-                this.params.monthPos =  this.params.dayPos ? 0 : 1;
-                this.params.dateLen = tmp[2].length + 6;
-                if (opts.minDate) {
-                    tmp = getParsedDate(opts.minDate, this.params);
-                    if (!tmp) {
-                        throw new Error(e + 'minDate must be a Date object. ' +
-                                        'Found: ' + opts.minDate);
-                    }
-                    this.params.minDate = tmp;
+                this.params.minDate = tmp;
+            }
+            if (opts.maxDate) {
+                tmp = getParsedDate(opts.maxDate, this.params);
+                if (!tmp) {
+                    throw new Error(e + 'maxDate must be a Date object. ' +
+                                    'Found: ' + opts.maxDate);
                 }
-                if (opts.maxDate) {
-                    tmp = getParsedDate(opts.maxDate, this.params);
-                    if (!tmp) {
-                        throw new Error(e + 'maxDate must be a Date object. ' +
-                                        'Found: ' + opts.maxDate);
-                    }
-                    if (this.params.minDate &&
-                        this.params.minDate.obj > tmp.obj) {
+                if (this.params.minDate &&
+                    this.params.minDate.obj > tmp.obj) {
 
-                        throw new Error(e + 'maxDate cannot be prior to ' +
-                                        'minDate. Found: ' + tmp.str +
-                                        ' < ' + this.params.minDate.str);
-                    }
-                    this.params.maxDate = tmp;
+                    throw new Error(e + 'maxDate cannot be prior to ' +
+                                    'minDate. Found: ' + tmp.str +
+                                    ' < ' + this.params.minDate.str);
                 }
+                this.params.maxDate = tmp;
+            }
 
-                // Preset inputWidth.
-                if (this.params.yearDigits === 2) this.inputWidth = '100px';
-                else this.inputWidth = '150px';
+            // Preset inputWidth.
+            if (this.params.yearDigits === 2) this.inputWidth = '100px';
+            else this.inputWidth = '150px';
 
-                // Preset placeholder.
-                this.placeholder = this.params.format;
+            // Preset placeholder.
+            this.placeholder = this.params.format;
 
-                tmp = function(value) {
+            if (!val) {
+                val = function(value) {
                     var p, tokens, tmp, res, dayNum, l1, l2;
                     p = that.params;
 
@@ -51958,7 +51959,7 @@ if (!Array.prototype.indexOf) {
                     else {
                         // Is it leap year?
                         dayNum = (res.year % 4 === 0 && res.year % 100 !== 0) ||
-                            res.year % 400 === 0 ? 29 : 28;
+                        res.year % 400 === 0 ? 29 : 28;
                     }
                     res.month = tmp;
                     // Day.
@@ -51984,51 +51985,53 @@ if (!Array.prototype.indexOf) {
                     }
                     return res;
                 };
-
-                setValues = function() {
-                    var p, minD, maxD, d, day, month, year;
-                    p = that.params;
-                    minD = p.minDate ? p.minDate.obj : new Date('01/01/1900');
-                    maxD = p.maxDate ? p.maxDate.obj : undefined;
-                    d = J.randomDate(minD, maxD);
-                    day = d.getDate();
-                    month = (d.getMonth() + 1);
-                    year = d.getFullYear();
-                    if (p.yearDigits === 2) year = ('' + year).substr(2);
-                    if (p.monthPos === 0) d = month + p.sep + day;
-                    else d = day + p.sep + month;
-                    d += p.sep + year;
-                    return d;
-                };
             }
-            else if (this.type === 'us_state') {
-                if (opts.abbreviation) {
-                    this.params.abbr = true;
-                    this.inputWidth = '100px';
-                }
-                else {
-                    this.inputWidth = '200px';
-                }
-                if (opts.territories !== false) {
-                    this.terr = true;
-                    if (this.params.abbr) {
-                        tmp = getUsStatesList('usStatesTerrByAbbrLow');
-                    }
-                    else {
-                        tmp = getUsStatesList('usStatesTerrLow');
-                    }
-                }
-                else {
-                    if (this.params.abbr) {
-                        tmp = getUsStatesList('usStatesByAbbrLow');
-                    }
-                    else {
-                        tmp = getUsStatesList('usStatesLow');
-                    }
-                }
-                this.params.usStateVal = tmp;
 
-                tmp = function(value) {
+            setValues = function() {
+                var p, minD, maxD, d, day, month, year;
+                p = that.params;
+                minD = p.minDate ? p.minDate.obj : new Date('01/01/1900');
+                maxD = p.maxDate ? p.maxDate.obj : undefined;
+                d = J.randomDate(minD, maxD);
+                day = d.getDate();
+                month = (d.getMonth() + 1);
+                year = d.getFullYear();
+                if (p.yearDigits === 2) year = ('' + year).substr(2);
+                if (p.monthPos === 0) d = month + p.sep + day;
+                else d = day + p.sep + month;
+                d += p.sep + year;
+                return d;
+            };
+        }
+        else if (this.type === 'us_state') {
+            if (opts.abbreviation) {
+                this.params.abbr = true;
+                this.inputWidth = '100px';
+            }
+            else {
+                this.inputWidth = '200px';
+            }
+            if (opts.territories !== false) {
+                this.terr = true;
+                if (this.params.abbr) {
+                    tmp = getUsStatesList('usStatesTerrByAbbrLow');
+                }
+                else {
+                    tmp = getUsStatesList('usStatesTerrLow');
+                }
+            }
+            else {
+                if (this.params.abbr) {
+                    tmp = getUsStatesList('usStatesByAbbrLow');
+                }
+                else {
+                    tmp = getUsStatesList('usStatesLow');
+                }
+            }
+            this.params.usStateVal = tmp;
+
+            if (!val) {
+                val = function(value) {
                     var res;
                     res = { value: value };
                     if (!that.params.usStateVal[value.toLowerCase()]) {
@@ -52036,14 +52039,16 @@ if (!Array.prototype.indexOf) {
                     }
                     return res;
                 };
-
-                setValues = function() {
-                    return J.randomKey(that.params.usStateVal);
-                };
-
             }
-            else if (this.type === 'us_zip') {
-                tmp = function(value) {
+
+            setValues = function() {
+                return J.randomKey(that.params.usStateVal);
+            };
+
+        }
+        else if (this.type === 'us_zip') {
+            if (val) {
+                val = function(value) {
                     var res;
                     res = { value: value };
                     if (!isValidUSZip(value)) {
@@ -52051,83 +52056,85 @@ if (!Array.prototype.indexOf) {
                     }
                     return res;
                 };
-
-                setValues = function() {
-                    return Math.floor(Math.random()*90000) + 10000;
-                };
             }
 
-            // Lists.
+            setValues = function() {
+                return Math.floor(Math.random()*90000) + 10000;
+            };
+        }
 
-            else if (this.type === 'list' ||
-                     this.type === 'us_city_state_zip') {
+        // Lists.
 
-                if (opts.listSeparator) {
-                    if ('string' !== typeof opts.listSeparator) {
-                        throw new TypeError(e + 'listSeparator must be ' +
-                                            'string or undefined. Found: ' +
-                                            opts.listSeperator);
-                    }
-                    this.params.listSep = opts.listSeparator;
+        else if (this.type === 'list' ||
+                 this.type === 'us_city_state_zip') {
+
+            if (opts.listSeparator) {
+                if ('string' !== typeof opts.listSeparator) {
+                    throw new TypeError(e + 'listSeparator must be ' +
+                                        'string or undefined. Found: ' +
+                                        opts.listSeperator);
                 }
-                else {
-                    this.params.listSep = ',';
-                }
+                this.params.listSep = opts.listSeparator;
+            }
+            else {
+                this.params.listSep = ',';
+            }
 
-                if (this.type === 'us_city_state_zip') {
+            if (this.type === 'us_city_state_zip') {
 
-                    getUsStatesList('usStatesTerrByAbbr');
-                    this.params.minItems = this.params.maxItems = 3;
-                    this.params.fixedSize = true;
-                    this.params.itemValidation = function(item, idx) {
-                        if (idx === 2) {
-                            if (!usStatesTerrByAbbr[item.toUpperCase()]) {
-                                return { err: that.getText('usStateAbbrErr') };
-                            }
+                getUsStatesList('usStatesTerrByAbbr');
+                this.params.minItems = this.params.maxItems = 3;
+                this.params.fixedSize = true;
+                this.params.itemValidation = function(item, idx) {
+                    if (idx === 2) {
+                        if (!usStatesTerrByAbbr[item.toUpperCase()]) {
+                            return { err: that.getText('usStateAbbrErr') };
                         }
-                        else if (idx === 3) {
-                            if (!isValidUSZip(item)) {
-                                return { err: that.getText('usZipErr') };
-                            }
-                        }
-                    };
-
-                    this.placeholder = 'Town' + this.params.listSep +
-                        ' State' + this.params.listSep + ' ZIP';
-                }
-                else {
-                    if ('undefined' !== typeof opts.minItems) {
-                        tmp = J.isInt(opts.minItems, 0);
-                        if (tmp === false) {
-                            throw new TypeError(e + 'minItems must be ' +
-                                                'a positive integer. Found: ' +
-                                                opts.minItems);
-                        }
-                        this.params.minItems = tmp;
                     }
-                    else if (this.required) {
-                        this.params.minItems = 1;
-                    }
-                    if ('undefined' !== typeof opts.maxItems) {
-                        tmp = J.isInt(opts.maxItems, 0);
-                        if (tmp === false) {
-                            throw new TypeError(e + 'maxItems must be ' +
-                                                'a positive integer. Found: ' +
-                                                opts.maxItems);
+                    else if (idx === 3) {
+                        if (!isValidUSZip(item)) {
+                            return { err: that.getText('usZipErr') };
                         }
-                        if (this.params.minItems &&
-                            this.params.minItems > tmp) {
+                    }
+                };
 
-                            throw new TypeError(e + 'maxItems must be larger ' +
-                                                'than minItems. Found: ' +
-                                                tmp + ' < ' +
-                                                this.params.minItems);
-                        }
-                        this.params.maxItems = tmp;
+                this.placeholder = 'Town' + this.params.listSep +
+                    ' State' + this.params.listSep + ' ZIP';
+            }
+            else {
+                if ('undefined' !== typeof opts.minItems) {
+                    tmp = J.isInt(opts.minItems, 0);
+                    if (tmp === false) {
+                        throw new TypeError(e + 'minItems must be ' +
+                                            'a positive integer. Found: ' +
+                                            opts.minItems);
                     }
+                    this.params.minItems = tmp;
                 }
+                else if (this.required) {
+                    this.params.minItems = 1;
+                }
+                if ('undefined' !== typeof opts.maxItems) {
+                    tmp = J.isInt(opts.maxItems, 0);
+                    if (tmp === false) {
+                        throw new TypeError(e + 'maxItems must be ' +
+                                            'a positive integer. Found: ' +
+                                            opts.maxItems);
+                    }
+                    if (this.params.minItems &&
+                        this.params.minItems > tmp) {
 
-                tmp = function(value) {
+                        throw new TypeError(e + 'maxItems must be larger ' +
+                                            'than minItems. Found: ' +
+                                            tmp + ' < ' +
+                                            this.params.minItems);
+                    }
+                    this.params.maxItems = tmp;
+                }
+            }
+
+            if (!val) {
+                val = function(value) {
                     var i, len, v, iVal, err;
                     value = value.split(that.params.listSep);
                     len = value.length;
@@ -52179,42 +52186,41 @@ if (!Array.prototype.indexOf) {
                     }
                     return { value: value };
                 };
+            }
 
-                if (this.type === 'us_city_state_zip') {
-                    setValues = function() {
-                        var sep;
-                        sep = that.params.listSep + ' ';
-                        return J.randomString(8) + sep +
-                            J.randomKey(usStatesTerrByAbbr) + sep +
-                            (Math.floor(Math.random()*90000) + 10000);
-                    };
-                }
-                else {
-                    setValues = function(opts) {
-                        var p, minItems, nItems, i, str, sample;
-                        p = that.params;
-                        minItems = p.minItems || 0;
-                        if (opts.availableValues) {
-                            nItems = J.randomInt(minItems,
-                                                 opts.availableValues.length);
-                            nItems--;
-                            sample = J.sample(0, (nItems-1));
-                        }
-                        else {
-                            nItems = J.randomInt(minItems,
-                                                 p.maxItems || (minItems + 5));
-                            nItems--;
-                        }
-                        str = '';
-                        for (i = 0; i < nItems; i++) {
-                            if (i !== 0) str += p.listSep + ' ';
-                            if (sample) str += opts.availableValues[sample[i]];
-                            else str += J.randomString(J.randomInt(3,10));
-                        }
-                        return str;
-                    };
-                }
-
+            if (this.type === 'us_city_state_zip') {
+                setValues = function() {
+                    var sep;
+                    sep = that.params.listSep + ' ';
+                    return J.randomString(8) + sep +
+                        J.randomKey(usStatesTerrByAbbr) + sep +
+                        (Math.floor(Math.random()*90000) + 10000);
+                };
+            }
+            else {
+                setValues = function(opts) {
+                    var p, minItems, nItems, i, str, sample;
+                    p = that.params;
+                    minItems = p.minItems || 0;
+                    if (opts.availableValues) {
+                        nItems = J.randomInt(minItems,
+                                             opts.availableValues.length);
+                        nItems--;
+                        sample = J.sample(0, (nItems-1));
+                    }
+                    else {
+                        nItems = J.randomInt(minItems,
+                                             p.maxItems || (minItems + 5));
+                        nItems--;
+                    }
+                    str = '';
+                    for (i = 0; i < nItems; i++) {
+                        if (i !== 0) str += p.listSep + ' ';
+                        if (sample) str += opts.availableValues[sample[i]];
+                        else str += J.randomString(J.randomInt(3,10));
+                    }
+                    return str;
+                };
             }
 
             // US_Town,State, Zip Code
@@ -52231,8 +52237,8 @@ if (!Array.prototype.indexOf) {
             if (value.trim() === '') {
                 if (that.required) res.err = that.getText('emptyErr');
             }
-            else if (tmp) {
-                res = tmp.call(this, value);
+            else if (val) {
+                res = val.call(this, value);
             }
             if (that.userValidation) that.userValidation.call(this, res);
             return res;
