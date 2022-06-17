@@ -462,14 +462,6 @@ p {
     text-decoration: underline;
 }
 
-.waitingroom .treatment {
-    border-radius: 10px;
-    box-shadow: 1px 1px 4px;
-    font-weight: 200;
-    padding: 10px;
-    width: 20rem;
-}
-
 /** ChoiceTable **/
 /*****************/
 div.choicetable,
@@ -479,7 +471,7 @@ div.choicetable div.panel-heading {
   padding: 0;
 }
 
-.choicetable-maintext, .custominput-maintext, .feedback-maintext, .slider-maintext, .dropdown-maintext {
+.choicetable-maintext, .custominput-maintext, .feedback-maintext, .slider-maintext {
   margin: 20px 0 0 !important;
   padding: 0;
   display: block;
@@ -488,26 +480,11 @@ div.choicetable div.panel-heading {
   margin-bottom: 0px !important;
 
 }
-.choicetable-maintext .choicetable-hint,
-.choicetable-maintext .custominput-hint,
-.custominput-maintext .choicetable-hint,
-.custominput-maintext .custominput-hint,
-.feedback-maintext .choicetable-hint,
-.feedback-maintext .custominput-hint,
-.choicetable-maintext .feedback-hint,
-.custominput-maintext .feedback-hint,
-.feedback-maintext .feedback-hint,
-.custominputgroup-maintext .custominputgroup-hint,
-.slider-maintext .slider-hint,
-.contentbox-maintext .contentbox-hint,
-.dropdown-maintext .dropdown-hint
- {
+.choicetable-maintext .choicetable-hint, .choicetable-maintext .custominput-hint, .custominput-maintext .choicetable-hint, .custominput-maintext .custominput-hint, .feedback-maintext .choicetable-hint, .feedback-maintext .custominput-hint, .choicetable-maintext .feedback-hint, .custominput-maintext .feedback-hint, .feedback-maintext .feedback-hint, .custominputgroup-maintext .custominputgroup-hint, .slider-maintext .slider-hint, .contentbox-maintext .contentbox-hint {
   margin-left: 10px;
 }
 
-.choicetable-hint, .custominput-hint, .feedback-hint,
-.custominputgroup-hint, .slider-hint, .contentbox-hint,
-.dropdown-hint {
+.choicetable-hint, .custominput-hint, .feedback-hint, .custominputgroup-hint, .slider-hint, .contentbox-hint {
   font-color: gray;
   font-size: 14px;
   font-weight: normal;
@@ -630,8 +607,7 @@ table.choicetable td,
 
 .choicetable .errbox,
 .custominput .errbox,
-.custominputgroup .errbox,
-.dropdown .errbox {
+.custominputgroup .errbox {
   margin-left: 20px;
   font-size: 14px;
   margin-top: 5px;
@@ -1077,21 +1053,4 @@ div.riskgauge .risk-info span {
 
 .slider-display-nochange {
     float: right;
-}
-
-/* Dropdown */
-
-div.dropdown,
-div.dropdown div.panel-body,
-div.dropdown div.panel-heading {
-  border: 0;
-  padding: 0;
-}
-
-div.dropdown select,
-div.dropdown datalist {
-    margin-left: 20px;
-    margin-top: 20px;
-    padding: 5px;
-    border-radius: 5px;
 }

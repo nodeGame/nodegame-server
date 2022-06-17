@@ -20842,14 +20842,14 @@ if (!Array.prototype.indexOf) {
         var outEvent;
 
         if (!msg.from || msg.from === this.node.UNDEFINED_PLAYER) {
-            this.node.err('Socket.send: cannot send message. ' +
-                          'Player undefined. Message discarded.');
+            this.node.err('Socket.send: sender id not initialized, ' +
+                          'message not sent');
             return false;
         }
 
         if (!this.isConnected()) {
-            this.node.err('Socket.send: cannot send message. ' +
-                          'No open socket. Message discarded.');
+            this.node.err('Socket.send: no open socket, ' +
+                          'message not sent');
 
             // TODO: test this
             // this.outBuffer.push(msg);
@@ -28956,10 +28956,10 @@ if (!Array.prototype.indexOf) {
      */
     function checkInitialized(that) {
         if ('number' !== typeof that.milliseconds) {
-            return 'this.milliseconds must be a number';
+            return 'milliseconds must be a number. Found ' + that.milliseconds;
         }
         if (that.update > that.milliseconds) {
-            return 'this.update must not be greater than this.milliseconds';
+            return 'update cannot be larger than milliseconds';
         }
         return null;
     }
@@ -49645,16 +49645,21 @@ if (!Array.prototype.indexOf) {
             opts.freeText : !!opts.freeText;
 
         if (opts.header) {
-            if (!J.isArray(opts.header) ||
-                opts.header.length !== opts.choices.length) {
+            tmp = opts.header;
+            // One td will colspan all choices.
+            if ('string' === typeof tmp) {
+                tmp = [ tmp ];
+            }
+            else if (!J.isArray(tmp) ||
+                    (tmp.length !== 1 && tmp.length !== opts.choices.length)) {
 
                 throw new Error('ChoiceTableGroup.init: header ' +
-                                'must be an array of length ' +
+                                'must be string, array (size ' +
                                 opts.choices.length +
-                                ' or undefined. Found: ' + opts.header);
+                                '), or undefined. Found: ' + tmp);
             }
 
-            this.header = opts.header;
+            this.header = tmp;
         }
 
 
@@ -49710,7 +49715,7 @@ if (!Array.prototype.indexOf) {
      * @see ChoiceTableGroup.order
      */
     ChoiceTableGroup.prototype.buildTable = function() {
-        var i, len, tr, H, ct;
+        var i, len, td, tr, H, ct;
         var j, lenJ, lenJOld, hasRight, cell;
 
         H = this.orientation === 'H';
@@ -49723,11 +49728,13 @@ if (!Array.prototype.indexOf) {
                     className: 'header'
                 });
                 for ( ; ++i < this.header.length ; ) {
-                    W.add('td', tr, {
+                    td = W.add('td', tr, {
                         innerHTML: this.header[i],
                         className: 'header'
                     });
                 }
+                // Only one element, header spans throughout.
+                if (i === 1) td.setAttribute('colspan', this.choices.length);
                 i = -1;
             }
 
@@ -55202,10 +55209,11 @@ if (!Array.prototype.indexOf) {
 
     // Meta-data.
 
-    Dropdown.version = '0.3.0';
+    Dropdown.version = '0.4.0';
     Dropdown.description = 'Creates a configurable dropdown menu.';
 
     Dropdown.texts = {
+
         // Texts here (more info on this later).
         error: function (w, value) {
             if (value !== null && w.fixedChoice &&
@@ -55245,6 +55253,13 @@ if (!Array.prototype.indexOf) {
          * Main text above the dropdown
          */
         this.mainText = null;
+
+        /**
+         * ### Dropdown.hint
+         *
+         * An additional text with information in lighter font
+         */
+        this.hint = null;
 
         /**
          * ### Dropdown.labelText
@@ -55462,154 +55477,176 @@ if (!Array.prototype.indexOf) {
     }
 
 
-    Dropdown.prototype.init = function (options) {
+    Dropdown.prototype.init = function (opts) {
         // Init widget variables, but do not create
         // HTML elements, they should be created in append.
 
         var tmp;
 
         if (!this.id) {
-            throw new TypeError('Dropdown.init: options.id is missing');
+            throw new TypeError('Dropdown.init: id is missing');
         }
 
-        if ('string' === typeof options.mainText) {
-            this.mainText = options.mainText;
+        if ('string' === typeof opts.mainText) {
+            this.mainText = opts.mainText;
         }
-        else if ('undefined' !== typeof options.mainText) {
-            throw new TypeError('Dropdown.init: options.mainText must ' +
+        else if ('undefined' !== typeof opts.mainText) {
+            throw new TypeError('Dropdown.init: mainText must ' +
                 'be string or undefined. Found: ' +
-                options.mainText);
+                opts.mainText);
         }
 
         // Set the labelText, if any.
-        if ('string' === typeof options.labelText) {
-            this.labelText = options.labelText;
+        if ('string' === typeof opts.labelText) {
+            this.labelText = opts.labelText;
         }
-        else if ('undefined' !== typeof options.labelText) {
-            throw new TypeError('Dropdown.init: options.labelText must ' +
+        else if ('undefined' !== typeof opts.labelText) {
+            throw new TypeError('Dropdown.init: labelText must ' +
                 'be string or undefined. Found: ' +
-                options.labelText);
+                opts.labelText);
         }
 
         // Set the placeholder text, if any.
-        if ('string' === typeof options.placeholder) {
-            this.placeholder = options.placeholder;
+        if ('string' === typeof opts.placeholder) {
+            this.placeholder = opts.placeholder;
         }
-        else if ('undefined' !== typeof options.placeholder) {
-            throw new TypeError('Dropdown.init: options.placeholder must ' +
+        else if ('undefined' !== typeof opts.placeholder) {
+            throw new TypeError('Dropdown.init: placeholder must ' +
                 'be string or undefined. Found: ' +
-                options.placeholder);
+                opts.placeholder);
         }
 
         // Add the choices.
-        if ('undefined' !== typeof options.choices) {
-            this.choices = options.choices;
+        if ('undefined' !== typeof opts.choices) {
+            this.choices = opts.choices;
         }
 
         // Option requiredChoice, if any.
-        if ('boolean' === typeof options.requiredChoice) {
-            this.requiredChoice = options.requiredChoice;
+        if ('boolean' === typeof opts.requiredChoice) {
+            this.requiredChoice = opts.requiredChoice;
         }
-        else if ('undefined' !== typeof options.requiredChoice) {
-            throw new TypeError('Dropdown.init: options.requiredChoice ' +
+        else if ('undefined' !== typeof opts.requiredChoice) {
+            throw new TypeError('Dropdown.init: requiredChoice ' +
                 'be boolean or undefined. Found: ' +
-                options.requiredChoice);
+                opts.requiredChoice);
         }
 
         // Add the correct choices.
-        if ('undefined' !== typeof options.correctChoice) {
+        if ('undefined' !== typeof opts.correctChoice) {
             if (this.requiredChoice) {
                 throw new Error('Dropdown.init: cannot specify both ' +
-                    'options requiredChoice and correctChoice');
+                    'opts requiredChoice and correctChoice');
             }
-            if (J.isArray(options.correctChoice) &&
-                options.correctChoice.length > options.choices.length) {
-                throw new Error('Dropdown.init: options.correctChoice ' +
-                    'length cannot exceed options.choices length');
+            if (J.isArray(opts.correctChoice) &&
+                opts.correctChoice.length > opts.choices.length) {
+                throw new Error('Dropdown.init: correctChoice ' +
+                    'length cannot exceed opts.choices length');
             }
             else {
-                this.correctChoice = options.correctChoice;
+                this.correctChoice = opts.correctChoice;
             }
 
         }
 
         // Option fixedChoice, if any.
-        if ('boolean' === typeof options.fixedChoice) {
-            this.fixedChoice = options.fixedChoice;
+        if ('boolean' === typeof opts.fixedChoice) {
+            this.fixedChoice = opts.fixedChoice;
         }
-        else if ('undefined' !== typeof options.fixedChoice) {
-            throw new TypeError('Dropdown.init: options.fixedChoice ' +
+        else if ('undefined' !== typeof opts.fixedChoice) {
+            throw new TypeError('Dropdown.init: fixedChoice ' +
                 'be boolean or undefined. Found: ' +
-                options.fixedChoice);
+                opts.fixedChoice);
         }
 
-        if ("undefined" === typeof options.tag) {
+        if ("undefined" === typeof opts.tag) {
             this.tag = "datalist";
         }
-        else if ("datalist" === options.tag || "select" === options.tag) {
-            this.tag = options.tag;
+        else if ("datalist" === opts.tag || "select" === opts.tag) {
+            this.tag = opts.tag;
         }
         else {
-            throw new TypeError('Dropdown.init: options.tag must ' +
-                'be "datalist", "select" or undefined. Found: ' + options.tag);
+            throw new TypeError('Dropdown.init: tag must ' +
+                'be "datalist", "select" or undefined. Found: ' + opts.tag);
         }
 
         // Set the main onchange listener, if any.
-        if ('function' === typeof options.listener) {
+        if ('function' === typeof opts.listener) {
             this.listener = function (e) {
-                options.listener.call(this, e);
+                opts.listener.call(this, e);
             };
         }
-        else if ('undefined' !== typeof options.listener) {
-            throw new TypeError('Dropdown.init: opts.listener must ' +
+        else if ('undefined' !== typeof opts.listener) {
+            throw new TypeError('Dropdown.init: listener must ' +
                 'be function or undefined. Found: ' +
-                options.listener);
+                opts.listener);
         }
 
         // Set an additional onchange, if any.
-        if ('function' === typeof options.onchange) {
-            this.onchange = options.onchange;
+        if ('function' === typeof opts.onchange) {
+            this.onchange = opts.onchange;
         }
-        else if ('undefined' !== typeof options.onchange) {
-            throw new TypeError('Dropdownn.init: opts.onchange must ' +
+        else if ('undefined' !== typeof opts.onchange) {
+            throw new TypeError('Dropdownn.init: onchange must ' +
                 'be function or undefined. Found: ' +
-                options.onchange);
+                opts.onchange);
         }
 
         // Set an additional validation, if any.
-        if ('function' === typeof options.validation) {
-            this.validation = options.validation;
+        if ('function' === typeof opts.validation) {
+            this.validation = opts.validation;
         }
-        else if ('undefined' !== typeof options.validation) {
-            throw new TypeError('Dropdownn.init: opts.validation must ' +
+        else if ('undefined' !== typeof opts.validation) {
+            throw new TypeError('Dropdownn.init: validation must ' +
                 'be function or undefined. Found: ' +
-                options.validation);
+                opts.validation);
         }
 
 
         // Option shuffleChoices, default false.
-        if ('undefined' === typeof options.shuffleChoices) tmp = false;
-        else tmp = !!options.shuffleChoices;
+        if ('undefined' === typeof opts.shuffleChoices) tmp = false;
+        else tmp = !!opts.shuffleChoices;
         this.shuffleChoices = tmp;
 
-        if (options.width) {
-            if ('string' !== typeof options.width) {
+        if (opts.width) {
+            if ('string' !== typeof opts.width) {
                 throw new TypeError('Dropdownn.init:width must be string or ' +
-                    'undefined. Found: ' + options.width);
+                    'undefined. Found: ' + opts.width);
             }
-            this.inputWidth = options.width;
+            this.inputWidth = opts.width;
         }
 
         // Validation Speed
-        if ('undefined' !== typeof options.validationSpeed) {
+        if ('undefined' !== typeof opts.validationSpeed) {
 
-            tmp = J.isInt(options.valiadtionSpeed, 0, undefined, true);
+            tmp = J.isInt(opts.valiadtionSpeed, 0, undefined, true);
             if (tmp === false) {
                 throw new TypeError('Dropdownn.init: validationSpeed must ' +
                     ' a non-negative number or undefined. Found: ' +
-                    options.validationSpeed);
+                    opts.validationSpeed);
             }
             this.validationSpeed = tmp;
+        }
+
+        // Hint (must be done after requiredChoice)
+        tmp = opts.hint;
+        if ('function' === typeof tmp) {
+            tmp = tmp.call(this);
+            if ('string' !== typeof tmp && false !== tmp) {
+                throw new TypeError('Dropdown.init: hint cb must ' +
+                                    'return string or false. Found: ' +
+                                    tmp);
+            }
+        }
+        if ('string' === typeof tmp || false === tmp) {
+            this.hint = tmp;
+        }
+        else if ('undefined' !== typeof tmp) {
+            throw new TypeError('Dropdown.init: hint must ' +
+                                'be a string, false, or undefined. Found: ' +
+                                tmp);
+        }
+        if (this.requiredChoice && tmp !== false) {
+            this.hint = tmp ? this.hint + ' *' : ' *';
         }
 
     }
@@ -55619,22 +55656,33 @@ if (!Array.prototype.indexOf) {
         if (W.gid(this.id)) {
             throw new Error('Dropdown.append: id is not unique: ' + this.id);
         }
-        var text = this.text;
-        var label = this.label;
+        var mt;
 
-        text = W.get('p');
-        text.innerHTML = this.mainText;
-        text.id = 'p';
-        this.bodyDiv.appendChild(text);
+        if (this.mainText) {
+            mt = W.append('span', this.bodyDiv, {
+                className: 'dropdown-maintext',
+                innerHTML: this.mainText
+            });
+        }
 
-        label = W.get('label');
-        label.innerHTML = this.labelText
-        this.bodyDiv.appendChild(label);
+        // Hint.
+        if (this.hint) {
+            W.append('span', mt || this.bodyDiv, {
+                className: 'dropdown-hint',
+                innerHTML: this.hint
+            });
+        }
+
+        if (this.labelText) {
+            W.append('label', this.bodyDiv, {
+                innerHTML: this.labelText
+            });
+        }
 
         this.setChoices(this.choices, true);
 
         this.errorBox = W.append('div', this.bodyDiv, {
-            className: 'errbox', id: 'errbox'
+            className: 'errbox'
         });
     };
 
@@ -55757,7 +55805,7 @@ if (!Array.prototype.indexOf) {
 
 
         if (this.tag === "select" && this.numberOfChanges === 0) {
-            current = this.currentChoice = this.menu.value;
+            current = this.currentChoice = this.menu.value || null;
         }
 
         if (this.requiredChoice) {
@@ -57275,12 +57323,11 @@ if (!Array.prototype.indexOf) {
             }
         }
 
-        // TODO: check this.
-        // if (this.minWords || this.minChars || this.maxWords ||
-        //     this.maxChars) {
-        //
-        //     this.required = true;
-        // }
+        if (this.minWords || this.minChars || this.maxWords ||
+            this.maxChars) {
+
+            this.required = true;
+        }
 
         /**
          * ### Feedback.rows
@@ -63223,21 +63270,21 @@ if (!Array.prototype.indexOf) {
      * - waitBoxOptions: an option object to be passed to `TimerBox`
      * - mainBoxOptions: an option object to be passed to `TimerBox`
      *
-     * @param {object} options Optional. Configuration options
+     * @param {object} opts Optional. Configuration options
      *
      * @see TimerBox
      * @see GameTimer
      */
-    VisualTimer.prototype.init = function(options) {
+    VisualTimer.prototype.init = function(opts) {
         var gameTimerOptions;
 
         // We keep the check for object, because this widget is often
         // called by users and the restart methods does not guarantee
         // an object.
-        options = options || {};
-        if ('object' !== typeof options) {
-            throw new TypeError('VisualTimer.init: options must be ' +
-                                'object or undefined. Found: ' + options);
+        opts = opts || {};
+        if ('object' !== typeof opts) {
+            throw new TypeError('VisualTimer.init: opts must be ' +
+                                'object or undefined. Found: ' + opts);
         }
 
         // Important! Do not modify directly options, because it might
@@ -63246,36 +63293,36 @@ if (!Array.prototype.indexOf) {
 
         // If gameTimer is not already set, check options, then
         // try to use node.game.timer, if defined, otherwise crete a new timer.
-        if ('undefined' !== typeof options.gameTimer) {
+        if ('undefined' !== typeof opts.gameTimer) {
 
             if (this.gameTimer) {
-                throw new Error('GameTimer.init: options.gameTimer cannot ' +
+                throw new Error('GameTimer.init: opts.gameTimer cannot ' +
                                 'be set if a gameTimer is already existing: ' +
                                 this.name);
             }
-            if ('object' !== typeof options.gameTimer) {
-                throw new TypeError('VisualTimer.init: options.' +
+            if ('object' !== typeof opts.gameTimer) {
+                throw new TypeError('VisualTimer.init: opts.' +
                                     'gameTimer must be object or ' +
-                                    'undefined. Found: ' + options.gameTimer);
+                                    'undefined. Found: ' + opts.gameTimer);
             }
-            this.gameTimer = options.gameTimer;
+            this.gameTimer = opts.gameTimer;
         }
         else {
             if (!this.isInitialized) {
                 this.internalTimer = true;
                 this.gameTimer = node.timer.createTimer({
-                    name: options.name || 'VisualTimer_' + J.randomInt(10000000)
+                    name: opts.name || 'VisualTimer_' + J.randomInt(10000000)
                 });
             }
         }
 
-        if (options.hooks) {
+        if (opts.hooks) {
             if (!this.internalTimer) {
                 throw new Error('VisualTimer.init: cannot add hooks on ' +
                                 'external gameTimer.');
             }
-            if (!J.isArray(options.hooks)) {
-                gameTimerOptions.hooks = [ options.hooks ];
+            if (!J.isArray(opts.hooks)) {
+                gameTimerOptions.hooks = [ opts.hooks ];
             }
         }
         else {
@@ -63294,23 +63341,23 @@ if (!Array.prototype.indexOf) {
         // Important! Manual clone must be done after hooks and gameTimer.
 
         // Parse milliseconds option.
-        if ('undefined' !== typeof options.milliseconds) {
+        if ('undefined' !== typeof opts.milliseconds) {
             gameTimerOptions.milliseconds =
-                node.timer.parseInput('milliseconds', options.milliseconds);
+                node.timer.parseInput('milliseconds', opts.milliseconds);
         }
 
         // Parse update option.
-        if ('undefined' !== typeof options.update) {
+        if ('undefined' !== typeof opts.update) {
             gameTimerOptions.update =
-                node.timer.parseInput('update', options.update);
+                node.timer.parseInput('update', opts.update);
         }
         else {
             gameTimerOptions.update = 1000;
         }
 
         // Parse timeup option.
-        if ('undefined' !== typeof options.timeup) {
-            gameTimerOptions.timeup = options.timeup;
+        if ('undefined' !== typeof opts.timeup) {
+            gameTimerOptions.timeup = opts.timeup;
         }
 
         // Init the gameTimer, regardless of the source (internal vs external).
@@ -63339,10 +63386,17 @@ if (!Array.prototype.indexOf) {
         this.options = gameTimerOptions;
 
         // Must be after this.options is assigned.
-        if ('undefined' === typeof this.options.stopOnDone) {
+        if ('undefined' === typeof opts.stopOnDone) {
+            this.options.stopOnDone = !!opts.stopOnDone;
+        }
+        else if ('undefined' === typeof this.options.stopOnDone) {
             this.options.stopOnDone = true;
         }
-        if ('undefined' === typeof this.options.startOnPlaying) {
+
+        if ('undefined' === typeof opts.startOnPlaying) {
+            this.options.startOnPlaying = !!opts.startOnPlaying;
+        }
+        else if ('undefined' === typeof this.options.startOnPlaying) {
             this.options.startOnPlaying = true;
         }
 
@@ -63354,7 +63408,7 @@ if (!Array.prototype.indexOf) {
         }
 
         J.mixout(this.options.mainBoxOptions,
-                {classNameBody: options.className, hideTitle: true});
+                {classNameBody: opts.className, hideTitle: true});
         J.mixout(this.options.waitBoxOptions,
                 {title: 'Max. wait timer',
                 classNameTitle: 'waitTimerTitle',
@@ -64520,30 +64574,43 @@ if (!Array.prototype.indexOf) {
                     flexBox.style['margin'] = '50px 100px 30px 150px';
                     flexBox.style['text-align'] = 'center';
 
-                    var li, a, t, liT1, liT2, liT3, display, counter;
+                    // border: 1px solid #CCC;
+                    //     border-radius: 10px;
+                    //     box-shadow: 2px 2px 10px;
+                    //     FONT-WEIGHT: 200;
+                    //     padding: 10px;
+
+                    var div, a, t, T, divT1, divT2, divT3, display, counter;
                     counter = 0;
                     if (conf.availableTreatments) {
                         for (t in conf.availableTreatments) {
                             if (conf.availableTreatments.hasOwnProperty(t)) {
-                                li = document.createElement('div');
-                                li.style.flex = '200px';
-                                li.style['margin-top'] = '10px';
-                                // li.style.display = 'flex';
-                                a = document.createElement('a');
-                                a.className =
-                                'btn-default btn-large round btn-icon';
-                                a.href = '#';
+                                div = document.createElement('div');
+                                div.style.flex = '200px';
+                                div.style['margin-top'] = '10px';
+                                div.className = 'treatment';
+                                // div.style.display = 'flex';
+                                a = document.createElement('span');
+                                // a.className =
+                                // 'btn btn-default btn-large round btn-icon';
+                                // a.href = '#';
                                 if (w.treatmentDisplayCb) {
                                     display = w.treatmentDisplayCb(t,
                                     conf.availableTreatments[t], ++counter, w);
                                 }
                                 else {
-                                    display = '<strong>' + t + '</strong>: ' +
-                                        conf.availableTreatments[t];
+                                    T = t;
+                                    if (t.length > 16) {
+                                        T = '<span title="' + t + '">' +
+                                        t.substr(0,13) + '...</span>';
+                                    }
+                                    display = '<strong>' + T + '</strong><br>' +
+                                        '<span style="font-size: smaller">' +
+                                        conf.availableTreatments[t] + '</span>';
                                 }
                                 a.innerHTML = display;
                                 a.id = t;
-                                li.appendChild(a);
+                                div.appendChild(a);
 
                                 a.onclick = function() {
                                     var t;
@@ -64555,23 +64622,23 @@ if (!Array.prototype.indexOf) {
                                     w.selectedTreatment);
                                 };
 
-                                if (t === 'treatment_latin_square') liT3 = li;
-                                else if (t === 'treatment_rotate') liT1 = li;
-                                else if (t === 'treatment_random') liT2 = li;
-                                else flexBox.appendChild(li);
+                                if (t === 'treatment_latin_square') divT3 = div;
+                                else if (t === 'treatment_rotate') divT1 = div;
+                                else if (t === 'treatment_random') divT2 = div;
+                                else flexBox.appendChild(div);
 
                             }
                         }
-                        li = document.createElement('div');
-                        li.style.flex = '200px';
-                        li.style['margin-top'] = '10px';
+                        div = document.createElement('div');
+                        div.style.flex = '200px';
+                        div.style['margin-top'] = '10px';
                         // Hack to fit nicely the treatments.
-                        flexBox.appendChild(li);
+                        flexBox.appendChild(div);
 
                         if (w.addDefaultTreatments !== false) {
-                            flexBox.appendChild(liT1);
-                            flexBox.appendChild(liT2);
-                            flexBox.appendChild(liT3);
+                            flexBox.appendChild(divT1);
+                            flexBox.appendChild(divT2);
+                            flexBox.appendChild(divT3);
                         }
                     }
 
