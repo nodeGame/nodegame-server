@@ -468,7 +468,15 @@ p {
     font-weight: 200;
     padding: 10px;
     width: 20rem;
+    transition: 0.2s;
 }
+
+.waitingroom .treatment:hover {
+    background: aliceblue;
+    box-shadow: 2px 2px 8px;
+    cursor: pointer;
+}
+
 
 /** ChoiceTable **/
 /*****************/
