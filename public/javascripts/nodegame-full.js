@@ -25695,15 +25695,19 @@ if (!Array.prototype.indexOf) {
     /**
      * ### Game.getCurrentGameStage
      *
-     * Return the GameStage that is currently being executed.
+     * Returns the GameStage that is currently being executed.
      *
-     * The return value is a reference to node.player.stage.
+     * @param {boolean} clone If TRUE, the GameStage is cloned, otherwise a
+     *   reference is returned.
      *
      * @return {GameStage} The stage currently played.
+     *
      * @see node.player.stage
      */
-    Game.prototype.getCurrentGameStage = function() {
-        return this.node.player.stage;
+    Game.prototype.getCurrentGameStage = function(clone) {
+        var s = this.node.player.stage;
+        return clone ?
+            new GameStage({ stage: s.stage, step: s.step, round: s.round }) : s;
     };
 
     /**
@@ -41695,43 +41699,44 @@ if (!Array.prototype.indexOf) {
      * @see Widgets.instances
      */
     Widgets.prototype.get = function(widgetName, opts) {
-        var WidgetPrototype, widget, changes, tmp;
+        var WidgetProto, widget, changes, tmp, err;
+
+        err = 'Widgets.get';
 
         if ('string' !== typeof widgetName) {
-            throw new TypeError('Widgets.get: widgetName must be string.' +
+            throw new TypeError(err + ': widgetName must be string.' +
                                'Found: ' + widgetName);
         }
-        if (!opts) opts = {};
 
-        else if ('object' !== typeof opts) {
-            throw new TypeError('Widgets.get: ' + widgetName + ' opts ' +
-                                'must be object or undefined. Found: ' +
-                                opts);
+        err += widgetName + ': ';
+
+        if (!opts) {
+            opts = {};
         }
+        else if ('object' !== typeof opts) {
+            throw new TypeError(err + ' opts must be object or undefined. ' +
+                                'Found: ' + opts);
+        }
+
+        WidgetProto = J.getNestedValue(widgetName, this.widgets);
+
+        if (!WidgetProto) throw new Error(err + ' not found');
+
+        node.info('creating widget ' + widgetName  + ' v.' +
+                  WidgetProto.version);
+
         if (opts.storeRef === false) {
-            if (opts.docked === true) {
-                throw new TypeError('Widgets.get: ' + widgetName +
-                                    'opts.storeRef cannot be false ' +
-                                    'if opts.docked is true.');
+            if (opts.docked === true || WidgetProto.docked) {
+                node.warn(err + ' storeRef=false ignored, widget is docked');
             }
         }
 
-        WidgetPrototype = J.getNestedValue(widgetName, this.widgets);
-
-        if (!WidgetPrototype) {
-            throw new Error('Widgets.get: ' + widgetName + ' not found');
-        }
-
-        node.info('creating widget ' + widgetName  +
-                  ' v.' +  WidgetPrototype.version);
-
-        if (!this.checkDependencies(WidgetPrototype)) {
-            throw new Error('Widgets.get: ' + widgetName + ' has unmet ' +
-                            'dependencies');
+        if (!this.checkDependencies(WidgetProto)) {
+            throw new Error(err + ' has unmet dependencies');
         }
 
         // Create widget.
-        widget = new WidgetPrototype(opts);
+        widget = new WidgetProto(opts);
 
         // Set ID.
         tmp = opts.id;
@@ -41770,17 +41775,17 @@ if (!Array.prototype.indexOf) {
         if ('undefined' !== typeof opts.title) {
             widget.title = opts.title;
         }
-        else if ('undefined' !== typeof WidgetPrototype.title) {
-            widget.title = WidgetPrototype.title;
+        else if ('undefined' !== typeof WidgetProto.title) {
+            widget.title = WidgetProto.title;
         }
         else {
             widget.title = '&nbsp;';
         }
         widget.panel = 'undefined' === typeof opts.panel ?
-            WidgetPrototype.panel : opts.panel;
+            WidgetProto.panel : opts.panel;
         widget.footer = 'undefined' === typeof opts.footer ?
-            WidgetPrototype.footer : opts.footer;
-        widget.className = WidgetPrototype.className;
+            WidgetProto.footer : opts.footer;
+        widget.className = WidgetProto.className;
         if (J.isArray(opts.className)) {
             widget.className += ' ' + opts.className.join(' ');
         }
@@ -41793,11 +41798,15 @@ if (!Array.prototype.indexOf) {
                                 opts.className);
         }
         widget.context = 'undefined' === typeof opts.context ?
-            WidgetPrototype.context : opts.context;
+            WidgetProto.context : opts.context;
         widget.sounds = 'undefined' === typeof opts.sounds ?
-            WidgetPrototype.sounds : opts.sounds;
+            WidgetProto.sounds : opts.sounds;
         widget.texts = 'undefined' === typeof opts.texts ?
-            WidgetPrototype.texts : opts.texts;
+            WidgetProto.texts : opts.texts;
+
+        widget.docked = 'undefined' === typeof opts.docked ?
+            WidgetProto.docked : opts.docked;
+
         widget.collapsible = opts.collapsible || false;
         widget.closable = opts.closable || false;
         widget.collapseTarget =
@@ -41845,16 +41854,18 @@ if (!Array.prototype.indexOf) {
         widget.highlighted = null;
         widget.collapsed = null;
         widget.hidden = null;
-        widget.docked = null;
 
         // Properties that will modify the UI of the widget once appended.
+
+        // Option already checked.
+        if (widget.docked) widget._docked = true;
 
         if (opts.bootstrap5) widget._bootstrap5 = true;
         if (opts.disabled) widget._disabled = true;
         if (opts.highlighted) widget._highlighted = true;
         if (opts.collapsed) widget._collapsed = true;
         if (opts.hidden) widget._hidden = true;
-        if (opts.docked) widget._docked = true;
+
 
         // Call init.
         widget.init(opts);
@@ -56125,7 +56136,7 @@ if (!Array.prototype.indexOf) {
 
     function getIdxOfChoice(that, choice) {
         var i, len, c;
-        len = this.choices.length;
+        len = that.choices.length;
         for (i = 0; i < len; i++) {
             c = that.choices[i];
             // c can be string, object, or array.
@@ -58001,6 +58012,113 @@ if (!Array.prototype.indexOf) {
         out = this.textareaElement ?
             this.textareaElement.value : this._feedback;
         return out ? out.trim() : out;
+    }
+
+})(node);
+
+/**
+ * # Goto
+ * Copyright(c) 2022 Stefano Balietti <ste@nodegame.org>
+ * MIT Licensed
+ *
+ * Creates a simple interface to go to a step in the sequence.
+ *
+ * www.nodegame.org
+ */
+ (function(node) {
+
+    "use strict";
+
+    node.widgets.register('Goto', Goto);
+
+    // ## Meta-data
+
+    Goto.version = '0.0.2';
+    Goto.description = 'Creates a simple interface to move across ' +
+                       'steps in the sequence.';
+
+    Goto.title = false;
+    Goto.panel = false;
+    Goto.className = 'goto';
+
+    /**
+     * ## Goto constructor
+     *
+     * Creates a new instance of Goto
+     *
+     * @param {object} options Optional. Configuration options.
+     *
+     * @see Goto.init
+     */
+    function Goto() {
+        /**
+         * ### Goto.dropdown
+         *
+         * A callback executed after the button is clicked
+         *
+         * If it return FALSE, node.done() is not called.
+         */
+        this.dropdown;
+    }
+
+    Goto.prototype.append = function() {
+        this.dropdown = node.widgets.append('Dropdown', this.bodyDiv, {
+            tag: 'select',
+            choices: getSequence(),
+            id: 'ng_goto',
+            placeholder: 'Go to Step',
+            width: '15rem',
+            onchange: function(choice, datalist, that) {
+                node.game.gotoStep(choice);
+            }
+        });
+    };
+
+    /**
+     * ### Goto.disable
+     *
+     * Disables the widget
+     */
+    Goto.prototype.disable = function(opts) {
+        if (this.disabled) return;
+        this.disabled = true;
+        this.dropdown.enable();
+        this.emit('disabled', opts);
+    };
+
+    /**
+     * ### Goto.enable
+     *
+     * Enables the widget
+     */
+    Goto.prototype.enable = function(opts) {
+        if (!this.disabled) return;
+        this.disabled = false;
+        this.dropdown.disable();
+        this.emit('enabled', opts);
+    };
+
+
+    // ## Helper functions.
+
+    function getSequence(seq) {
+        var i, j, out, value, vvalue, name, ss;
+        out = [];
+        seq = seq || node.game.plot.stager.sequence;
+        for ( i = 0 ; i < seq.length ; i++) {
+            value = (i+1);
+            name = seq[i].id;
+            for ( j = 0 ; j < seq[i].steps.length ; j++) {
+                ss = seq[i].steps.length === 1;
+                vvalue = ss ? value : value + '.' + (j+1);
+                out.push({
+                    value: vvalue,
+                    name: vvalue + ' ' +
+                         (ss ? name : name + '.' + seq[i].steps[j])
+                });
+            }
+        }
+        return out;
     }
 
 })(node);
@@ -64586,6 +64704,7 @@ if (!Array.prototype.indexOf) {
                         for (t in conf.availableTreatments) {
                             if (conf.availableTreatments.hasOwnProperty(t)) {
                                 div = document.createElement('div');
+                                div.id = t;
                                 div.style.flex = '200px';
                                 div.style['margin-top'] = '10px';
                                 div.className = 'treatment';
@@ -64609,10 +64728,10 @@ if (!Array.prototype.indexOf) {
                                         conf.availableTreatments[t] + '</span>';
                                 }
                                 a.innerHTML = display;
-                                a.id = t;
+
                                 div.appendChild(a);
 
-                                a.onclick = function() {
+                                div.onclick = function() {
                                     var t;
                                     t = this.id;
                                     // Clicked on description?

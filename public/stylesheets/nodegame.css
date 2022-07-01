@@ -1102,3 +1102,15 @@ div.dropdown datalist {
     padding: 5px;
     border-radius: 5px;
 }
+
+/* Goto */
+
+.goto {
+    padding: 0 !important;
+    font-size: 12px;
+}
+
+.goto select {
+    margin-left: 0 !important;
+    margin-top: 0 !important;
+}
