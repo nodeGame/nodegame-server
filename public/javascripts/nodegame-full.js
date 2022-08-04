@@ -63397,14 +63397,14 @@ if (!Array.prototype.indexOf) {
         this.options = gameTimerOptions;
 
         // Must be after this.options is assigned.
-        if ('undefined' === typeof opts.stopOnDone) {
+        if ('undefined' !== typeof opts.stopOnDone) {
             this.options.stopOnDone = !!opts.stopOnDone;
         }
         else if ('undefined' === typeof this.options.stopOnDone) {
             this.options.stopOnDone = true;
         }
 
-        if ('undefined' === typeof opts.startOnPlaying) {
+        if ('undefined' !== typeof opts.startOnPlaying) {
             this.options.startOnPlaying = !!opts.startOnPlaying;
         }
         else if ('undefined' === typeof this.options.startOnPlaying) {
