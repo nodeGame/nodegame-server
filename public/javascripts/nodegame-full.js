@@ -50450,6 +50450,17 @@ if (!Array.prototype.indexOf) {
          * Default: TRUE
          */
         this.showPrint = null;
+
+        /**
+         * ## Consent.disconnect
+         *
+         * If TRUE, client is disconnected upon reject
+         *
+         * Default: TRUE
+         */
+        this.disconnect = null;
+
+
     }
 
     // ## Consent methods.
@@ -50472,6 +50483,8 @@ if (!Array.prototype.indexOf) {
         }
 
         this.showPrint = opts.showPrint === false ? false : true;
+
+        this.disconnect = opts.disconnect === false ? false : true;
     };
 
     Consent.prototype.enable = function() {
@@ -50590,7 +50603,9 @@ if (!Array.prototype.indexOf) {
                 a.onclick = null;
                 na.onclick = null;
 
-                node.socket.disconnect();
+                // Disconnect, if requested.
+                if (that.disconnect) node.socket.disconnect();
+
                 W.hide('consent');
                 W.show('notAgreed');
 
