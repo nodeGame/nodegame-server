@@ -6036,7 +6036,7 @@ if (!Array.prototype.indexOf) {
 
         // ### __update.indexes
         // If TRUE, rebuild indexes on every insert and remove
-        this.__update.indexes = true;
+        this.__update.indexes = false;
 
         // ### __update.sort
         // If TRUE, sort db on every insert and remove
@@ -64606,6 +64606,12 @@ if (!Array.prototype.indexOf) {
                     //     FONT-WEIGHT: 200;
                     //     padding: 10px;
 
+                    // --- CAN - SOC waitroom modification --- //
+
+                    flexBox.className = 'waitroom-listContainer';
+
+                    // -------------- //
+
                     var div, a, t, T, display, counter;
                     var divT1, divT2, divT3, divT4;
                     counter = 0;
@@ -64618,6 +64624,13 @@ if (!Array.prototype.indexOf) {
                                 div.style['margin-top'] = '10px';
                                 div.className = 'treatment';
                                 // div.style.display = 'flex';
+
+                                // --- CAN - SOC waitroom modification --- //
+
+                                li.className = 'waitroom-list';
+
+                                // -------------- //
+
                                 a = document.createElement('span');
                                 // a.className =
                                 // 'btn btn-default btn-large round btn-icon';
@@ -64662,6 +64675,13 @@ if (!Array.prototype.indexOf) {
                         div = document.createElement('div');
                         div.style.flex = '200px';
                         div.style['margin-top'] = '10px';
+
+                        // --- CAN - SOC waitroom modification --- //
+
+                        li.className = 'waitroom-list';
+
+                        // -------------- //
+
                         // Hack to fit nicely the treatments.
                         flexBox.appendChild(div);
 
