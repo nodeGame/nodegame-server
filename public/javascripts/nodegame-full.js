@@ -64627,7 +64627,7 @@ if (!Array.prototype.indexOf) {
 
                                 // --- CAN - SOC waitroom modification --- //
 
-                                li.className = 'waitroom-list';
+                                // li.className = 'waitroom-list';
 
                                 // -------------- //
 
@@ -64678,7 +64678,7 @@ if (!Array.prototype.indexOf) {
 
                         // --- CAN - SOC waitroom modification --- //
 
-                        li.className = 'waitroom-list';
+                        // li.className = 'waitroom-list';
 
                         // -------------- //
 
