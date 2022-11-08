@@ -28606,7 +28606,7 @@ if (!Array.prototype.indexOf) {
      *
      * Stops the timer, sets the status to UNINITIALIZED, and
      * sets the following properties to default: milliseconds,
-     * update, timeup, hooks, hookNames.
+     * update, timeup, hooks, hookNames, _timeup.
      *
      * Does **not** change properties: eventEmitterName, and
      * stagerSync.
@@ -28622,6 +28622,7 @@ if (!Array.prototype.indexOf) {
         this.timeup = 'TIMEUP';
         this.hooks = [];
         this.hookNames = {};
+        this._timeup = false;
 
         return this;
     };
