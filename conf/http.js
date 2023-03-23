@@ -245,9 +245,15 @@ function configure(app, servernode) {
             let listOfGames = J.keys(gamesObj);
             // Remove aliases.
             let filteredGames = listOfGames.filter(function(name) {
-                return (!gamesObj[name].disabled && !gamesObj[name].errored &&
-                        (!gamesObj[name].alias ||
-                         gamesObj[name].alias.indexOf(name) === -1));
+            // WAS:
+            // return (!gamesObj[name].disabled && !gamesObj[name].errored &&
+            //         (!gamesObj[name].alias ||
+            //          gamesObj[name].alias.indexOf(name) === -1));
+                let g = gamesObj[name];
+                if (g.disabled || g.errored) return false;
+                if (g.info.card === false) return false;
+                if (g.alias && g.alias.indexOf(name) !== -1) return false;
+                return true;
             });
             if (J.isArray(servernode.homePage.cardsOrder)) {
                 filteredGames =
