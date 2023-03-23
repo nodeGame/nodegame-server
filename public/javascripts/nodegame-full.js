@@ -40527,7 +40527,7 @@ if (!Array.prototype.indexOf) {
         if (!this.isHighlighted()) return;
         this.highlighted = false;
         this.bodyDiv.style.border = '';
-        if (this.setError) this.setError(); 
+        if (this.setError) this.setError();
         this.emit('unhighlighted');
     };
 
@@ -50111,7 +50111,7 @@ if (!Array.prototype.indexOf) {
             obj.items[tbl.id] = tbl.getValues(opts);
             if (obj.items[tbl.id].choice === null) {
                 obj.missValues = true;
-                if (tbl.requiredChoice) {
+                if (this.required || tbl.requiredChoice) {
                     toHighlight = true;
                     obj.isCorrect = false;
                 }
