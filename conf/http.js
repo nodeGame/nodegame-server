@@ -1,6 +1,6 @@
 /**
  * # http.js
- * Copyright(c) 2020 Stefano Balietti
+ * Copyright(c) 2023 Stefano Balietti
  * MIT Licensed
  *
  * Configuration file for Express server in nodegame-server
@@ -282,6 +282,9 @@ function configure(app, servernode) {
                     description: gamesObj[name].info.description
                 });
                 games.push({
+                    // If someone rename `card.name` the link still needs
+                    // to point to name.
+                    _name: name,
                     name: card.name,
                     color: color,
                     url: card.url,
