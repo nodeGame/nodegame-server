@@ -1,6 +1,6 @@
 /**
  * # http.js
- * Copyright(c) 2020 Stefano Balietti
+ * Copyright(c) 2023 Stefano Balietti
  * MIT Licensed
  *
  * Configuration file for Express server in nodegame-server
@@ -245,9 +245,15 @@ function configure(app, servernode) {
             let listOfGames = J.keys(gamesObj);
             // Remove aliases.
             let filteredGames = listOfGames.filter(function(name) {
-                return (!gamesObj[name].disabled && !gamesObj[name].errored &&
-                        (!gamesObj[name].alias ||
-                         gamesObj[name].alias.indexOf(name) === -1));
+            // WAS:
+            // return (!gamesObj[name].disabled && !gamesObj[name].errored &&
+            //         (!gamesObj[name].alias ||
+            //          gamesObj[name].alias.indexOf(name) === -1));
+                let g = gamesObj[name];
+                if (g.disabled || g.errored) return false;
+                if (g.info.card === false) return false;
+                if (g.alias && g.alias.indexOf(name) !== -1) return false;
+                return true;
             });
             if (J.isArray(servernode.homePage.cardsOrder)) {
                 filteredGames =
@@ -267,15 +273,20 @@ function configure(app, servernode) {
             let i = 0;
             for (let j = 0; j < filteredGames.length; j++) {
                 let name = filteredGames[j];
-                if (i >= colors.length) i = 0;
-                let color = colors[i];
                 // Mixout name and description from package.json
                 // if not in card, or if no card is defined.
                 let card = J.mixout(gamesObj[name].info.card || {}, {
                     name: name.charAt(0).toUpperCase() + name.slice(1),
                     description: gamesObj[name].info.description
                 });
+
+                if (i >= colors.length) i = 0;
+                let color = card.color || colors[i];
+
                 games.push({
+                    // If someone rename `card.name` the link still needs
+                    // to point to name.
+                    _name: name,
                     name: card.name,
                     color: color,
                     url: card.url,
