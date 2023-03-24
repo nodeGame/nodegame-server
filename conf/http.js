@@ -273,14 +273,16 @@ function configure(app, servernode) {
             let i = 0;
             for (let j = 0; j < filteredGames.length; j++) {
                 let name = filteredGames[j];
-                if (i >= colors.length) i = 0;
-                let color = colors[i];
                 // Mixout name and description from package.json
                 // if not in card, or if no card is defined.
                 let card = J.mixout(gamesObj[name].info.card || {}, {
                     name: name.charAt(0).toUpperCase() + name.slice(1),
                     description: gamesObj[name].info.description
                 });
+
+                if (i >= colors.length) i = 0;
+                let color = card.color || colors[i];
+
                 games.push({
                     // If someone rename `card.name` the link still needs
                     // to point to name.
