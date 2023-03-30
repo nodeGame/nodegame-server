@@ -40371,7 +40371,7 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # Widget
- * Copyright(c) 2021 Stefano Balietti <ste@nodegame.org>
+ * Copyright(c) 2023 Stefano Balietti <ste@nodegame.org>
  * MIT Licensed
  *
  * Prototype of a widget class
@@ -49016,7 +49016,7 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # ChoiceTableGroup
- * Copyright(c) 2021 Stefano Balietti
+ * Copyright(c) 2023 Stefano Balietti
  * MIT Licensed
  *
  * Creates a table that groups together several choice tables widgets
@@ -49033,7 +49033,7 @@ if (!Array.prototype.indexOf) {
 
     // ## Meta-data
 
-    ChoiceTableGroup.version = '1.8.0';
+    ChoiceTableGroup.version = '1.9.0';
     ChoiceTableGroup.description = 'Groups together and manages sets of ' +
         'ChoiceTable widgets.';
 
@@ -50093,10 +50093,11 @@ if (!Array.prototype.indexOf) {
      * @see ChoiceTableGroup.reset
      */
     ChoiceTableGroup.prototype.getValues = function(opts) {
-        var obj, i, len, tbl, toHighlight, toReset;
+        var obj, i, len, tbl, toHighlight, toReset, res;
         obj = {
             id: this.id,
             order: this.order,
+            nClicks: 0,
             items: {},
             isCorrect: true
         };
@@ -50108,15 +50109,19 @@ if (!Array.prototype.indexOf) {
         i = -1, len = this.items.length;
         for ( ; ++i < len ; ) {
             tbl = this.items[i];
-            obj.items[tbl.id] = tbl.getValues(opts);
-            if (obj.items[tbl.id].choice === null) {
+            res = tbl.getValues(opts);
+            obj.items[tbl.id] = opts.simplify ? res.value : res;
+            if (res.choice === null) {
                 obj.missValues = true;
                 if (this.required || tbl.requiredChoice) {
                     toHighlight = true;
                     obj.isCorrect = false;
                 }
             }
-            if (obj.items[tbl.id].isCorrect === false && opts.highlight) {
+            else {
+                obj.nClicks += res.nClicks;
+            }
+            if (res.isCorrect === false && opts.highlight) {
                 toHighlight = true;
             }
         }
