@@ -45562,7 +45562,7 @@ if (!Array.prototype.indexOf) {
 
     // ## Meta-data
 
-    ChoiceManager.version = '1.8.0';
+    ChoiceManager.version = '1.9.0';
     ChoiceManager.description = 'Groups together and manages a set of ' +
         'survey forms (e.g., ChoiceTable).';
 
@@ -46281,6 +46281,9 @@ if (!Array.prototype.indexOf) {
      *      to find the correct answer. Default: TRUE.
      *   - highlight:   If TRUE, forms that do not have a correct value
      *      will be highlighted. Default: TRUE.
+     *   - simplify:    If TRUE, forms are not nested under `.forms`, but
+     *      available at the first level. Duplicated keys will be overwritten.
+     *      TODO: rename "flatten."
      *
      * @return {object} Object containing the choice and paradata
      *
@@ -46380,7 +46383,7 @@ if (!Array.prototype.indexOf) {
         if (this.textarea) obj.freetext = this.textarea.value;
 
         // Simplify everything, if requested.
-        if (opts.simplify || this.simplify) {
+        if (opts.simplify === true || this.simplify) {
             res = obj;
             obj = obj.forms;
             if (res.isCorrect === false) obj.isCorrect = false;
@@ -49431,6 +49434,17 @@ if (!Array.prototype.indexOf) {
          * @see ChoiceTable.tabbable
          */
         this.tabbable = null;
+
+        /**
+         * ### ChoiceTableGroup.valueOnly
+         *
+         * If TRUE, `getValues` returns only the field `value` from ChoiceTable
+         *
+         * Default FALSE
+         *
+         * @see ChoiceTableGroup.getValues
+         */
+        this.valueOnly = null;
     }
 
     // ## ChoiceTableGroup methods
@@ -49635,6 +49649,8 @@ if (!Array.prototype.indexOf) {
         }
 
         if (opts.tabbable !== false) this.tabbable = true;
+
+        if (opts.valueOnly === true) this.valueOnly = true;
 
         // Separator checked by ChoiceTable.
         if (opts.separator) this.separator = opts.separator;
@@ -50086,6 +50102,8 @@ if (!Array.prototype.indexOf) {
      *   - reset:    If TRUTHY and no item raises an error,
      *       then it resets the state of all items before
      *       returning it. Default: FALSE.
+     *   - valueOnly: If TRUE it returns only the value of each ChoiceTable
+     *       instead of the all object from .getValues(). Experimental.
      *
      * @return {object} Object containing the choice and paradata
      *
@@ -50093,7 +50111,7 @@ if (!Array.prototype.indexOf) {
      * @see ChoiceTableGroup.reset
      */
     ChoiceTableGroup.prototype.getValues = function(opts) {
-        var obj, i, len, tbl, toHighlight, toReset, res;
+        var obj, i, len, tbl, toHighlight, toReset, res, valueOnly;
         obj = {
             id: this.id,
             order: this.order,
@@ -50106,11 +50124,12 @@ if (!Array.prototype.indexOf) {
         // Make sure reset is done only at the end.
         toReset = opts.reset;
         opts.reset = false;
+        valueOnly = opts.valueOnly === true || this.valueOnly;
         i = -1, len = this.items.length;
         for ( ; ++i < len ; ) {
             tbl = this.items[i];
             res = tbl.getValues(opts);
-            obj.items[tbl.id] = opts.simplify ? res.value : res;
+            obj.items[tbl.id] = valueOnly ? res.value : res;
             if (res.choice === null) {
                 obj.missValues = true;
                 if (this.required || tbl.requiredChoice) {
