@@ -49600,6 +49600,10 @@ if (!Array.prototype.indexOf) {
             this.hint = this.getText('autoHint');
         }
 
+        if (this.required && this.hint !== false) {
+            if (opts.displayRequired !== false) this.hint += ' *';
+        }
+
         // Set the timeFrom, if any.
         if (opts.timeFrom === false ||
             'string' === typeof opts.timeFrom) {
@@ -60968,6 +60972,10 @@ if (!Array.prototype.indexOf) {
         },
         noChange: 'No change',
         error: 'Movement required.',
+        autoHint: function(w) {
+            if (w.requiredChoice) return 'Movement required.';
+            else return false;
+        }
     };
 
 
@@ -61321,12 +61329,10 @@ if (!Array.prototype.indexOf) {
             this.hint = opts.hint;
         }
         else {
-            // TODO: Do we need it?
-            // this.hint = this.getText('autoHint');
+            this.hint = this.getText('autoHint');
         }
 
         if (this.required && this.hint !== false) {
-            if (!this.hint) this.hint = 'Movement required';
             if (opts.displayRequired !== false) this.hint += ' *';
         }
 
