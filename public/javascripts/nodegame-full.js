@@ -61160,12 +61160,13 @@ if (!Array.prototype.indexOf) {
          * @see Slider.onmove
          */
         var timeOut = null;
-        this.listener = function(noChange, init) {
+        this.listener = function(noChange, init, sync) {
+            var _listener;
             if (!noChange && timeOut) return;
 
             if (that.isHighlighted()) that.unhighlight();
 
-            timeOut = setTimeout(function() {
+            _listener = function() {
                 var percent, diffPercent;
 
                 percent = (that.slider.value - that.min) * that.scale;
@@ -61204,7 +61205,10 @@ if (!Array.prototype.indexOf) {
                 }
 
                 timeOut = null;
-            }, 0);
+            };
+
+            if (sync) _listener();
+            else timeOut = setTimeout(_listener, 0);
         }
 
         /** Slider.onmove
@@ -61530,10 +61534,30 @@ if (!Array.prototype.indexOf) {
     };
 
     Slider.prototype.setValues = function(opts) {
+        var value;
         if ('undefined' === typeof opts) opts = {};
         else if ('number' === typeof opts) opts = { value: opts };
-        this.slider.value = opts.value;
-        this.slider.oninput();
+
+        if (opts.correct && this.correctValue !== null) {
+            value = this.correctValue;
+        }
+        else if ('number' !== typeof opts.value) {
+            value = J.randomInt(0, 101)-1;
+
+            // Check if movement is required and no movement was done and
+            // the random value is equal to the current value. If so, add 1.
+            if (this.required && this.totalMove === 0 && 
+                value === this.slider.value) {
+
+                    value++;
+            }
+        }
+        else {
+            value = opts.value;
+        }
+
+        this.slider.value = value;
+        this.slider.oninput(false, false, true);
     };
 
     /**
