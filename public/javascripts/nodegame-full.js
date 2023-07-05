@@ -47236,7 +47236,13 @@ if (!Array.prototype.indexOf) {
         /**
         * ### ChoiceTable.sameWidthCells
         *
-        * If TRUE, cells have same width regardless of content
+        * If truthy, it forces cells to have same width regardless of content
+        * 
+        *  - If TRUE, it automatically computes the equal size of the cells
+        *      (options `left` and `right` affect computation).
+        *  - If string, it is the value of width for all cells  
+        * 
+        * Only applies in horizontal mode.
         */
         this.sameWidthCells = true;
 
@@ -47672,6 +47678,11 @@ if (!Array.prototype.indexOf) {
         }
 
         // Add other.
+        if ('undefined' !== typeof opts.sameWidthCells) {
+            this.sameWidthCells = opts.sameWidthCells;
+        }
+
+        // Add other.
         if ('undefined' !== typeof opts.other) {
             this.other = opts.other;
         }
@@ -47725,10 +47736,6 @@ if (!Array.prototype.indexOf) {
                     }
                 })();
             }
-        }
-
-        if ('undefined' !== typeof opts.sameWidthCells) {
-            this.sameWidthCells = !!opts.sameWidthCells;
         }
 
         if ('undefined' !== typeof opts.doneOnClick) {
@@ -48032,10 +48039,16 @@ if (!Array.prototype.indexOf) {
 
         // Forces equal width.
         if (this.sameWidthCells && this.orientation === 'H') {
-            width = this.left ? 70 : 100;
-            if (this.right) width = width - 30;
-            width = width / (this.choicesSetSize || this.choices.length);
-            td.style.width = width.toFixed(2) + '%';
+            if (this.sameWidthCells === true) {
+                width = this.left ? 70 : 100;
+                if (this.right) width = width - 20;
+                width = width / (this.choicesSetSize || this.choices.length);
+                width = width.toFixed(2) + '%';
+            }
+            else {
+                width = this.sameWidthCells;
+            }
+            td.style.width = width;
         }
 
         // Use custom renderer.
