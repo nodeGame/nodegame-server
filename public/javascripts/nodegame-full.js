@@ -42761,12 +42761,6 @@ if (!Array.prototype.indexOf) {
     BoxSelector.title = false;
     BoxSelector.className = 'boxselector';
 
-    // ## Dependencies
-
-    BoxSelector.dependencies = {
-        JSUS: {}
-    };
-
     /**
      * ## BoxSelector constructor
      *
@@ -43076,12 +43070,6 @@ if (!Array.prototype.indexOf) {
     Chat.className = 'chat';
 
     Chat.panel = false;
-
-    // ## Dependencies
-
-    Chat.dependencies = {
-        JSUS: {}
-    };
 
     /**
      * ## Chat constructor
@@ -43900,7 +43888,6 @@ if (!Array.prototype.indexOf) {
 
     // ## Dependencies
     ChernoffFaces.dependencies = {
-        JSUS: {},
         Table: {},
         Canvas: {},
         SliderControls: {}
@@ -44916,7 +44903,6 @@ if (!Array.prototype.indexOf) {
 
     // ## Dependencies
     ChernoffFaces.dependencies = {
-        JSUS: {},
         Table: {},
         Canvas: {},
         'Controls.Slider': {}
@@ -47237,11 +47223,11 @@ if (!Array.prototype.indexOf) {
         * ### ChoiceTable.sameWidthCells
         *
         * If truthy, it forces cells to have same width regardless of content
-        * 
+        *
         *  - If TRUE, it automatically computes the equal size of the cells
         *      (options `left` and `right` affect computation).
-        *  - If string, it is the value of width for all cells  
-        * 
+        *  - If string, it is the value of width for all cells
+        *
         * Only applies in horizontal mode.
         */
         this.sameWidthCells = true;
@@ -49613,8 +49599,11 @@ if (!Array.prototype.indexOf) {
             this.hint = this.getText('autoHint');
         }
 
-        if (this.required && this.hint !== false) {
-            if (opts.displayRequired !== false) this.hint += ' *';
+        if (this.required && this.hint !== false &&
+            this.hint.charAt(this.hint.length-1) != '*' &&
+            opts.displayRequired !== false) {
+
+                this.hint += ' *';
         }
 
         // Set the timeFrom, if any.
@@ -50693,10 +50682,6 @@ if (!Array.prototype.indexOf) {
     ContentBox.panel = false;
     ContentBox.className = 'contentbox';
 
-    // ## Dependencies
-
-    ContentBox.dependencies = {};
-
     /**
      * ## ContentBox constructor
      *
@@ -51451,12 +51436,6 @@ if (!Array.prototype.indexOf) {
             return 'Must follow format ' + w.params.format;
         },
         emptyErr: 'Cannot be empty'
-    };
-
-    // ## Dependencies
-
-    CustomInput.dependencies = {
-        JSUS: {}
     };
 
     /**
@@ -52911,12 +52890,6 @@ if (!Array.prototype.indexOf) {
     };
     CustomInputGroup.texts.inputErr = 'One or more errors detected.';
 
-    // ## Dependencies
-
-    CustomInputGroup.dependencies = {
-        JSUS: {}
-    };
-
     /**
      * ## CustomInputGroup constructor
      *
@@ -54086,8 +54059,7 @@ if (!Array.prototype.indexOf) {
     // ## Dependencies
 
     D3.dependencies = {
-        d3: {},
-        JSUS: {}
+        d3: {}
     };
 
     function D3 (options) {
@@ -54453,12 +54425,6 @@ if (!Array.prototype.indexOf) {
 
     DebugWall.title = 'Debug Wall';
     DebugWall.className = 'debugwall';
-
-    // ## Dependencies
-
-    DebugWall.dependencies = {
-        JSUS: {}
-    };
 
     /**
      * ## DebugWall constructor
@@ -58084,7 +58050,7 @@ if (!Array.prototype.indexOf) {
  * www.nodegame.org
  *
  *
- * Style from state-of-crypto.
+ * TODO: Update Style:
 
  <style>
 .goto {
@@ -58096,7 +58062,6 @@ if (!Array.prototype.indexOf) {
     margin-left: 0 !important;
     margin-top: 0 !important;
 }
-
 </style>
 
 
@@ -58417,12 +58382,6 @@ if (!Array.prototype.indexOf) {
     LanguageSelector.className = 'languageselector';
 
     LanguageSelector.texts.loading = 'Loading language information...';
-
-    // ## Dependencies
-
-    LanguageSelector.dependencies = {
-        JSUS: {}
-    };
 
     /**
      * ## LanguageSelector constructor
@@ -58854,12 +58813,6 @@ if (!Array.prototype.indexOf) {
     MoneyTalks.title = 'Earnings';
     MoneyTalks.className = 'moneytalks';
 
-    // ## Dependencies
-
-    MoneyTalks.dependencies = {
-        JSUS: {}
-    };
-
     /**
      * ## MoneyTalks constructor
      *
@@ -59058,11 +59011,6 @@ if (!Array.prototype.indexOf) {
 
     MoodGauge.texts.mainText = 'Thinking about yourself and how you normally' +
                 ' feel, to what extent do you generally feel: ';
-
-    // ## Dependencies
-    MoodGauge.dependencies = {
-        JSUS: {}
-    };
 
     /**
      * ## MoodGauge constructor
@@ -59343,7 +59291,6 @@ if (!Array.prototype.indexOf) {
     // ## Dependencies
 
     Requirements.dependencies = {
-        JSUS: {},
         List: {}
     };
 
@@ -61559,7 +61506,7 @@ if (!Array.prototype.indexOf) {
 
             // Check if movement is required and no movement was done and
             // the random value is equal to the current value. If so, add 1.
-            if (this.required && this.totalMove === 0 && 
+            if (this.required && this.totalMove === 0 &&
                 value === this.slider.value) {
 
                     value++;
