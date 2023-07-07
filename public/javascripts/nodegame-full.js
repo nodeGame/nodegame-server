@@ -64460,7 +64460,6 @@ if (!Array.prototype.indexOf) {
          */
         this.selectedTreatment = null;
 
-
         /**
          * ### WaitingRoom.addDefaultTreatments
          *
@@ -64473,6 +64472,15 @@ if (!Array.prototype.indexOf) {
          * @see WaitingRoom.selectTreatmentOption
          */
         this.addDefaultTreatments = null;
+
+        /**
+         * ### WaitingRoom.treatmentTiles
+         *
+         * If TRUE, treatments are displayed in tiles instead of a dropdown
+         *
+         * Default: FALSE
+         */
+        this.treatmentTiles = null;
 
     }
 
@@ -64588,7 +64596,7 @@ if (!Array.prototype.indexOf) {
         else this.playWithBotOption = false;
         if (conf.selectTreatmentOption) this.selectTreatmentOption = true;
         else this.selectTreatmentOption = false;
-        if ('undefined' === typeof conf.addDefaultTreatments) {
+        if ('undefined' !== typeof conf.addDefaultTreatments) {
             this.addDefaultTreatments = !!conf.addDefaultTreatments;
         }
         else {
@@ -64615,289 +64623,18 @@ if (!Array.prototype.indexOf) {
             this.treatmentDisplayCb = conf.treatmentDisplayCb;
         }
 
+        if ('undefined' !== typeof conf.treatmentTiles) {
+            this.treatmentTiles = conf.treatmentTiles;
+        }
+
         // Display Exec Mode.
         this.displayExecMode();
 
-    // if (this.playWithBotOption && !document.getElementById('bot_btn')) {
-    //     // Closure to create button group.
-    //     (function(w) {
-    //         var btnGroup = document.createElement('div');
-    //         btnGroup.role = 'group';
-    //         btnGroup['aria-label'] = 'Play Buttons';
-    //         btnGroup.className = 'btn-group';
-    //
-    //         var playBotBtn = document.createElement('input');
-    //         playBotBtn.className = 'btn btn-primary btn-lg';
-    //         playBotBtn.value = w.getText('playBot');
-    //         playBotBtn.id = 'bot_btn';
-    //         playBotBtn.type = 'button';
-    //         playBotBtn.onclick = function() {
-    //             w.playBotBtn.value = w.getText('connectingBots');
-    //             w.playBotBtn.disabled = true;
-    //             node.say('PLAYWITHBOT', 'SERVER', w.selectedTreatment);
-    //             setTimeout(function() {
-    //                 w.playBotBtn.value = w.getText('playBot');
-    //                 w.playBotBtn.disabled = false;
-    //             }, 5000);
-    //         };
-    //
-    //         btnGroup.appendChild(playBotBtn);
-    //
-    //         // Store reference in widget.
-    //         w.playBotBtn = playBotBtn;
-    //
-    //         if (w.selectTreatmentOption) {
-    //
-    //             var btnGroupTreatments = document.createElement('div');
-    //             btnGroupTreatments.role = 'group';
-    //             btnGroupTreatments['aria-label'] = 'Select Treatment';
-    //             btnGroupTreatments.className = 'btn-group';
-    //
-    //             var btnTreatment = document.createElement('button');
-    //             btnTreatment.className = 'btn btn-default btn-lg ' +
-    //                 'dropdown-toggle';
-    //             btnTreatment['data-toggle'] = 'dropdown';
-    //             btnTreatment['aria-haspopup'] = 'true';
-    //             btnTreatment['aria-expanded'] = 'false';
-    //             btnTreatment.innerHTML = w.getText('selectTreatment');
-    //
-    //             var span = document.createElement('span');
-    //             span.className = 'caret';
-    //
-    //             btnTreatment.appendChild(span);
-    //
-    //             var ul = document.createElement('ul');
-    //             ul.className = 'dropdown-menu';
-    //             ul.style['text-align'] = 'left';
-    //
-    //             var li, a, t, liT1, liT2, liT3;
-    //             if (conf.availableTreatments) {
-    //                 li = document.createElement('li');
-    //                 li.innerHTML = w.getText('gameTreatments');
-    //                 li.className = 'dropdown-header';
-    //                 ul.appendChild(li);
-    //                 for (t in conf.availableTreatments) {
-    //                     if (conf.availableTreatments.hasOwnProperty(t)) {
-    //                         li = document.createElement('li');
-    //                         li.id = t;
-    //                         a = document.createElement('a');
-    //                         a.href = '#';
-    //                         a.innerHTML = '<strong>' + t + '</strong>: ' +
-    //                             conf.availableTreatments[t];
-    //                         li.appendChild(a);
-    //                         if (t === 'treatment_latin_square') liT3 = li;
-    //                         else if (t === 'treatment_rotate') liT1 = li;
-    //                         else if (t === 'treatment_random') liT2 = li;
-    //                         else ul.appendChild(li);
-    //                     }
-    //                 }
-    //
-    //                 if (w.addDefaultTreatments !== false) {
-    //                     li = document.createElement('li');
-    //                     li.role = 'separator';
-    //                     li.className = 'divider';
-    //                     ul.appendChild(li);
-    //                     li = document.createElement('li');
-    //                     li.innerHTML = w.getText('defaultTreatments');
-    //                     li.className = 'dropdown-header';
-    //                     ul.appendChild(li);
-    //                     ul.appendChild(liT1);
-    //                     ul.appendChild(liT2);
-    //                     ul.appendChild(liT3);
-    //                 }
-    //
-    //             }
-    //
-    //             btnGroupTreatments.appendChild(btnTreatment);
-    //             btnGroupTreatments.appendChild(ul);
-    //
-    //             btnGroup.appendChild(btnGroupTreatments);
-    //
-    //             // We are not using bootstrap js files
-    //             // and we redo the job manually here.
-    //             btnTreatment.onclick = function() {
-    //                 // When '' is hidden by bootstrap class.
-    //                 if (ul.style.display === '') {
-    //                     ul.style.display = 'block';
-    //                 }
-    //                 else {
-    //                     ul.style.display = '';
-    //                 }
-    //             };
-    //
-    //             ul.onclick = function(eventData) {
-    //                 var t;
-    //                 t = eventData.target;
-    //                 // When '' is hidden by bootstrap class.
-    //                 ul.style.display = '';
-    //                 t = t.parentNode.id;
-    //                 // Clicked on description?
-    //                 if (!t) t = eventData.target.parentNode.parentNode.id;
-    //                 // Nothing relevant clicked (e.g., header).
-    //                 if (!t) return;
-    //                 btnTreatment.innerHTML = t + ' ';
-    //                 btnTreatment.appendChild(span);
-    //                 w.selectedTreatment = t;
-    //             };
-    //
-    //             // Store Reference in widget.
-    //             w.treatmentBtn = btnTreatment;
-    //         }
-    //         // Append button group.
-    //         w.bodyDiv.appendChild(document.createElement('br'));
-    //         w.bodyDiv.appendChild(btnGroup);
-    //
-    //     })(this);
-    // }
-
+        // Displays treatments.
         if (this.playWithBotOption && !document.getElementById('bot_btn')) {
-            // Closure to create button group.
-            (function(w) {
-                // var btnGroup = document.createElement('div');
-                // btnGroup.role = 'group';
-                // btnGroup['aria-label'] = 'Play Buttons';
-                // btnGroup.className = 'btn-group';
-                //
-                // var playBotBtn = document.createElement('input');
-                // playBotBtn.className = 'btn btn-primary btn-lg';
-                // playBotBtn.value = w.getText('playBot');
-                // playBotBtn.id = 'bot_btn';
-                // playBotBtn.type = 'button';
-                // playBotBtn.onclick = function() {
-                //     w.playBotBtn.value = w.getText('connectingBots');
-                //     w.playBotBtn.disabled = true;
-                //     node.say('PLAYWITHBOT', 'SERVER', w.selectedTreatment);
-                //     setTimeout(function() {
-                //         w.playBotBtn.value = w.getText('playBot');
-                //         w.playBotBtn.disabled = false;
-                //     }, 5000);
-                // };
-                //
-                // btnGroup.appendChild(playBotBtn);
-                //
-                // // Store reference in widget.
-                // w.playBotBtn = playBotBtn;
+            if (this.treatmentTiles === false) dropdownDisplay(this, conf);
+            else tilesDisplay(this, conf);
 
-                if (w.selectTreatmentOption) {
-
-
-                    var flexBox = W.add('div', w.bodyDiv);
-                    flexBox.style.display = 'flex';
-                    flexBox.style['flex-wrap'] = 'wrap';
-                    flexBox.style['column-gap'] = '20px';
-                    flexBox.style['justify-content'] = 'space-between';
-                    flexBox.style['margin'] = '50px 100px 30px 150px';
-                    flexBox.style['text-align'] = 'center';
-
-                    // border: 1px solid #CCC;
-                    //     border-radius: 10px;
-                    //     box-shadow: 2px 2px 10px;
-                    //     FONT-WEIGHT: 200;
-                    //     padding: 10px;
-
-                    // --- CAN - SOC waitroom modification --- //
-
-                    flexBox.className = 'waitroom-listContainer';
-
-                    // -------------- //
-
-                    var div, a, t, T, display, counter;
-                    var divT1, divT2, divT3, divT4;
-                    counter = 0;
-                    if (conf.availableTreatments) {
-                        for (t in conf.availableTreatments) {
-                            if (conf.availableTreatments.hasOwnProperty(t)) {
-                                div = document.createElement('div');
-                                div.id = t;
-                                div.style.flex = '200px';
-                                div.style['margin-top'] = '10px';
-                                div.className = 'treatment waitroom-list';
-                                // div.style.display = 'flex';
-
-                                a = document.createElement('span');
-                                // a.className =
-                                // 'btn btn-default btn-large round btn-icon';
-                                // a.href = '#';
-                                if (w.treatmentDisplayCb) {
-                                    display = w.treatmentDisplayCb(t,
-                                    conf.availableTreatments[t], ++counter, w);
-                                }
-                                else {
-                                    T = t;
-                                    if (t.length > 16) {
-                                        T = '<span title="' + t + '">' +
-                                        t.substr(0,13) + '...</span>';
-                                    }
-                                    display = '<strong>' + T + '</strong><br>' +
-                                        '<span style="font-size: smaller">' +
-                                        conf.availableTreatments[t] + '</span>';
-                                }
-                                a.innerHTML = display;
-
-                                div.appendChild(a);
-
-                                div.onclick = function() {
-                                    var t;
-                                    t = this.id;
-                                    // Clicked on description?
-                                    // btnTreatment.innerHTML = t + ' ';
-                                    w.selectedTreatment = t;
-                                    node.say('PLAYWITHBOT', 'SERVER',
-                                    w.selectedTreatment);
-                                };
-
-                                t = t.substring(10);
-                                if (t === 'latin_square') divT3 = div;
-                                else if (t === 'rotate') divT1 = div;
-                                else if (t === 'random') divT2 = div;
-                                else if (t === 'weighted_random') divT4 = div;
-                                else flexBox.appendChild(div);
-
-                            }
-                        }
-                        div = document.createElement('div');
-                        div.style.flex = '200px';
-                        div.style['margin-top'] = '10px';
-
-                        div.className = 'waitroom-list';
-
-                        // Hack to fit nicely the treatments.
-                        flexBox.appendChild(div);
-
-                        if (w.addDefaultTreatments !== false) {
-                            flexBox.appendChild(divT1);
-                            flexBox.appendChild(divT2);
-                            flexBox.appendChild(divT3);
-                            flexBox.appendChild(divT4);
-                        }
-                    }
-
-                   //  var btnGroupTreatments = document.createElement('div');
-                   // btnGroupTreatments.role = 'group';
-                   // btnGroupTreatments['aria-label'] = 'Select Treatment';
-                   // btnGroupTreatments.className = 'btn-group';
-                   //
-                   // var btnTreatment = document.createElement('button');
-                   // btnTreatment.className = 'btn btn-default btn-lg ' +
-                   //     'dropdown-toggle';
-                   // btnTreatment['data-toggle'] = 'dropdown';
-                   // btnTreatment['aria-haspopup'] = 'true';
-                   // btnTreatment['aria-expanded'] = 'false';
-                   // btnTreatment.innerHTML = w.getText('selectTreatment');
-                   //
-                   //  btnGroupTreatments.appendChild(btnTreatment);
-
-                    // btnGroup.appendChild(btnGroupTreatments);
-
-
-                    // Store Reference in widget.
-                    // w.treatmentBtn = btnTreatment;
-                }
-                // Append button group.
-                // w.bodyDiv.appendChild(document.createElement('br'));
-                // w.bodyDiv.appendChild(btnGroup);
-
-            })(this);
         }
 
         // Handle destroy.
@@ -64958,6 +64695,8 @@ if (!Array.prototype.indexOf) {
      * ### WaitingRoom.updateState
      *
      * Displays the state of the waiting room on screen
+     *
+     * @param {object} update Object containing info about the waiting room
      *
      * @see WaitingRoom.updateState
      */
@@ -65149,11 +64888,6 @@ if (!Array.prototype.indexOf) {
 
             // Write about disconnection in page.
             that.bodyDiv.innerHTML = that.getText('disconnect');
-
-            // Enough to not display it in case of page refresh.
-            // setTimeout(function() {
-            //              alert('Disconnection from server detected!');
-            //             }, 200);
         });
 
         node.on.data('ROOM_CLOSED', function() {
@@ -65161,6 +64895,11 @@ if (!Array.prototype.indexOf) {
         });
     };
 
+    /**
+     * ### WaitingRoom.stopTimer
+     *
+     * If found, it stops the timer
+     */
     WaitingRoom.prototype.stopTimer = function() {
         if (this.timer) {
             node.info('waiting room: PAUSING TIMER');
@@ -65171,7 +64910,7 @@ if (!Array.prototype.indexOf) {
     /**
      * ### WaitingRoom.disconnect
      *
-     * Disconnects the playr, stops the timer, and displays a msg
+     * Disconnects the player, stops the timer, and displays a msg
      *
      * @param {string|function} msg. Optional. A disconnect message. If set,
      *    replaces the current value for future calls.
@@ -65184,6 +64923,11 @@ if (!Array.prototype.indexOf) {
         this.stopTimer();
     };
 
+    /**
+     * ### WaitingRoom.alertPlayer
+     *
+     * Plays a sound and blinks the title of the tab to alert the player
+     */
     WaitingRoom.prototype.alertPlayer = function() {
         var clearBlink, onFrame;
         var blink, sound;
@@ -65224,5 +64968,284 @@ if (!Array.prototype.indexOf) {
             });
         }
     };
+
+    // ### Helper functions.
+
+    function dropdownDisplay(w, conf) {
+         
+        var btnGroup = document.createElement('div');
+        btnGroup.role = 'group';
+        btnGroup['aria-label'] = 'Play Buttons';
+        btnGroup.className = 'btn-group';
+
+        var playBotBtn = document.createElement('input');
+        playBotBtn.className = 'btn btn-primary btn-lg';
+        playBotBtn.value = w.getText('playBot');
+        playBotBtn.id = 'bot_btn';
+        playBotBtn.type = 'button';
+        playBotBtn.onclick = function() {
+            w.playBotBtn.value = w.getText('connectingBots');
+            w.playBotBtn.disabled = true;
+            node.say('PLAYWITHBOT', 'SERVER', w.selectedTreatment);
+            setTimeout(function() {
+                w.playBotBtn.value = w.getText('playBot');
+                w.playBotBtn.disabled = false;
+            }, 5000);
+        };
+
+        btnGroup.appendChild(playBotBtn);
+
+        // Store reference in widget.
+        w.playBotBtn = playBotBtn;
+
+        if (w.selectTreatmentOption) {
+
+            var btnGroupTreatments = document.createElement('div');
+            btnGroupTreatments.role = 'group';
+            btnGroupTreatments['aria-label'] = 'Select Treatment';
+            btnGroupTreatments.className = 'btn-group';
+
+            var btnTreatment = document.createElement('button');
+            btnTreatment.className = 'btn btn-default btn-lg ' +
+                'dropdown-toggle';
+            btnTreatment['data-toggle'] = 'dropdown';
+            btnTreatment['aria-haspopup'] = 'true';
+            btnTreatment['aria-expanded'] = 'false';
+            btnTreatment.innerHTML = w.getText('selectTreatment');
+
+            var span = document.createElement('span');
+            span.className = 'caret';
+
+            btnTreatment.appendChild(span);
+
+            var ul = document.createElement('ul');
+            ul.className = 'dropdown-menu';
+            ul.style['text-align'] = 'left';
+
+            var li, a, t, liT1, liT2, liT3, liT4;
+            if (conf.availableTreatments) {
+                li = document.createElement('li');
+                li.innerHTML = w.getText('gameTreatments');
+                li.className = 'dropdown-header';
+                ul.appendChild(li);
+                for (t in conf.availableTreatments) {
+                    if (conf.availableTreatments.hasOwnProperty(t)) {
+                        li = document.createElement('li');
+                        li.id = t;
+                        a = document.createElement('a');
+                        a.href = '#';
+                        a.innerHTML = '<strong>' + t + '</strong>: ' +
+                            conf.availableTreatments[t];
+                        li.appendChild(a);
+                        if (t === 'treatment_latin_square') liT3 = li;
+                        else if (t === 'treatment_rotate') liT1 = li;
+                        else if (t === 'treatment_random') liT2 = li;
+                        else if (t === 'treatment_weighted_random') liT4 = li;
+                        else ul.appendChild(li);
+                    }
+                }
+
+                if (w.addDefaultTreatments !== false) {
+                    li = document.createElement('li');
+                    li.role = 'separator';
+                    li.className = 'divider';
+                    ul.appendChild(li);
+                    li = document.createElement('li');
+                    li.innerHTML = w.getText('defaultTreatments');
+                    li.className = 'dropdown-header';
+                    ul.appendChild(li);
+                    ul.appendChild(liT1);
+                    ul.appendChild(liT2);
+                    ul.appendChild(liT3);
+                    ul.appendChild(liT4);
+                }
+            }
+
+            btnGroupTreatments.appendChild(btnTreatment);
+            btnGroupTreatments.appendChild(ul);
+
+            btnGroup.appendChild(btnGroupTreatments);
+
+            // We are not using bootstrap js files
+            // and we redo the job manually here.
+            btnTreatment.onclick = function() {
+                // When '' is hidden by bootstrap class.
+                if (ul.style.display === '') {
+                    ul.style.display = 'block';
+                }
+                else {
+                    ul.style.display = '';
+                }
+            };
+
+            ul.onclick = function(eventData) {
+                var t;
+                t = eventData.target;
+                // When '' is hidden by bootstrap class.
+                ul.style.display = '';
+                t = t.parentNode.id;
+                // Clicked on description?
+                if (!t) t = eventData.target.parentNode.parentNode.id;
+                // Nothing relevant clicked (e.g., header).
+                if (!t) return;
+                btnTreatment.innerHTML = t + ' ';
+                btnTreatment.appendChild(span);
+                w.selectedTreatment = t;
+            };
+
+            // Store Reference in widget.
+            w.treatmentBtn = btnTreatment;
+        }
+        // Append button group.
+        w.bodyDiv.appendChild(document.createElement('br'));
+        w.bodyDiv.appendChild(btnGroup);
+    }
+
+    // Closure to create button group.
+    function tilesDisplay(w, conf) {
+        // var btnGroup = document.createElement('div');
+        // btnGroup.role = 'group';
+        // btnGroup['aria-label'] = 'Play Buttons';
+        // btnGroup.className = 'btn-group';
+        //
+        // var playBotBtn = document.createElement('input');
+        // playBotBtn.className = 'btn btn-primary btn-lg';
+        // playBotBtn.value = w.getText('playBot');
+        // playBotBtn.id = 'bot_btn';
+        // playBotBtn.type = 'button';
+        // playBotBtn.onclick = function() {
+        //     w.playBotBtn.value = w.getText('connectingBots');
+        //     w.playBotBtn.disabled = true;
+        //     node.say('PLAYWITHBOT', 'SERVER', w.selectedTreatment);
+        //     setTimeout(function() {
+        //         w.playBotBtn.value = w.getText('playBot');
+        //         w.playBotBtn.disabled = false;
+        //     }, 5000);
+        // };
+        //
+        // btnGroup.appendChild(playBotBtn);
+        //
+        // // Store reference in widget.
+        // w.playBotBtn = playBotBtn;
+
+        if (w.selectTreatmentOption) {
+
+            var flexBox = W.add('div', w.bodyDiv);
+            flexBox.style.display = 'flex';
+            flexBox.style['flex-wrap'] = 'wrap';
+            flexBox.style['column-gap'] = '20px';
+            flexBox.style['justify-content'] = 'space-between';
+            flexBox.style['margin'] = '50px 100px 30px 150px';
+            flexBox.style['text-align'] = 'center';
+
+            // border: 1px solid #CCC;
+            //     border-radius: 10px;
+            //     box-shadow: 2px 2px 10px;
+            //     FONT-WEIGHT: 200;
+            //     padding: 10px;
+
+            // --- CAN - SOC waitroom modification --- //
+
+            flexBox.className = 'waitroom-listContainer';
+
+            // -------------- //
+
+            var div, a, t, T, display, counter;
+            var divT1, divT2, divT3, divT4;
+            counter = 0;
+            if (conf.availableTreatments) {
+                for (t in conf.availableTreatments) {
+                    if (conf.availableTreatments.hasOwnProperty(t)) {
+                        div = document.createElement('div');
+                        div.id = t;
+                        div.style.flex = '200px';
+                        div.style['margin-top'] = '10px';
+                        div.className = 'treatment waitroom-list';
+                        // div.style.display = 'flex';
+
+                        a = document.createElement('span');
+                        // a.className =
+                        // 'btn btn-default btn-large round btn-icon';
+                        // a.href = '#';
+                        if (w.treatmentDisplayCb) {
+                            display = w.treatmentDisplayCb(t,
+                            conf.availableTreatments[t], ++counter, w);
+                        }
+                        else {
+                            T = t;
+                            if (t.length > 16) {
+                                T = '<span title="' + t + '">' +
+                                t.substr(0,13) + '...</span>';
+                            }
+                            display = '<strong>' + T + '</strong><br>' +
+                                '<span style="font-size: smaller">' +
+                                conf.availableTreatments[t] + '</span>';
+                        }
+                        a.innerHTML = display;
+
+                        div.appendChild(a);
+
+                        div.onclick = function() {
+                            var t;
+                            t = this.id;
+                            // Clicked on description?
+                            // btnTreatment.innerHTML = t + ' ';
+                            w.selectedTreatment = t;
+                            node.say('PLAYWITHBOT', 'SERVER',
+                            w.selectedTreatment);
+                        };
+
+                        t = t.substring(10);
+                        if (t === 'latin_square') divT3 = div;
+                        else if (t === 'rotate') divT1 = div;
+                        else if (t === 'random') divT2 = div;
+                        else if (t === 'weighted_random') divT4 = div;
+                        else flexBox.appendChild(div);
+
+                    }
+                }
+                div = document.createElement('div');
+                div.style.flex = '200px';
+                div.style['margin-top'] = '10px';
+
+                div.className = 'waitroom-list';
+
+                // Hack to fit nicely the treatments.
+                flexBox.appendChild(div);
+
+                if (w.addDefaultTreatments !== false) {
+                    flexBox.appendChild(divT1);
+                    flexBox.appendChild(divT2);
+                    flexBox.appendChild(divT3);
+                    flexBox.appendChild(divT4);
+                }
+            }
+
+        //  var btnGroupTreatments = document.createElement('div');
+        // btnGroupTreatments.role = 'group';
+        // btnGroupTreatments['aria-label'] = 'Select Treatment';
+        // btnGroupTreatments.className = 'btn-group';
+        //
+        // var btnTreatment = document.createElement('button');
+        // btnTreatment.className = 'btn btn-default btn-lg ' +
+        //     'dropdown-toggle';
+        // btnTreatment['data-toggle'] = 'dropdown';
+        // btnTreatment['aria-haspopup'] = 'true';
+        // btnTreatment['aria-expanded'] = 'false';
+        // btnTreatment.innerHTML = w.getText('selectTreatment');
+        //
+        //  btnGroupTreatments.appendChild(btnTreatment);
+
+        // btnGroup.appendChild(btnGroupTreatments);
+
+
+        // Store Reference in widget.
+        // w.treatmentBtn = btnTreatment;
+        }
+        // Append button group.
+        // w.bodyDiv.appendChild(document.createElement('br'));
+        // w.bodyDiv.appendChild(btnGroup);
+
+    }
 
 })(node);
