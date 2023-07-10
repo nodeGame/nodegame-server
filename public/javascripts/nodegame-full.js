@@ -25335,7 +25335,15 @@ if (!Array.prototype.indexOf) {
             this.widgetStep = true;
 
             // Parse input params. // TODO: throws errors.
-            if ('string' === typeof widget) widget = { name: widget };
+            
+            // Default widget is ChoiceManager.
+            if ('string' === typeof widget) {
+                widget = { name: widget };
+            }
+            else if (!widget.name) {
+                widget.name = 'ChoiceManager';
+            }
+
             if ('string' !== typeof widget.id) {
                 widget.id = 'ng_step_widget_' + widget.name;
             }
@@ -45535,7 +45543,7 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # ChoiceManager
- * Copyright(c) 2022 Stefano Balietti
+ * Copyright(c) 2023 Stefano Balietti
  * MIT Licensed
  *
  * Creates and manages a set of selectable choices forms (e.g., ChoiceTable).
@@ -45569,6 +45577,7 @@ if (!Array.prototype.indexOf) {
      * Creates a new instance of ChoiceManager
      */
     function ChoiceManager() {
+
         /**
          * ### ChoiceManager.dl
          *
@@ -45640,7 +45649,6 @@ if (!Array.prototype.indexOf) {
          */
         this.groupOrder = null;
 
-        // TODO: rename in sharedOptions.
         /**
          * ### ChoiceManager.formsOptions
          *
@@ -45655,13 +45663,12 @@ if (!Array.prototype.indexOf) {
             storeRef: false
         };
 
-
         /**
          * ### ChoiceManager.simplify
          *
-         * If TRUE, it returns getValues() returns forms.values
+         * If TRUE, method `ChoiceManager.getValues()` returns only forms.values
          *
-         * @see ChoiceManager.getValue
+         * @see ChoiceManager.getValues
          */
         this.simplify = null;
 
@@ -45774,7 +45781,6 @@ if (!Array.prototype.indexOf) {
         if ('undefined' === typeof options.shuffleForms) tmp = false;
         else tmp = !!options.shuffleForms;
         this.shuffleForms = tmp;
-
 
         // Set the group, if any.
         if ('string' === typeof options.group ||
@@ -45921,27 +45927,6 @@ if (!Array.prototype.indexOf) {
         if (this.shuffleForms) this.order = J.shuffle(this.order);
     };
 
-    /**
-     * ### ChoiceManager.buildDl
-     *
-     * Builds the list of all forms
-     *
-     * Must be called after forms have been set already.
-     *
-     * @see ChoiceManager.setForms
-     * @see ChoiceManager.order
-     */
-    ChoiceManager.prototype.buildDl = function() {
-        var i, len;
-        var form;
-
-        i = -1, len = this.forms.length;
-        for ( ; ++i < len ; ) {
-            form = this.forms[this.order[i]];
-            appendDT(this.dl, form);
-        }
-    };
-
     ChoiceManager.prototype.append = function() {
         var div, opts;
 
@@ -45961,9 +45946,8 @@ if (!Array.prototype.indexOf) {
         }
 
         // Dl.
-        this.dl = document.createElement('dl');
-        this.buildDl();
-        // Append Dl.
+        this.dl = buildDL(this);
+        // Append it.
         this.bodyDiv.appendChild(this.dl);
 
         // Creates a free-text textarea, possibly with placeholder text.
@@ -45996,7 +45980,6 @@ if (!Array.prototype.indexOf) {
                 this.doneBtn = node.widgets.append('DoneButton', div, opts);
             }
         }
-
 
         if (this.honeypot) this.addHoneypot(this.honeypot);
     };
@@ -46577,6 +46560,21 @@ if (!Array.prototype.indexOf) {
 
     // ## Helper methods.
 
+    /**
+     * ### checkFormResult
+     *
+     * Checks if the values returned by a form are valid
+     *
+     * @param {object} res The values returned by a form
+     * @param {object} form The form object
+     * @param {object} opts Configuration options changing the checking behavior
+     * @param {object} out Optional The object returned by
+     *     `ChoiceManager.getValues()`
+     *
+     * @return {bool} TRUE, if conditions for display are met
+     *
+     * @see ChoiceManager.getValues
+     */
     function checkFormResult(res, form, opts, out) {
         var err;
         // Backward compatible (requiredChoice).
@@ -46595,16 +46593,28 @@ if (!Array.prototype.indexOf) {
         return err;
     }
 
-    function checkConditional(that, id) {
+    /**
+     * ### checkConditional
+     *
+     * Checks if the conditions for the display of a form are met
+     *
+     * @param {ChoiceManager} w This widget instance
+     * @param {string} form The id of the conditional to check
+     *
+     * @return {bool} TRUE, if conditions for display are met
+     *
+     * @see ChoiceManager.conditionals
+     */
+    function checkConditional(w, id) {
         var f, c, form;
-        f = that.conditionals[id];
+        f = w.conditionals[id];
         if (f) {
             if ('function' === typeof f) {
-                return f.call(that, that.formsById);
+                return f.call(w, w.formsById);
             }
             for (c in f) {
                 if (f.hasOwnProperty(c)) {
-                    form = that.formsById[c];
+                    form = w.formsById[c];
                     if (!form) continue;
                     // No multiple choice allowed.
                     if (J.isArray(f[c])) {
@@ -46619,11 +46629,47 @@ if (!Array.prototype.indexOf) {
         return true;
     }
 
+    /**
+     * ### buildDL
+     *
+     * Builds the list of all forms
+     *
+     * Must be called after forms have been set already.
+     *
+     * @param {ChoiceManager} w This widget instance
+     *
+     * @return {HTMLElement} The <DL> HTML element
+     *
+     * @see ChoiceManager.setForms
+     * @see ChoiceManager.order
+     * @see appendDT
+     */
+    function buildDL(w) {
+        var i, len, form, dl;
+        dl = document.createElement('dl');
+        i = -1, len = w.forms.length;
+        for ( ; ++i < len ; ) {
+            form = w.forms[w.order[i]];
+            appendDT(dl, form);
+        }
+        return dl;
+    }
+
+     /**
+     * ### appendDT
+     *
+     * Creates a <DT>, adds a widget to it, and <DT> to a <DL>
+     *
+     * @param {HTMLElement} dl The <DL> HTML element
+     * @param {object} form The widget settings to create a new form
+     *
+     * @see buildDL
+     */
     function appendDT(dl, form) {
         var dt;
         dt = document.createElement('dt');
         dt.className = 'question';
-        node.widgets.append(form, dt);
+        node.widgets.add(form, dt);
         dl.appendChild(dt);
     }
 
@@ -55827,10 +55873,22 @@ if (!Array.prototype.indexOf) {
      *    - correctChoice:  the choices are compared against correct ones.
      *    - fixedChoice: compares the choice with given choices.
      *
-     * @return {boolean|null} TRUE if current choice is correct,
-     *   FALSE if it is not correct, or NULL if no correct choice
-     *   was set
+     * If a custom validation is set, it will executed with the current
+     * result of the validation.
      *
+     * @return {object} res The result of the verification and validation.
+     *   The object is of the type:
+     *   ```js
+     *        {
+     *          value: boolean/null // TRUE if current choice is correct,
+     *                              // FALSE if it is not correct,
+     *                              // or NULL if no correct choice was set.
+     *        }
+     *   ```
+     *   The custom validation function, if any is set, can add
+     *   information to the return object.
+     *
+     * @see Dropdown.validation
      */
     Dropdown.prototype.verifyChoice = function () {
 
@@ -56067,9 +56125,9 @@ if (!Array.prototype.indexOf) {
      * @see Dropdown.verifyChoice
      */
     Dropdown.prototype.getValues = function (opts) {
-        var obj;
+        var obj, verif;
         opts = opts || {};
-        var verif = this.verifyChoice().value;
+        verif = this.verifyChoice().value;
 
         obj = {
             id: this.id,
@@ -56088,6 +56146,7 @@ if (!Array.prototype.indexOf) {
 
         if (null !== this.correctChoice || null !== this.requiredChoice ||
             null !== this.fixedChoice) {
+
             obj.isCorrect = verif;
             if (!obj.isCorrect && opts.highlight) this.highlight();
         }
@@ -56095,6 +56154,17 @@ if (!Array.prototype.indexOf) {
             this.setError(this.getText('error', obj.value));
         }
         return obj;
+    };
+
+    /**
+     * ### Dropdown.isChoiceDone
+     *
+     * Returns TRUE if the choice/s has been done, if requested
+     *
+     * @return {boolean} TRUE if the choice is done
+     */
+    Dropdown.prototype.isChoiceDone = function() {
+        return this.verifyChoice().value !== false;
     };
 
     /**
@@ -57666,6 +57736,17 @@ if (!Array.prototype.indexOf) {
         }
         return res;
     };
+
+    /**
+     * ### Feedback.isChoiceDone
+     *
+     * Returns TRUE if the feedback was filled as requested
+     *
+     * @return {boolean} TRUE if the feedback was filled as requested
+     */
+    Feedback.prototype.isChoiceDone = function() {
+        return this.verifyFeedback();
+     };
 
     /**
      * ### Feedback.append
@@ -61469,15 +61550,11 @@ if (!Array.prototype.indexOf) {
     };
 
     Slider.prototype.getValues = function(opts) {
-        var res, value, nochange;
+        var res, nochange;
         opts = opts || {};
         res = true;
         if ('undefined' === typeof opts.highlight) opts.highlight = true;
-        value = this.currentValue;
-        nochange = this.noChangeCheckbox && this.noChangeCheckbox.checked;
-        if ((this.required && this.totalMove === 0 && !nochange) ||
-           (null !== this.correctValue && this.correctValue !== value)) {
-
+        if (!this.isChoiceDone()) {
             if (opts.highlight) {
                 this.highlight();
                 this.setError(this.getText('error'));
@@ -61485,8 +61562,10 @@ if (!Array.prototype.indexOf) {
             res = false;
         }
 
+        nochange = this.noChangeCheckbox && this.noChangeCheckbox.checked;
+
         return {
-            value: value,
+            value: this.currentValue,
             noChange: !!nochange,
             initialValue: this.initialValue,
             totalMove: this.totalMove,
@@ -61560,6 +61639,21 @@ if (!Array.prototype.indexOf) {
         this.errorBox.innerHTML = err || '';
         if (err) this.highlight();
         else this.unhighlight();
+    };
+
+    /**
+     * ### Slider.isChoiceDone
+     *
+     * Returns TRUE if the slider has been moved (if requested)
+     *
+     * @return {boolean} TRUE if the choice is done
+     */
+    Slider.prototype.isChoiceDone = function() {
+        var value, nochange;
+        value = this.currentValue;
+        nochange = this.noChangeCheckbox && this.noChangeCheckbox.checked;
+        return !((this.required && this.totalMove === 0 && !nochange) ||
+                (null !== this.correctValue && this.correctValue !== value));
     };
 
 })(node);
@@ -64124,7 +64218,7 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # WaitingRoom
- * Copyright(c) 2022 Stefano Balietti <ste@nodegame.org>
+ * Copyright(c) 2023 Stefano Balietti <ste@nodegame.org>
  * MIT Licensed
  *
  * Displays the number of connected/required players to start a game
@@ -64419,7 +64513,7 @@ if (!Array.prototype.indexOf) {
         this.disconnectIfNotSelected = null;
 
         /**
-         * ### WaitingRoom.userDispatch
+         * ### WaitingRoom.userCanDispatch
          *
          * If TRUE, the interface allows to start a new game
          *
@@ -64428,7 +64522,7 @@ if (!Array.prototype.indexOf) {
          *
          * @see WaitingRoom.playBtn
          */
-        this.userDispatch = null;
+        this.userCanDispatch = null;
 
         /**
          * ### WaitingRoom.playBtn
@@ -64437,28 +64531,28 @@ if (!Array.prototype.indexOf) {
          *
          * Will be created if requested by options.
          *
-         * @see WaitingRoom.userDispatch
+         * @see WaitingRoom.userCanDispatch
          */
         this.playBtn = null;
 
         /**
-         * ### WaitingRoom.selectTreatmentOption
+         * ### WaitingRoom.userCanSelectTreat
          *
          * If TRUE, it displays a selector to choose the treatment of the game
          *
          * This option is set by the server, local modifications will
          * not have an effect if server does not allow it
          */
-        this.selectTreatmentOption = null;
+        this.userCanSelectTreat = null;
 
         /**
          * ### WaitingRoom.treatmentBtn
          *
          * Holds the name of selected treatment
          *
-         * Only used if `selectTreatmentOption` is enabled
+         * Only used if `userCanSelectTreat` is enabled
          *
-         * @see WaitingRoom.selectTreatmentOption
+         * @see WaitingRoom.userCanSelectTreat
          */
         this.selectedTreatment = null;
 
@@ -64467,11 +64561,11 @@ if (!Array.prototype.indexOf) {
          *
          * If TRUE, after the user defined treatments, it adds default ones
          *
-         * It has effect only if WaitingRoom.selectTreatmentOption is TRUE.
+         * It has effect only if WaitingRoom.userCanSelectTreat is TRUE.
          *
          * Default: TRUE
          *
-         * @see WaitingRoom.selectTreatmentOption
+         * @see WaitingRoom.userCanSelectTreat
          */
         this.addDefaultTreatments = null;
 
@@ -64502,8 +64596,8 @@ if (!Array.prototype.indexOf) {
      *   - onSuccess: function executed when all tests succeed
      *   - waitTime: max waiting time to execute all tests (in milliseconds)
      *   - startDate: max waiting time to execute all tests (in milliseconds)
-     *   - userDispatch: displays button to dispatch a new game
-     *   - selectTreatmentOption: displays treatment selector
+     *   - userCanDispatch: displays button to dispatch a new game
+     *   - userCanSelectTreat: displays treatment selector
      *
      * @param {object} conf Configuration object.
      */
@@ -64594,10 +64688,10 @@ if (!Array.prototype.indexOf) {
         }
 
 
-        if (conf.userDispatch) this.userDispatch = true;
-        else this.userDispatch = false;
-        if (conf.selectTreatmentOption) this.selectTreatmentOption = true;
-        else this.selectTreatmentOption = false;
+        if (conf.userCanDispatch) this.userCanDispatch = true;
+        else this.userCanDispatch = false;
+        if (conf.userCanSelectTreat) this.userCanSelectTreat = true;
+        else this.userCanSelectTreat = false;
         if ('undefined' !== typeof conf.addDefaultTreatments) {
             this.addDefaultTreatments = !!conf.addDefaultTreatments;
         }
@@ -64632,8 +64726,8 @@ if (!Array.prototype.indexOf) {
         this.displayExecMode();
 
         // Displays treatments / play btn.
-        if (this.userDispatch) {
-            if (this.selectTreatmentOption) {
+        if (this.userCanDispatch) {
+            if (this.userCanSelectTreat) {
                 this.treatmentTiles ? buildTreatTiles(this, conf) :
                      buildTreatDropdown(this, conf)
             }
