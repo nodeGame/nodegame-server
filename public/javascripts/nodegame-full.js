@@ -24025,15 +24025,10 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # GameDB
- * Copyright(c) 2021 Stefano Balietti
+ * Copyright(c) 2023 Stefano Balietti
  * MIT Licensed
  *
  * Provides a simple, lightweight NO-SQL database for nodeGame
- *
- * It automatically indexes inserted items by:
- *
- *  - player,
- *  - stage.
  *
  * @see GameStage.compare
  * @see NDDB
@@ -24131,6 +24126,66 @@ if (!Array.prototype.indexOf) {
 
         this.node = this.__shared.node;
     }
+
+    /**
+     * ## GameDB.defaultStreams
+     *
+     * Adds default streams to save to file
+     *
+     * Default streams include:
+     * 
+     * - memory.json:  all items in memory.
+     * - feedback.csv: all items with a property `feedback` (creates new view).
+     * - email.csv:    all items with a property `email` (creates a new view).
+     * - times.csv     the times to complete every step.
+     * 
+     * @param {object} mask Optional. A configuration object to exclude a
+     *    stream. E.g., `{ email: false }` will not add the email stream.
+     */
+    GameDB.prototype.defaultStreams = function(mask) {
+        mask = mask || {};
+
+        // Done.
+        if (mask.memory === true) this.stream();
+
+        // Feedback.
+        if (mask.feedback === true) {
+            this.view("feedback").stream({
+                format: "csv",
+                header: ["time", "timestamp", "player", "feedback"],
+            });
+        }
+
+        // Email.
+        if (mask.email === true) {
+            this.view("email").stream({
+                format: "csv",
+                header: ["timestamp", "player", "email"],
+            });
+        }
+
+        // Times.
+        if (mask.times === true) {
+            this.stream({
+                filename: "times.csv",
+                format: "csv",
+                delay: 20000,
+                header: [
+                    "session",
+                    "treatment",
+                    "player",
+                    "stage",
+                    "step",
+                    "round",
+                    "stageId",
+                    "stepId",
+                    "timestamp",
+                    "time",
+                ],
+                stageNum2Id: false, // TODO: this should be default FALSE
+            });
+        }
+    };
 
     /**
      * ### GameDB.add
@@ -25335,7 +25390,7 @@ if (!Array.prototype.indexOf) {
             this.widgetStep = true;
 
             // Parse input params. // TODO: throws errors.
-            
+
             // Default widget is ChoiceManager.
             if ('string' === typeof widget) {
                 widget = { name: widget };
