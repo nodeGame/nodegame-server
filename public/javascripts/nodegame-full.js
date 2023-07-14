@@ -42465,7 +42465,7 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # BackButton
- * Copyright(c) 2020 Stefano Balietti <ste@nodegame.org>
+ * Copyright(c) 2023 Stefano Balietti <ste@nodegame.org>
  * MIT Licensed
  *
  * Creates a button that if pressed goes to the previous step
@@ -42484,7 +42484,6 @@ if (!Array.prototype.indexOf) {
     BackButton.description = 'Creates a button that if ' +
         'pressed goes to the previous step.';
 
-    BackButton.title = false;
     BackButton.panel = false;
     BackButton.className = 'backbutton';
     BackButton.texts.back = 'Back';
@@ -42741,7 +42740,7 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # BoxSelector
- * Copyright(c) 2019 Stefano Balietti
+ * Copyright(c) 2023 Stefano Balietti
  * MIT Licensed
  *
  * Creates a simple box that opens a menu of items to choose from
@@ -42763,7 +42762,6 @@ if (!Array.prototype.indexOf) {
         'of items to choose from.';
 
     BoxSelector.panel = false;
-    BoxSelector.title = false;
     BoxSelector.className = 'boxselector';
 
     /**
@@ -43009,7 +43007,7 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # Chat
- * Copyright(c) 2021 Stefano Balietti
+ * Copyright(c) 2023 Stefano Balietti
  * MIT Licensed
  *
  * Creates a simple configurable chat
@@ -43071,7 +43069,6 @@ if (!Array.prototype.indexOf) {
     Chat.description = 'Offers a uni-/bi-directional communication interface ' +
         'between players, or between players and the server.';
 
-    Chat.title = 'Chat';
     Chat.className = 'chat';
 
     Chat.panel = false;
@@ -43867,7 +43864,7 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # ChernoffFaces
- * Copyright(c) 2017 Stefano Balietti
+ * Copyright(c) 2023 Stefano Balietti
  * MIT Licensed
  *
  * Displays multidimensional data in the shape of a Chernoff Face.
@@ -43888,7 +43885,6 @@ if (!Array.prototype.indexOf) {
     ChernoffFaces.description =
         'Display parametric data in the form of a Chernoff Face.';
 
-    ChernoffFaces.title = 'ChernoffFaces';
     ChernoffFaces.className = 'chernofffaces';
 
     // ## Dependencies
@@ -45557,7 +45553,6 @@ if (!Array.prototype.indexOf) {
     ChoiceManager.description = 'Groups together and manages a set of ' +
         'survey forms (e.g., ChoiceTable).';
 
-    ChoiceManager.title = false;
     ChoiceManager.className = 'choicemanager';
 
     // ## Dependencies
@@ -46711,7 +46706,6 @@ if (!Array.prototype.indexOf) {
     ChoiceTable.description = 'Creates a configurable table where ' +
         'each cell is a selectable choice.';
 
-    ChoiceTable.title = 'Make your choice';
     ChoiceTable.className = 'choicetable';
 
     ChoiceTable.texts = {
@@ -47860,7 +47854,7 @@ if (!Array.prototype.indexOf) {
                     allFixedPos.push({ fixed: fixedPos, pos: i, idx: idxOrder});
                 }
             }
-            // All fixed position collected, we need to sort them from 
+            // All fixed position collected, we need to sort them from
             // lowest to highest, then we can do the placing.
             if (allFixedPos.length) {
                 allFixedPos.sort(function(a, b) { return a.fixed < b.fixed });
@@ -49119,7 +49113,6 @@ if (!Array.prototype.indexOf) {
     ChoiceTableGroup.description = 'Groups together and manages sets of ' +
         'ChoiceTable widgets.';
 
-    ChoiceTableGroup.title = 'Make your choice';
     ChoiceTableGroup.className = 'choicetable choicetablegroup';
 
     ChoiceTableGroup.separator = '::';
@@ -50488,7 +50481,7 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # Consent
- * Copyright(c) 2021 Stefano Balietti
+ * Copyright(c) 2023 Stefano Balietti
  * MIT Licensed
  *
  * Displays a consent form with buttons to accept/reject it
@@ -50506,7 +50499,6 @@ if (!Array.prototype.indexOf) {
     Consent.version = '0.4.0';
     Consent.description = 'Displays a configurable consent form.';
 
-    Consent.title = false;
     Consent.panel = false;
     Consent.className = 'consent';
 
@@ -50740,7 +50732,7 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # ContentBox
- * Copyright(c) 2019 Stefano Balietti
+ * Copyright(c) 2023 Stefano Balietti
  * MIT Licensed
  *
  * Displays some content.
@@ -50758,7 +50750,6 @@ if (!Array.prototype.indexOf) {
     ContentBox.version = '0.2.0';
     ContentBox.description = 'Simply displays some content';
 
-    ContentBox.title = false;
     ContentBox.panel = false;
     ContentBox.className = 'contentbox';
 
@@ -50840,7 +50831,7 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # Controls
- * Copyright(c) 2017 Stefano Balietti <ste@nodegame.org>
+ * Copyright(c) 2023 Stefano Balietti <ste@nodegame.org>
  * MIT Licensed
  *
  * Creates and manipulates a set of forms
@@ -50860,7 +50851,6 @@ if (!Array.prototype.indexOf) {
     Controls.version = '0.5.1';
     Controls.description = 'Wraps a collection of user-inputs controls.';
 
-    Controls.title = 'Controls';
     Controls.className = 'controls';
 
     /**
@@ -50917,7 +50907,7 @@ if (!Array.prototype.indexOf) {
     }
 
     Controls.prototype.add = function(root, id, attributes) {
-        // TODO: replace W.addTextInput 
+        // TODO: replace W.addTextInput
         //return W.addTextInput(root, id, attributes);
     };
 
@@ -51033,7 +51023,7 @@ if (!Array.prototype.indexOf) {
                     };
                 }
 
-                if (attributes.label) {                    
+                if (attributes.label) {
                     W.add('label', container, {
                         'for': elem.id,
                         innerHTML: attributes.label
@@ -51268,7 +51258,7 @@ if (!Array.prototype.indexOf) {
         for (key in this.features) {
             if (this.features.hasOwnProperty(key)) {
                 el = W.getElementById(key);
-                if (el.checked) return el.value;                
+                if (el.checked) return el.value;
             }
         }
         return false;
@@ -51278,7 +51268,7 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # CustomInput
- * Copyright(c) 2021 Stefano Balietti
+ * Copyright(c) 2023 Stefano Balietti
  * MIT Licensed
  *
  * Creates a configurable input form with validation
@@ -51296,7 +51286,6 @@ if (!Array.prototype.indexOf) {
     CustomInput.version = '0.12.0';
     CustomInput.description = 'Creates a configurable input form';
 
-    CustomInput.title = false;
     CustomInput.panel = false;
     CustomInput.className = 'custominput';
 
@@ -52938,7 +52927,7 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # CustomInputGroup
- * Copyright(c) 2021 Stefano Balietti
+ * Copyright(c) 2023 Stefano Balietti
  * MIT Licensed
  *
  * Creates a table that groups together several custom input widgets
@@ -52959,7 +52948,6 @@ if (!Array.prototype.indexOf) {
     CustomInputGroup.description = 'Groups together and manages sets of ' +
         'CustomInput widgets.';
 
-    CustomInputGroup.title = false;
     CustomInputGroup.className = 'custominput custominputgroup';
 
     CustomInputGroup.separator = '::';
@@ -54848,7 +54836,7 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # DisconnectBox
- * Copyright(c) 2019 Stefano Balietti
+ * Copyright(c) 2023 Stefano Balietti
  * MIT Licensed
  *
  * Shows a disconnect button
@@ -54866,7 +54854,6 @@ if (!Array.prototype.indexOf) {
     DisconnectBox.version = '0.4.0';
     DisconnectBox.description = 'Monitors and handles disconnections';
 
-    DisconnectBox.title = false;
     DisconnectBox.panel = false;
     DisconnectBox.className = 'disconnectbox';
 
@@ -55009,7 +54996,7 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # DoneButton
- * Copyright(c) 2020 Stefano Balietti <ste@nodegame.org>
+ * Copyright(c) 2023 Stefano Balietti <ste@nodegame.org>
  * MIT Licensed
  *
  * Creates a button that if pressed emits node.done()
@@ -55028,7 +55015,6 @@ if (!Array.prototype.indexOf) {
     DoneButton.description = 'Creates a button that if ' +
         'pressed emits node.done().';
 
-    DoneButton.title = false;
     DoneButton.panel = false;
     DoneButton.className = 'donebutton';
     DoneButton.texts.done = 'Done';
@@ -55318,6 +55304,15 @@ if (!Array.prototype.indexOf) {
 
 })(node);
 
+/**
+ * # DropDown
+ * Copyright(c) 2023 Stefano Balietti <ste@nodegame.org>
+ * MIT Licensed
+ *
+ * Creates a customizable dropdown menu
+ *
+ * www.nodegame.org
+ */
 (function(node) {
 
     node.widgets.register('Dropdown', Dropdown);
@@ -55346,8 +55341,6 @@ if (!Array.prototype.indexOf) {
         }
     };
 
-    // Title is displayed in the header.
-    Dropdown.title = false;
     // Classname is added to the widgets.
     Dropdown.className = 'dropdown';
 
@@ -56282,7 +56275,7 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # EmailForm
- * Copyright(c) 2021 Stefano Balietti <ste@nodegame.org>
+ * Copyright(c) 2023 Stefano Balietti <ste@nodegame.org>
  * MIT Licensed
  *
  * Displays a form to input email
@@ -56300,7 +56293,6 @@ if (!Array.prototype.indexOf) {
     EmailForm.version = '0.13.1';
     EmailForm.description = 'Displays a configurable email form.';
 
-    EmailForm.title = false;
     EmailForm.className = 'emailform';
 
     EmailForm.texts = {
@@ -56702,7 +56694,7 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # EndScreen
- * Copyright(c) 2021 Stefano Balietti <ste@nodegame.org>
+ * Copyright(c) 2023 Stefano Balietti <ste@nodegame.org>
  * MIT Licensed
  *
  * Creates an interface to display final earnings, exit code, etc.
@@ -56722,7 +56714,6 @@ if (!Array.prototype.indexOf) {
     EndScreen.description = 'Game end screen. With end game message, ' +
                             'email form, and exit code.';
 
-    EndScreen.title = false;
     EndScreen.className = 'endscreen';
 
     EndScreen.texts = {
@@ -56752,11 +56743,11 @@ if (!Array.prototype.indexOf) {
      *
      * Creates a new instance of EndScreen
      *
-     * @param {object} options Configuration options
+     * @param {object} opts Configuration options
      *
      * @see EndScreen.init
      */
-    function EndScreen(options) {
+    function EndScreen(opts) {
 
         /**
          * ### EndScreen.showEmailForm
@@ -56848,86 +56839,85 @@ if (!Array.prototype.indexOf) {
          *
          * If TRUE, after being appended it sends a 'WIN' message to server
          *
-         * Default: FALSE
+         * Default: TRUE
          */
-        this.askServer = options.askServer || false;
+        this.askServer = true;
     }
 
-    EndScreen.prototype.init = function(options) {
+    EndScreen.prototype.init = function(opts) {
 
-        if (options.email === false) {
+        if ('undefined' !== typeof opts.askServer) {
+            this.askServer = !!opts.askServer;
+        }
+
+        if (opts.email === false) {
             this.showEmailForm = false;
         }
-        else if ('boolean' === typeof options.showEmailForm) {
-            this.showEmailForm = options.showEmailForm;
+        else if ('boolean' === typeof opts.showEmailForm) {
+            this.showEmailForm = opts.showEmailForm;
         }
-        else if ('undefined' !== typeof options.showEmailForm) {
-            throw new TypeError('EndScreen.init: ' +
-                                'options.showEmailForm ' +
-                                'must be boolean or undefined. ' +
-                                'Found: ' + options.showEmailForm);
+        else if ('undefined' !== typeof opts.showEmailForm) {
+            throw new TypeError('EndScreen.init: opts.showEmailForm ' +
+                                'must be boolean or undefined. Found: ' +
+                                opts.showEmailForm);
         }
 
-        if (options.feedback === false) {
+        if (opts.feedback === false) {
             this.showFeedbackForm = false;
         }
-        else if ('boolean' === typeof options.showFeedbackForm) {
-            this.showFeedbackForm = options.showFeedbackForm;
+        else if ('boolean' === typeof opts.showFeedbackForm) {
+            this.showFeedbackForm = opts.showFeedbackForm;
         }
-        else if ('undefined' !== typeof options.showFeedbackForm) {
-            throw new TypeError('EndScreen.init: ' +
-                                'options.showFeedbackForm ' +
-                                'must be boolean or undefined. ' +
-                                'Found: ' + options.showFeedbackForm);
+        else if ('undefined' !== typeof opts.showFeedbackForm) {
+            throw new TypeError('EndScreen.init: opts.showFeedbackForm ' +
+                                'must be boolean or undefined. Found: ' +
+                                opts.showFeedbackForm);
         }
 
-        if (options.totalWin === false) {
+        if (opts.totalWin === false) {
             this.showTotalWin = false;
         }
-        else if ('boolean' === typeof options.showTotalWin) {
-            this.showTotalWin = options.showTotalWin;
+        else if ('boolean' === typeof opts.showTotalWin) {
+            this.showTotalWin = opts.showTotalWin;
         }
-        else if ('undefined' !== typeof options.showTotalWin) {
-            throw new TypeError('EndScreen.init: ' +
-                                'options.showTotalWin ' +
-                                'must be boolean or undefined. ' +
-                                'Found: ' + options.showTotalWin);
-        }
-
-        if (options.exitCode === false) {
-            options.showExitCode !== false
-        }
-        else if ('boolean' === typeof options.showExitCode) {
-            this.showExitCode = options.showExitCode;
-        }
-        else if ('undefined' !== typeof options.showExitCode) {
-            throw new TypeError('EndScreen.init: ' +
-                                'options.showExitCode ' +
-                                'must be boolean or undefined. ' +
-                                'Found: ' + options.showExitCode);
+        else if ('undefined' !== typeof opts.showTotalWin) {
+            throw new TypeError('EndScreen.init: opts.showTotalWin ' +
+                                'must be boolean or undefined. Found: ' +
+                                opts.showTotalWin);
         }
 
-        if ('string' === typeof options.totalWinCurrency &&
-                 options.totalWinCurrency.trim() !== '') {
-
-            this.totalWinCurrency = options.totalWinCurrency;
+        if (opts.exitCode === false) {
+            opts.showExitCode !== false
         }
-        else if ('undefined' !== typeof options.totalWinCurrency) {
+        else if ('boolean' === typeof opts.showExitCode) {
+            this.showExitCode = opts.showExitCode;
+        }
+        else if ('undefined' !== typeof opts.showExitCode) {
+            throw new TypeError('EndScreen.init: opts.showExitCode ' +
+                                'must be boolean or undefined. Found: ' +
+                                 opts.showExitCode);
+        }
+
+        if ('string' === typeof opts.totalWinCurrency &&
+                 opts.totalWinCurrency.trim() !== '') {
+
+            this.totalWinCurrency = opts.totalWinCurrency;
+        }
+        else if ('undefined' !== typeof opts.totalWinCurrency) {
             throw new TypeError('EndScreen.init: ' +
-                                'options.totalWinCurrency must be undefined ' +
+                                'opts.totalWinCurrency must be undefined ' +
                                 'or a non-empty string. Found: ' +
-                                options.totalWinCurrency);
+                                opts.totalWinCurrency);
         }
 
-        if (options.totalWinCb) {
-            if ('function' === typeof options.totalWinCb) {
-                this.totalWinCb = options.totalWinCb;
+        if (opts.totalWinCb) {
+            if ('function' === typeof opts.totalWinCb) {
+                this.totalWinCb = opts.totalWinCb;
             }
             else {
-                throw new TypeError('EndScreen.init: ' +
-                                    'options.totalWinCb ' +
-                                    'must be function or undefined. ' +
-                                    'Found: ' + options.totalWinCb);
+                throw new TypeError('EndScreen.init: opts.totalWinCb ' +
+                                    'must be function or undefined. Found: ' +
+                                     opts.totalWinCb);
             }
         }
 
@@ -56946,13 +56936,13 @@ if (!Array.prototype.indexOf) {
                     errString: 'Please enter a valid email and retry'
                 },
                 setMsg: true // Sends a set message for logic's db.
-            }, options.email));
+            }, opts.email));
         }
 
         if (this.showFeedbackForm) {
             this.feedback = node.widgets.get('Feedback', J.mixin(
                 { storeRef: false, minChars: 50, setMsg: true },
-                options.feedback));
+                opts.feedback));
         }
     };
 
@@ -57204,7 +57194,7 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # Feedback
- * Copyright(c) 2021 Stefano Balietti
+ * Copyright(c) 2023 Stefano Balietti
  * MIT Licensed
  *
  * Sends a feedback message to the server
@@ -57226,7 +57216,7 @@ if (!Array.prototype.indexOf) {
     Feedback.version = '1.6.0';
     Feedback.description = 'Displays a configurable feedback form';
 
-    Feedback.title = 'Feedback';
+    Feedback.title = false;
     Feedback.className = 'feedback';
 
     Feedback.texts = {
@@ -58157,7 +58147,7 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # Goto
- * Copyright(c) 2022 Stefano Balietti <ste@nodegame.org>
+ * Copyright(c) 2023 Stefano Balietti <ste@nodegame.org>
  * MIT Licensed
  *
  * Creates a simple interface to go to a step in the sequence.
@@ -58193,7 +58183,6 @@ if (!Array.prototype.indexOf) {
     Goto.description = 'Creates a simple interface to move across ' +
                        'steps in the sequence.';
 
-    Goto.title = false;
     Goto.panel = false;
     Goto.className = 'goto';
 
@@ -58281,7 +58270,7 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # GroupMalleability
- * Copyright(c) 2021 Stefano Balietti
+ * Copyright(c) 2023 Stefano Balietti
  * MIT Licensed
  *
  * Displays an interface to measure users' perception of group malleability.
@@ -58337,10 +58326,6 @@ if (!Array.prototype.indexOf) {
             'selecting a number from 1 to 7 on the scale below. <em>You ' +
             'can work quickly, your first feeling is generally best.</em>'
     };
-
-    // ## Dependencies
-
-    GroupMalleability.dependencies = {};
 
     /**
      * ## GroupMalleability constructor
@@ -58493,7 +58478,7 @@ if (!Array.prototype.indexOf) {
     LanguageSelector.version = '0.6.2';
     LanguageSelector.description = 'Display information about the current ' +
         'language and allows to change language.';
-    LanguageSelector.title = 'Language';
+
     LanguageSelector.className = 'languageselector';
 
     LanguageSelector.texts.loading = 'Loading language information...';
@@ -59102,7 +59087,7 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # MoodGauge
- * Copyright(c) 2019 Stefano Balietti
+ * Copyright(c) 2023 Stefano Balietti
  * MIT Licensed
  *
  * Displays an interface to query users about mood, emotions and well-being
@@ -59117,11 +59102,10 @@ if (!Array.prototype.indexOf) {
 
     // ## Meta-data
 
-    MoodGauge.version = '0.4.0';
+    MoodGauge.version = '0.5.0';
     MoodGauge.description = 'Displays an interface to measure mood ' +
         'and emotions.';
 
-    MoodGauge.title = 'Mood Gauge';
     MoodGauge.className = 'moodgauge';
 
     MoodGauge.texts.mainText = 'Thinking about yourself and how you normally' +
@@ -59318,14 +59302,13 @@ if (!Array.prototype.indexOf) {
     // ## Available methods.
 
     // ### I_PANAS_SF
-    function I_PANAS_SF(options) {
-        var items, emotions, choices, left, right;
+    function I_PANAS_SF(opts) {
+        var items, emotions, choices, left, right, l;
         var gauge, i, len;
 
-        choices = options.choices ||
-            [ '1', '2', '3', '4', '5' ];
+        choices = opts.choices || [ '1', '2', '3', '4', '5' ];
 
-        emotions = options.emotions || [
+        emotions = opts.emotions || [
             'Upset',
             'Hostile',
             'Alert',
@@ -59337,32 +59320,32 @@ if (!Array.prototype.indexOf) {
             'Afraid',
             'Active'
         ];
-
-        left = options.left || 'never';
-
-        right = options.right || 'always';
-
         len = emotions.length;
+
+        left = opts.left || 'never';
+        right = opts.right || 'always';
 
         items = new Array(len);
 
         i = -1;
         for ( ; ++i < len ; ) {
+            l = '<span class="emotion">' + emotions[i] + ':</span> ' + left;
             items[i] = {
                 id: emotions[i],
-                left: '<span class="emotion">' + emotions[i] + ':</span> never',
+                left: l,
                 right: right,
-                choices: choices
+                sameCellWidth: '200px'
             };
         }
 
         gauge = node.widgets.get('ChoiceTableGroup', {
-            id: options.id || 'ipnassf',
+            id: opts.id || 'ipnassf',
             items: items,
             mainText: this.mainText || this.getText('mainText'),
-            title: false,
             requiredChoice: true,
-            storeRef: false
+            storeRef: false,
+            header: opts.header,
+            choices: choices,
         });
 
         return gauge;
@@ -60051,7 +60034,7 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # RiskGauge
- * Copyright(c) 2020 Stefano Balietti
+ * Copyright(c) 2023 Stefano Balietti
  * MIT Licensed
  *
  * Displays an interface to measure risk preferences with different methods
@@ -60072,7 +60055,6 @@ if (!Array.prototype.indexOf) {
     RiskGauge.description = 'Displays an interface to ' +
         'measure risk preferences with different methods.';
 
-    RiskGauge.title = 'Risk Gauge';
     RiskGauge.className = 'riskgauge';
 
     RiskGauge.texts =  {
@@ -60733,7 +60715,7 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # SDO
- * Copyright(c) 2021 Stefano Balietti
+ * Copyright(c) 2023 Stefano Balietti
  * MIT Licensed
  *
  * Displays an interface to measure users' social dominance orientation (S.D.O.)
@@ -60752,7 +60734,6 @@ if (!Array.prototype.indexOf) {
     SDO.description = 'Displays an interface to measure Social ' +
         'Dominance Orientation (S.D.O.).';
 
-    SDO.title = 'SDO';
     SDO.className = 'SDO';
 
 
@@ -61038,7 +61019,6 @@ if (!Array.prototype.indexOf) {
     Slider.version = '0.7.0';
     Slider.description = 'Creates a configurable slider';
 
-    Slider.title = false;
     Slider.className = 'slider';
 
     Slider.texts = {
@@ -61692,7 +61672,7 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # SVOGauge
- * Copyright(c) 2021 Stefano Balietti
+ * Copyright(c) 2023 Stefano Balietti
  * MIT Licensed
  *
  * Displays an interface to measure users' social value orientation (S.V.O.)
@@ -61711,7 +61691,6 @@ if (!Array.prototype.indexOf) {
     SVOGauge.description = 'Displays an interface to measure social ' +
         'value orientation (S.V.O.).';
 
-    SVOGauge.title = 'SVO Gauge';
     SVOGauge.className = 'svogauge';
 
     SVOGauge.texts = {
@@ -62017,7 +61996,7 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # VisualRound
- * Copyright(c) 2020 Stefano Balietti
+ * Copyright(c) 2023 Stefano Balietti
  * MIT Licensed
  *
  * Display information about rounds and/or stage in the game
@@ -62038,7 +62017,6 @@ if (!Array.prototype.indexOf) {
     VisualRound.version = '0.9.0';
     VisualRound.description = 'Displays current/total/left round/stage/step. ';
 
-    VisualRound.title = false;
     VisualRound.className = 'visualround';
 
     VisualRound.texts = {
@@ -63090,7 +63068,7 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # VisualStage
- * Copyright(c) 2019 Stefano Balietti
+ * Copyright(c) 2023 Stefano Balietti
  * MIT Licensed
  *
  * Shows the name of the current, previous and next step.
@@ -63111,7 +63089,6 @@ if (!Array.prototype.indexOf) {
     VisualStage.description =
         'Displays the name of the current, previous and next step of the game.';
 
-    VisualStage.title = false;
     VisualStage.className = 'visualstage';
 
     VisualStage.texts = {
