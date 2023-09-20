@@ -370,20 +370,23 @@ p {
 /** Language Selector **/
 /***********************/
 .languageselector {
-  float: center;
-  width: 160px;
+  width: fit-content;
 }
-.languageselector .panel-heading {
+.languageselector .card-header {
   font-size: 18px;
 }
 
-.languageselector > .panel-body > form > label {
+.languageselector .card-body label {
   font-size: 20px;
-  font-weight: normal;
+  font-weight: normal !important;
 }
 
-.languageselector > .panel-body > form > label.selectedButtonLabel {
-  font-weight: bold;
+.languageselector label.selected {
+  font-weight: bold !important;
+}
+
+.languageselector label input[type="radio"] {
+  margin: 4px !important;
 }
 
 /** Feedback **/
