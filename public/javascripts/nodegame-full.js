@@ -24762,7 +24762,7 @@ if (!Array.prototype.indexOf) {
         var msgHandler, node;
 
         if (!this.isPausable()) {
-            throw new Error('Game.pause: game cannot be paused.');
+            throw new Error('Game.pause: game cannot be paused');
         }
 
         node = this.node;
@@ -35910,6 +35910,7 @@ if (!Array.prototype.indexOf) {
      * - decrements the counter of loading iframes
      * - executes a given callback function
      * - auto parses the elements specified (if any)
+     * - updates UI, e.g., scroll-up or adds CSS
      * - set the window state as loaded (eventually)
      *
      * @param {function} func Optional. A callback function
@@ -35932,7 +35933,7 @@ if (!Array.prototype.indexOf) {
                                                          autoParsePrefix,
                                                          scrollUp) {
 
-        var loaded, stageLevel;
+        var css, loaded, stageLevel;
         loaded = updateAreLoading(this, -1);
         if (loaded) this.setStateLevel('LOADED');
         if (func) func.call(node.game);
@@ -35940,6 +35941,9 @@ if (!Array.prototype.indexOf) {
             this.searchReplace(autoParse, autoParseMod, autoParsePrefix);
         }
         if (scrollUp && window.scrollTo) window.scrollTo(0,0);
+
+        css = node.game.getProperty('css');
+        if (css) W.cssRule(css);
 
         // ng event emitter is not used.
         node.events.ee.game.emit('FRAME_LOADED');
@@ -37018,23 +37022,6 @@ if (!Array.prototype.indexOf) {
 
     "use strict";
 
-    // var J = node.JSUS;
-
-    // function getElement(idOrObj, prefix) {
-    //     var el;
-    //     if ('string' === typeof idOrObj) {
-    //         el = W.getElementById(idOrObj);
-    //     }
-    //     else if (J.isElement(idOrObj)) {
-    //         el = idOrObj;
-    //     }
-    //     else {
-    //         throw new TypeError(prefix + ': idOrObj must be string ' +
-    //                             ' or HTML Element.');
-    //     }
-    //     return el;
-    // }
-
     var GameWindow = node.GameWindow;
 
     /**
@@ -37058,37 +37045,6 @@ if (!Array.prototype.indexOf) {
         node.on('NODEGAME_GAME_CREATED', function() {
             W.init(node.conf.window);
         });
-
-//         node.on('HIDE', function(idOrObj) {
-//             var el;
-//             console.log('***GameWindow.on.HIDE is deprecated. Use ' +
-//                         'GameWindow.hide() instead.***');
-//             el = getElement(idOrObj, 'GameWindow.on.HIDE');
-//             if (el) el.style.display = 'none';
-//         });
-//
-//         node.on('SHOW', function(idOrObj) {
-//             var el;
-//             console.log('***GameWindow.on.SHOW is deprecated. Use ' +
-//                         'GameWindow.show() instead.***');
-//             el = getElement(idOrObj, 'GameWindow.on.SHOW');
-//             if (el) el.style.display = '';
-//         });
-//
-//         node.on('TOGGLE', function(idOrObj) {
-//             var el;
-//             console.log('***GameWindow.on.TOGGLE is deprecated. Use ' +
-//                         'GameWindow.toggle() instead.***');
-//             el = getElement(idOrObj, 'GameWindow.on.TOGGLE');
-//             if (el) {
-//                 if (el.style.display === 'none') {
-//                     el.style.display = '';
-//                 }
-//                 else {
-//                     el.style.display = 'none';
-//                 }
-//             }
-//         });
 
         // Disable all the input forms found within a given id element.
         node.on('INPUT_DISABLE', function(id) {
@@ -37229,7 +37185,9 @@ if (!Array.prototype.indexOf) {
     }
 
     function event_PAUSED(text) {
-        text = text || W.waitScreen.defaultTexts.paused;
+        // Ignores non-string parameters.
+        text = 'string' === typeof text ?
+            text : W.waitScreen.defaultTexts.paused;
         if (W.isScreenLocked()) {
             W.waitScreen.beforePauseInnerHTML =
                 W.waitScreen.contentDiv.innerHTML;
@@ -38591,7 +38549,6 @@ if (!Array.prototype.indexOf) {
     };
 
     GameWindow.prototype.setInnerHTML = function(search, replace, mod) {
-        // console.log('***deprecated: use W.html instead of W.setInnerHTML');
         this.html(search, replace, mod);
     };
 
@@ -41783,9 +41740,7 @@ if (!Array.prototype.indexOf) {
         else if ('undefined' !== typeof WidgetProto.title) {
             widget.title = WidgetProto.title;
         }
-        else {
-            widget.title = '&nbsp;';
-        }
+
         widget.panel = 'undefined' === typeof opts.panel ?
             WidgetProto.panel : opts.panel;
         widget.footer = 'undefined' === typeof opts.footer ?
@@ -58456,7 +58411,7 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # LanguageSelector
- * Copyright(c) 2017 Stefano Balietti <ste@nodegame.org>
+ * Copyright(c) 2023 Stefano Balietti <ste@nodegame.org>
  * MIT Licensed
  *
  * Manages and displays information about languages available and selected
@@ -58473,13 +58428,16 @@ if (!Array.prototype.indexOf) {
 
     // ## Meta-data
 
-    LanguageSelector.version = '0.6.2';
+    LanguageSelector.version = '0.6.3';
     LanguageSelector.description = 'Display information about the current ' +
-        'language and allows to change language.';
+        'language and allows users to change it.';
+
+    LanguageSelector.title = 'Select Language';
+
 
     LanguageSelector.className = 'languageselector';
 
-    LanguageSelector.texts.loading = 'Loading language information...';
+    LanguageSelector.texts.loading = 'Loading...';
 
     /**
      * ## LanguageSelector constructor
@@ -58631,13 +58589,14 @@ if (!Array.prototype.indexOf) {
          * @see LanguageSelector.setLanguage
          */
         this.onLangCallback = function(msg) {
-            var language;
+            var language, label, display, counter;
 
             // Clear display.
             while (that.displayForm.firstChild) {
                 that.displayForm.removeChild(that.displayForm.firstChild);
             }
 
+            counter = 0;
             // Initialize widget.
             that.availableLanguages = msg.data;
             if (that.usingButtons) {
@@ -58645,31 +58604,32 @@ if (!Array.prototype.indexOf) {
                 // Creates labeled buttons.
                 for (language in msg.data) {
                     if (msg.data.hasOwnProperty(language)) {
-                        that.optionsLabel[language] = W.get('label', {
+                        label = W.get('label', {
                             id: language + 'Label',
                             'for': language + 'RadioButton'
                         });
 
-                        that.optionsDisplay[language] = W.get('input', {
+                        display = W.get('input', {
                             id: language + 'RadioButton',
                             type: 'radio',
                             name: 'languageButton',
                             value: msg.data[language].name
                         });
 
-                        that.optionsDisplay[language].onclick =
-                            makeSetLanguageOnClick(language);
+                        display.onclick = makeOnClick(language);
 
-                        that.optionsLabel[language].appendChild(
-                            that.optionsDisplay[language]);
-                        that.optionsLabel[language].appendChild(
-                            document.createTextNode(
-                                msg.data[language].nativeName));
-                        W.add('br', that.displayForm);
-                        that.optionsLabel[language].className =
-                            'unselectedButtonLabel';
-                        that.displayForm.appendChild(
-                            that.optionsLabel[language]);
+                        label.appendChild(display);
+
+                        label.appendChild(document.createTextNode(
+                            msg.data[language].nativeName));
+
+                        if (++counter !== 1) W.add('br', that.displayForm);
+                        label.className = 'unselected';
+                        that.displayForm.appendChild(label);
+
+                        that.optionsLabel[language] = label;
+                        that.optionsDisplay[language] = display;
+
                     }
                 }
             }
@@ -58677,18 +58637,19 @@ if (!Array.prototype.indexOf) {
 
                 that.displaySelection = W.get('select', 'selectLanguage');
                 for (language in msg.data) {
-                    that.optionsLabel[language] =
+                    label =
                         document.createTextNode(msg.data[language].nativeName);
-                    that.optionsDisplay[language] = W.get('option', {
+                    display = W.get('option', {
                         id: language + 'Option',
                         value: language
                     });
-                    that.optionsDisplay[language].appendChild(
-                        that.optionsLabel[language]);
-                    that.displaySelection.appendChild(
-                        that.optionsDisplay[language]);
+                    display.appendChild(label);
+                    that.displaySelection.appendChild(display);
 
+                    that.optionsLabel[language] = label;
+                    that.optionsDisplay[language] = display
                 }
+
                 that.displayForm.appendChild(that.displaySelection);
                 that.displayForm.onchange = function() {
                     that.setLanguage(that.displaySelection.value,
@@ -58709,7 +58670,7 @@ if (!Array.prototype.indexOf) {
                 that.onLangCallbackExtension = null;
             }
 
-            function makeSetLanguageOnClick(langStr) {
+            function makeOnClick(langStr) {
                 return function() {
                     that.setLanguage(langStr, that.updatePlayer === 'onselect');
                 };
@@ -58814,7 +58775,7 @@ if (!Array.prototype.indexOf) {
                 this.optionsDisplay[this.currentLanguage].checked =
                     'unchecked';
                 this.optionsLabel[this.currentLanguage].className =
-                    'unselectedButtonLabel';
+                    'unselected';
             }
         }
 
@@ -58824,8 +58785,7 @@ if (!Array.prototype.indexOf) {
         if (this.usingButtons) {
             // Check language button and change className of label.
             this.optionsDisplay[this.currentLanguage].checked = 'checked';
-            this.optionsLabel[this.currentLanguage].className =
-                'selectedButtonLabel';
+            this.optionsLabel[this.currentLanguage].className = 'selected';
         }
         else {
             this.displaySelection.value = this.currentLanguage;
@@ -60405,6 +60365,10 @@ if (!Array.prototype.indexOf) {
 
         // Public variables.
 
+        // Enables done button on open (only if DoneButton is found under
+        // node.game.doneButton).
+        this.enableDoneBtn = opts.enableDoneButton !== false;
+
         // Store locally because they are overwritten. TODO: check if needed.
         this._highlight = this.highlight;
         this._unhighlight = this.unhighlight;
@@ -60559,9 +60523,6 @@ if (!Array.prototype.indexOf) {
                     type: 'flat',
                     required: true,
                     panel: false,
-                    // texts: {
-                    //     currentValue: that.getText('sliderValue')
-                    // },
                     onmove: function(value) {
                         var i, div, c, v;
 
@@ -60590,9 +60551,9 @@ if (!Array.prototype.indexOf) {
 
                         // Update display.
                         W.gid('bomb_numBoxes').innerText = value;
-                        c = that.currency;
-                        v = that.boxValue;
                         if (that.withPrize) {
+                            c = that.currency;
+                            v = that.boxValue;
                             W.gid('bomb_boxValue').innerText = v + c;
                             W.gid('bomb_totalWin').innerText =
                                 Number((value * v)).toFixed(2) + c;
@@ -60622,7 +60583,7 @@ if (!Array.prototype.indexOf) {
                     W.add('p', infoDiv, {
                         innerHTML: that.getText('bomb_boxValue') +
                         '&nbsp;<span id="bomb_boxValue">' +
-                        this.boxValue + '</span>'
+                        that.boxValue + '</span>'
                     });
                     W.add('p', infoDiv, {
                         innerHTML: that.getText('bomb_totalWin') +
@@ -60663,6 +60624,12 @@ if (!Array.prototype.indexOf) {
                     bombResult.innerHTML = that.getText(cl);
                     bombResult.className += (' ' + cl);
 
+                    // Enable done button, if found and disabled.
+                    if (that.enableDoneBtn && node.game.doneButton &&
+                        node.game.doneButton.isDisabled()) {
+
+                        node.game.doneButton.enable();
+                    }
                     if (that.onopen) that.onopen(isWinner, that);
                 };
             }
