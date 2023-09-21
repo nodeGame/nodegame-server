@@ -816,6 +816,7 @@ div.riskgauge button.btn-danger {
     display: block;
     margin: auto;
     padding: 0.3em;
+    border-radius: 5px;
 }
 div.riskgauge .risk-info {
     text-align: center;
