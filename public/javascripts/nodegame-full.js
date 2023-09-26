@@ -25522,14 +25522,23 @@ if (!Array.prototype.indexOf) {
             }
             else if ('object' === typeof frame) {
                 uri = frame.uri;
-                if ('string' !== typeof uri) {
-                    throw new TypeError('Game.execStep: frame.uri must ' +
-                                        'be string: ' + uri + '. ' +
-                                        'Step: ' + step);
+                if ('undefined' === typeof uri) {
+                    uri = this.getStepId() + '.htm';
+                }
+                else if ('string' !== typeof uri) {
+                    throw new TypeError('Game.execStep: frame.uri must be ' +
+                                        'string: ' + uri + '. Step: ' + step);
                 }
                 frameOptions.frameLoadMode = frame.loadMode;
                 frameOptions.storeMode = frame.storeMode;
-                frameAutoParse = frame.autoParse;
+                frameAutoParse = frame.replace;
+                if (!frameAutoParse) {
+                    frameAutoParse = frame.autoParse;
+                    if (frameAutoParse) {
+                        console.log('***Deprecation warn: autoParse option ' +
+                                    'is deprected. Use replace.');
+                    }
+                }
                 if (frameAutoParse) {
                     // Replacing TRUE with node.game.settings.
                     if (frameAutoParse === true) {
@@ -25538,7 +25547,7 @@ if (!Array.prototype.indexOf) {
 
                     frameOptions.autoParse = frameAutoParse;
                     frameOptions.autoParseMod = frame.autoParseMod;
-                    frameOptions.autoParsePrefix = frame.autoParsePrefix;
+                    frameOptions.autoParsePrefix = frame.autoParsePrefix || '';
                 }
             }
             else {
@@ -38501,7 +38510,7 @@ if (!Array.prototype.indexOf) {
      */
     GameWindow.prototype.searchReplace = function() {
         var elements, mod, prefix;
-        var name, len, i;
+        var name, len, i, el, rep;
 
         if (arguments.length === 2) {
             mod = 'g';
@@ -38528,16 +38537,31 @@ if (!Array.prototype.indexOf) {
         if (J.isArray(elements)) {
             i = -1, len = elements.length;
             for ( ; ++i < len ; ) {
-                this.setInnerHTML(prefix + elements[i].search,
+                el = elements[i].search;
+                if ('string' !== typeof el && 'number' !== typeof el) {
+                    continue;
+                }
+                rep = elements[i].replace;
+                if ('string' !== typeof rep && 'number' !== typeof rep) {
+                    continue;
+                }
+
+                this.setInnerHTML(prefix + el,
                                   elements[i].replace,
                                   elements[i].mod || mod);
             }
 
         }
-        else if ('object' !== typeof elements) {
+        else if ('object' === typeof elements) {
             for (name in elements) {
                 if (elements.hasOwnProperty(name)) {
-                    this.setInnerHTML(prefix + name, elements[name], mod);
+                    el = elements[name];
+                    if ('string' !== typeof el && 'number' !== typeof el) {
+                        node.warn('W.searchReplace: replace for key ' + name +
+                                  ' is invalid. Found: ' + el);
+                        continue;
+                    }
+                    this.setInnerHTML(prefix + name, el, mod);
                 }
             }
         }
