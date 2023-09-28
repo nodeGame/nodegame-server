@@ -25339,7 +25339,7 @@ if (!Array.prototype.indexOf) {
         var widget, widgetObj, widgetRoot;
         var widgetCb, widgetExit, widgetDone;
         var doneCb, origDoneCb, exitCb, origExitCb;
-        var w, frame, uri, frameOptions, frameAutoParse, reloadFrame;
+        var w, frame, uri, frameOptions, reloadFrame;
 
         if ('object' !== typeof step) {
             throw new TypeError('Game.execStep: step must be object. Found: ' +
@@ -25555,25 +25555,7 @@ if (!Array.prototype.indexOf) {
                                         'string: ' + uri + '. Step: ' + step);
                 }
                 frameOptions.frameLoadMode = frame.loadMode;
-                frameOptions.storeMode = frame.storeMode;
-                frameAutoParse = frame.replace;
-                if (!frameAutoParse) {
-                    frameAutoParse = frame.autoParse;
-                    if (frameAutoParse) {
-                        console.log('***Deprecation warn: autoParse option ' +
-                                    'is deprected. Use replace.');
-                    }
-                }
-                if (frameAutoParse) {
-                    // Replacing TRUE with node.game.settings.
-                    if (frameAutoParse === true) {
-                        frameAutoParse = this.settings;
-                    }
-
-                    frameOptions.autoParse = frameAutoParse;
-                    frameOptions.autoParseMod = frame.autoParseMod;
-                    frameOptions.autoParsePrefix = frame.autoParsePrefix || '';
-                }
+                frameOptions.storeMode = frame.storeMode;                
             }
             else {
                 throw new TypeError('Game.execStep: frame must be string or ' +
@@ -35685,7 +35667,6 @@ if (!Array.prototype.indexOf) {
         var loadCache;
         var storeCacheNow, storeCacheLater;
         var scrollUp;
-        var autoParse, autoParsePrefix, autoParseMod;
         var iframe, iframeName, iframeDocument, iframeWindow;
         var frameDocumentElement, frameReady;
         var lastURI;
@@ -35768,35 +35749,6 @@ if (!Array.prototype.indexOf) {
             }
         }
 
-        // Parsing options.
-
-        if ('undefined' !== typeof opts.autoParse) {
-            if ('object' !== typeof opts.autoParse) {
-                throw new TypeError('GameWindow.loadFrame: opts.autoParse ' +
-                                    'must be object or undefined. Found: ' +
-                                    opts.autoParse);
-            }
-            if ('undefined' !== typeof opts.autoParsePrefix) {
-                if ('string' !== typeof opts.autoParsePrefix) {
-                    throw new TypeError('GameWindow.loadFrame: opts.' +
-                                        'autoParsePrefix must be string ' +
-                                        'or undefined. Found: ' +
-                                        opts.autoParsePrefix);
-                }
-                autoParsePrefix = opts.autoParsePrefix;
-            }
-            if ('undefined' !== typeof opts.autoParseMod) {
-                if ('string' !== typeof opts.autoParseMod) {
-                    throw new TypeError('GameWindow.loadFrame: opts.' +
-                                        'autoParseMod must be string ' +
-                                        'or undefined. Found: ' +
-                                        opts.autoParseMod);
-                }
-                autoParseMod = opts.autoParseMod;
-            }
-            autoParse = opts.autoParse;
-        }
-
         // Scroll Up.
 
         scrollUp = 'undefined' === typeof opts.scrollUp ? true : opts.scrollUp;
@@ -35873,13 +35825,9 @@ if (!Array.prototype.indexOf) {
                 handleFrameLoad(that, uri, iframe, iframeName, loadCache,
                                 storeCacheNow, function() {
 
-                                    // Executes callback, autoParses,
+                                    // Executes callback, css, replace, html,
                                     // and updates GameWindow state.
-                                    that.updateLoadFrameState(func,
-                                                              autoParse,
-                                                              autoParseMod,
-                                                              autoParsePrefix,
-                                                              scrollUp);
+                                    that.updateLoadFrameState(func, scrollUp);
                                 });
             });
         }
@@ -35895,13 +35843,9 @@ if (!Array.prototype.indexOf) {
                 handleFrameLoad(this, uri, iframe, iframeName, loadCache,
                                 storeCacheNow, function() {
 
-                                    // Executes callback
+                                    // Executes callback, css, replace, html,
                                     // and updates GameWindow state.
-                                    that.updateLoadFrameState(func,
-                                                              autoParse,
-                                                              autoParseMod,
-                                                              autoParsePrefix,
-                                                              scrollUp);
+                                    that.updateLoadFrameState(func, scrollUp);
                                 });
             }
         }
@@ -35948,11 +35892,6 @@ if (!Array.prototype.indexOf) {
      * - set the window state as loaded (eventually)
      *
      * @param {function} func Optional. A callback function
-     * @param {object} autoParse Optional. An object containing elements
-     *    to replace in the HTML DOM.
-     * @param {string} autoParseMod Optional. Modifier for search and replace
-     * @param {string} autoParsePrefix Optional. Custom prefix to add to the
-     *    keys of the elements in autoParse object
      * @param {boolean} scrollUp Optional. If TRUE, scrolls the page to the,
      *    top (if window.scrollTo is defined). Default: FALSE.
      *
@@ -35962,18 +35901,12 @@ if (!Array.prototype.indexOf) {
      * @emit FRAME_LOADED
      * @emit LOADED
      */
-    GameWindow.prototype.updateLoadFrameState = function(func, autoParse,
-                                                         autoParseMod,
-                                                         autoParsePrefix,
-                                                         scrollUp) {
+    GameWindow.prototype.updateLoadFrameState = function(func, scrollUp) {
 
-        var css, html, loaded, stageLevel;
+        var css, html, replace, loaded, stageLevel;
         loaded = updateAreLoading(this, -1);
         if (loaded) this.setStateLevel('LOADED');
-        if (func) func.call(node.game);
-        if (autoParse) {
-            this.searchReplace(autoParse, autoParseMod, autoParsePrefix);
-        }
+        if (func) func.call(node.game);        
         if (scrollUp && window.scrollTo) window.scrollTo(0,0);
 
         css = node.game.getProperty('css');
@@ -35981,6 +35914,9 @@ if (!Array.prototype.indexOf) {
 
         html = node.game.getProperty('html');
         if (html) W.write(html);
+
+        replace = node.game.getProperty('replace');
+        if (replace) W.searchReplace(replace, 'g', '');
 
         // ng event emitter is not used.
         node.events.ee.game.emit('FRAME_LOADED');
@@ -45848,7 +45784,7 @@ if (!Array.prototype.indexOf) {
          *
          * If FALSE, no question number is added.
          */
-        this.qCounter = 0;
+        this.qCounter = 1;
 
         /**
          * ### ChoiceManager.qCounterSymbol
@@ -46191,7 +46127,7 @@ if (!Array.prototype.indexOf) {
                     form.mainText = '<span style="font-weight: normal; ' +
                         'color:gray;">'
                          + this.qCounterSymbol +
-                         ++this.qCounter + '</span> ' + form.mainText;
+                         this.qCounter++ + '</span> ' + form.mainText;
                 }
             }
 
@@ -61442,6 +61378,13 @@ if (!Array.prototype.indexOf) {
          */
          this.timeFrom = 'step';
 
+         /**
+         * ### Slider.hideKnob
+         *
+         * If TRUE, the knob of the slider is hidden before interaction
+         */
+         this.hideKnob = false;
+
     }
 
     // ## Slider methods
@@ -61603,6 +61546,10 @@ if (!Array.prototype.indexOf) {
             }
             this.right = '' + tmp;
         }
+
+        if ('undefined' !== typeof opts.hideKnob) {
+            this.hideKnob = !!opts.hideKnob;
+        }
     };
 
     /**
@@ -61653,15 +61600,22 @@ if (!Array.prototype.indexOf) {
             // id: 'range-fill'
         });
 
-        this.slider = W.add('input', container, {
+        tmp = {
             className: 'volume-slider',
-            // id: 'range-slider-input',
             name: 'rangeslider',
             type: 'range',
             min: this.min,
             max: this.max,
-            step: this.step
-        });
+            step: this.step,
+        };
+        if (this.hideKnob) tmp.style = { opacity: 0 };
+        this.slider = W.add('input', container, tmp);
+        if (this.hideKnob) {
+            this.slider.onclick = function() {
+                that.slider.style.opacity = 1;
+                that.slider.onclick = null;
+            };
+        }
 
         this.slider.onmouseover = function() {
             tmpColor = that.rangeFill.style.background || 'black';
@@ -61672,7 +61626,6 @@ if (!Array.prototype.indexOf) {
         };
 
         if (this.sliderWidth) this.slider.style.width = this.sliderWidth;
-
 
         if (this.right) {
             tmp = W.add('span', container);
