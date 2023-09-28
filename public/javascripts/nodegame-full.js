@@ -1646,6 +1646,19 @@ if (!Array.prototype.indexOf) {
     };
 
     /**
+     * ### DOM.write2
+     *
+     * Like `DOM.write` but with support for HTML in text (no return value)
+     *
+     * @see DOM.write
+     */
+    DOM.write2 = function(root, text) {
+        if ('undefined' === typeof text) text = "";
+        if (JSUS.isNode(text) || JSUS.isElement(text)) root.appendChild(text);
+        else root.innerHTML += text;
+    };
+
+    /**
      * ### DOM.writeln
      *
      * Write a text and a break into a root element
@@ -1666,6 +1679,18 @@ if (!Array.prototype.indexOf) {
         content = DOM.write(root, text);
         this.add(rc || 'br', root);
         return content;
+    };
+
+    /**
+     * ### DOM.writeln2
+     *
+     * Like `DOM.writeln` but with support for HTML in text (no return value)
+     *
+     * @see DOM.writeln
+     */
+    DOM.writeln2 = function(root, text, rc) {
+        DOM.write2(root, text);
+        this.add(rc || 'br', root);
     };
 
     /**
@@ -34059,7 +34084,7 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # GameWindow
- * Copyright(c) 2021 Stefano Balietti <ste@nodegame.org>
+ * Copyright(c) 2023 Stefano Balietti <ste@nodegame.org>
  * MIT Licensed
  *
  * API to interface nodeGame with the browser window
@@ -35942,7 +35967,7 @@ if (!Array.prototype.indexOf) {
                                                          autoParsePrefix,
                                                          scrollUp) {
 
-        var css, loaded, stageLevel;
+        var css, html, loaded, stageLevel;
         loaded = updateAreLoading(this, -1);
         if (loaded) this.setStateLevel('LOADED');
         if (func) func.call(node.game);
@@ -35953,6 +35978,9 @@ if (!Array.prototype.indexOf) {
 
         css = node.game.getProperty('css');
         if (css) W.cssRule(css);
+
+        html = node.game.getProperty('html');
+        if (html) W.write(html);
 
         // ng event emitter is not used.
         node.events.ee.game.emit('FRAME_LOADED');
@@ -36219,6 +36247,40 @@ if (!Array.prototype.indexOf) {
 
         // Store the value of current offset.
         W.headerOffset = offset;
+    };
+
+
+    /**
+     * ### GameWindow.cssRule
+     *
+     * Add a css rule to the page
+     *
+     * @param {string} rule The css rule
+     * @param {boolean} clear Optional. TRUE to clear all previous rules
+     *   added with this method to the page
+     *
+     * @return {Element} The HTML style element where the rules were added
+     *
+     * @see handleFrameLoad
+     */
+    GameWindow.prototype.cssRule = function(rule, clear) {
+        var root;
+        if ('string' !== typeof rule) {
+            throw new TypeError(G + 'cssRule: style property must be ' +
+                                'string. Found: ' + rule);
+        }
+        if (!this.styleElement) {
+            root = W.getFrameDocument() || window.document;
+            this.styleElement = W.append('style', root.head, {
+                type: 'text/css',
+                id: 'ng_style'
+            });
+        }
+        else if (clear) {
+            this.styleElement.innerHTML = '';
+        }
+        this.styleElement.innerHTML += rule;
+        return this.styleElement;
     };
 
 
@@ -38133,7 +38195,7 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # extra
- * Copyright(c) 2022 Stefano Balietti
+ * Copyright(c) 2023 Stefano Balietti
  * MIT Licensed
  *
  * GameWindow extras
@@ -38147,15 +38209,20 @@ if (!Array.prototype.indexOf) {
     var GameWindow = node.GameWindow;
     var DOM = J.require('DOM');
 
+    var G = 'GameWindow.';
+
+    // ### BASIC.
+
     /**
      * ### GameWindow.getScreen
      *
      * Returns the "screen" of the game
      *
-     * i.e. the innermost element inside which to display content
+     * i.e., the innermost element inside which to display content
      *
      * In the following order the screen can be:
      *
+     * - the element with id "container" (presumably inside the iframe)
      * - the body element of the iframe
      * - the document element of the iframe
      * - the body element of the document
@@ -38165,44 +38232,42 @@ if (!Array.prototype.indexOf) {
      */
     GameWindow.prototype.getScreen = function() {
         var el;
-        el = this.getFrameDocument();
-        if (el) el = el.body || el;
-        else el = document.body || document.lastElementChild;
+        el = this.gid('container');
+        if (!el) {
+            el = this.getFrameDocument();
+            if (el) el = el.body || el;
+            else el = document.body || document.lastElementChild;
+        }
         return el;
     };
 
     /**
-     * ### GameWindow.cssRule
+     * ### GameWindow.uniqueId|generateUniqueId
      *
-     * Add a css rule to the page
+     * Generates a unique id
      *
-     * @param {string} rule The css rule
-     * @param {boolean} clear Optional. TRUE to clear all previous rules
-     *   added with this method to the page
+     * Overrides JSUS.DOM.generateUniqueId.
      *
-     * @return {Element} The HTML style element where the rules were added
+     * @param {string} prefix Optional. The prefix to use
      *
-     * @see handleFrameLoad
+     * @return {string} The generated id
+     *
+     * @experimental
+     * TODO: it is not always working fine.
      */
-    GameWindow.prototype.cssRule = function(rule, clear) {
-        var root;
-        if ('string' !== typeof rule) {
-            throw new TypeError('Game.execStep: style property must be ' +
-                                'string. Found: ' + rule);
+    GameWindow.prototype.uniqueId =
+    GameWindow.prototype.generateUniqueId = function(prefix) {
+        var id, found;
+        id = '' + (prefix || J.randomInt(0, 1000));
+        found = this.gid(id);
+        while (found) {
+            id = '' + prefix + '_' + J.randomInt(0, 1000);
+            found = this.gid(id);
         }
-        if (!this.styleElement) {
-            root = W.getFrameDocument() || window.document;
-            this.styleElement = W.append('style', root.head, {
-                type: 'text/css',
-                id: 'ng_style'
-            });
-        }
-        else if (clear) {
-            this.styleElement.innerHTML = '';
-        }
-        this.styleElement.innerHTML += rule;
-        return this.styleElement;
+        return id;
     };
+
+    // ### WRITE TO SCREEN.
 
     /**
      * ### GameWindow.write
@@ -38217,17 +38282,13 @@ if (!Array.prototype.indexOf) {
      *
      * @return {string|object} The content written
      *
+     * @see JSUS.write
      * @see GameWindow.writeln
+     * @see getDefaultRoot
      */
     GameWindow.prototype.write = function(text, root) {
-        if ('string' === typeof root) root = this.getElementById(root);
-        else if (!root) root = this.getScreen();
-
-        if (!root) {
-            throw new
-                Error('GameWindow.write: could not determine where to write');
-        }
-        return DOM.write(root, text);
+        root = getDefaultRoot(root, 'write');
+        return DOM.write2(root, text);
     };
 
     /**
@@ -38243,98 +38304,252 @@ if (!Array.prototype.indexOf) {
      *
      * @return {string|object} The content written
      *
+     * @see JSUS.writeln
      * @see GameWindow.write
+     * @see getDefaultRoot
      */
     GameWindow.prototype.writeln = function(text, root, br) {
-        if ('string' === typeof root) root = this.getElementById(root);
-        else if (!root) root = this.getScreen();
-
-        if (!root) {
-            throw new Error('GameWindow.writeln: ' +
-                            'could not determine where to write');
-        }
-        return DOM.writeln(root, text, br);
+        root = getDefaultRoot(root, 'writeln');
+        return DOM.writeln2(root, text, br);
     };
 
     /**
-     * ### GameWindow.generateUniqueId
-     *
-     * Generates a unique id
-     *
-     * Overrides JSUS.DOM.generateUniqueId.
-     *
-     * @param {string} prefix Optional. The prefix to use
-     *
-     * @return {string} The generated id
-     *
-     * @experimental
-     * TODO: it is not always working fine.
-     */
-    GameWindow.prototype.generateUniqueId = function(prefix) {
-        var id, found;
-
-        id = '' + (prefix || J.randomInt(0, 1000));
-        found = this.getElementById(id);
-
-        while (found) {
-            id = '' + prefix + '_' + J.randomInt(0, 1000);
-            found = this.getElementById(id);
-        }
-        return id;
+    * ### DOM.sprintf
+    *
+    * Builds up a decorated HTML text element
+    *
+    * Performs string substitution from an args object where the first
+    * character of the key bears the following semantic:
+    *
+    * - '@': variable substitution with escaping
+    * - '!': variable substitution without variable escaping
+    * - '%': wraps a portion of string into a _span_ element to which is
+    *        possible to associate a css class or id. Alternatively,
+    *        it also possible to add in-line style. E.g.:
+    *
+    * ```javascript
+    *      sprintf('%sImportant!%s An error has occurred: %pre@err%pre', {
+    *              '%pre': {
+    *                      style: 'font-size: 12px; font-family: courier;'
+    *              },
+    *              '%s': {
+    *                      id: 'myId',
+    *                      'class': 'myClass',
+    *              },
+    *              '@err': 'file not found',
+    *      }, document.body);
+    * ```
+    *
+    * Special span elements are %strong and %em, which add
+    * respectively a _strong_ and _em_ tag instead of the default
+    * _span_ tag. They cannot be styled.
+    *
+    * @param {string} string A text to transform
+    * @param {object} args Optional. An object containing string
+    *   transformations
+    * @param {Element} root Optional. An HTML element to which append the
+    *    string. Defaults, a new _span_ element
+    *
+    * @return {Element} The root element.
+    */
+    GameWindow.prototype.sprintf = function(string, args, root) {
+        if (!root) root = getDefaultRoot(root, 'sprintf');
+        return DOM.sprintf(string, args, root);
     };
 
     /**
-     * ### GameWindow.toggleInputs
+     * ### GameWindo.add|append
      *
-     * Enables / disables the input forms
+     * Creates and append an element with specified attributes to a root
      *
-     * If an id is provided, only input elements that are children
-     * of the element with the specified id are toggled.
+     * @param {string} name The name of the HTML tag
+     * @param {HTMLElement} root The root element to which the new element
+     *   will be appended
+     * @param {object|string} options Optional. Object containing
+     *   attributes for the element and rules about how to insert it relative
+     *   to root. Available options: insertAfter, insertBefore (default:
+     *   child of root). If string, it is the id of the element. Examples:
      *
-     * If id is not given, it toggles the input elements on the whole page,
-     * including the frame document, if found.
      *
-     * If a state parameter is given, all the input forms will be either
-     * disabled or enabled (and not toggled).
-     *
-     * @param {string} id Optional. The id of the element container
-     *   of the forms. Default: the whole page, including the frame document
-     * @param {boolean} disabled Optional. Forces all the inputs to be either
-     *   disabled or enabled (not toggled)
-     *
-     * @return {boolean} FALSE, if the method could not be executed
-     *
-     * @see GameWindow.getFrameDocument
-     * @see toggleInputs
+     * @see getDefaultRoot
      */
-    GameWindow.prototype.toggleInputs = function(id, disabled) {
-        var container;
-        if (!document.getElementsByTagName) {
-            node.err(
-                'GameWindow.toggleInputs: getElementsByTagName not found');
-            return false;
+    GameWindow.prototype.add =
+    GameWindow.prototype.append = function(el, root, opts) {
+        if (!root) root = getDefaultRoot(root, 'add');
+        return DOM.add(el, root, opts);
+    };
+
+    /**
+     * ### GameWindow.searchReplace
+     *
+     * Replaces the innerHTML of the element/s with matching id or class name
+     *
+     * It iterates through each element and passes it to
+     * `GameWindow.setInnerHTML`.
+     *
+     * If elements is array, each item in the array must be of the type:
+     *
+     * ```javascript
+     *
+     *   { search: 'key', replace: 'value' }
+     *
+     *   // or
+     *
+     *   { search: 'key', replace: 'value', mod: 'id' }
+     * ```
+     *
+     * If elements is object, it must be of the type:
+     *
+     * ```javascript
+     *
+     *    {
+     *      search1: value1, search2: value 2 // etc.
+     *    }
+     * ```
+     *
+     * It accepts a variable number of input parameters. The first is always
+     * _elements_. If there are 2 input parameters, the second is _prefix_,
+     * while if there are 3 input parameters, the second is _mod_ and the third
+     * is _prefix_.
+     *
+     * @param {object|array} Elements to search and replace
+     * @param {string} mod Optional. Modifier passed to GameWindow.setInnerHTML
+     * @param {string} prefix Optional. Prefix added to the search string.
+     *    Default: 'ng_replace_', null or '' equals no prefix.
+     *
+     * @see GameWindow.setInnerHTML
+     */
+    GameWindow.prototype.searchReplace = function() {
+        var elements, mod, prefix;
+        var name, len, i, el, rep;
+
+        if (arguments.length === 2) {
+            mod = 'g';
+            prefix = arguments[1];
         }
-        if (id && 'string' === typeof id) {
-            throw new Error('GameWindow.toggleInputs: id must be string or ' +
-                            'undefined. Found: ' + id);
+        else if (arguments.length > 2) {
+            mod = arguments[1];
+            prefix = arguments[2];
         }
-        if (id) {
-            container = this.getElementById(id);
-            if (!container) {
-                throw new Error('GameWindow.toggleInputs: no elements found ' +
-                                'with id ' + id);
+
+        if ('undefined' === typeof prefix) {
+            prefix = 'ng_replace_';
+        }
+        else if (null === prefix) {
+            prefix = '';
+        }
+        else if ('string' !== typeof prefix) {
+            throw new TypeError(G + 'searchReplace: prefix must be string, ' +
+                                'null or undefined. Found: ' + prefix);
+        }
+
+        elements = arguments[0];
+        if (J.isArray(elements)) {
+            i = -1, len = elements.length;
+            for ( ; ++i < len ; ) {
+                el = elements[i].search;
+                if ('string' !== typeof el && 'number' !== typeof el) {
+                    continue;
+                }
+                rep = elements[i].replace;
+                if ('string' !== typeof rep && 'number' !== typeof rep) {
+                    continue;
+                }
+
+                this.setInnerHTML(prefix + el,
+                                  elements[i].replace,
+                                  elements[i].mod || mod);
             }
-            toggleInputs(disabled, container);
+
+        }
+        else if ('object' === typeof elements) {
+            for (name in elements) {
+                if (elements.hasOwnProperty(name)) {
+                    el = elements[name];
+                    if ('string' !== typeof el && 'number' !== typeof el) {
+                        node.warn(G + 'searchReplace: replace for key ' + name +
+                                  ' is invalid. Found: ' + el);
+                        continue;
+                    }
+                    this.setInnerHTML(prefix + name, el, mod);
+                }
+            }
         }
         else {
-            // The whole page.
-            toggleInputs(disabled);
-            container = this.getFrameDocument();
-            // If there is a frame, apply it there too.
-            if (container) toggleInputs(disabled, container);
+            throw new TypeError(G + 'setInnerHTML: elements must be ' +
+                                'object or arrray. Found: ' + elements);
         }
-        return true;
+
     };
+
+    /**
+     * ### GameWindow.html|setInnerHTML
+     *
+     * Replaces the innerHTML of the element with matching id or class name
+     *
+     * @param {string|number} search Element id or className
+     * @param {string|number} replace The new value of the property innerHTML
+     * @param {string} mod Optional. A modifier defining how to use the
+     *    search parameter. Values:
+     *
+     *    - 'id': replaces at most one element with the same id (default)
+     *    - 'className': replaces all elements with same class name
+     *    - 'g': replaces globally, both by id and className
+     */
+    GameWindow.prototype.setInnerHTML =
+    GameWindow.prototype.html = function(search, replace, mod) {
+        var el, i, len;
+
+        // Only process strings or numbers.
+        if ('string' !== typeof search && 'number' !== typeof search) {
+            throw new TypeError(G + 'setInnerHTML: search must be ' +
+                                'string or number. Found: ' + search +
+                                " (replace = " + replace + ")");
+        }
+
+        // Only process strings or numbers.
+        if ('string' !== typeof replace && 'number' !== typeof replace) {
+            throw new TypeError(G + 'setInnerHTML: replace must be ' +
+                                'string or number. Found: ' + replace +
+                                " (search = " + search + ")");
+        }
+
+        if ('undefined' === typeof mod) {
+            mod = 'id';
+        }
+        else if ('string' === typeof mod) {
+            if (mod !== 'g' && mod !== 'id' && mod !== 'className') {
+                throw new Error(G + 'setInnerHTML: invalid ' +
+                                'mod value: ' + mod  +
+                                " (search = " + search + ")");
+            }
+        }
+        else {
+            throw new TypeError(G + 'setInnerHTML: mod must be ' +
+                                'string or undefined. Found: ' + mod  +
+                                " (search = " + search + ")");
+        }
+
+        if (mod === 'id' || mod === 'g') {
+            // Look by id.
+            el = W.getElementById(search);
+            if (el && el.className !== search) el.innerHTML = replace;
+        }
+
+        if (mod === 'className' || mod === 'g') {
+            // Look by class name.
+            el = W.getElementsByClassName(search);
+            len = el.length;
+            if (len) {
+                i = -1;
+                for ( ; ++i < len ; ) {
+                    el[i].innerHTML = replace;
+                }
+            }
+        }
+    };
+
+    // ### ADD STUFF: Event button, loading dots.
 
     /**
      * ### GameWindow.getLoadingDots
@@ -38348,7 +38563,7 @@ if (!Array.prototype.indexOf) {
      *
      * @param {number} len Optional. The maximum length of the loading dots.
      *   Default: 5
-     * @param {string} id Optional The id of the span
+     * @param {string} id Optional. The id of the span
      *
      * @return {object} An object containing two properties: the span element
      *   and a method stop, that clears the interval
@@ -38356,8 +38571,8 @@ if (!Array.prototype.indexOf) {
     GameWindow.prototype.getLoadingDots = function(len, id) {
         var spanDots, counter, intervalId;
         if (len & len < 0) {
-            throw new Error('GameWindow.getLoadingDots: len cannot be < 0. ' +
-                            'Found: ' + len);
+            throw new Error(G + 'getLoadingDots: len cannot be < 0. Found: ' +
+                            len);
         }
         spanDots = document.createElement('span');
         spanDots.id = id || 'span_dots';
@@ -38430,7 +38645,7 @@ if (!Array.prototype.indexOf) {
     GameWindow.prototype.getEventButton = function(event, attributes) {
         var b;
         if ('string' !== typeof event) {
-            throw new TypeError('GameWindow.getEventButton: event must ' +
+            throw new TypeError(G + 'getEventButton: event must ' +
                                 'be string. Found: ' + event);
         }
         if ('string' === typeof attributes) {
@@ -38468,178 +38683,58 @@ if (!Array.prototype.indexOf) {
         return root.appendChild(eb);
     };
 
-    /**
-     * ### GameWindow.searchReplace
-     *
-     * Replaces the innerHTML of the element/s with matching id or class name
-     *
-     * It iterates through each element and passes it to
-     * `GameWindow.setInnerHTML`.
-     *
-     * If elements is array, each item in the array must be of the type:
-     *
-     * ```javascript
-     *
-     *   { search: 'key', replace: 'value' }
-     *
-     *   // or
-     *
-     *   { search: 'key', replace: 'value', mod: 'id' }
-     * ```
-     *
-     * If elements is object, it must be of the type:
-     *
-     * ```javascript
-     *
-     *    {
-     *      search1: value1, search2: value 2 // etc.
-     *    }
-     * ```
-     *
-     * It accepts a variable number of input parameters. The first is always
-     * _elements_. If there are 2 input parameters, the second is _prefix_,
-     * while if there are 3 input parameters, the second is _mod_ and the third
-     * is _prefix_.
-     *
-     * @param {object|array} Elements to search and replace
-     * @param {string} mod Optional. Modifier passed to GameWindow.setInnerHTML
-     * @param {string} prefix Optional. Prefix added to the search string.
-     *    Default: 'ng_replace_', null or '' equals no prefix.
-     *
-     * @see GameWindow.setInnerHTML
-     */
-    GameWindow.prototype.searchReplace = function() {
-        var elements, mod, prefix;
-        var name, len, i, el, rep;
-
-        if (arguments.length === 2) {
-            mod = 'g';
-            prefix = arguments[1];
-        }
-        else if (arguments.length > 2) {
-            mod = arguments[1];
-            prefix = arguments[2];
-        }
-
-        if ('undefined' === typeof prefix) {
-            prefix = 'ng_replace_';
-        }
-        else if (null === prefix) {
-            prefix = '';
-        }
-        else if ('string' !== typeof prefix) {
-            throw new TypeError('GameWindow.searchReplace: prefix ' +
-                                'must be string, null or undefined. Found: ' +
-                                prefix);
-        }
-
-        elements = arguments[0];
-        if (J.isArray(elements)) {
-            i = -1, len = elements.length;
-            for ( ; ++i < len ; ) {
-                el = elements[i].search;
-                if ('string' !== typeof el && 'number' !== typeof el) {
-                    continue;
-                }
-                rep = elements[i].replace;
-                if ('string' !== typeof rep && 'number' !== typeof rep) {
-                    continue;
-                }
-
-                this.setInnerHTML(prefix + el,
-                                  elements[i].replace,
-                                  elements[i].mod || mod);
-            }
-
-        }
-        else if ('object' === typeof elements) {
-            for (name in elements) {
-                if (elements.hasOwnProperty(name)) {
-                    el = elements[name];
-                    if ('string' !== typeof el && 'number' !== typeof el) {
-                        node.warn('W.searchReplace: replace for key ' + name +
-                                  ' is invalid. Found: ' + el);
-                        continue;
-                    }
-                    this.setInnerHTML(prefix + name, el, mod);
-                }
-            }
-        }
-        else {
-            throw new TypeError('GameWindow.setInnerHTML: elements must be ' +
-                                'object or arrray. Found: ' + elements);
-        }
-
-    };
-
-    GameWindow.prototype.setInnerHTML = function(search, replace, mod) {
-        this.html(search, replace, mod);
-    };
+    // ### SHOWING, HIDING, TOGGLING.
 
     /**
-     * ### GameWindow.html
+     * ### GameWindow.toggleInputs
      *
-     * Replaces the innerHTML of the element with matching id or class name
+     * Enables / disables the input forms
      *
-     * @param {string|number} search Element id or className
-     * @param {string|number} replace The new value of the property innerHTML
-     * @param {string} mod Optional. A modifier defining how to use the
-     *    search parameter. Values:
+     * If an id is provided, only input elements that are children
+     * of the element with the specified id are toggled.
      *
-     *    - 'id': replaces at most one element with the same id (default)
-     *    - 'className': replaces all elements with same class name
-     *    - 'g': replaces globally, both by id and className
+     * If id is not given, it toggles the input elements on the whole page,
+     * including the frame document, if found.
+     *
+     * If a state parameter is given, all the input forms will be either
+     * disabled or enabled (and not toggled).
+     *
+     * @param {string} id Optional. The id of the element container
+     *   of the forms. Default: the whole page, including the frame document
+     * @param {boolean} disabled Optional. Forces all the inputs to be either
+     *   disabled or enabled (not toggled)
+     *
+     * @return {boolean} FALSE, if the method could not be executed
+     *
+     * @see GameWindow.getFrameDocument
+     * @see toggleInputs
      */
-    GameWindow.prototype.html = function(search, replace, mod) {
-        var el, i, len;
-
-        // Only process strings or numbers.
-        if ('string' !== typeof search && 'number' !== typeof search) {
-            throw new TypeError('GameWindow.setInnerHTML: search must be ' +
-                                'string or number. Found: ' + search +
-                                " (replace = " + replace + ")");
+    GameWindow.prototype.toggleInputs = function(id, disabled) {
+        var container;
+        if (!document.getElementsByTagName) {
+            node.err(G + 'toggleInputs: getElementsByTagName not found');
+            return false;
         }
-
-        // Only process strings or numbers.
-        if ('string' !== typeof replace && 'number' !== typeof replace) {
-            throw new TypeError('GameWindow.setInnerHTML: replace must be ' +
-                                'string or number. Found: ' + replace +
-                                " (search = " + search + ")");
+        if (id && 'string' === typeof id) {
+            throw new Error(G + 'toggleInputs: id must be string or ' +
+                            'undefined. Found: ' + id);
         }
-
-        if ('undefined' === typeof mod) {
-            mod = 'id';
-        }
-        else if ('string' === typeof mod) {
-            if (mod !== 'g' && mod !== 'id' && mod !== 'className') {
-                throw new Error('GameWindow.setInnerHTML: invalid ' +
-                                'mod value: ' + mod  +
-                                " (search = " + search + ")");
+        if (id) {
+            container = this.gid(id);
+            if (!container) {
+                throw new Error(G + 'toggleInputs: no elements found with id ' +
+                                id);
             }
+            toggleInputs(disabled, container);
         }
         else {
-            throw new TypeError('GameWindow.setInnerHTML: mod must be ' +
-                                'string or undefined. Found: ' + mod  +
-                                " (search = " + search + ")");
+            // The whole page.
+            toggleInputs(disabled);
+            container = this.getFrameDocument();
+            // If there is a frame, apply it there too.
+            if (container) toggleInputs(disabled, container);
         }
-
-        if (mod === 'id' || mod === 'g') {
-            // Look by id.
-            el = W.getElementById(search);
-            if (el && el.className !== search) el.innerHTML = replace;
-        }
-
-        if (mod === 'className' || mod === 'g') {
-            // Look by class name.
-            el = W.getElementsByClassName(search);
-            len = el.length;
-            if (len) {
-                i = -1;
-                for ( ; ++i < len ; ) {
-                    el[i].innerHTML = replace;
-                }
-            }
-        }
+        return true;
     };
 
     /**
@@ -38658,7 +38753,7 @@ if (!Array.prototype.indexOf) {
      */
     GameWindow.prototype.hide = function(idOrObj) {
         var el;
-        el = getElement(idOrObj, 'GameWindow.hide');
+        el = getElement(idOrObj, 'hide');
         if (el) {
             el.style.display = 'none';
             W.adjustFrameHeight(0, 0);
@@ -38686,10 +38781,10 @@ if (!Array.prototype.indexOf) {
         var el;
         display = display || '';
         if ('string' !== typeof display) {
-            throw new TypeError('GameWindow.show: display must be ' +
+            throw new TypeError(G + 'show: display must be ' +
                                 'string or undefined. Found: ' + display);
         }
-        el = getElement(idOrObj, 'GameWindow.show');
+        el = getElement(idOrObj, 'show');
         if (el) {
             el.style.display = display;
             W.adjustFrameHeight(0, 0);
@@ -38717,10 +38812,10 @@ if (!Array.prototype.indexOf) {
         var el;
         display = display || '';
         if ('string' !== typeof display) {
-            throw new TypeError('GameWindow.toggle: display must ' +
+            throw new TypeError(G + 'toggle: display must ' +
                                 'be string or undefined. Found: ' + display);
         }
-        el = getElement(idOrObj, 'GameWindow.toggle');
+        el = getElement(idOrObj, 'toggle');
         if (el) {
             if (el.style.display === 'none') el.style.display = display;
             else el.style.display = 'none';
@@ -38733,6 +38828,13 @@ if (!Array.prototype.indexOf) {
 
     /**
      * ### toggleInputs
+     *
+     * Enable/disable inputs: 'button', 'select', 'textarea', 'input'
+     *
+     * @param {boolean} state Optional. True/false to enable/disable, undefined
+     *   to toggle.
+     * @param {HTMLElement} container Optional. The element inside which
+     *   toggling takes place. Default: `document`.
      *
      * @api private
      */
@@ -38764,26 +38866,48 @@ if (!Array.prototype.indexOf) {
      *
      * Gets the element or returns it
      *
-     * @param {string|HTMLElement} The id or the HTML element itself
+     * @param {string|HTMLElement} idOrObj The id or the HTML element itself
+     * @param {string|undefined} throwAs Optional. The name of the calling
+     *   method used in the string of the error, or undefined to avoid
+     *   throwing altogether.
      *
-     * @return {HTMLElement} The HTML Element
+     * @return {HTMLElement|undefined} The HTML Element or undefined if none
+     *   is found and throwAs is falsy
      *
-     * @see GameWindow.getElementById
+     * @see GameWindow.gid
      * @api private
      */
-    function getElement(idOrObj, prefix) {
-        var el;
-        if ('string' === typeof idOrObj) {
-            el = W.getElementById(idOrObj);
+    function getElement(idOrObj, throwAs) {
+        if ('string' === typeof idOrObj) return W.gid(idOrObj);
+        if (J.isElement(idOrObj)) return idOrObj;
+        if (throwAs) {
+            throw new TypeError(G + throwAs + ': idOrObj must be string or ' +
+                               'HTML Element. Found: ' + idOrObj);
         }
-        else if (J.isElement(idOrObj)) {
-            el = idOrObj;
-        }
-        else {
-            throw new TypeError(prefix + ': idOrObj must be string ' +
-                                ' or HTML Element. Found: ' + idOrObj);
-        }
-        return el;
+    }
+
+    /**
+     * ### getDefaultRoot
+     *
+     * Tries to find a default root and returns it
+     *
+     * @param {string|HTMLElement} root Optional. The id of or the HTML
+     *   element itself to be used as root.
+     * @param {string|undefined} throwAs Optional. The name of the calling
+     *   method used in the string of the error, or undefined to avoid
+     *   throwing altogether.
+     *
+     * @return {HTMLElement|undefined} The root HTML Element, or undefined
+     *   if none is found and `throwAs` is falsy
+     *
+     * @see GameWindow.gid
+     * @api private
+     */
+    function getDefaultRoot(root, throwAs) {
+        if (!root) root = W.getScreen();
+        else root = getElement(root);
+        if (root) return root;
+        if (throwAs) throw new Error(G + throwAs + ': could not find root');
     }
 
 })(
@@ -45540,6 +45664,8 @@ if (!Array.prototype.indexOf) {
         BackButton: {}, DoneButton: {}
     };
 
+    var C = 'ChoiceManager.';
+
     /**
      * ## ChoiceManager constructor
      *
@@ -45715,6 +45841,22 @@ if (!Array.prototype.indexOf) {
          */
         this.honeypot = null;
 
+        /**
+         * ### ChoiceManager.qCounter
+         *
+         * Adds question number starting from the integer.
+         *
+         * If FALSE, no question number is added.
+         */
+        this.qCounter = 0;
+
+        /**
+         * ### ChoiceManager.qCounterSymbol
+         *
+         * The symbol used to count the questions.
+         */
+        this.qCounterSymbol = 'Q';
+
     }
 
     // ## ChoiceManager methods
@@ -45758,7 +45900,7 @@ if (!Array.prototype.indexOf) {
             this.group = options.group;
         }
         else if ('undefined' !== typeof options.group) {
-            throw new TypeError('ChoiceManager.init: options.group must ' +
+            throw new TypeError(C + 'init: options.group must ' +
                                 'be string, number or undefined. Found: ' +
                                 options.group);
         }
@@ -45769,7 +45911,7 @@ if (!Array.prototype.indexOf) {
             this.groupOrder = options.groupOrder;
         }
         else if ('undefined' !== typeof options.group) {
-            throw new TypeError('ChoiceManager.init: options.groupOrder must ' +
+            throw new TypeError(C + 'init: options.groupOrder must ' +
                                 'be number or undefined. Found: ' +
                                 options.groupOrder);
         }
@@ -45779,7 +45921,7 @@ if (!Array.prototype.indexOf) {
             this.mainText = options.mainText;
         }
         else if ('undefined' !== typeof options.mainText) {
-            throw new TypeError('ChoiceManager.init: options.mainText must ' +
+            throw new TypeError(C + 'init: options.mainText must ' +
                                 'be string or undefined. Found: ' +
                                 options.mainText);
         }
@@ -45787,12 +45929,12 @@ if (!Array.prototype.indexOf) {
         // formsOptions.
         if ('undefined' !== typeof options.formsOptions) {
             if ('object' !== typeof options.formsOptions) {
-                throw new TypeError('ChoiceManager.init: options.formsOptions' +
+                throw new TypeError(C + 'init: options.formsOptions' +
                                     ' must be object or undefined. Found: ' +
                                     options.formsOptions);
             }
             if (options.formsOptions.hasOwnProperty('name')) {
-                throw new Error('ChoiceManager.init: options.formsOptions ' +
+                throw new Error(C + 'init: options.formsOptions ' +
                                 'cannot contain property name. Found: ' +
                                 options.formsOptions);
             }
@@ -45823,6 +45965,14 @@ if (!Array.prototype.indexOf) {
 
         // If truthy a useless form is added to detect bots.
         this.honeypot = options.honeypot;
+
+        if ('undefined' !== typeof options.qCounter) {
+            this.qCounter = options.qCounter;
+        }
+
+        if ('undefined' !== typeof options.qCounterSymbol) {
+            this.qCounterSymbol = options.qCounterSymbol;
+        }
 
         // After all configuration options are evaluated, add forms.
 
@@ -45863,7 +46013,7 @@ if (!Array.prototype.indexOf) {
         if ('function' === typeof forms) {
             parsedForms = forms.call(node.game);
             if (!J.isArray(parsedForms)) {
-                throw new TypeError('ChoiceManager.setForms: forms is a ' +
+                throw new TypeError(C + 'setForms: forms is a ' +
                                     'callback, but did not returned an ' +
                                     'array. Found: ' + parsedForms);
             }
@@ -45872,13 +46022,13 @@ if (!Array.prototype.indexOf) {
             parsedForms = forms;
         }
         else {
-            throw new TypeError('ChoiceManager.setForms: forms must be array ' +
+            throw new TypeError(C + 'setForms: forms must be array ' +
                                 'or function. Found: ' + forms);
         }
 
         len = parsedForms.length;
         if (!len) {
-            throw new Error('ChoiceManager.setForms: forms is an empty array.');
+            throw new Error(C + 'setForms: forms is an empty array.');
         }
 
         // Manual clone forms.
@@ -45901,7 +46051,7 @@ if (!Array.prototype.indexOf) {
 
         // Id must be unique.
         if (W.getElementById(this.id)) {
-            throw new Error('ChoiceManager.append: id is not ' +
+            throw new Error(C + 'append: id is not ' +
                             'unique: ' + this.id);
         }
 
@@ -46016,7 +46166,7 @@ if (!Array.prototype.indexOf) {
 
                 // False is set manually, otherwise undefined.
                 if (this.required === false) {
-                    throw new Error('ChoiceManager.setForms: required is ' +
+                    throw new Error(C + 'setForms: required is ' +
                                     'false, but form "' + form.id +
                                     '" has required truthy');
                 }
@@ -46036,14 +46186,22 @@ if (!Array.prototype.indexOf) {
                 form.bootstrap5 = true;
             }
 
+            if (this.qCounter !== false) {
+                if (form.mainText) {
+                    form.mainText = '<span style="font-weight: normal; ' +
+                        'color:gray;">'
+                         + this.qCounterSymbol +
+                         ++this.qCounter + '</span> ' + form.mainText;
+                }
+            }
+
             form = node.widgets.get(name, form);
 
         }
 
         if (form.id) {
             if (this.formsById[form.id]) {
-                throw new Error('ChoiceManager.setForms: duplicated ' +
-                                'form id: ' + form.id);
+                throw new Error(C + 'setForms: duplicated form id: ' + form.id);
             }
 
         }
@@ -46168,7 +46326,7 @@ if (!Array.prototype.indexOf) {
      */
     ChoiceManager.prototype.highlight = function(border) {
         if (border && 'string' !== typeof border) {
-            throw new TypeError('ChoiceManager.highlight: border must be ' +
+            throw new TypeError(C + 'highlight: border must be ' +
                                 'string or undefined. Found: ' + border);
         }
         if (!this.dl || this.highlighted === true) return;
@@ -46352,7 +46510,7 @@ if (!Array.prototype.indexOf) {
     ChoiceManager.prototype.setValues = function(opts) {
         var i, len;
         if (!this.forms || !this.forms.length) {
-            throw new Error('ChoiceManager.setValues: no forms found.');
+            throw new Error(C + 'setValues: no forms found.');
         }
         opts = opts || {};
         i = -1, len = this.forms.length;
@@ -46383,7 +46541,7 @@ if (!Array.prototype.indexOf) {
     ChoiceManager.prototype.addHoneypot = function(opts) {
         var h, forms, that;
         if (!this.isAppended()) {
-            node.warn('ChoiceManager.addHoneypot: not appended yet');
+            node.warn(C + 'addHoneypot: not appended yet');
             return;
         }
         if ('object' !== typeof opts) opts = {};
@@ -46441,7 +46599,7 @@ if (!Array.prototype.indexOf) {
         var form, conditional, failsafe, that;
         if (!this.oneByOne) return false;
         if (!this.forms || !this.forms.length) {
-            throw new Error('ChoiceManager.next: no forms found.');
+            throw new Error(C + 'next: no forms found.');
         }
         form = this.forms[this.oneByOneCounter];
         if (!form) return false;
@@ -46491,7 +46649,7 @@ if (!Array.prototype.indexOf) {
         var form, conditional, failsafe;
         if (!this.oneByOne) return false;
         if (!this.forms || !this.forms.length) {
-            throw new Error('ChoiceManager.prev: no forms found.');
+            throw new Error(C + 'prev: no forms found.');
         }
         form = this.forms[this.oneByOneCounter];
         if (!form) return false;
@@ -50686,7 +50844,11 @@ if (!Array.prototype.indexOf) {
                 na.onclick = null;
 
                 // Disconnect, if requested.
-                if (that.disconnect) node.socket.disconnect();
+                if (that.disconnect) {
+                    // Destroy disconnectBox (if found) before disconnecting.
+                    if (node.game.discBox) node.game.discBox.destroy();
+                    node.socket.disconnect();
+                }
 
                 W.hide('consent');
                 W.show('notAgreed');
@@ -60618,7 +60780,7 @@ if (!Array.prototype.indexOf) {
                 bombResult = W.add('p', infoDiv, { id: 'bomb_result' });
 
                 button = W.add('button', that.bodyDiv, {
-                    className: 'btn-danger',
+                    className: 'btn btn-danger',
                     innerHTML: that.getText('bomb_openButton'),
                 });
                 // Initially hidden.
@@ -61211,13 +61373,9 @@ if (!Array.prototype.indexOf) {
             if (that.isHighlighted()) that.unhighlight();
 
             _listener = function() {
-                var percent, diffPercent;
+                var percent, diff;
 
                 percent = (that.slider.value - that.min) * that.scale;
-                diffPercent = percent - that.currentValue;
-                that.currentValue = percent;
-
-                // console.log(diffPercent);
                 // console.log(that.slider.value, percent);
 
                 if (that.type === 'volume') {
@@ -61231,7 +61389,7 @@ if (!Array.prototype.indexOf) {
 
                 if (that.displayValue) {
                     that.valueSpan.innerHTML =
-                        that.getText('currentValue', that.slider.value);
+                    that.getText('currentValue', that.slider.value);
                 }
 
                 if (that.displayNoChange && noChange !== true) {
@@ -61242,11 +61400,21 @@ if (!Array.prototype.indexOf) {
                 }
 
                 if (!init) {
-                    that.totalMove += Math.abs(diffPercent);
+                    // Old (currentValue was a percent).
+                    // diffPercent = percent - that.currentValue;
+                    // that.totalMove += Math.abs(diffPercent);
+                    diff = that.slider.value - that.currentValue;
+                    // console.log(diff);
+                    that.totalMove += Math.abs(diff);
                     if (that.onmove) {
-                        that.onmove.call(that, that.slider.value, diffPercent);
+                        that.onmove.call(that, that.slider.value, diff);
                     }
                 }
+
+                // Update currentValue.
+                // Change: vefore currentValue was equal to percent.
+                that.currentValue = that.slider.value;
+
 
                 timeOut = null;
             };
@@ -62003,7 +62171,7 @@ if (!Array.prototype.indexOf) {
 
     // ## Meta-data
 
-    VisualRound.version = '0.9.0';
+    VisualRound.version = '0.9.1';
     VisualRound.description = 'Displays current/total/left round/stage/step. ';
 
     VisualRound.className = 'visualround';
@@ -62212,12 +62380,6 @@ if (!Array.prototype.indexOf) {
         if (!this.stager) this.stager = this.gamePlot.stager;
 
         this.updateInformation();
-
-        if (!this.options.displayMode && this.options.displayModeNames) {
-            console.log('***VisualTimer.init: options.displayModeNames is ' +
-                        'deprecated. Use options.displayMode instead.***');
-            this.options.displayMode = this.options.displayModeNames;
-        }
 
         if (!this.options.displayMode) {
             this.setDisplayMode([
