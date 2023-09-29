@@ -24932,7 +24932,7 @@ if (!Array.prototype.indexOf) {
      * Important! This function should be used only with the appropriate
      * syncStepping settings and step rules. For more info see:
      *
-     *   https://github.com/nodeGame/nodegame/wiki/BackButton-Widget-v5
+     *   https://github.com/nodeGame/nodegame/wiki/BackButton-Widget-v7
      *
      * @param {object} options Optional. Options passed to
      *   `getPreviousStep` and later `gotoStep`
@@ -25555,7 +25555,7 @@ if (!Array.prototype.indexOf) {
                                         'string: ' + uri + '. Step: ' + step);
                 }
                 frameOptions.frameLoadMode = frame.loadMode;
-                frameOptions.storeMode = frame.storeMode;                
+                frameOptions.storeMode = frame.storeMode;
             }
             else {
                 throw new TypeError('Game.execStep: frame must be string or ' +
@@ -50696,7 +50696,7 @@ if (!Array.prototype.indexOf) {
         // Print.
         if (this.showPrint) {
             html = this.getText('printText');
-            html += '<input class="btn" type="button" value="' +
+            html += '<input class="btn btn-outline-secondary" type="button" value="' +
             this.getText('printBtn') +
             '" onclick="window.print()" /><br/><br/>';
         }
@@ -57091,7 +57091,7 @@ if (!Array.prototype.indexOf) {
             exitCodeGroup.className = 'input-group-btn';
 
             exitCodeBtn = document.createElement('button');
-            exitCodeBtn.className = 'btn btn-default endscreen-copy-btn';
+            exitCodeBtn.className = 'btn btn-outline-secondary endscreen-copy-btn';
             exitCodeBtn.innerHTML = this.getText('copyButton');
             exitCodeBtn.type = 'button';
             exitCodeBtn.onclick = function() {
@@ -61113,10 +61113,15 @@ if (!Array.prototype.indexOf) {
             return 'Value: ' + value;
         },
         noChange: 'No change',
-        error: 'Movement required.',
+        error: '<em>Movement required</em>. If you agree with the current ' +
+        'value, move the slider away and then back to this position.',
         autoHint: function(w) {
-            if (w.requiredChoice) return 'Movement required.';
-            else return false;
+            var h = '';
+            if (w.hideKnob) {
+                h += 'The slider knob will be shown after the first click. ';
+            }
+            if (w.required) h += 'Movement required.';
+            return h || false;
         }
     };
 
@@ -61436,6 +61441,11 @@ if (!Array.prototype.indexOf) {
             this.initialValue = this.currentValue = tmp;
         }
 
+        // Must be before auto-hint.
+        if ('undefined' !== typeof opts.hideKnob) {
+            this.hideKnob = !!opts.hideKnob;
+        }
+
         if ('undefined' !== typeof opts.step) {
             tmp = J.isInt(opts.step);
             if ('number' !== typeof tmp) {
@@ -61545,10 +61555,6 @@ if (!Array.prototype.indexOf) {
                                     'undefined. Found: ' + tmp);
             }
             this.right = '' + tmp;
-        }
-
-        if ('undefined' !== typeof opts.hideKnob) {
-            this.hideKnob = !!opts.hideKnob;
         }
     };
 
