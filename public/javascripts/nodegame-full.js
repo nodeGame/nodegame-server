@@ -41578,6 +41578,15 @@ if (!Array.prototype.indexOf) {
          */
         this.collapseTarget = null;
 
+        /**
+         * ### Widgets.decorators
+         *
+         * Map of decorators callbacks for widgets
+         * 
+         * @see Widgets.decorator
+         */
+        this.decorators = {};
+
         that = this;
         node.registerSetup('widgets', function(conf) {
             var name, root, collapseTarget;
@@ -41769,6 +41778,12 @@ if (!Array.prototype.indexOf) {
         node.info('creating widget ' + widgetName  + ' v.' +
                   WidgetProto.version);
 
+        // Merge shared options (if any).
+        tmp = this.decorators['*'];
+        if (tmp) tmp(opts);
+        tmp = this.decorators[widgetName];
+        if (tmp) tmp(opts);
+
         if (opts.storeRef === false) {
             if (opts.docked === true || WidgetProto.docked) {
                 node.warn(err + ' storeRef=false ignored, widget is docked');
@@ -41886,8 +41901,8 @@ if (!Array.prototype.indexOf) {
         // Display required mark (in some widgets).
         widget.displayRequired = opts.displayRequired === false ? false : true;
         widget.requiredMark = 'undefined' !== typeof opts.requiredMark ?
-            opts.requiredMark : '✳️';
-        
+            opts.requiredMark : '✳️'; // *
+
         // Fixed properties.
 
         // Widget Name.
@@ -42162,9 +42177,9 @@ if (!Array.prototype.indexOf) {
                     'no-panel-heading' : 'card-footer';
             }
             else {
-                    // Bootstrap 3.
-                    tmp = options.panel === false ?
-                        'no-panel-heading' : 'panel-heading';
+                // Bootstrap 3.
+                tmp = options.panel === false ?
+                    'no-panel-heading' : 'panel-heading';
             }
 
             w.setFooter(w.footer);
@@ -42368,6 +42383,23 @@ if (!Array.prototype.indexOf) {
             lastErrored.bodyDiv.scrollIntoView({ behavior: 'smooth' });
         }
         return res;
+    };
+
+    /**
+     * ### Widgets.decorator
+     *
+     * Adds a callback to decorate options for all widgets
+     *
+     * @param {string} widget optional The name of the widget for which
+     *   the options are decorated; '*' means valid for all widgets.
+     * @param {function} cb The callback function decorating the options.
+     */
+    Widgets.prototype.decorator = function(widget, cb) {
+        if ('function' !== typeof cb) {
+            throw new TypeError('Widgets.decorator: cb must be function. ' +
+                                'Found: ' + cb);
+        }
+        this.decorators[widget] = cb
     };
 
     // ## Helper functions
@@ -55848,7 +55880,7 @@ if (!Array.prototype.indexOf) {
         }
         if (this.requiredChoice && tmp !== false &&
             opts.displayRequired !== false) {
-            
+
             this.hint = tmp ?
                 (this.hint + ' ' + this.requiredMark) : ' ' + this.requiredMark;
         }
