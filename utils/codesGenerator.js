@@ -176,11 +176,12 @@ module.exports = function(settings) {
             return;
         }
 
-        else {
+        // Asynchronous.
+        else if (mode !== 'monitor') {
 
             // Unknown mode.
             throw new Error(E + 'unknown mode. Valid modes: ' +
-                            '[auto,dummy,local,external,custom]');
+                            '[auto,dummy,local,external,monitor,custom]');
         }
 
 
