@@ -6061,7 +6061,7 @@ if (!Array.prototype.indexOf) {
 
         // ### __update.indexes
         // If TRUE, rebuild indexes on every insert and remove
-        this.__update.indexes = false;
+        this.__update.indexes = true;
 
         // ### __update.sort
         // If TRUE, sort db on every insert and remove
@@ -35410,6 +35410,7 @@ if (!Array.prototype.indexOf) {
      */
     GameWindow.prototype.preCacheTest = function(cb, uri) {
         var iframe, iframeName;
+
         uri = uri || '/pages/testpage.htm';
         if ('string' !== typeof uri) {
             throw new TypeError('GameWindow.precacheTest: uri must string ' +
@@ -35436,8 +35437,15 @@ if (!Array.prototype.indexOf) {
             catch(e) {
                 W.cacheSupported = false;
             }
+            // It's possible that it was already removed if two calls
+            // to preCacheTest are made one after the other.
+            try {
+                document.body.removeChild(iframe);
+            }
+            catch(e) {
+                node.warn('W.preCacheTest: iframe already removed');
+            }
 
-            document.body.removeChild(iframe);
             if (cb) cb();
         });
     };
@@ -35663,7 +35671,7 @@ if (!Array.prototype.indexOf) {
     GameWindow.prototype.loadFrame = function(uri, func, opts) {
         var that;
         var loadCache;
-        var storeCacheNow, storeCacheLater;
+        var shouldTestCache, storeCacheNow, storeCacheLater;
         var scrollUp;
         var iframe, iframeName, iframeDocument, iframeWindow;
         var frameDocumentElement, frameReady;
@@ -35721,6 +35729,7 @@ if (!Array.prototype.indexOf) {
                 }
                 else if (opts.cache.loadMode === 'cache') {
                     loadCache = true;
+                    shouldTestCache = true;
                 }
                 else {
                     throw new Error('GameWindow.loadFrame: unkown cache ' +
@@ -35732,17 +35741,22 @@ if (!Array.prototype.indexOf) {
                     storeCacheNow = false;
                     storeCacheLater = false;
                 }
-                else if (opts.cache.storeMode === 'onLoad') {
-                    storeCacheNow = true;
-                    storeCacheLater = false;
-                }
-                else if (opts.cache.storeMode === 'onClose') {
-                    storeCacheNow = false;
-                    storeCacheLater = true;
-                }
                 else {
-                    throw new Error('GameWindow.loadFrame: unkown cache ' +
-                                    'store mode: ' + opts.cache.storeMode);
+                    
+                    if (opts.cache.storeMode === 'onLoad') {
+                        storeCacheNow = true;
+                        storeCacheLater = false;
+                    }
+                    else if (opts.cache.storeMode === 'onClose') {
+                        storeCacheNow = false;
+                        storeCacheLater = true;
+                    }
+                    else {
+                        throw new Error('GameWindow.loadFrame: unkown cache ' +
+                                        'store mode: ' + opts.cache.storeMode);
+                    }
+
+                    shouldTestCache = true;
                 }
             }
         }
@@ -35754,7 +35768,8 @@ if (!Array.prototype.indexOf) {
         // Store unprocessed uri parameter.
         this.unprocessedUri = uri;
 
-        if (this.cacheSupported === null) {
+        shouldTestCache = true;
+        if (shouldTestCache && this.cacheSupported === null) {
             this.preCacheTest(function() {
                 that.loadFrame(uri, func, opts);
             });
@@ -35904,7 +35919,7 @@ if (!Array.prototype.indexOf) {
         var css, html, replace, loaded, stageLevel;
         loaded = updateAreLoading(this, -1);
         if (loaded) this.setStateLevel('LOADED');
-        if (func) func.call(node.game);        
+        if (func) func.call(node.game);
         if (scrollUp && window.scrollTo) window.scrollTo(0,0);
 
         css = node.game.getProperty('css');
@@ -55333,10 +55348,9 @@ if (!Array.prototype.indexOf) {
         // then unlocked by GameWindow, but otherwise it must be
         // done here.
         node.on('PLAYING', function() {
-            var prop, step, delay;
+            var prop, delay;
 
-            step = node.game.getCurrentGameStage();
-            prop = node.game.plot.getProperty(step, 'donebutton');
+            prop = node.game.getProperty('donebutton');
             if (prop === false || (prop && prop.enableOnPlaying === false)) {
                 // It might be disabled already, but we do it again.
                 that.disable();
@@ -55361,10 +55375,15 @@ if (!Array.prototype.indexOf) {
                     that.enable();
                 }
             }
-            if ('string' === typeof prop) that.button.value = prop;
-            else if (prop && prop.text) that.button.value = prop.text;
+            if ('string' === typeof prop) {
+                that.button.value = prop;
+            }
+            else if (prop) {
+                if (prop.text) that.button.value = prop.text;
+                if (prop.onclick) setOnClick(that, prop.onclick, true);
+            }  
 
-            if (prop) setOnClick(this, prop.onclick, true);
+            
         });
 
         if (this.disableOnDisconnect) {
@@ -55443,6 +55462,11 @@ if (!Array.prototype.indexOf) {
                                     ' or undefined. Found: ' + onclick);
             }
             that.onclick = onclick;
+        }
+        if (step) {
+            node.once('REALLY_DONE', function() {
+                that.onclick = null;
+            });
         }
     }
 
