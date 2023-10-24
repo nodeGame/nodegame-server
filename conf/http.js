@@ -237,7 +237,7 @@ function configure(app, servernode) {
             servernode.homePage.enabled === false) {
 
             res.render('index_simple', {
-                title: 'Yay! nodeGame server is running.'
+                title: 'Yay! The server is running.'
             });
         }
         else {
