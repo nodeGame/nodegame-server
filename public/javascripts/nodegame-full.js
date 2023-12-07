@@ -25545,10 +25545,7 @@ if (!Array.prototype.indexOf) {
             }
             else if ('object' === typeof frame) {
                 uri = frame.uri;
-                if ('undefined' === typeof uri) {
-                    uri = this.getStepId() + '.htm';
-                }
-                else if ('string' !== typeof uri) {
+                if ('string' !== typeof uri) {
                     throw new TypeError('Game.execStep: frame.uri must be ' +
                                         'string: ' + uri + '. Step: ' + step);
                 }
@@ -46016,7 +46013,7 @@ if (!Array.prototype.indexOf) {
      * @see ChoiceManager.buildTableAndForms
      */
     ChoiceManager.prototype.setForms = function(forms) {
-        var i, len, parsedForms;
+        var i, formIdx, len, parsedForms;
         if ('function' === typeof forms) {
             parsedForms = forms.call(node.game);
             if (!J.isArray(parsedForms)) {
@@ -46040,17 +46037,18 @@ if (!Array.prototype.indexOf) {
 
         // Manual clone forms.
         this.formsById = {};
-        this.order = new Array(len);
         this.forms = new Array(len);
-        i = -1;
-        for ( ; ++i < len ; ) {
-            this.addForm(parsedForms[i], false, i);
-            // Save the order in which the choices will be added.
-            this.order[i] = i;
-        }
 
         // Shuffle, if needed.
+        this.order = J.seq(0, len-1);
         if (this.shuffleForms) this.order = J.shuffle(this.order);
+
+        i = -1;
+        for ( ; ++i < len ; ) {
+            formIdx = this.order[i];
+            this.addForm(parsedForms[formIdx], false, i);
+            // Save the order in which the choices will be added.
+        }
     };
 
     ChoiceManager.prototype.append = function() {
@@ -46791,7 +46789,9 @@ if (!Array.prototype.indexOf) {
         dl = document.createElement('dl');
         i = -1, len = w.forms.length;
         for ( ; ++i < len ; ) {
-            form = w.forms[w.order[i]];
+            // If shuffled, w.forms already follows the shuffled order.
+            form = w.forms[i];
+            // form = w.forms[w.order[i]];
             appendDT(dl, form);
         }
         return dl;
@@ -48947,6 +48947,7 @@ if (!Array.prototype.indexOf) {
 
         // Set values, random or pre-set.
         i = -1;
+        // Pre-set.
         if ('undefined' !== typeof options.values) {
             if (!J.isArray(options.values)) tmp = [ options.values ];
             len = tmp.length;
@@ -49005,8 +49006,8 @@ if (!Array.prototype.indexOf) {
 
         // Make a random comment.
         if (this.textarea) this.textarea.value = J.randomString(100, '!Aa0');
-        if (this.custominput && !this.custominput.isHidden()) {
-            this.custominput.setValues();
+        if (this.customInput && !this.customInput.isHidden()) {
+            this.customInput.setValues();
         }
     };
 
@@ -57229,7 +57230,7 @@ if (!Array.prototype.indexOf) {
         basePay = node.game.settings.BASE_PAY;
         if ('undefined' !== typeof basePay) {
             this.updateDisplay({
-                basePay: basePay, total: basePay, exitCode: ''
+                basePay: basePay, total: basePay, exitCode: 'N/A'
             });
         }
 
