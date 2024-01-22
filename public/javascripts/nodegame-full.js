@@ -2334,7 +2334,7 @@ if (!Array.prototype.indexOf) {
             if (className instanceof Array) className = className.join(' ');
             if ('string' !== typeof className || className.trim() === '') {
                 throw new TypeError('DOM.addClass: className must be ' +
-                                    'HTMLElement. Found: ' + className);
+                                    'string. Found: ' + className);
             }
             if (!elem.className) elem.className = className;
             else elem.className += (' ' + className);
@@ -46837,7 +46837,7 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # ChoiceTable
- * Copyright(c) 2023 Stefano Balietti
+ * Copyright(c) 2024 Stefano Balietti
  * MIT Licensed
  *
  * Creates a configurable table where each cell is a selectable choice
@@ -46959,7 +46959,7 @@ if (!Array.prototype.indexOf) {
          * @see ChoiceTable.onclick
          */
         this.listener = function(e) {
-            var name, value, td, ci;
+            var name, value, td, ci, lastClicked;
             var i, len, removed, otherSel;
 
             e = e || window.event;
@@ -47084,6 +47084,8 @@ if (!Array.prototype.indexOf) {
                 value = parseInt(value, 10);
                 that.onclick.call(that, value, removed, td);
             }
+
+            that.lastClicked = value;
 
             if (that.doneOnClick) node.done();
         };
@@ -47450,6 +47452,13 @@ if (!Array.prototype.indexOf) {
         * @see ChoiceTable.other
         */
         this.customInput = null;
+
+        /**
+        * ### ChoiceTable.lastClicked
+        *
+        * The idx of the last selected choice
+        */
+        this.lastClicked = null;
 
         /**
         * ### ChoiceTable.doneOnClick
@@ -47942,10 +47951,13 @@ if (!Array.prototype.indexOf) {
      *
      * Marks a choice as disabled (will not be clickable)
      *
-     * @param {string|number} value The value of the choice to disable`
+     * @param {string|number} idx The idx of the choice to disable
      */
-    ChoiceTable.prototype.disableChoice = function(value) {
-        this.disabledChoices[value] = true;
+    ChoiceTable.prototype.disableChoice = function(idx) {
+        if (!this.disabledChoices[idx]) {
+            this.disabledChoices[idx] = true;
+            J.addClass(this.choicesCells[idx], 'disabled');
+        }
     };
 
     /**
@@ -47953,10 +47965,13 @@ if (!Array.prototype.indexOf) {
      *
      * Enables a choice (will be clickable again if previously disabled)
      *
-     * @param {string|number} value The value of the choice to disable`
+     * @param {string|number} idx The value of the choice to disable
      */
-    ChoiceTable.prototype.enableChoice = function(value) {
-        this.disabledChoices[value] = null;
+    ChoiceTable.prototype.enableChoice = function(idx) {
+        if (this.disabledChoices[idx]) {
+            this.disabledChoices[idx] = null;
+            J.removeClass(this.choicesCells[idx], 'disabled');
+        }
     };
 
     /**
@@ -47999,7 +48014,7 @@ if (!Array.prototype.indexOf) {
         // Loop through all choices and see if there is any fixed position.
         // TODO: we could add validation here.
         (function(w) {
-            var i, c, fixedPos, idxOrder,allFixedPos = [];
+            var i, c, fixedPos, idxOrder, allFixedPos = [], allFixedLen;
             // See if there is any fixed-choice.
             for (i = -1 ; ++i < len ; ) {
                 fixedPos = undefined;
@@ -48018,10 +48033,12 @@ if (!Array.prototype.indexOf) {
             }
             // All fixed position collected, we need to sort them from
             // lowest to highest, then we can do the placing.
-            if (allFixedPos.length) {
-                allFixedPos.sort(function(a, b) { return a.fixed < b.fixed });
-                len = allFixedPos.length;
-                for (i = -1 ; ++i < len ; ) {
+            allFixedLen = allFixedPos.length; 
+            if (allFixedLen) {
+                if (allFixedLen > 1) {
+                    allFixedPos.sort(function(a, b) {return a.fixed < b.fixed});
+                }
+                for (i = -1 ; ++i < allFixedLen ; ) {
                     c = allFixedPos[i];
                     // Remove from old position and place it in new one.
                     w.order.splice(c.pos, 1);
@@ -48056,12 +48073,13 @@ if (!Array.prototype.indexOf) {
      * @see ChoiceTable.renderSpecial
      */
     ChoiceTable.prototype.buildChoices = function() {
-        var i, len;
-        i = -1, len = this.choices.length;
+        var len, pos, idx;
+        pos = -1, len = this.choices.length;
         // Pre-allocate the choicesCells array.
         this.choicesCells = new Array(len);
-        for ( ; ++i < len ; ) {
-            this.renderChoice(this.choices[this.order[i]], i);
+        for ( ; ++pos < len ; ) {
+            idx = this.order[pos];
+            this.renderChoice(this.choices[idx], idx, pos);
         }
         if (this.left) this.renderSpecial('left', this.left);
         if (this.right) this.renderSpecial('right', this.right);
@@ -48083,7 +48101,7 @@ if (!Array.prototype.indexOf) {
     ChoiceTable.prototype.buildTable = (function() {
 
         function makeSet(i, len, H, doSets) {
-            var tr, counter;
+            var tr, counter, pos;
             counter = 0;
             // Start adding tr/s and tds based on the orientation.
             if (H) {
@@ -48102,7 +48120,8 @@ if (!Array.prototype.indexOf) {
                     }
                 }
                 // Clickable cell.
-                tr.appendChild(this.choicesCells[i]);
+                pos = this.order[i];
+                tr.appendChild(this.choicesCells[pos]);
                 // Stop if we reached set size (still need to add the right).
                 if (doSets && ++counter >= this.choicesSetSize) break;
             }
@@ -48146,7 +48165,7 @@ if (!Array.prototype.indexOf) {
      * @see ChoiceTable.orientation
      */
     ChoiceTable.prototype.buildTableAndChoices = function() {
-        var i, len, tr, td, H;
+        var i, idx, len, tr, td, H;
 
         len = this.choices.length;
         // Pre-allocate the choicesCells array.
@@ -48175,7 +48194,8 @@ if (!Array.prototype.indexOf) {
                 }
             }
             // Clickable cell.
-            td = this.renderChoice(this.choices[this.order[i]], i);
+            idx = this.order[i];
+            td = this.renderChoice(this.choices[idx], idx, i);
             tr.appendChild(td);
         }
         if (this.right) {
@@ -48246,7 +48266,7 @@ if (!Array.prototype.indexOf) {
      *   text to display as choice, or an object with properties value and
      *   display. If a renderer function is defined there are no restriction
      *   on the format of choice.
-     * @param {number} idx The position of the choice within the choice array
+     * @param {number} idx The position of the choice within the choices array
      *
      * @return {HTMLElement} td The newly created cell of the table
      *
@@ -48254,7 +48274,7 @@ if (!Array.prototype.indexOf) {
      * @see ChoiceTable.separator
      * @see ChoiceTable.choicesCells
      */
-    ChoiceTable.prototype.renderChoice = function(choice, idx) {
+    ChoiceTable.prototype.renderChoice = function(choice, idx, pos) {
         var td, shortValue, value, width;
         td = document.createElement('td');
         if (this.tabbable) J.makeTabbable(td);
@@ -48289,7 +48309,8 @@ if (!Array.prototype.indexOf) {
                 choice = choice.display;
             }
 
-            value = this.shuffleChoices ? this.order[idx] : idx;
+            // value = this.shuffleChoices ? this.order[idx] : idx;
+            value = idx;
 
             if ('string' === typeof choice || 'number' === typeof choice) {
                 td.innerHTML = choice;
@@ -48318,7 +48339,7 @@ if (!Array.prototype.indexOf) {
         }
 
         // All fine, updates global variables.
-        this.choicesValues[value] = idx;
+        this.choicesValues[value] = pos;
         this.choicesCells[idx] = td;
         this.choicesIds[td.id] = td;
 
