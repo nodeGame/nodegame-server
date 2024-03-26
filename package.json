@@ -30,7 +30,7 @@
         "cookie-parser": "*",
         "cookie-session": "*",
         "errorhandler": "*",
-        "express": "4.17.1",
+        "express": "4.19.2",
         "jade": "1.11.0",
         "JSON": "1.0.0",
         "jsonwebtoken": "8.5.1",
