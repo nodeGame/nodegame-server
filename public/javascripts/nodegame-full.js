@@ -47994,7 +47994,7 @@ if (!Array.prototype.indexOf) {
             throw new Error('ChoiceTable.clickChoice: choicesCells not ' +
                 'initialized.');
         }
-        if (!J.isInt(idx)) {
+        if (J.isInt(idx) === false) {
             throw new TypeError('ChoiceTable.clickChoice: idx must be ' +
                             'integer. Found: ' + idx);
         }
