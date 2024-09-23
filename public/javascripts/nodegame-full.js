@@ -42138,7 +42138,7 @@ if (!Array.prototype.indexOf) {
         if (w._bootstrap5) {
             // Bootstrap 5
             tmp = {
-                className: tmp ? [ 'ng_widget', 'no-panel', w.className ] :
+                className: tmp ? [ 'ng_widget', w.className ] :
                     [ 'ng_widget', 'card', w.className ]
             };
         }
@@ -54349,7 +54349,7 @@ if (!Array.prototype.indexOf) {
             id: that.id + '_summary',
             storeRef: false,
             title: false,
-            panel: false,
+            // panel: false,
             className: 'custominputgroup-summary',
             disabled: true
         }, that.sharedOptions);
@@ -61873,9 +61873,9 @@ if (!Array.prototype.indexOf) {
         if (this.hideKnob) tmp.style = { opacity: 0 };
         this.slider = W.add('input', container, tmp);
         if (this.hideKnob) {
-            this.slider.onclick = function() {
+            this.slider.onmousedown = function() {
                 that.slider.style.opacity = 1;
-                that.slider.onclick = null;
+                that.slider.onmousedown = null;
             };
         }
 
