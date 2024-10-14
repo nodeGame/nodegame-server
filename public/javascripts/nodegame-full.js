@@ -61382,7 +61382,7 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # Slider
- * Copyright(c) 2023 Stefano Balietti
+ * Copyright(c) 2024 Stefano Balietti
  * MIT Licensed
  *
  * Creates a configurable slider.
@@ -61545,8 +61545,16 @@ if (!Array.prototype.indexOf) {
         *
         * @see Slider.displayNoChange
         * @see Slider.noChangeCheckbox
+        * @see Slider.noChangeCb
         */
         this.noChangeSpan = null;
+
+        /**
+         * ### Slider.noChangeCb
+         *
+         * If a callback executed when the noChangeSpan is clicked
+         */
+        this.noChangeCb = null;
 
         /**
          * ### Slider.errorBox
@@ -61560,6 +61568,12 @@ if (!Array.prototype.indexOf) {
          * The total movement of the slider
          */
         this.totalMove = 0;
+
+        /** Slider.nClicks
+         *
+         * Counts onmousedown events on the slider
+         */
+        this.nClicks = 0;
 
         /** Slider.volumeSlider
          *
@@ -61758,6 +61772,14 @@ if (!Array.prototype.indexOf) {
         if ('undefined' !== typeof opts.displayNoChange) {
             this.displayNoChange = !!opts.displayNoChange;
         }
+        if ('undefined' !== typeof opts.noChangeCb) {
+            if ('function' !== typeof opts.noChangeCb) {
+                throw new TypeError(e + 'noChangeCb must be function or ' +
+                    'undefined. Found: ' + opts.noChangeCb);
+
+            }
+            this.noChangeCb = opts.noChangeCb;
+        }
 
         if (opts.type) {
             if (opts.type !== 'volume' && opts.type !== 'flat') {
@@ -61915,12 +61937,17 @@ if (!Array.prototype.indexOf) {
         };
         if (this.hideKnob) tmp.style = { opacity: 0 };
         this.slider = W.add('input', container, tmp);
-        if (this.hideKnob) {
-            this.slider.onmousedown = function() {
+        
+        // Count nClicks
+        this.slider.onmousedown = function() {
+            // Important that it is not three equals here.
+            if (that.hideKnob && that.slider.style.opacity == 0) {
                 that.slider.style.opacity = 1;
-                that.slider.onmousedown = null;
-            };
-        }
+                that.listener(true, false, true);
+            } 
+            that.nClicks++;
+            // that.slider.onmousedown = null;
+        };
 
         this.slider.onmouseover = function() {
             tmpColor = that.rangeFill.style.background || 'black';
@@ -61940,32 +61967,46 @@ if (!Array.prototype.indexOf) {
             tmp.style.float = 'right';
         }
 
-        if (this.displayValue) {
-            this.valueSpan = W.add('span', this.bodyDiv, {
-                className: 'slider-display-value'
-            });
-        }
-
         if (this.displayNoChange) {
             this.noChangeSpan = W.add('span', this.bodyDiv, {
-                className: 'slider-display-nochange',
+                className: 'slider-display-nochange btn btn-danger',
                 innerHTML: this.getText('noChange') + '&nbsp;'
             });
             this.noChangeCheckbox = W.add('input', this.noChangeSpan, {
                 type: 'checkbox'
             });
-            this.noChangeCheckbox.onclick = function() {
-                if (that.noChangeCheckbox.checked) {
-                    if (that.slider.value === that.initialValue) return;
-                    that.slider.value = that.initialValue;
-                    that.listener(true);
-                    J.addClass(that.noChangeSpan, 'italic');
+
+            this.noChangeSpan.onclick = function(event) {
+                var c;
+                c = that.noChangeCheckbox;
+                if (c.checked) {
+                    J.removeClass(that.noChangeSpan, 'italic');             
+                    // Click the checkbox (unless already clicked).       
+                    if (!event.target || event.target.type !== 'checkbox') {
+                        c.checked = false;
+                    }
+                    that.noChange = true;
                 }
                 else {
-                    J.removeClass(that.noChangeSpan, 'italic');
+                    if (that.slider.value !== that.initialValue) {
+                        that.slider.value = that.initialValue;
+                        that.listener(true);
+                        J.addClass(that.noChangeSpan, 'italic');
+                    }
+                    // Click the checkbox (unless already clicked).       
+                    if (!event.target || event.target.type !== 'checkbox') {
+                        c.checked = true;
+                    }                    
                 }
 
+                if (that.noChangeCb) that.noChangeCb(that, c.checked);
             };
+        }
+
+        if (this.displayValue) {
+            this.valueSpan = W.add('span', this.bodyDiv, {
+                className: 'slider-display-value'
+            });
         }
 
         this.errorBox = W.append('div', this.bodyDiv, { className: 'errbox' });
@@ -61996,9 +62037,10 @@ if (!Array.prototype.indexOf) {
             noChange: !!nochange,
             initialValue: this.initialValue,
             totalMove: this.totalMove,
+            nClicks: this.nClicks,
             isCorrect: res,
             time: node.timer.getTimeSince(this.timeFrom)
-        };
+        };        
     };
 
     Slider.prototype.setValues = function(opts) {
