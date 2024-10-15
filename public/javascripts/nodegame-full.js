@@ -61414,7 +61414,7 @@ if (!Array.prototype.indexOf) {
         'value, move the slider away and then back to this position.',
         autoHint: function(w) {
             var h = '';
-            if (w.hideKnob) {
+            if (w.knobHiddenFirst) {
                 h += 'The slider knob will be shown after the first click. ';
             }
             if (w.required) h += 'Movement required.';
@@ -61539,7 +61539,7 @@ if (!Array.prototype.indexOf) {
         */
         this.displayNoChange = true;
 
-        /** Slider.noChangeSpan
+        /** Slider.noChangeBtn
         *
         * The checkbox form marking the no-change
         *
@@ -61547,12 +61547,12 @@ if (!Array.prototype.indexOf) {
         * @see Slider.noChangeCheckbox
         * @see Slider.noChangeCb
         */
-        this.noChangeSpan = null;
+        this.noChangeBtn = null;
 
         /**
          * ### Slider.noChangeCb
          *
-         * If a callback executed when the noChangeSpan is clicked
+         * If a callback executed when the noChangeBtn is clicked
          */
         this.noChangeCb = null;
 
@@ -61647,7 +61647,7 @@ if (!Array.prototype.indexOf) {
                 if (that.displayNoChange && noChange !== true) {
                     if (that.noChangeCheckbox.checked) {
                         that.noChangeCheckbox.checked = false;
-                        J.removeClass(that.noChangeSpan, 'italic');
+                        J.removeClass(that.noChangeBtn, 'italic');
                     }
                 }
 
@@ -61695,11 +61695,23 @@ if (!Array.prototype.indexOf) {
          this.timeFrom = 'step';
 
          /**
-         * ### Slider.hideKnob
+         * ### Slider.knobHiddenFirst
          *
          * If TRUE, the knob of the slider is hidden before interaction
          */
-         this.hideKnob = false;
+         this.knobHiddenFirst = false;
+
+
+        /**
+         * ### Slider._tmpColor
+         *
+         *  The original color of the rangeFill container (default black)
+         * 
+         * that is replaced upon highlighting.
+         * Need to do js onmouseover because ccs:hover does not work here.
+         * 
+         */ 
+        this._tmpColor;
 
     }
 
@@ -61754,7 +61766,7 @@ if (!Array.prototype.indexOf) {
 
         // Must be before auto-hint.
         if ('undefined' !== typeof opts.hideKnob) {
-            this.hideKnob = !!opts.hideKnob;
+            this.knobHiddenFirst = !!opts.hideKnob;
         }
 
         if ('undefined' !== typeof opts.step) {
@@ -61888,11 +61900,6 @@ if (!Array.prototype.indexOf) {
     Slider.prototype.append = function() {
         var container, tmp;
 
-        // The original color of the rangeFill container (default black)
-        // that is replaced upon highlighting.
-        // Need to do js onmouseover because ccs:hover does not work here.
-        var tmpColor;
-
         var that = this;
 
         // MainText.
@@ -61935,26 +61942,28 @@ if (!Array.prototype.indexOf) {
             max: this.max,
             step: this.step,
         };
-        if (this.hideKnob) tmp.style = { opacity: 0 };
+        if (this.knobHiddenFirst) tmp.style = { opacity: 0 };
         this.slider = W.add('input', container, tmp);
         
-        // Count nClicks
+        // Count nClicks.
         this.slider.onmousedown = function() {
             // Important that it is not three equals here.
-            if (that.hideKnob && that.slider.style.opacity == 0) {
-                that.slider.style.opacity = 1;
+            if (that.knobHiddenFirst && that.isKnobHidden()) {
+                that.showKnob();
                 that.listener(true, false, true);
             } 
             that.nClicks++;
-            // that.slider.onmousedown = null;
         };
 
+        // TODO: we should use a CSS class.
         this.slider.onmouseover = function() {
-            tmpColor = that.rangeFill.style.background || 'black';
+            if (that.slider.disabled) return;
+            that._tmpColor = that.rangeFill.style.background || 'black';
             that.rangeFill.style.background = that.hoverColor;
         };
         this.slider.onmouseout = function() {
-            that.rangeFill.style.background = tmpColor;
+            if (that.slider.disabled) return;
+            that.rangeFill.style.background = that._tmpColor;
         };
 
         if (this.sliderWidth) this.slider.style.width = this.sliderWidth;
@@ -61968,38 +61977,39 @@ if (!Array.prototype.indexOf) {
         }
 
         if (this.displayNoChange) {
-            this.noChangeSpan = W.add('span', this.bodyDiv, {
-                className: 'slider-display-nochange btn btn-danger',
+            this.noChangeBtn = W.add('button', this.bodyDiv, {
+                className: 'btn btn-danger btn-sm slider-display-nochange',
                 innerHTML: this.getText('noChange') + '&nbsp;'
             });
-            this.noChangeCheckbox = W.add('input', this.noChangeSpan, {
+            this.noChangeCheckbox = W.add('input', this.noChangeBtn, {
                 type: 'checkbox'
             });
 
-            this.noChangeSpan.onclick = function(event) {
-                var c;
+            this.noChangeBtn.onclick = function(event) {
+                var c, isCheckBox;
                 c = that.noChangeCheckbox;
-                if (c.checked) {
-                    J.removeClass(that.noChangeSpan, 'italic');             
+                isCheckBox = event.target && event.target.type === 'checkbox';
+
+                // Currently no change, pressed to re-activate movements.
+                if (that.noChange) {     
+                    J.removeClass(that.noChangeBtn, 'italic');             
+                    that.noChange = false;         
                     // Click the checkbox (unless already clicked).       
-                    if (!event.target || event.target.type !== 'checkbox') {
-                        c.checked = false;
-                    }
-                    that.noChange = true;
+                    c.checked = false;
+                    that.enableSlider();
                 }
+                // Activated no-change.
                 else {
-                    if (that.slider.value !== that.initialValue) {
-                        that.slider.value = that.initialValue;
-                        that.listener(true);
-                        J.addClass(that.noChangeSpan, 'italic');
-                    }
+                    J.addClass(that.noChangeBtn, 'italic');                    
+                    // Update state.
+                    that.noChange = true;
                     // Click the checkbox (unless already clicked).       
-                    if (!event.target || event.target.type !== 'checkbox') {
-                        c.checked = true;
-                    }                    
+                    c.checked = true;     
+                    that.disableSlider();
                 }
 
-                if (that.noChangeCb) that.noChangeCb(that, c.checked);
+                // Call callback with current status.
+                if (that.noChangeCb) that.noChangeCb(that, that.noChange);
             };
         }
 
@@ -62070,27 +62080,92 @@ if (!Array.prototype.indexOf) {
         this.slider.oninput(false, false, true);
     };
 
+    
+ 
+    /**
+     * ### Slider.disableSlider
+     *
+     * Disables the slider only
+     */
+    Slider.prototype.disableSlider = function (hideKnob) {
+        W.addClass(this.rangeFill, 'disabled');
+        W.addClass(this.slider, 'disabled');
+        this._tmpColor = this.rangeFill.style.background || 'black';
+        this.rangeFill.style.background = 'grey';
+        this.slider.disabled = true;
+        if (hideKnob !== false) this.hideKnob();
+    };
+
+    /**
+     * ### Slider.enableSlider
+     *
+     * Enables the slider only
+     */
+    Slider.prototype.enableSlider = function (showKnob) {
+        W.removeClass(this.rangeFill, 'disabled');
+        W.removeClass(this.slider, 'disabled');
+        this.rangeFill.style.background = this._tmpColor;
+        this.slider.disabled = false;
+        if (showKnob !== false) this.showKnob();
+    };
+
+    /**
+     * ### Slider.hideKnob
+     *
+     * Hides the knob
+     */
+    Slider.prototype.hideKnob = function () {
+       this.slider.style.opacity = 0;
+    };
+
+    /**
+     * ### Slider.showKnob
+     *
+     * Hides the knob
+     */
+    Slider.prototype.showKnob = function () {
+        this.slider.style.opacity = 1;
+    };
+
+    /**
+     * ### Slider.isKnobHidden
+     *
+     * Hides the knob
+     */
+    Slider.prototype.isKnobHidden = function () {
+        // Two equals important.
+        return this.slider.style.opacity == 0;
+    };
+
     /**
      * ### Slider.disable
      *
-     * Disables the slider
+     * Disables the widget
      */
     Slider.prototype.disable = function () {
         if (this.disabled === true) return;
         this.disabled = true;
-        this.slider.disabled = true;
+        this.disableSlider();
+        if (this.noChangeBtn) {
+            this.noChangeBtn.disabled = true;
+            this.noChangeCheckbox.disabled = true;
+        }
         this.emit('disabled');
     };
 
     /**
      * ### Slider.enable
      *
-     * Enables the dropdown menu
+     * Enables the widget
      */
     Slider.prototype.enable = function () {
         if (this.disabled === false) return;
         this.disabled = false;
-        this.slider.disabled = false;
+        this.enableSlider();
+        if (this.noChangeBtn) {
+            this.noChangeBtn.disabled = false;
+            this.noChangeCheckbox.disabled = false;
+        }
         this.emit('enabled');
     };
 
