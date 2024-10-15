@@ -1033,7 +1033,18 @@ div.riskgauge .risk-info span {
     border: 1px solid #fff;
 }
 
-.volume-slider:hover ~ .fill-slider { background: darkturquoise !important; }
+/* Done in JS, should be done here. */
+/* .volume-slider:hover ~ .fill-slider { background: darkturquoise !important; } */
+
+.fill-slider.disabled:hover { 
+  background: gray !important;
+  cursor: not-allowed;
+}
+
+.volume-slider.disabled, .fill-slider.disabled {
+  background: gray !important;
+  cursor: not-allowed;
+}
 
 /* .volume-slider:hover {
     background: darkturquoise !important;
@@ -1083,7 +1094,7 @@ div.riskgauge .risk-info span {
 
 .slider-display-value,
 .slider-display-nochange {
-    clear:both;
+    clear: both;
     font-size: 14px;
 }
 
