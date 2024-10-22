@@ -45865,6 +45865,21 @@ if (!Array.prototype.indexOf) {
          */
         this.autoId = true;
 
+        /**
+         * ### ChoiceManager.delayOnNext
+         *
+         * The number of milliseconds the _next_ form is initially disabled
+         * 
+         * Next and back buttons are also disabled in the process.
+         * 
+         * Set to falsy to prevent this default behavior.
+         * 
+         * @see ChoiceManager.next
+         * @see ChoiceManager.doneBtn
+         * @see ChoiceManager.backBtn
+         */
+        this.delayOnNext = 350;
+
     }
 
     // ## ChoiceManager methods
@@ -45984,6 +45999,15 @@ if (!Array.prototype.indexOf) {
 
         if ('undefined' !== typeof options.autoId) {
             this.autoId = options.autoId;
+        }
+
+        tmp = options.delayOnNext;
+        if ('undefined' !== typeof tmp) {
+            if (J.isNumber(tmp, 0)) {
+                throw new TypeError('ChoiceManager.init: delayOnNext must ' +
+                    'be a positive number or undefined. Found: ' + tmp);
+            }
+            this.delayOnNext = tmp;
         }
 
         // After all configuration options are evaluated, add forms.
@@ -46642,6 +46666,9 @@ if (!Array.prototype.indexOf) {
         // TODO: make this property a reserved keyword.
         form._shown = true;
 
+        // Delay the activation of the form to prevent accidental clicking.
+        if (this.delayOnNext) form.disable();
+        
         if ('undefined' !== typeof $) {
             $(form.panelDiv).fadeIn();
             form.hidden = false; // for nodeGame.
@@ -46651,14 +46678,16 @@ if (!Array.prototype.indexOf) {
         }
         window.scrollTo(0,0);
 
-        that = this;
-        setTimeout(function() {
-            if (node.game.isPaused()) return;
-            if (that.backBtn) that.backBtn.enable();
-            if (that.doneBtn) that.doneBtn.enable();
-        }, 250);
-
-
+        if (this.delayOnNext) {
+            that = this;
+            setTimeout(function() {
+                if (node.game.isPaused()) return;
+                form.enable();
+                if (that.backBtn) that.backBtn.enable();
+                if (that.doneBtn) that.doneBtn.enable();
+            }, this.delayOnNext);
+        }
+        
         W.adjustFrameHeight();
 
         node.emit('WIDGET_NEXT', this);
@@ -46967,7 +46996,7 @@ if (!Array.prototype.indexOf) {
          * @see ChoiceTable.onclick
          */
         this.listener = function(e) {
-            var name, value, td, ci, lastClicked;
+            var value, td, ci;
             var i, len, removed, otherSel;
 
             e = e || window.event;
@@ -47208,6 +47237,15 @@ if (!Array.prototype.indexOf) {
          * @see ChoiceTable.renderSpecial
          */
         this.rightCell = null;
+
+        /**
+        * ### ChoiceTable.header
+        *
+        * Header to be displayed above the table
+        *
+        * @experimental
+        */
+        this.header = null;
 
         /**
          * ### ChoiceTable.errorBox
@@ -47980,6 +48018,25 @@ if (!Array.prototype.indexOf) {
             this.defaultChoice = tmp;
             initDefaultChoice(this);
         }
+
+        if (opts.header) {
+            tmp = opts.header;
+            // One td will colspan all choices.
+            if ('string' === typeof tmp) {
+                tmp = [ tmp ];
+            }
+            else if (!J.isArray(tmp) ||
+                    (tmp.length !== 1 && tmp.length !== opts.choices.length)) {
+
+                throw new Error('ChoiceTableGroup.init: header ' +
+                                'must be string, array (size ' +
+                                opts.choices.length +
+                                '), or undefined. Found: ' + tmp);
+            }
+
+            this.header = tmp;
+        }
+
     };
 
     /**
@@ -48159,10 +48216,33 @@ if (!Array.prototype.indexOf) {
     ChoiceTable.prototype.buildTable = (function() {
 
         function makeSet(i, len, H, doSets) {
-            var tr, counter, pos;
+            var tr, td, counter, pos;
             counter = 0;
             // Start adding tr/s and tds based on the orientation.
             if (H) {
+
+                if (this.header) {
+                    tr = W.add('tr', this.table);
+                    
+                    // Add empty left header cell, if needed.
+                    if (this.left) W.add('td', tr, { className: 'header' });
+                    
+                    for ( ; ++i < this.header.length ; ) {
+                        td = W.add('td', tr, {
+                            innerHTML: this.header[i],
+                            className: 'header'
+                        });
+                    }
+
+                    // Only one element, header spans throughout.
+                    if (i === 1) td.setAttribute('colspan', this.choices.length);
+
+                    // Add empty right header cell, if needed.
+                    if (this.right) W.add('td', tr, { className: 'header' });
+                    
+                    i = -1;
+                }
+
                 tr = createTR(this, 'main');
                 // Add horizontal choices title.
                 if (this.leftCell) tr.appendChild(this.leftCell);
