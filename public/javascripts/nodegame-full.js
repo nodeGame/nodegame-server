@@ -47053,7 +47053,12 @@ if (!Array.prototype.indexOf) {
             if (that.customInput) {
                 // Is "Other" currently selected?
                 otherSel = value === (len - 1);
-                if (otherSel && !removed) {
+
+                if (otherSel && !removed &&
+                    // Fixed Select multiple (not all max choices selected).
+                    ('number' !== typeof that.selectMultiple || 
+                        (that.selectMultiple > that.currentChoice.length))
+                ) {
                     that.customInput.show();
                 }
                 else if (!that.selectMultiple || otherSel) {
@@ -62168,6 +62173,10 @@ if (!Array.prototype.indexOf) {
      * ### Slider.disableSlider
      *
      * Disables the slider only
+     * 
+     * It hides the knob by default
+     * 
+     * @param {boolean} showKnob If FALSE it does not show knob
      */
     Slider.prototype.disableSlider = function (hideKnob) {
         W.addClass(this.rangeFill, 'disabled');
@@ -62182,13 +62191,22 @@ if (!Array.prototype.indexOf) {
      * ### Slider.enableSlider
      *
      * Enables the slider only
+     * 
+     * It shows the knob by default, unless it has never been clicked and
+     * the `knobHiddenFirst` is TRUE.
+     * 
+     * @param {boolean} showKnob If FALSE it does not show knob
      */
     Slider.prototype.enableSlider = function (showKnob) {
         W.removeClass(this.rangeFill, 'disabled');
         W.removeClass(this.slider, 'disabled');
         this.rangeFill.style.background = this._tmpColor;
         this.slider.disabled = false;
-        if (showKnob !== false) this.showKnob();
+        if (showKnob !== false) {
+            if (this.knobHiddenFirst && this.nClicks !== 0) {
+                this.showKnob();
+            }
+        }
     };
 
     /**
