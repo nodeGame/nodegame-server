@@ -1130,3 +1130,48 @@ div.dropdown datalist {
     margin-left: 0 !important;
     margin-top: 0 !important;
 }
+
+
+/* Consent */
+
+.gdpr-checkboxes .form-switch {
+  padding-left: 3.5em;
+} 
+
+.gdpr-checkboxes .form-check-input {
+  font-size: 1.2em;
+  cursor: pointer;
+}
+
+.gdpr-checkboxes .form-check-label {
+  font-weight: normal;
+  font-size: smaller;
+  cursor: pointer;
+}
+
+.gdpr-checkboxes a {
+  color: inherit
+}
+
+/* Add this in styles.css */
+@keyframes shake {
+  0% { transform: translateX(0); }
+  25% { transform: translateX(-5px); }
+  50% { transform: translateX(5px); }
+  75% { transform: translateX(-5px); }
+  100% { transform: translateX(0); }
+}
+
+.shake {
+  animation: shake 0.5s ease-in-out;
+}
+
+.consent-checkboxes {
+  font-size: 14px;
+}
+
+.consent-checkboxes .form-check-input,
+.consent-checkboxes .form-check-label {
+  font-size: large !important;
+}
+
