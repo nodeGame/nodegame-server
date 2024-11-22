@@ -38812,8 +38812,74 @@ if (!Array.prototype.indexOf) {
         return el;
     };
 
+    /**
+     * ## GameWindow.fadeIn
+     *
+     * Fades in an element
+     *
+     * @param {string|HTMLElement} idOrObj The id of or the HTML element itself
+     * @param {object} opts Configuration options
+     *
+     * @return {HTMLElement|null} The faded-in element if found, null otherwise
+     *
+     * @see _fade
+     */
+    GameWindow.prototype.fadeIn = function(idOrObj, opts) {
+        return _fade(false, idOrObj, opts);
+    };
+
+    /**
+     * ## GameWindow.fadeOut
+     *
+     * Fades out an element
+     *
+     * @param {string|HTMLElement} idOrObj The id of or the HTML element itself
+     * @param {object} opts Configuration options
+     *
+     * @return {HTMLElement|null} The faded-out element if found, null otherwise
+     *
+     * @see _fade
+     */
+    GameWindow.prototype.fadeOut = function(idOrObj, opts) {
+        return _fade(true, idOrObj, opts);
+    };
+    
+
 
     // ## Helper Functions
+
+    /**
+     * Fades an element in or out and adjust the frame height
+     * 
+     * @param {boolean} out True if it is a fadeOut event, False otherwise
+     * @param {string|HTMLElement} idOrObj The id of or the HTML element itself
+     * @param {object} opts Configuration options:
+     *      - `display`: The display property for the faded element
+     *      - `adjustFrameHeight`: If not FALSE, W.adjustFrameHeight is called
+     * 
+     * @return {HTMLElement|null} The faded* element if found, null otherwise
+     */
+    function _fade(out, idOrObj, opts) {
+        var el, classRem, classAdd, defDisplay;
+        el = getElement(idOrObj);
+        if (!el) return null;
+        if (out) {
+            classRem = 'fadein';
+            classAdd = 'fadeout';
+            defDisplay = 'none';
+        }
+        else {
+            classRem = 'fadeout';
+            classAdd = 'fadein';
+            defDisplay = '';
+        }
+        opts = opts || {};
+        el.classList.remove(classRem);
+        el.classList.add(classAdd);
+        el.style.display = opts.display || defDisplay;
+        if (opts.adjustFrameHeight !== false) W.adjustFrameHeight();
+        return el;
+    }
 
     /**
      * ### toggleInputs
@@ -50880,7 +50946,7 @@ if (!Array.prototype.indexOf) {
 
 /**
  * # Consent
- * Copyright(c) 2023 Stefano Balietti
+ * Copyright(c) 2024 Stefano Balietti
  * MIT Licensed
  *
  * Displays a consent form with buttons to accept/reject it
@@ -50895,7 +50961,7 @@ if (!Array.prototype.indexOf) {
 
     // ## Meta-data
 
-    Consent.version = '0.4.0';
+    Consent.version = '0.5.0';
     Consent.description = 'Displays a configurable consent form.';
 
     Consent.panel = false;
@@ -51061,7 +51127,7 @@ if (!Array.prototype.indexOf) {
             });
      
             if (this.fineprint) {
-                html += '<p class="gdpr-fineprint" style="font-size: small; margin-top: 20px;">';
+                html += '<p class="gdpr-fineprint">';
                 html += this.fineprint;
                 html += '</p>';
             }
@@ -51082,26 +51148,26 @@ if (!Array.prototype.indexOf) {
         html += '<strong>' + this.getText('consentTerms') + '</strong><br/>';
 
         // Buttons.
-        html += '<div style="margin-top: 30px; text-align: center;">';
+        html += '<div class="consent-btn-container">';
 
         if (document.querySelector('html').dir === 'rtl') {
             btn1 = 'agree';
             btn2 = 'notAgree';
             st1 = 'info';
-            st2 = 'danger';
+            st2 = 'outline-danger';
         }
         else {
             btn1 = 'notAgree';
             btn2 = 'agree';
-            st1 = 'danger';
+            st1 = 'outline-danger';
             st2 = 'info';
         }
 
-        html += '<button class="btn btn-lg btn-' + st1 +
-              '" style="margin: 0px 30px" id="' + btn1 + '">' +
+        html += '<button class="consent-btn btn btn-lg btn-' + st1 +
+              '" id="' + btn1 + '">' +
               this.getText(btn1) + '</button>';
 
-        html += '<button class="btn btn-lg btn-' + st2 + '" id="' +
+        html += '<button class="consent-btn btn btn-lg btn-' + st2 + '" id="' +
                  btn2 + '">' + this.getText(btn2) + '</button></div>';
 
         consent.innerHTML += html;

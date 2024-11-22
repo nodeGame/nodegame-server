@@ -1102,6 +1102,11 @@ div.riskgauge .risk-info span {
     float: right;
 }
 
+.slider-display-nochange input[type="checkbox"] {
+  margin-left: 5px;
+}
+
+
 /* Dropdown */
 
 div.dropdown,
@@ -1134,6 +1139,8 @@ div.dropdown datalist {
 
 /* Consent */
 
+
+
 .gdpr-checkboxes .form-switch {
   padding-left: 3.5em;
 } 
@@ -1151,6 +1158,11 @@ div.dropdown datalist {
 
 .gdpr-checkboxes a {
   color: inherit
+}
+
+.gdpr-fineprint {
+  font-size: small;
+  margin-top: 20px;
 }
 
 /* Add this in styles.css */
@@ -1175,3 +1187,27 @@ div.dropdown datalist {
   font-size: large !important;
 }
 
+.consent-btn-container {
+  margin-top: 30px; 
+  text-align: center; 
+  display: flex; 
+  gap: 30px;
+  justify-content: center;
+}
+
+.consent-btn {
+  flex: 1;
+  max-width: 320px;
+}
+
+/* Utility */
+
+.fadein {
+  opacity: 1 !important;
+  transition: opacity 1s;
+}
+
+.fadeout {
+  opacity: 0 !important;
+  transition: opacity 0.5s;
+}
