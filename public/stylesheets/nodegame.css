@@ -1099,11 +1099,11 @@ div.riskgauge .risk-info span {
 }
 
 .slider-display-nochange {
-    float: right;
+    float: inline-end;
 }
 
 .slider-display-nochange input[type="checkbox"] {
-  margin-left: 5px;
+  margin-inline-start: 5px;
 }
 
 
