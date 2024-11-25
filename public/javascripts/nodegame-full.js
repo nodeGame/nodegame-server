@@ -38843,6 +38843,32 @@ if (!Array.prototype.indexOf) {
     GameWindow.prototype.fadeOut = function(idOrObj, opts) {
         return _fade(true, idOrObj, opts);
     };
+
+
+    /**
+     * ### GameWindow.isRTL
+     *
+     * Returns TRUE is the page is written right to left
+     * 
+     * Results are cached.
+     * 
+     * @param {boolean} force If truthy, it resets the cache;
+     *     if HTMLElement, it checks within that element.
+     * 
+     * @returns {boolean} TRUE if the page is RTL
+     */
+    GameWindow.prototype.isRTL = GameWindow.prototype.isRtl = (function(cache) {
+        return function(force) {
+            var d;
+            if ('undefined' === typeof cache || force) {
+                d = J.isElement(force) ? force : document.documentElement;
+                cache = d.dir === 'rtl' || 
+                ('function' === typeof getComputedStyle && 
+                    getComputedStyle(d).direction === 'rtl');
+            }
+            return cache;
+        };
+    })();
     
 
 
@@ -51033,6 +51059,18 @@ if (!Array.prototype.indexOf) {
          * ## Consent.checkboxes
          *
          * Checkboxes that need to checked to consent
+         * 
+         * The content of the arrays can be strings, or objects that specify
+         * additional properties, i.e.:
+         * 
+         * ```js
+         * 
+         * {
+         *    label: 'This is the label text',
+         *    required: false, // Default true
+         *    className: 'myclass' // Added to outer div, default: 'form-switch'
+         * }
+         * ```
          */
         this.checkboxes = [];
 
@@ -51096,7 +51134,7 @@ if (!Array.prototype.indexOf) {
     };
 
     Consent.prototype.append = function() {
-        var consent, html, btn1, btn2, st1, st2;
+        var consent, isRtl, html, btn1, btn2, st1, st2;
         // Hide not agreed div.
         W.hide('notAgreed');
 
@@ -51106,25 +51144,45 @@ if (!Array.prototype.indexOf) {
                             'element with id "consent"');
         }
         html = '';
-
-
+        
         // Checkboxes.
 
-        if (this.checkboxes.length) {
+        isRtl = W.isRTL(this.bodyDiv);
+
+        if (this.checkboxes.length || this.fineprint) {
     
         
-            html += '<div class="gdpr-checkboxes"><dl>';
+            html += '<div class="gdpr-checkboxes">';
             
-            this.checkboxes.forEach(function(c, idx) {
-                var id = _getCbxId(idx+1);
-                html += '<dt>';
-                html += '<div class="form-check form-switch">'
-                html += '<input class="form-check-input" type="checkbox" ' +
-                    'role="switch" id="' + id + '">';
-                html += '<label class="form-check-label" for="' + id + '">';
-                html += c;
-                html += '</label></div></dt>';
-            });
+            if (this.checkboxes.length) {
+                html += '<dl>';
+                this.checkboxes.forEach(function(c, idx) {
+                    var id, label, btn, className;
+                    id = _getCbxId(idx+1);
+
+                    className = 'form-check';
+                    if (isRtl) className += '-reverse';
+
+                    if ('object' === typeof c) {
+                        label = c.label;
+                        className += ' ' + c.className; 
+                    }
+                    else {
+                        label = c;
+                    }
+                    
+                    btn = '<input class="form-check-input" type="checkbox" ' +
+                        'role="switch" id="' + id + '">';
+                    label = '<label class="form-check-label" ' +
+                        'for="' + id + '">' + label + '</label>';
+                        
+                    html += '<dt>';
+                    html += '<div class="' + className + '">'
+                    html += isRtl ? label + btn : btn + label;
+                    html += '</div></dt>';
+                });
+                html += '</dl>';
+            }
      
             if (this.fineprint) {
                 html += '<p class="gdpr-fineprint">';
@@ -51150,7 +51208,7 @@ if (!Array.prototype.indexOf) {
         // Buttons.
         html += '<div class="consent-btn-container">';
 
-        if (document.querySelector('html').dir === 'rtl') {
+        if (isRtl) {
             btn1 = 'agree';
             btn2 = 'notAgree';
             st1 = 'info';
@@ -51204,15 +51262,22 @@ if (!Array.prototype.indexOf) {
                 var res = true;
                 if (that.checkboxes.length) {
                     that.checkboxes.forEach(function(c, idx) {
-                        var cbx, id;
+                        var cbx, id, req;
                         id = _getCbxId(idx+1);
                         cbx = W.gid(id);
                         if (!cbx) {
                             node.warn('Consent: could not find checkbox ' + id);
                         }
-                        else if (!cbx.checked) {
-                            res = false;
-                            W.shake(cbx);
+                        else {
+                            req = that.checkboxes[idx];
+                            if ('string' === typeof req ||
+                                req.required !== false) {
+                                
+                                if (!cbx.checked) {
+                                    res = false;
+                                    W.shake(cbx);
+                                }
+                            }
                         }
                     });
                     if (!res) return;
