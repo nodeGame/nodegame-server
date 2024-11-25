@@ -1141,8 +1141,12 @@ div.dropdown datalist {
 
 
 
+.gdpr-checkboxes .form-check {
+  padding-inline-start: 2.5em;
+} 
+
 .gdpr-checkboxes .form-switch {
-  padding-left: 3.5em;
+  padding-inline-start: 3.5em;
 } 
 
 .gdpr-checkboxes .form-check-input {
