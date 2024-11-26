@@ -50987,7 +50987,7 @@ if (!Array.prototype.indexOf) {
 
     // ## Meta-data
 
-    Consent.version = '0.5.0';
+    Consent.version = '0.7.0';
     Consent.description = 'Displays a configurable consent form.';
 
     Consent.panel = false;
@@ -51029,13 +51029,20 @@ if (!Array.prototype.indexOf) {
     function Consent() {
 
         /**
-         * ## Consent.consent
+         * ## Consent.consentTexts
          *
          * The object containing the variables to substitute
          *
          * Default: node.game.settings.CONSENT
          */
-        this.consent = null;
+        this.consentTexts = null;
+
+        /**
+         * ## Consent.agreed
+         *
+         * If TRUE, consent has been given
+         */
+        this.agreed = null;
 
         /**
          * ## Consent.showPrint
@@ -51045,6 +51052,15 @@ if (!Array.prototype.indexOf) {
          * Default: TRUE
          */
         this.showPrint = null;
+
+        /**
+         * ## Consent.showAgreeBtns
+         *
+         * If TRUE, the agree/disagree buttons are shown
+         *
+         * Default: TRUE
+         */
+        this.showAgreeBtns = null;
 
         /**
          * ## Consent.disconnect
@@ -51071,6 +51087,10 @@ if (!Array.prototype.indexOf) {
          *    className: 'myclass' // Added to outer div, default: 'form-switch'
          * }
          * ```
+         * 
+         * They can also be functions, that either return strings or objects,
+         * or FALSE, if the checkbox should not be added.
+         * 
          */
         this.checkboxes = [];
 
@@ -51081,6 +51101,34 @@ if (!Array.prototype.indexOf) {
          */
         this.fineprint = null;
 
+        /**
+         * ## Consent.prefix
+         *
+         * The prefix to the ids created by the widget
+         * 
+         * Default: ''
+         */
+        this.prefix = '';
+
+        /**
+         * ## Consent.consentId
+         *
+         * The id of the HTML element that contains the consent
+         * 
+         * The widget will be appended here, if found.
+         * 
+         * Default: `prefix` + 'consent'
+         */
+        this.consentId = 'consent';
+
+        /**
+         * ## Consent.doneOnAgree
+         *
+         * If TRUE, `node.done` is called upon agreeing to consent
+         * 
+         * Default: TRUE
+         */
+        this.doneOnAgree;
 
     }
 
@@ -51094,38 +51142,50 @@ if (!Array.prototype.indexOf) {
      * @param {object} opts Optional. Configuration options.
      */
     Consent.prototype.init = function(opts) {
+        var that;
         opts = opts || {};
 
-        this.consent = opts.consent || node.game.settings.CONSENT;
+        this.consentTexts = opts.consent || node.game.settings.CONSENT;
 
-        if (this.consent && 'object' !== typeof this.consent) {
+        if (this.consentTexts && 'object' !== typeof this.consentTexts) {
             throw new TypeError('Consent.init: consent must be object or ' +
-                                'undefined. Found: ' + this.consent);
+                                'undefined. Found: ' + this.consentTexts);
         }
 
         this.showPrint = opts.showPrint === false ? false : true;
 
+        this.showBtns = opts.showAgreeBtns === false ? false : true;
+        
         this.disconnect = opts.disconnect === false ? false : true;
 
+        this.doneOnAgree = opts.doneOnAgree === false ? false : true;
+
         if (J.isArray(opts.checkboxes)) {
-            this.checkboxes = opts.checkboxes;
+            that = this;
+            opts.checkboxes.forEach(function(item) {
+                if ('function' === typeof item) {
+                    item = item();
+                    if (item === false) return;
+                }
+                that.checkboxes.push(item);
+            });
         }
         else if (opts.checkboxes) {
             throw new TypeError('Consent.init: checkboxes must be array or ' +
                                 'undefined. Found: ' + this.checkboxes);
         }
-        if ('string' === typeof opts.fineprint) {
-            this.fineprint = opts.fineprint;
-        }
-        else if (opts.fineprint) {
-            throw new TypeError('Consent.init: fineprint must be string or ' +
-                                'undefined. Found: ' + this.fineprint);
-        }
 
+        _assignStr(this, opts, 'prefix');
+        _assignStr(this, opts, 'fineprint');
+        _assignStr(this, opts, 'consentId');
+
+        if ('undefined' === typeof opts.consentId) {
+            this.consentId = _addPrefix(this, this.consentId);
+        }
     };
 
     Consent.prototype.enable = function() {
-        if (this.notAgreed) return;
+        if (this.agreed !== null) return;
         _toggleEnable(true);
     };
 
@@ -51134,14 +51194,20 @@ if (!Array.prototype.indexOf) {
     };
 
     Consent.prototype.append = function() {
-        var consent, isRtl, html, btn1, btn2, st1, st2;
+        var that, consent, isRtl, html, btn1, btn2, st1, st2;
+        
+        that = this;
+        
         // Hide not agreed div.
-        W.hide('notAgreed');
+        W.hide(_addPrefix(this, 'notAgreed'));
 
-        consent = W.gid('consent');
+        consent = W.gid(this.consentId);
         if (!consent) {
-            throw new Error('Consent.append: the page does not contain an ' +
-                            'element with id "consent"');
+            node.warn('Consent.append: the page does not contain an ' +
+                            'element with id "' + this.consentId + 
+                            '", it will use widget\'s root');
+            
+            consent = w.bodyDiv;
         }
         html = '';
         
@@ -51150,7 +51216,6 @@ if (!Array.prototype.indexOf) {
         isRtl = W.isRTL(this.bodyDiv);
 
         if (this.checkboxes.length || this.fineprint) {
-    
         
             html += '<div class="gdpr-checkboxes">';
             
@@ -51158,7 +51223,7 @@ if (!Array.prototype.indexOf) {
                 html += '<dl>';
                 this.checkboxes.forEach(function(c, idx) {
                     var id, label, btn, className;
-                    id = _getCbxId(idx+1);
+                    id = _getCbxId(that, idx+1);
 
                     className = 'form-check';
                     if (isRtl) className += '-reverse';
@@ -51177,7 +51242,7 @@ if (!Array.prototype.indexOf) {
                         'for="' + id + '">' + label + '</label>';
                         
                     html += '<dt>';
-                    html += '<div class="' + className + '">'
+                    html += '<div class="' + className + '">';
                     html += isRtl ? label + btn : btn + label;
                     html += '</div></dt>';
                 });
@@ -51202,31 +51267,34 @@ if (!Array.prototype.indexOf) {
                 '" onclick="window.print()" /><br/><br/>';
         }
 
-        // Header for buttons.
-        html += '<strong>' + this.getText('consentTerms') + '</strong><br/>';
+        
+        if (this.showBtns !== false) {
+            // Header for buttons.
+            html += '<strong>' + this.getText('consentTerms') + '</strong><br>';
 
-        // Buttons.
-        html += '<div class="consent-btn-container">';
+            // Buttons.
+            html += '<div class="consent-btn-container">';
 
-        if (isRtl) {
-            btn1 = 'agree';
-            btn2 = 'notAgree';
-            st1 = 'info';
-            st2 = 'outline-danger';
+            if (isRtl) {
+                btn1 = _addPrefix(this, 'agree');
+                btn2 = _addPrefix(this, 'notAgree');
+                st1 = 'info';
+                st2 = 'outline-danger';
+            }
+            else {
+                btn1 = _addPrefix(this, 'notAgree');
+                btn2 = _addPrefix(this, 'agree');
+                st1 = 'outline-danger';
+                st2 = 'info';
+            }
+
+            html += '<button class="consent-btn btn btn-lg btn-' + st1 +
+                '" id="' + btn1 + '">' + this.getText(btn1) + '</button>';
+
+            html += '<button class="consent-btn btn btn-lg btn-' + st2 + 
+                '" id="' + btn2 + '">' + this.getText(btn2) + '</button></div>';
         }
-        else {
-            btn1 = 'notAgree';
-            btn2 = 'agree';
-            st1 = 'outline-danger';
-            st2 = 'info';
-        }
-
-        html += '<button class="consent-btn btn btn-lg btn-' + st1 +
-              '" id="' + btn1 + '">' +
-              this.getText(btn1) + '</button>';
-
-        html += '<button class="consent-btn btn btn-lg btn-' + st2 + '" id="' +
-                 btn2 + '">' + this.getText(btn2) + '</button></div>';
+        
 
         consent.innerHTML += html;
         setTimeout(function() { W.adjustFrameHeight(); });
@@ -51234,7 +51302,7 @@ if (!Array.prototype.indexOf) {
 
     Consent.prototype.listeners = function() {
         var that = this;
-        var consent = this.consent;
+        var consent = this.consentTexts;
         node.on('FRAME_LOADED', function() {
             var a, na, p, id;
 
@@ -51252,37 +51320,18 @@ if (!Array.prototype.indexOf) {
             }
 
             // Add listeners on buttons.
-            a = W.gid('agree');
-            na = W.gid('notAgree');
+            if (!that.showBtns) return;
 
-            if (!a) throw new Error('Consent: agree button not found');
-            if (!na) throw new Error('Consent: notAgree button not found');
+            a = W.gid(_addPrefix(this, 'agree'));
+            na = W.gid(_addPrefix(this, 'notAgree'));
 
             a.onclick = function() { 
-                var res = true;
-                if (that.checkboxes.length) {
-                    that.checkboxes.forEach(function(c, idx) {
-                        var cbx, id, req;
-                        id = _getCbxId(idx+1);
-                        cbx = W.gid(id);
-                        if (!cbx) {
-                            node.warn('Consent: could not find checkbox ' + id);
-                        }
-                        else {
-                            req = that.checkboxes[idx];
-                            if ('string' === typeof req ||
-                                req.required !== false) {
-                                
-                                if (!cbx.checked) {
-                                    res = false;
-                                    W.shake(cbx);
-                                }
-                            }
-                        }
-                    });
-                    if (!res) return;
-                }
-                node.done({ consent: true }); 
+                var consent;
+                consent = that.getValues({ agreed: true });
+                if (!consent.consent) return;
+                this.agreed = true;
+                node.emit('CONSENT_ACCEPTED', consent);
+                if (that.doneOnAgree) node.done(consent); 
             };
             na.onclick = function() {
                 var showIt, confirmed;
@@ -51292,7 +51341,7 @@ if (!Array.prototype.indexOf) {
 
                 node.emit('CONSENT_REJECTING');
 
-                that.notAgreed = true;
+                that.agreed = false;
                 node.set({
                     consent: false,
                     // Need to send these two because it's not a DONE msg.
@@ -51311,15 +51360,15 @@ if (!Array.prototype.indexOf) {
                     node.socket.disconnect();
                 }
 
-                W.hide('consent');
-                W.show('notAgreed');
+                W.hide(that.consentId);
+                W.show(_addPrefix(that, 'notAgreed'));
 
                 // If a show-consent button is found enable it.
-                showIt = W.gid('show-consent');
+                showIt = W.gid(_addPrefix(that, 'show-consent'));
                 if (showIt) {
                     showIt.onclick = function() {
                         var div, s;
-                        div = W.toggle('consent');
+                        div = W.toggle(that.consentId);
                         s = div.style.display === '' ? 'hide' : 'show';
                         this.innerHTML = that.getText('showHideConsent', s);
                     };
@@ -51327,6 +51376,60 @@ if (!Array.prototype.indexOf) {
                 node.emit('CONSENT_REJECTED');
             };
        });
+    };
+
+    /**
+     * ## Consent.getValues
+     * 
+     * Returns the current selection on Consent
+     * 
+     * @param {object} opts Configuration object. Options:
+     *   - highlight: if TRUE, missing consents on checkboxes are highlighted.
+     *       Default: TRUE.
+     *   - agreed: TRUE to flag that the user has already clicked on agree 
+     * @returns {object} consent Values of consent.
+     * 
+     * ```js
+     * { 
+     *   consent: true, // if all consent conditions are fullfilled  
+     *   checkboxes: true // if all required checkboxes are checked
+     *   [checkbox_ID1...IDN]: true // one property per checkbox 
+     * }
+     */
+    Consent.prototype.getValues = function(opts) {
+        var consent, that;
+        that = this;
+        consent = { consent: true };
+        opts = opts || {};
+        if (this.checkboxes.length) {
+            consent.checkboxes = true;
+            this.checkboxes.forEach(function(c, idx) {
+                var cbx, id, req;
+                id = _getCbxId(that, idx+1);
+                cbx = W.gid(id);
+                if (!cbx) {
+                    node.warn('Consent: could not find checkbox ' + id);
+                }
+                else {
+                    req = that.checkboxes[idx];
+                    consent[id] = cbx.checked;
+
+                    if ('string' === typeof req ||
+                        req.required !== false) {
+                    
+                        if (!cbx.checked) {
+                            // At least one is needed to deny consent.
+                            consent.checkboxes = consent.consent = false;
+                            if (opts.highlight !== false) W.shake(cbx);
+                        }
+                    }
+                }
+            });
+        }
+        if (this.agreed !== true && this.showBtns && !opts.agree) {
+            consent.consent = false;
+        }
+        return consent;
     };
 
     // ### Helper functions
@@ -51353,14 +51456,52 @@ if (!Array.prototype.indexOf) {
     }
 
     /**
+     * ### _addPrefix
+     * 
+     * Adds a the widget prefix to a string, if one is set.
+     * 
+     * @param {object} w This widget
+     * @param {string} str The string to manipulate
+     * 
+     * @returns {string} The id of the checkbox at a given index
+     */
+    function _addPrefix(w, str) {
+        return (w.prefix ? (w.prefix + '_') : '') + str;
+    }
+
+    /**
+     * ### _getCbxId
+     * 
      * Returns a standardized id for a chekbox based on its index.
      * 
+     * @param {object} w This widget
      * @param {number} idx The id of the checkbox
      * 
      * @returns {string} The id of the checkbox at a given index
      */
-    function _getCbxId(idx) {
-        return 'consent_checkbox_' + idx; 
+    function _getCbxId(w, idx) {
+        return _addPrefix(w, 'consent_checkbox_' + idx); 
+    }
+
+    /**
+     * ### _assignStr
+     * 
+     * Checks the value of a field in an object, if string it stores it
+     * 
+     * @param {object} w This widget
+     * @param {object} opts The configuration options with the field to check
+     * @param {string} id The id to assign
+     */
+    function _assignStr(w, opts, id) {
+        var str;
+        str = opts[id];
+        if ('string' === typeof str) {
+            w[id] = str;
+        }
+        else if (str) {
+            throw new TypeError('Consent.init: ' +  id + 'Id must be ' +
+                                'string or undefined. Found: ' + str);
+        }
     }
 
 })(node);
