@@ -61509,7 +61509,7 @@ if (!Array.prototype.indexOf) {
                 bombResult = W.add('p', infoDiv, { id: 'bomb_result' });
 
                 button = W.add('button', that.bodyDiv, {
-                    className: 'btn btn-danger',
+                    className: 'btn btn-lg btn-danger',
                     innerHTML: that.getText('bomb_openButton'),
                 });
                 // Initially hidden.
