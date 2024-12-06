@@ -51245,7 +51245,9 @@ if (!Array.prototype.indexOf) {
                         
                     html += '<dt>';
                     html += '<div class="' + className + '">';
-                    html += isRtl ? label + btn : btn + label;
+                    // The reverse class takes care of switching the order 
+                    // of btn and label.
+                    html += btn + label; 
                     html += '</div></dt>';
                 });
                 html += '</dl>';
@@ -62483,7 +62485,7 @@ if (!Array.prototype.indexOf) {
 
         if (this.displayNoChange) {
             this.noChangeBtn = W.add('button', this.bodyDiv, {
-                className: 'btn btn-danger btn-sm slider-display-nochange',
+            className: 'btn btn-danger btn-sm slider-display-nochange',
                 innerHTML: this.getText('noChange') + '&nbsp;'
             });
             this.noChangeCheckbox = W.add('input', this.noChangeBtn, {
